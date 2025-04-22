@@ -1,0 +1,144 @@
+// typed lua replacement
+// find a new name the actual one kinda sucks
+
+// every thing is public by default.
+fun main(args: list(string))
+    hello_world()
+end
+
+// local means it is only visible in the current block.
+local fun hello_world()
+    print("Hello world!")
+end
+
+trait Display
+    fun display(self, f: Formatter) -> result
+end
+
+class Person
+    name: string,
+end
+
+impl Display for Person
+    fun display(self, f: Formatter) -> result
+        // ...
+    end
+end
+
+// here this function takes a variadic amount of arguments of type `obj<Display>`
+fun print(..: obj(Display))
+    // builin ..
+end
+
+// the `obj` type represents everything.
+//
+// you can ensure an object `obj` implements a specific Trait(s) like that:
+// obj(Trait1, Trait2, Trait3) and k2 will ensure at compile-time if possible or
+// at runtime if the type implements all the necessary traits
+//
+// you can also ensure an object doesn't implement a specific Trait(s) like that:
+// obj(not Trait1, Trait2, not Trait3) here the obj will never implement Trait1
+// and Trait3 but will always implement Trait2
+
+// exported values those that aren't marked as local, like functions, or variables:
+// fun test() end
+// a = 12.34
+//
+// can be accessed from another file like that:
+//
+// local my_api = require("the_file.k2")
+// or without the local if you want to re-export.
+//
+// then you can make calls to the exported function
+// my_api.hello_world()
+//
+// or access globals:
+// my_api.my_global
+
+local fun test2()
+    list = [1, 2, 3, 4]
+
+    // for loop
+    for i in list
+        print(i)
+    end
+
+    // while looop
+    i = 0
+    while i < len(list)
+        i += 1
+        print(list[i])
+    end
+
+    // if condition
+    if len(list) == 3
+        print("blabla")
+    end
+
+    // if else
+    if 0 == 0
+        // ...
+    else
+        // ...
+    end
+
+    // if else-if else
+    if -1 == -1
+        // ...
+    else if 2 > 0
+        // ...
+    else
+        // ...
+    end
+
+    // if else-if
+    if true
+        // ...
+    else if not false
+        // ..
+    end
+end
+
+// TYPES AND TRAITS
+// are compile time values that can be exported:
+//
+// class Test
+//     field: int,
+// end
+//
+// is equivalent to:
+//
+// Test = class
+//     field: int
+// end
+//
+// and
+//
+// trait Test
+//     fun test()
+// end
+//
+// is equivalent to:
+//
+// Test = trait
+//     fun test()
+// end
+//
+// so you can write comptime functions that return a type like
+//
+// fun array(T: type, N: int) -> comptime type
+//     // built in
+// end
+//
+// and so values of this type could look like `array(int, 12)`
+
+// `nil` value and type,
+//
+// THE NIL TYPE
+//
+// it's the type of a function that doesn't return anything.
+//
+// THE NIL VALUE
+//
+// it's a value that can be used to initialize variables, fields but when used
+// like in a call to a function or something else, it makes an error.
