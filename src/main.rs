@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use k2::lexer::Lexer;
+use l2::lexer::Lexer;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let source_code = r#"

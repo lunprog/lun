@@ -1,3 +1,4 @@
-# k2
+# l2
 
-rename to `l2` like `Lua v2` -> `l2`
+Language heavily inspired by Lua so its name come from it kinda:
+`Lua v2` -> `l2`.

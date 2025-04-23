@@ -44,7 +44,7 @@ end
 // the `obj` type represents everything.
 //
 // you can ensure an object `obj` implements a specific Trait(s) like that:
-// obj(Trait1, Trait2, Trait3) and k2 will ensure at compile-time if possible or
+// obj(Trait1, Trait2, Trait3) and l2 will ensure at compile-time if possible or
 // at runtime if the type implements all the necessary traits
 //
 // you can also ensure an object doesn't implement a specific Trait(s) like that:
@@ -57,7 +57,7 @@ end
 //
 // can be accessed from another file like that:
 //
-// local my_api = require("the_file.k2")
+// local my_api = require("the_file.l2")
 // or without the local if you want to re-export.
 //
 // then you can make calls to the exported function

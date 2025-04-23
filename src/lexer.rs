@@ -1,4 +1,4 @@
-//! Lexer of k2
+//! Lexer of l2
 
 use thiserror::Error;
 
