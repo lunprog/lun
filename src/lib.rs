@@ -18,13 +18,24 @@ use std::fmt::Display;
 
 pub mod blob;
 pub mod lexer;
+pub mod parser;
 pub mod token;
 pub mod vm;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Span {
+    // TODO: maybe rename `start` to `lo` and `end` to `hi`.
     pub start: usize,
     pub end: usize,
+}
+
+impl Span {
+    pub const fn from_ends(start: Span, end: Span) -> Span {
+        Span {
+            start: start.start,
+            end: end.end,
+        }
+    }
 }
 
 #[inline(always)]

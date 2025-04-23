@@ -1,6 +1,6 @@
 //! Token, TokenTree, everything related to tokens.
 
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use crate::Span;
 
@@ -27,6 +27,10 @@ impl TokenTree {
 
         is_eof
     }
+
+    pub fn get(&self, idx: usize) -> Option<&Token> {
+        self.toks.get(idx)
+    }
 }
 
 impl Debug for TokenTree {
@@ -37,8 +41,8 @@ impl Debug for TokenTree {
 
 #[derive(Debug, Clone)]
 pub struct Token {
-    tt: TokenType,
-    loc: Span,
+    pub tt: TokenType,
+    pub loc: Span,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -48,13 +52,19 @@ pub enum TokenType {
     /// identifier
     Ident(String),
     /// integer literal
-    Int(u64),
+    IntLit(u64),
     /// string literal
-    String(String),
+    StringLit(String),
     /// punctuation and operators
     Punct(Punctuation),
     /// End Of File
     EOF,
+}
+
+impl Display for TokenType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 // /!\ If an identifier is added change the `lex_identifer` method of the Lexer
@@ -80,6 +90,8 @@ pub enum Keyword {
     Impl,
     /// local
     Local,
+    /// not
+    Not,
     /// return
     Return,
     /// self
@@ -100,34 +112,52 @@ pub enum Keyword {
 impl Keyword {
     /// `break` keyword.
     pub const BREAK: &str = "break";
+
     /// `class` keyword.
     pub const CLASS: &str = "class";
+
     /// `continue` keyword.
     pub const CONTINUE: &str = "continue";
+
     /// `do` keyword.
     pub const DO: &str = "do";
+
     /// `end` keyword.
     pub const END: &str = "end";
+
     /// `false` keyword.
     pub const FALSE: &str = "false";
+
     /// `for` keyword.
     pub const FOR: &str = "for";
+
     /// `fun` keyword.
     pub const FUN: &str = "fun";
+
     /// `impl` keyword.
     pub const IMPL: &str = "impl";
+
     /// `local` keyword.
     pub const LOCAL: &str = "local";
+
+    /// `not` keyword.
+    pub const NOT: &str = "not";
+
     /// `return` keyword.
     pub const RETURN: &str = "return";
+
     /// `self` keyword.
     pub const SELF: &str = "self";
+
     /// `then` keyword.
     pub const THEN: &str = "then";
+
     /// `trait` keyword.
     pub const TRAIT: &str = "trait";
+
     /// `true` keyword.
     pub const TRUE: &str = "true";
+
     /// `while` keyword.
     pub const WHILE: &str = "while";
 }
@@ -158,4 +188,24 @@ pub enum Punctuation {
     Colon,
     /// ,
     Comma,
+    /// =
+    Equal,
+    /// ==
+    Equal2,
+    /// !=
+    BangEqual,
+    /// <=
+    LArrow,
+    /// <
+    LArrowEqual,
+    /// >
+    RArrow,
+    /// >=
+    RArrowEqual,
+}
+
+impl Display for Punctuation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }

@@ -116,6 +116,41 @@ impl Lexer {
             Some('*') => Punct(Star),
             Some(':') => Punct(Colon),
             Some(',') => Punct(Comma),
+            Some('=') => {
+                self.pop();
+                match self.peek() {
+                    Some('=') => {
+                        self.pop();
+                        return Ok(Punct(Equal2));
+                    }
+                    _ => return Ok(Punct(Equal)),
+                }
+            }
+            Some('!') => {
+                self.pop();
+                self.expect('=');
+                return Ok(Punct(BangEqual));
+            }
+            Some('<') => {
+                self.pop();
+                match self.peek() {
+                    Some('=') => {
+                        self.pop();
+                        return Ok(Punct(LArrowEqual));
+                    }
+                    _ => return Ok(Punct(LArrow)),
+                }
+            }
+            Some('>') => {
+                self.pop();
+                match self.peek() {
+                    Some('=') => {
+                        self.pop();
+                        return Ok(Punct(RArrowEqual));
+                    }
+                    _ => return Ok(Punct(RArrow)),
+                }
+            }
             Some('/') => {
                 self.pop();
                 match self.peek() {
@@ -166,6 +201,7 @@ impl Lexer {
             Keyword::FUN => KW(Keyword::Fun),
             Keyword::IMPL => KW(Keyword::Impl),
             Keyword::LOCAL => KW(Keyword::Local),
+            Keyword::NOT => KW(Keyword::Not),
             Keyword::RETURN => KW(Keyword::Return),
             Keyword::SELF => KW(Keyword::Zelf),
             Keyword::THEN => KW(Keyword::Then),
@@ -214,7 +250,7 @@ impl Lexer {
         // TODO: add support for radix like `0x...`, `0o...`, `0b...`
         let int = self.make_int();
 
-        Ok(TokenType::Int(parse_u64(&int, 10)?))
+        Ok(TokenType::IntLit(parse_u64(&int, 10)?))
     }
 
     pub fn lex_string(&mut self) -> Result<TokenType, LexingError> {
@@ -256,7 +292,7 @@ impl Lexer {
             }
         }
 
-        Ok(TokenType::String(str))
+        Ok(TokenType::StringLit(str))
     }
 
     pub fn make_escape_sequence(&mut self, es: char) -> Result<char, LexingError> {
