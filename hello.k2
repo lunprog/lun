@@ -30,6 +30,17 @@ fun print(..: obj(Display))
     // builin ..
 end
 
+// or maybe a print function like that.
+fun print(fmt: string, ..: obj(Display))
+    // builtin..
+end
+
+// and like that
+fun println(fmt: string = "", ..: obj(Display))
+    print(concat(fmt, "\n"), args())
+    // here `args()` is to collect the variable number of arguments
+end
+
 // the `obj` type represents everything.
 //
 // you can ensure an object `obj` implements a specific Trait(s) like that:
@@ -42,7 +53,7 @@ end
 
 // exported values those that aren't marked as local, like functions, or variables:
 // fun test() end
-// a = 12.34
+// a := 12.34
 //
 // can be accessed from another file like that:
 //
@@ -56,45 +67,54 @@ end
 // my_api.my_global
 
 local fun test2()
-    list = [1, 2, 3, 4]
+    local list := [1, 2, 3, 4]
 
-    // for loop
-    for i in list
+    // numeric for
+    // iterate over values between expr1 and expr2 with optional step expr3
+    // if expr3 is not specified then a step of one is assumed
+    for var := expr1..expr2, expr3 do
         print(i)
     end
 
+    // generic for
+    // iterate on the iterator here `"Hello".chars()`, until the iterator
+    // returns `nil`
+    for c in "Hello":chars() do
+        print(c)
+    then
+
     // while looop
-    i = 0
-    while i < len(list)
+    local i := 0
+    while i < len(list) do
         i += 1
         print(list[i])
     end
 
     // if condition
-    if len(list) == 3
+    if list:len() == 3 then
         print("blabla")
     end
 
     // if else
-    if 0 == 0
+    if 0 == 0 then
         // ...
     else
         // ...
     end
 
     // if else-if else
-    if -1 == -1
+    if -1 == -1 then
         // ...
-    else if 2 > 0
+    else if 2 > 0 then
         // ...
     else
         // ...
     end
 
     // if else-if
-    if true
+    if true then
         // ...
-    else if not false
+    else if not false then
         // ..
     end
 end
@@ -108,7 +128,7 @@ end
 //
 // is equivalent to:
 //
-// Test = class
+// Test := class
 //     field: int
 // end
 //
@@ -120,7 +140,7 @@ end
 //
 // is equivalent to:
 //
-// Test = trait
+// Test := trait
 //     fun test()
 // end
 //

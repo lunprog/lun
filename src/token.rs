@@ -60,8 +60,12 @@ pub enum TokenType {
 // /!\ If an identifier is added change the `lex_identifer` method of the Lexer
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Keyword {
+    /// break
+    Break,
     /// class
     Class,
+    /// continue
+    Continue,
     /// do
     Do,
     /// end
@@ -79,7 +83,12 @@ pub enum Keyword {
     /// return
     Return,
     /// self
+    ///
+    /// Note: here the name of this keyword is `Zelf` because we can't name it
+    /// Self because it's a keyword and neither `r#Self`.
     Zelf,
+    /// then
+    Then,
     /// trait
     Trait,
     /// true
@@ -89,8 +98,12 @@ pub enum Keyword {
 }
 
 impl Keyword {
+    /// `break` keyword.
+    pub const BREAK: &str = "break";
     /// `class` keyword.
     pub const CLASS: &str = "class";
+    /// `continue` keyword.
+    pub const CONTINUE: &str = "continue";
     /// `do` keyword.
     pub const DO: &str = "do";
     /// `end` keyword.
@@ -109,6 +122,8 @@ impl Keyword {
     pub const RETURN: &str = "return";
     /// `self` keyword.
     pub const SELF: &str = "self";
+    /// `then` keyword.
+    pub const THEN: &str = "then";
     /// `trait` keyword.
     pub const TRAIT: &str = "trait";
     /// `true` keyword.

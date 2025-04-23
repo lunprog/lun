@@ -156,7 +156,9 @@ impl Lexer {
         use TokenType::KW;
 
         match word.as_str() {
+            Keyword::BREAK => KW(Keyword::Break),
             Keyword::CLASS => KW(Keyword::Class),
+            Keyword::CONTINUE => KW(Keyword::Continue),
             Keyword::DO => KW(Keyword::Do),
             Keyword::END => KW(Keyword::End),
             Keyword::FALSE => KW(Keyword::False),
@@ -166,6 +168,7 @@ impl Lexer {
             Keyword::LOCAL => KW(Keyword::Local),
             Keyword::RETURN => KW(Keyword::Return),
             Keyword::SELF => KW(Keyword::Zelf),
+            Keyword::THEN => KW(Keyword::Then),
             Keyword::TRAIT => KW(Keyword::Trait),
             Keyword::TRUE => KW(Keyword::True),
             Keyword::WHILE => KW(Keyword::While),
