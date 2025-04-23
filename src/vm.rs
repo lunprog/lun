@@ -5,6 +5,8 @@ use crate::{
     read_dword, read_word,
 };
 
+use std::mem;
+
 /// The stack of the VM
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Stack {
@@ -59,6 +61,32 @@ impl Stack {
         let bytes = self.pop(size_of::<u64>()).try_into().unwrap();
         u64::from_le_bytes(bytes)
     }
+
+    pub fn push_qword(&mut self, int: u64) {
+        let bytes = int.to_le_bytes();
+        self.push(&bytes);
+    }
+
+    pub fn pop_integer(&mut self) -> i64 {
+        // SAFETY: no worries, it's safe just some integer transmutes ;)
+        unsafe { mem::transmute(self.pop_qword()) }
+    }
+
+    pub fn push_integer(&mut self, int: i64) {
+        unsafe {
+            // SAFETY: no worries, it's safe just some integer transmutes ;)
+            self.push_qword(mem::transmute(int));
+        }
+    }
+}
+
+macro_rules! binary_op {
+    ($self:expr, $op:tt) => ({
+        let b = $self.stack.pop_integer();
+        let a = $self.stack.pop_integer();
+
+        $self.stack.push_integer(a $op b);
+    });
 }
 
 /// The Virtual Machine of L2.
@@ -116,6 +144,14 @@ impl VM {
                     let val = self.blob.dpool.read_many(offset as usize, size as usize);
                     self.stack.push(val);
                 }
+                OpCode::Neg => {
+                    let int = self.stack.pop_integer();
+                    self.stack.push_integer(-int);
+                }
+                OpCode::Add => binary_op!(self, +),
+                OpCode::Sub => binary_op!(self, -),
+                OpCode::Mul => binary_op!(self, *),
+                OpCode::Div => binary_op!(self, /),
             }
         }
 

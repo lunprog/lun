@@ -22,8 +22,12 @@ end
 
     let mut blob = Blob::new();
 
-    let _ = blob.dpool.write_integer(0xDEADBEEF);
-    blob.write_const(0, size_of::<u64>() as u16);
+    let a = blob.dpool.write_integer(10) as u32;
+    blob.write_const(a, size_of::<i64>() as u16);
+    let b = blob.dpool.write_integer(4) as u32;
+    blob.write_const(b, size_of::<i64>() as u16);
+
+    blob.write_sub();
 
     blob.write_return();
 
@@ -37,7 +41,7 @@ end
     elapsed = start.elapsed();
 
     println!("{elapsed:?} to run.\n");
-    println!("RES = {:X?}", res);
+    println!("RES = {}", res);
 
     Ok(())
 }
