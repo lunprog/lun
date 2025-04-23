@@ -1,6 +1,6 @@
 //! A `blob` is a sequence of bytecode.
 
-use crate::{read_dword, read_qword, read_word, write_dword, write_qword, write_word};
+use crate::{read_dword, read_many, read_qword, read_word, write_dword, write_qword, write_word};
 
 #[repr(u8)]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -60,7 +60,7 @@ impl OpCode {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Blob {
     /// the code we will run
-    code: Vec<u8>,
+    pub(crate) code: Vec<u8>,
     /// the data pool, where constants are stored.
     pub dpool: DataPool,
 }
@@ -153,7 +153,7 @@ impl Blob {
 /// An immutable pool of data that contains all of the constants of the program
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DataPool {
-    data: Vec<u8>,
+    pub(crate) data: Vec<u8>,
 }
 
 impl DataPool {
@@ -185,5 +185,11 @@ impl DataPool {
     /// Panics if there are not enough bytes to read a full u64.
     pub fn read_integer(&self, offset: u64) -> u64 {
         read_qword(&self.data, offset as usize)
+    }
+
+    /// Reads a variable amount of data from the data pool at the given offset
+    /// and size. Panics if there are not enough bytes to read a full u64.
+    pub fn read_many(&self, offset: usize, size: usize) -> &[u8] {
+        read_many(&self.data, offset, size)
     }
 }

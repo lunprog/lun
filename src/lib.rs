@@ -19,6 +19,7 @@ use std::fmt::Display;
 pub mod blob;
 pub mod lexer;
 pub mod token;
+pub mod vm;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Span {
@@ -95,4 +96,11 @@ pub fn read_word(bytes: &[u8], offset: usize) -> u16 {
     let end = offset + 2;
     let word = &bytes[offset..end];
     u16::from_le_bytes(word.try_into().expect("Slice should be 2 bytes long"))
+}
+
+/// Reads a 64 bit little-endian u64 from the Slice at the given offset.
+/// Panics if there are not enough bytes to read a full u64.
+pub fn read_many(bytes: &[u8], offset: usize, size: usize) -> &[u8] {
+    let end = offset + size;
+    &bytes[offset..end]
 }

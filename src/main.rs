@@ -1,6 +1,6 @@
 use std::{error::Error, process::ExitCode, time::Instant};
 
-use l2::{blob::Blob, lexer::Lexer};
+use l2::{blob::Blob, lexer::Lexer, vm::VM};
 
 fn run() -> Result<(), Box<dyn Error>> {
     let source_code = r#"
@@ -11,11 +11,11 @@ end
 
     let mut lexer = Lexer::new(source_code.to_owned());
 
-    let start = Instant::now();
+    let mut start = Instant::now();
 
     let tt = lexer.lex()?;
 
-    let elapsed = start.elapsed();
+    let mut elapsed = start.elapsed();
 
     // dbg!(tt);
     println!("{elapsed:?} to lex.\n");
@@ -28,6 +28,16 @@ end
     blob.write_return();
 
     blob.disassemble("test blob");
+
+    let mut vm = VM::new(blob);
+    start = Instant::now();
+
+    let res = vm.run();
+
+    elapsed = start.elapsed();
+
+    println!("{elapsed:?} to run.\n");
+    println!("RES = {:X?}", res);
 
     Ok(())
 }
