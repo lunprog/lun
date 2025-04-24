@@ -2,6 +2,7 @@
 name = "l2_bytecode"
 description = "Bytecode of l2."
 version.workspace = true
+license.workspace = true
 edition = "2024"
 
 [dependencies]

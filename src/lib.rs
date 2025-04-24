@@ -15,7 +15,7 @@
 //! end
 //! ```
 
-use std::{error::Error, time::Instant};
+use std::time::Instant;
 
 use crate::{
     bytecode::Blob,

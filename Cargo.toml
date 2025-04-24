@@ -12,6 +12,7 @@ memers = [
 
 [workspace.package]
 version = "0.1.0"
+license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
 l2_bytecode = { path = "crates/l2_bytecode" }
