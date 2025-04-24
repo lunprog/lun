@@ -1,4 +1,4 @@
-//! Diagnostic that may be emitted by the lexer.
+//! Diagnostics that may be emitted by the lexer.
 
 use l2_diagnostic::{Diagnostic, ErrorCode, Label, ToDiagnostic};
 use l2_utils::Span;

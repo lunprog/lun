@@ -30,6 +30,10 @@ impl TokenTree {
     pub fn get(&self, idx: usize) -> Option<&Token> {
         self.toks.get(idx)
     }
+
+    pub fn last(&self) -> Option<&Token> {
+        self.toks.last()
+    }
 }
 
 impl Debug for TokenTree {
@@ -62,6 +66,8 @@ pub enum TokenType {
 
 impl Display for TokenType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // TODO(urgent): make a better formatter for TokenType's
+        // TODO: implement Display for Keyword
         write!(f, "{:?}", self)
     }
 }

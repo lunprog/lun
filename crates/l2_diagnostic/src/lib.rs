@@ -112,6 +112,7 @@ impl<FileId> ToDiagnostic<FileId> for Diagnostic<FileId> {
 // TODO: create a cmd to explain error codes, like `l2 --explain E0001`
 // and it tells you what's wrong
 
+// TODO: write the docs for ErrorCode's
 /// List of all the Error Code in the l2 compiling stages
 #[derive(Debug, Clone, Copy)]
 pub enum ErrorCode {
@@ -151,6 +152,10 @@ pub enum ErrorCode {
     UnterminatedStringLiteral,
     /// Unknown character escape
     UnknownCharacterEscape,
+    /// Unknown character escape
+    ExpectedToken,
+    /// Unknown character escape
+    ReachedEOF,
 }
 
 impl Display for ErrorCode {

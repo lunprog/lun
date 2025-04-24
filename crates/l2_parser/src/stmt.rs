@@ -10,7 +10,8 @@ pub struct Chunk {
 }
 
 impl AstNode for Chunk {
-    fn parse(parser: &mut Parser) -> PResult<Self> {
+    fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
+        _ = parser;
         todo!("chunk parsing :D")
     }
 }

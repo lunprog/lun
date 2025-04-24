@@ -2,9 +2,10 @@
 
 use std::fmt::Debug;
 
+use diags::*;
 use expr::Expression;
+use l2_diagnostic::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic};
 use stmt::Chunk;
-use thiserror::Error;
 
 use l2_utils::{
     Span,
@@ -14,33 +15,9 @@ use l2_utils::{
     },
 };
 
+pub mod diags;
 pub mod expr;
 pub mod stmt;
-
-#[derive(Debug, Clone, Error)]
-pub enum ParsingError {
-    #[error("{loc:?}: expected {expected:?}, but found {found:?}")]
-    Expected {
-        expected: String,
-        found: String,
-        loc: Span,
-    },
-    #[error("reached eof.")]
-    ReachedEOF,
-}
-
-impl ParsingError {
-    pub fn new_expected(expected: impl ToString, found: impl ToString, loc: Span) -> ParsingError {
-        ParsingError::Expected {
-            expected: expected.to_string(),
-            found: found.to_string(),
-            loc,
-        }
-    }
-}
-
-/// Parsing result
-type PResult<T, E = ParsingError> = Result<T, E>;
 
 #[derive(Debug, Clone)]
 pub struct Parser {
@@ -48,12 +25,14 @@ pub struct Parser {
     tt: TokenTree,
     /// token index
     ti: usize,
+    /// sink of diags
+    sink: DiagnosticSink,
 }
 
 impl Parser {
     /// Create a new parser with the given token tree.
-    pub fn new(tt: TokenTree) -> Parser {
-        Parser { tt, ti: 0 }
+    pub fn new(tt: TokenTree, sink: DiagnosticSink) -> Parser {
+        Parser { tt, ti: 0, sink }
     }
 
     /// Pops a tokens of the stream
@@ -91,19 +70,36 @@ impl Parser {
         self.peek_tok().map(|t| &t.tt)
     }
 
-    pub fn parse(&mut self) -> PResult<Chunk> {
-        <Chunk as AstNode>::parse(self)
+    pub fn produce(&mut self) -> StageResult<Chunk> {
+        if !self.sink.failed() {
+            match <Chunk as AstNode>::parse(self) {
+                Ok(ast) => return StageResult::Good(ast),
+                Err(diag) => {
+                    self.sink.push(diag);
+                }
+            }
+        }
+        StageResult::Fail(self.sink.clone())
     }
 
-    pub fn parse_node<T: AstNode>(&mut self) -> PResult<T> {
+    pub fn parse_node<T: AstNode>(&mut self) -> Result<T, Diagnostic> {
         T::parse(&mut *self)
+    }
+
+    pub(crate) fn eof_diag(&self) -> Diagnostic {
+        // it's ok to unwrap there is at least the EOF token
+        let eof = self.tt.last().unwrap();
+        ReachedEOF {
+            loc: eof.loc.clone(),
+        }
+        .into_diag()
     }
 }
 
 /// A node of the AST that can be parsed.
 pub trait AstNode: Debug {
     /// parse the node with the given parser and returns the node.
-    fn parse(parser: &mut Parser) -> PResult<Self>
+    fn parse(parser: &mut Parser) -> Result<Self, Diagnostic>
     where
         Self: Sized;
 }
@@ -135,7 +131,7 @@ macro_rules! expect_token {
         }
     );
 
-    ($parser:expr => [ $($token:pat, $result:expr $(,in $between:stmt)?);* $( ; )?], $expected:expr) => (
+    ($parser:expr => [ $($token:pat, $result:expr $(,in $between:stmt)?);* $( ; )?], $expected:expr $(, in $node:expr)?) => (
         match $parser.peek_tok() {
             $(
                 // we allow unused variable in case of a $between that terminates.
@@ -156,9 +152,14 @@ macro_rules! expect_token {
                 }
             )*
             Some(::l2_utils::token::Token { tt, loc }) => {
-                return Err(ParsingError::new_expected($expected, tt, loc.clone()));
+                let node = None::<String>;
+                $(
+                    node = Some($node);
+                )?
+
+                return Err($crate::diags::ExpectedToken::new($expected, tt.clone(), node, loc.clone()).into_diag());
             }
-            _ => return Err(ParsingError::ReachedEOF)
+            _ => return Err($parser.eof_diag())
         }
     );
 

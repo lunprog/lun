@@ -15,15 +15,7 @@
 //! end
 //! ```
 
-use std::time::Instant;
-
-use crate::{
-    bytecode::Blob,
-    diagnostic::DiagnosticSink,
-    lexer::Lexer,
-    parser::{AstNode, Parser, expr::Expression},
-    vm::VM,
-};
+use crate::{bytecode::Blob, diagnostic::DiagnosticSink, lexer::Lexer, parser::Parser, vm::VM};
 
 pub use l2_bytecode as bytecode;
 pub use l2_diagnostic as diagnostic;
@@ -43,22 +35,20 @@ pub fn run() -> StageResult<()> {
     // end
     //     "#;
     let source_code = r#"
-1 + 1 * 93# = 1844674407370955161d5 "BLAH BLAH BLAH\xAW"
+1 + 1 * 93 = 18446744073709551615 "BLAH BLAH BLAH\xAC\xDC"
         "#;
 
-    let mut sink = DiagnosticSink::new("test.l2".to_owned(), source_code.to_owned());
+    let sink = DiagnosticSink::new("test.l2".to_owned(), source_code.to_owned());
 
     let mut lexer = Lexer::new(sink.clone(), source_code.to_owned());
 
     let tt = match lexer.produce() {
         StageResult::Good(tt) => tt,
-        StageResult::Part(tt, new_sink) => {
-            sink = new_sink;
-            tt
+        StageResult::Part(_, sink) => {
+            return StageResult::Fail(sink);
         }
-        StageResult::Fail(new_sink) => {
-            sink = new_sink;
-            TokenTree::new()
+        StageResult::Fail(sink) => {
+            return StageResult::Fail(sink);
         }
     };
 
@@ -66,17 +56,25 @@ pub fn run() -> StageResult<()> {
         return StageResult::Fail(sink);
     }
 
-    let mut parser = Parser::new(tt);
+    let mut parser = Parser::new(tt, sink.clone());
 
-    let mut start = Instant::now();
-    let ast = parser.parse().unwrap();
-    let mut elapsed = start.elapsed();
+    let ast = match parser.produce() {
+        StageResult::Good(ast) => ast,
+        StageResult::Part(_, sink) => {
+            return StageResult::Fail(sink);
+        }
+        StageResult::Fail(sink) => {
+            return StageResult::Fail(sink);
+        }
+    };
+
+    if sink.failed() {
+        return StageResult::Fail(sink);
+    }
 
     dbg!(ast);
-    println!("{elapsed:?} to parse.\n");
 
-    let expr = Expression::parse(&mut parser).unwrap();
-    dbg!(expr);
+    // THE VM PARTS
 
     let mut blob = Blob::new();
 
@@ -92,13 +90,9 @@ pub fn run() -> StageResult<()> {
     blob.disassemble("test blob");
 
     let mut vm = VM::new(blob);
-    start = Instant::now();
 
     let res = vm.run();
 
-    elapsed = start.elapsed();
-
-    println!("{elapsed:?} to run.\n");
     println!("RES = {}", res);
 
     StageResult::Good(())

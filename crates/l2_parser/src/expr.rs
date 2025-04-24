@@ -20,7 +20,7 @@ pub struct Expression {
 impl AstNode for Expression {
     #[inline]
     #[track_caller]
-    fn parse(parser: &mut Parser) -> PResult<Self> {
+    fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         parse_expr_precedence(parser, HIGHEST_PRECEDENCE)
     }
 }
@@ -50,7 +50,10 @@ pub enum Expr {
 }
 
 /// Parses an expression given the following precedence.
-pub fn parse_expr_precedence(parser: &mut Parser, precedence: Precedence) -> PResult<Expression> {
+pub fn parse_expr_precedence(
+    parser: &mut Parser,
+    precedence: Precedence,
+) -> Result<Expression, Diagnostic> {
     let mut lhs = match parser.peek_tt() {
         Some(IntLit(_)) => parse!(@fn parser => parse_intlit_expr),
         Some(KW(Keyword::True | Keyword::False)) => parse!(@fn parser => parse_boollit_expr),
@@ -64,9 +67,27 @@ pub fn parse_expr_precedence(parser: &mut Parser, precedence: Precedence) -> PRe
         Some(_) => {
             // unwrap is safe because we already know the next has a token type
             let t = parser.peek_tok().unwrap().clone();
-            return Err(ParsingError::new_expected("expression", t.tt, t.loc));
+            // TODO: make the parser retry if he failed to parse lhs with a loop
+            return Err(ExpectedToken::new(
+                [
+                    IntLit(0),
+                    KW(Keyword::False),
+                    KW(Keyword::True),
+                    StringLit(String::new()),
+                    Punct(Punctuation::LParen),
+                    Ident(String::new()),
+                    KW(Keyword::Not),
+                    Punct(Punctuation::Minus),
+                ],
+                t.tt,
+                Some("expression"),
+                t.loc,
+            )
+            .into_diag());
         }
-        None => return Err(ParsingError::ReachedEOF),
+        None => {
+            return Err(parser.eof_diag());
+        }
     };
 
     loop {
@@ -94,7 +115,7 @@ pub fn parse_expr_precedence(parser: &mut Parser, precedence: Precedence) -> PRe
 }
 
 /// Parse an integer literal expression
-pub fn parse_intlit_expr(parser: &mut Parser) -> PResult<Expression> {
+pub fn parse_intlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (i, loc) = expect_token!(parser => [IntLit(i), *i], "integer literal");
 
     Ok(Expression {
@@ -104,7 +125,7 @@ pub fn parse_intlit_expr(parser: &mut Parser) -> PResult<Expression> {
 }
 
 /// Parse a boolean literal expression
-pub fn parse_boollit_expr(parser: &mut Parser) -> PResult<Expression> {
+pub fn parse_boollit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (b, loc) = expect_token!(parser => [KW(Keyword::True), true; KW(Keyword::False), false], "bool literal");
 
     Ok(Expression {
@@ -114,7 +135,7 @@ pub fn parse_boollit_expr(parser: &mut Parser) -> PResult<Expression> {
 }
 
 /// Parse a string literal expression
-pub fn parse_strlit_expr(parser: &mut Parser) -> PResult<Expression> {
+pub fn parse_strlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (str, loc) = expect_token!(parser => [StringLit(s), s.clone()], "integer literal");
 
     Ok(Expression {
@@ -124,11 +145,12 @@ pub fn parse_strlit_expr(parser: &mut Parser) -> PResult<Expression> {
 }
 
 /// Parse a grouping expression
-pub fn parse_grouping_expr(parser: &mut Parser) -> PResult<Expression> {
+pub fn parse_grouping_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let ((), start) =
-        expect_token!(parser => [Punct(Punctuation::LParen), ()], Punctuation::LParen);
+        expect_token!(parser => [Punct(Punctuation::LParen), ()], [Punctuation::LParen]);
     let expr = Box::new(parse!(parser => Expression));
-    let ((), end) = expect_token!(parser => [Punct(Punctuation::RParen), ()], Punctuation::RParen);
+    let ((), end) =
+        expect_token!(parser => [Punct(Punctuation::RParen), ()], [Punctuation::RParen]);
 
     Ok(Expression {
         expr: Expr::Grouping(expr),
@@ -137,7 +159,7 @@ pub fn parse_grouping_expr(parser: &mut Parser) -> PResult<Expression> {
 }
 
 /// Parse an identifier expression
-pub fn parse_ident_expr(parser: &mut Parser) -> PResult<Expression> {
+pub fn parse_ident_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (id, loc) = expect_token!(parser => [Ident(s), s.clone()], "integer literal");
 
     Ok(Expression {
@@ -291,7 +313,7 @@ impl BinOp {
 }
 
 /// Parse binary expression, `expression op expression`
-pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> PResult<Expression> {
+pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> Result<Expression, Diagnostic> {
     let (op, tok) = match parser.peek_tok() {
         // TODO: here we compute twice the binary op its a little dumb, find a solution to that problem.
         Some(Token { tt: op, .. }) if BinOp::from_tt(op.clone()).is_some() => {
@@ -301,9 +323,11 @@ pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> PResult<Expres
         }
         Some(tok) => {
             let t = tok.clone();
-            return Err(ParsingError::new_expected("binary operator", t.tt, t.loc));
+            return Err(
+                ExpectedToken::new("binary operator", t.tt, Some("expression"), t.loc).into_diag(),
+            );
         }
-        None => return Err(ParsingError::ReachedEOF),
+        None => return Err(parser.eof_diag()),
     };
     let mut pr = Precedence::from(tok.clone());
 
@@ -345,7 +369,7 @@ impl UnaryOp {
 }
 
 /// Parse unary expression, `op expression`
-pub fn parse_unary_expr(parser: &mut Parser) -> PResult<Expression> {
+pub fn parse_unary_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (op, start) = expect_token!(parser => [
         Punct(Punctuation::Minus), UnaryOp::Negation;
         KW(Keyword::Not), UnaryOp::Not;
