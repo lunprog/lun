@@ -24,12 +24,11 @@ use crate::{
     vm::VM,
 };
 
-pub mod vm;
-
 pub use l2_bytecode as bytecode;
 pub use l2_lexer as lexer;
 pub use l2_parser as parser;
 pub use l2_utils as utils;
+pub use l2_vm as vm;
 
 pub fn run() -> Result<(), Box<dyn Error>> {
     //     let source_code = r#"

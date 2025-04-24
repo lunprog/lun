@@ -1,0 +1,9 @@
+[package]
+name = "l2_vm"
+description = "VM of l2."
+version.workspace = true
+edition = "2024"
+
+[dependencies]
+l2_utils = { workspace = true }
+l2_bytecode = { workspace = true }
