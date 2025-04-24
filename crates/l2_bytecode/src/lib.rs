@@ -1,4 +1,4 @@
-//! A `blob` is a sequence of bytecode.
+//! Bytecode of l2.
 
 use l2_utils::{
     read_dword, read_many, read_qword, read_word, write_dword, write_qword, write_word,
@@ -128,11 +128,11 @@ impl OpCode {
 
 // TODO: add debug infos, like file names, the span of an instruction in the so
 // called file etc..
-/// The sequence of bytecode.
+/// A `blob` is a sequence of bytecode.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Blob {
     /// the code we will run
-    pub(crate) code: Vec<u8>,
+    pub code: Vec<u8>,
     /// the data pool, where constants are stored.
     pub dpool: DataPool,
 }

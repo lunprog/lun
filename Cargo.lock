@@ -6,10 +6,18 @@ version = 4
 name = "l2"
 version = "0.1.0"
 dependencies = [
+ "l2_bytecode",
  "l2_lexer",
  "l2_parser",
  "l2_utils",
  "thiserror",
+]
+
+[[package]]
+name = "l2_bytecode"
+version = "0.1.0"
+dependencies = [
+ "l2_utils",
 ]
 
 [[package]]

@@ -1,6 +1,6 @@
 //! The virtual machine for l2's bytecode.
 
-use crate::blob::{Blob, OpCode};
+use crate::bytecode::{Blob, OpCode};
 use l2_utils::{read_dword, read_word};
 
 use std::mem;

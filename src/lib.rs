@@ -18,15 +18,15 @@
 use std::{error::Error, time::Instant};
 
 use crate::{
-    blob::Blob,
+    bytecode::Blob,
     lexer::Lexer,
     parser::{AstNode, Parser, expr::Expression},
     vm::VM,
 };
 
-pub mod blob;
 pub mod vm;
 
+pub use l2_bytecode as bytecode;
 pub use l2_lexer as lexer;
 pub use l2_parser as parser;
 pub use l2_utils as utils;
