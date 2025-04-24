@@ -3,6 +3,7 @@ resolver = "2"
 memers = [
   "crates/l2_lexer",
   "crates/l2_utils",
+  "crates/l2_parser",
   "."
 ]
 
@@ -12,6 +13,7 @@ version = "0.1.0"
 [workspace.dependencies]
 l2_lexer = { path = "crates/l2_lexer" }
 l2_utils = { path = "crates/l2_utils" }
+l2_parser = { path = "crates/l2_parser" }
 
 # other dependencies
 thiserror = "2.0.12"
@@ -25,3 +27,4 @@ edition = "2024"
 thiserror = { workspace = true }
 l2_lexer = { workspace = true }
 l2_utils = { workspace = true }
+l2_parser = { workspace = true }
