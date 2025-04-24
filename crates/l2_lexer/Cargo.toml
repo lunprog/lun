@@ -1,0 +1,9 @@
+[package]
+name = "l2_lexer"
+description = "Lexer for l2."
+version.workspace = true
+edition = "2024"
+
+[dependencies]
+thiserror = { workspace = true }
+l2_utils = { workspace = true }

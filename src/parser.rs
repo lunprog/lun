@@ -4,7 +4,7 @@ use std::fmt::Debug;
 
 use thiserror::Error;
 
-use crate::{
+use l2_utils::{
     Span,
     token::{
         Keyword, Punctuation, Token, TokenTree,
@@ -117,7 +117,7 @@ macro_rules! expect_token {
     ($parser:expr => [ $($token:pat, $result:expr $(,in $between:stmt)?);* ] else $unexpected:block) => (
         match $parser.peek_tok() {
             $(
-                Some($crate::token::Token { tt: $token, .. }) => {
+                Some(::l2_utils::token::Token { tt: $token, .. }) => {
                     $(
                         $between
                     )?
@@ -135,7 +135,7 @@ macro_rules! expect_token {
             $(
                 // we allow unused variable in case of a $between that terminates.
                 #[allow(unused_variables)]
-                Some($crate::token::Token {
+                Some(::l2_utils::token::Token {
                     tt: $token,
                     ..
                 }) => {
@@ -150,7 +150,7 @@ macro_rules! expect_token {
                     ($result, $parser.pop().unwrap().loc)
                 }
             )*
-            Some($crate::token::Token { tt, loc }) => {
+            Some(::l2_utils::token::Token { tt, loc }) => {
                 return Err(ParsingError::new_expected($expected, tt, loc.clone()));
             }
             _ => return Err(ParsingError::ReachedEOF)
@@ -162,7 +162,7 @@ macro_rules! expect_token {
             $(
                 // we allow unused variable in case of a $between that terminates.
                 #[allow(unused_variables)]
-                Some($crate::token::Token {
+                Some(::l2_utils::token::Token {
                     tt: $token,
                     ..
                 }) => {
@@ -180,7 +180,7 @@ macro_rules! expect_token {
                     }
                 }
             )*
-            Some($crate::token::Token { tt, loc: loc }) => {
+            Some(::l2_utils::token::Token { tt, loc: loc }) => {
                 return Err(ParsingError::new_expected($expected, tt, loc.clone()));
             }
             _ => return Err(ParsingError::ReachedEOF)

@@ -1,7 +1,27 @@
+[workspace]
+resolver = "2"
+memers = [
+  "crates/l2_lexer",
+  "crates/l2_utils",
+  "."
+]
+
+[workspace.package]
+version = "0.1.0"
+
+[workspace.dependencies]
+l2_lexer = { path = "crates/l2_lexer" }
+l2_utils = { path = "crates/l2_utils" }
+
+# other dependencies
+thiserror = "2.0.12"
+
 [package]
 name = "l2"
-version = "0.1.0"
+version.workspace = true
 edition = "2024"
 
 [dependencies]
-thiserror = "2.0.12"
+thiserror = { workspace = true }
+l2_lexer = { workspace = true }
+l2_utils = { workspace = true }

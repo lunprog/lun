@@ -6,8 +6,22 @@ version = 4
 name = "l2"
 version = "0.1.0"
 dependencies = [
+ "l2_lexer",
+ "l2_utils",
  "thiserror",
 ]
+
+[[package]]
+name = "l2_lexer"
+version = "0.1.0"
+dependencies = [
+ "l2_utils",
+ "thiserror",
+]
+
+[[package]]
+name = "l2_utils"
+version = "0.1.0"
 
 [[package]]
 name = "proc-macro2"

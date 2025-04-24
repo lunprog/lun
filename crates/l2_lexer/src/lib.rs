@@ -2,7 +2,7 @@
 
 use thiserror::Error;
 
-use crate::{
+use l2_utils::{
     Span, span,
     token::{Keyword, TokenTree, TokenType},
 };
@@ -102,7 +102,7 @@ impl Lexer {
     }
 
     pub fn make_token(&mut self) -> Result<TokenType, LexingError> {
-        use crate::token::{Punctuation::*, TokenType::*};
+        use l2_utils::token::{Punctuation::*, TokenType::*};
 
         let t = match self.peek() {
             Some('(') => Punct(LParen),

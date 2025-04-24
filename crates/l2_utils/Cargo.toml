@@ -1,0 +1,7 @@
+[package]
+name = "l2_utils"
+description = "Utils for l2 libs."
+version.workspace = true
+edition = "2024"
+
+[dependencies]

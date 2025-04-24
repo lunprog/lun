@@ -1,6 +1,8 @@
 //! A `blob` is a sequence of bytecode.
 
-use crate::{read_dword, read_many, read_qword, read_word, write_dword, write_qword, write_word};
+use l2_utils::{
+    read_dword, read_many, read_qword, read_word, write_dword, write_qword, write_word,
+};
 
 #[repr(u8)]
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -2,10 +2,11 @@ use std::{error::Error, process::ExitCode, time::Instant};
 
 use l2::{
     blob::Blob,
-    lexer::Lexer,
     parser::{AstNode, Expression, Parser},
     vm::VM,
 };
+
+use l2_lexer::Lexer;
 
 fn run() -> Result<(), Box<dyn Error>> {
     //     let source_code = r#"
