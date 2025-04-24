@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-memers = [
+members = [
   "crates/l2_bytecode",
   "crates/l2_diagnostic",
   "crates/l2_lexer",

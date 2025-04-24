@@ -18,7 +18,7 @@ pub struct ExpectedToken {
 }
 
 impl ExpectedToken {
-    pub fn new<'a, I, S, L>(expected: I, found: TokenType, node: Option<S>, loc: L) -> ExpectedToken
+    pub fn new<I, S, L>(expected: I, found: TokenType, node: Option<S>, loc: L) -> ExpectedToken
     where
         I: IntoDisplayables,
         S: ToString,
@@ -59,7 +59,7 @@ impl ExpectedToken {
             .node
             .clone()
             .map(|s| format!("in {s}"))
-            .unwrap_or(String::new());
+            .unwrap_or_default();
 
         format!("expected {}{}, found {}", expected, node, self.found)
     }

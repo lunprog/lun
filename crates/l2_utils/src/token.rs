@@ -1,10 +1,10 @@
 //! Token, TokenTree, everything related to tokens.
 
-use std::fmt::{Debug, Display};
+use std::fmt::{self, Debug, Display};
 
 use crate::Span;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct TokenTree {
     toks: Vec<Token>,
 }
@@ -65,10 +65,16 @@ pub enum TokenType {
 }
 
 impl Display for TokenType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // TODO(urgent): make a better formatter for TokenType's
-        // TODO: implement Display for Keyword
-        write!(f, "{:?}", self)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use TokenType::*;
+        match self {
+            KW(kw) => write!(f, "keyword `{}`", kw),
+            Ident(_) => write!(f, "identifier"),
+            IntLit(_) => write!(f, "integer literal"),
+            StringLit(_) => write!(f, "string literal"),
+            Punct(p) => Display::fmt(p, f),
+            EOF => write!(f, "end of file"),
+        }
     }
 }
 
@@ -167,6 +173,30 @@ impl Keyword {
     pub const WHILE: &str = "while";
 }
 
+impl Display for Keyword {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Keyword::Break => f.write_str(Keyword::BREAK),
+            Keyword::Class => f.write_str(Keyword::CLASS),
+            Keyword::Continue => f.write_str(Keyword::CONTINUE),
+            Keyword::Do => f.write_str(Keyword::DO),
+            Keyword::End => f.write_str(Keyword::END),
+            Keyword::False => f.write_str(Keyword::FALSE),
+            Keyword::For => f.write_str(Keyword::FOR),
+            Keyword::Fun => f.write_str(Keyword::FUN),
+            Keyword::Impl => f.write_str(Keyword::IMPL),
+            Keyword::Local => f.write_str(Keyword::LOCAL),
+            Keyword::Not => f.write_str(Keyword::NOT),
+            Keyword::Return => f.write_str(Keyword::RETURN),
+            Keyword::Zelf => f.write_str(Keyword::SELF),
+            Keyword::Then => f.write_str(Keyword::THEN),
+            Keyword::Trait => f.write_str(Keyword::TRAIT),
+            Keyword::True => f.write_str(Keyword::TRUE),
+            Keyword::While => f.write_str(Keyword::WHILE),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Punctuation {
     /// (
@@ -210,7 +240,28 @@ pub enum Punctuation {
 }
 
 impl Display for Punctuation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use Punctuation::*;
+        match self {
+            LParen => f.write_str("("),
+            RParen => f.write_str(")"),
+            LBracket => f.write_str("["),
+            RBracket => f.write_str("]"),
+            LBrace => f.write_str("{"),
+            RBrace => f.write_str("}"),
+            Plus => f.write_str("+"),
+            Minus => f.write_str("-"),
+            Star => f.write_str("*"),
+            Slash => f.write_str("/"),
+            Colon => f.write_str(":"),
+            Comma => f.write_str(","),
+            Equal => f.write_str("="),
+            Equal2 => f.write_str("=="),
+            BangEqual => f.write_str("!="),
+            LArrow => f.write_str("<="),
+            LArrowEqual => f.write_str("<"),
+            RArrow => f.write_str(">"),
+            RArrowEqual => f.write_str(">="),
+        }
     }
 }

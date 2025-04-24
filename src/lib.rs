@@ -15,15 +15,19 @@
 //! end
 //! ```
 
-use crate::{bytecode::Blob, diagnostic::DiagnosticSink, lexer::Lexer, parser::Parser, vm::VM};
+use crate::{
+    bytecode::Blob,
+    diagnostic::{DiagnosticSink, StageResult},
+    lexer::Lexer,
+    parser::Parser,
+    vm::VM,
+};
 
 pub use l2_bytecode as bytecode;
 pub use l2_diagnostic as diagnostic;
-use l2_diagnostic::StageResult;
 pub use l2_lexer as lexer;
 pub use l2_parser as parser;
 pub use l2_utils as utils;
-use l2_utils::token::TokenTree;
 pub use l2_vm as vm;
 
 // TODO: add a panic hook to tell that if l2 had panicked it's a bug an it

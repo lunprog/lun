@@ -67,13 +67,13 @@ impl Stack {
 
     pub fn pop_integer(&mut self) -> i64 {
         // SAFETY: no worries, it's safe just some integer transmutes ;)
-        unsafe { mem::transmute(self.pop_qword()) }
+        unsafe { mem::transmute::<u64, i64>(self.pop_qword()) }
     }
 
     pub fn push_integer(&mut self, int: i64) {
         unsafe {
             // SAFETY: no worries, it's safe just some integer transmutes ;)
-            self.push_qword(mem::transmute(int));
+            self.push_qword(mem::transmute::<i64, u64>(int));
         }
     }
 }
