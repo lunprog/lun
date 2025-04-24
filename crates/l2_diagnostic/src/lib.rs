@@ -9,7 +9,7 @@ use codespan_reporting::{
 };
 use l2_utils::pluralize;
 
-pub use codespan_reporting::diagnostic::Diagnostic;
+pub type Diagnostic<FileId = ()> = codespan_reporting::diagnostic::Diagnostic<FileId>;
 pub use codespan_reporting::diagnostic::Label;
 pub use codespan_reporting::diagnostic::Severity;
 pub use codespan_reporting::term::termcolor;
@@ -23,7 +23,7 @@ pub struct DiagnosticSink {
     /// a count of all the warning diagnostics
     warnings: usize,
     /// the file where diagnostics are located.
-    files: SimpleFile<String, String>,
+    file: SimpleFile<String, String>,
 }
 
 impl DiagnosticSink {
@@ -32,7 +32,7 @@ impl DiagnosticSink {
             diags: Vec::new(),
             errors: 0,
             warnings: 0,
-            files: SimpleFile::new(file_name, source_code),
+            file: SimpleFile::new(file_name, source_code),
         }
     }
 
@@ -46,7 +46,7 @@ impl DiagnosticSink {
         let config = Config::default();
 
         for diag in &self.diags {
-            term::emit(writer, &config, &self.files, diag)?;
+            term::emit(writer, &config, &self.file, diag)?;
         }
 
         Ok(())
@@ -65,7 +65,8 @@ impl DiagnosticSink {
     pub fn summary(&self) -> Option<String> {
         if self.errors > 0 {
             Some(format!(
-                "compilation failed due to {} error{} and {} warning{}",
+                "compilation of `{}` failed due to {} error{} and {} warning{}",
+                self.file.name(),
                 self.errors,
                 pluralize(self.errors),
                 self.warnings,
@@ -73,7 +74,8 @@ impl DiagnosticSink {
             ))
         } else if self.warnings > 0 {
             Some(format!(
-                "compilation successful but {} warning{} emitted.",
+                "compilation of `{}` succeeded but {} warning{} emitted.",
+                self.file.name(),
                 self.warnings,
                 pluralize(self.warnings)
             ))
@@ -147,6 +149,8 @@ pub enum ErrorCode {
     /// local s = ""
     /// ```
     UnterminatedStringLiteral,
+    /// Unknown character escape
+    UnknownCharacterEscape,
 }
 
 impl Display for ErrorCode {
@@ -155,11 +159,26 @@ impl Display for ErrorCode {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum InternalRes<T, E> {
+/// A custom result type to use at the end of a stage in the compiler.
+///
+/// In the stage you may be successful, no error, no warnings, no diagnostics,
+/// then you simply return Good(T).
+///
+/// But if you emitted a warning or an error that was recoverable and the stage
+/// was able to produce a "good" but poisoned result you should return
+/// Part(T, sink).
+///
+/// And if the error in the stage is so bad, you just return Fail(sink).
+///
+/// # Why ?
+///
+/// Because the "simple" Result type can't carry easily the informations I want
+/// to correctly handle the diagnostics.
+#[derive(Debug, Clone)]
+pub enum StageResult<T> {
     Good(T),
-    Part(T, E),
-    Fail(E),
+    Part(T, DiagnosticSink),
+    Fail(DiagnosticSink),
 }
 
 #[cfg(test)]

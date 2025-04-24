@@ -17,7 +17,6 @@ impl TokenTree {
     /// Pushes the TokenType with its start and end offsets and return `true`
     /// if the token is End Of File
     pub fn push(&mut self, tt: TokenType, start: usize, end: usize) -> bool {
-        dbg!(&tt);
         let is_eof = tt == TokenType::EOF;
 
         self.toks.push(Token {

@@ -1,30 +1,17 @@
 //! Lexer of l2
 
-use thiserror::Error;
+use diags::{
+    InvalidDigitInNumber, TooLargeIntegerLiteral, UnknownCharacterEscape, UnknownToken,
+    UnterminatedStringLiteral,
+};
+use l2_diagnostic::{Diagnostic, DiagnosticSink, StageResult};
 
 use l2_utils::{
     Span, span,
     token::{Keyword, TokenTree, TokenType},
 };
 
-// TODO: handle errors with `miette` and be able to report multiple errors at
-// each stage of the compilation
-#[derive(Debug, Clone, Error)]
-pub enum LexingError {
-    /// used to communicate between make_token and lex, it's not an actual error,
-    /// there is just a comment or a whitespace where we tried to lex so there
-    /// is no token to produce
-    #[error("this is actually not an error and shouldn't be displayed as one.")]
-    WsOrComment,
-    #[error("{loc}: unknown start of token {c:?} ")]
-    UnknownToken { c: char, loc: Span },
-    #[error(transparent)]
-    IntParseError(#[from] ParseUIntError),
-    #[error("{0}: unterminated string literal")]
-    UnterminatedStringLiteral(Span),
-    #[error("{loc}: unknown escape sequence {es:?} ")]
-    UnknownEscapeSequence { es: char, loc: Span },
-}
+pub mod diags;
 
 #[derive(Debug, Clone)]
 pub struct Lexer {
@@ -34,26 +21,33 @@ pub struct Lexer {
     cur: usize,
     /// the position of the previous token's end
     prev: usize,
+    /// sink of diags
+    sink: DiagnosticSink,
 }
 
 impl Lexer {
-    pub fn new(source_code: String) -> Lexer {
+    pub fn new(sink: DiagnosticSink, source_code: String) -> Lexer {
         Lexer {
             chars: source_code.chars().collect(),
             cur: 0,
             prev: 0,
+            sink,
         }
     }
 
-    pub fn lex(&mut self) -> Result<TokenTree, LexingError> {
+    pub fn produce(&mut self) -> StageResult<TokenTree> {
         let mut tt = TokenTree::new();
 
         loop {
             self.prev = self.cur;
             let t = match self.make_token() {
-                Ok(t) => t,
-                Err(LexingError::WsOrComment) => continue,
-                Err(e) => Err(e)?,
+                Some(Ok(t)) => t,
+                Some(Err(diag)) => {
+                    // irrecoverable error diagnostic
+                    self.sink.push(diag);
+                    break;
+                }
+                None => continue,
             };
 
             if tt.push(t, self.prev, self.cur) {
@@ -61,7 +55,11 @@ impl Lexer {
             }
         }
 
-        Ok(tt)
+        if self.sink.failed() {
+            return StageResult::Part(tt, self.sink.clone());
+        }
+
+        StageResult::Good(tt)
     }
 
     pub fn peek(&self) -> Option<char> {
@@ -72,6 +70,10 @@ impl Lexer {
         let c = self.peek();
         self.cur += 1;
         c
+    }
+
+    pub fn loc(&self) -> Span {
+        span(self.prev, self.cur)
     }
 
     pub fn expect(&mut self, expected: char) {
@@ -101,7 +103,13 @@ impl Lexer {
         }
     }
 
-    pub fn make_token(&mut self) -> Result<TokenType, LexingError> {
+    pub fn make_token(&mut self) -> Option<Result<TokenType, Diagnostic>> {
+        // TODO: find a less ugly type than that shitty Option<Result<..>>
+        // maybe skip the whitespaces until there is something else than a ws
+        //
+        // OR (and better) create a special `__NoneToken__`(or sth else) token
+        // that has the same utility than the old `WsOrComment` error and be
+        // used when there was a recoverable error.
         use l2_utils::token::{Punctuation::*, TokenType::*};
 
         let t = match self.peek() {
@@ -121,24 +129,24 @@ impl Lexer {
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Ok(Punct(Equal2));
+                        return Some(Ok(Punct(Equal2)));
                     }
-                    _ => return Ok(Punct(Equal)),
+                    _ => return Some(Ok(Punct(Equal))),
                 }
             }
             Some('!') => {
                 self.pop();
                 self.expect('=');
-                return Ok(Punct(BangEqual));
+                return Some(Ok(Punct(BangEqual)));
             }
             Some('<') => {
                 self.pop();
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Ok(Punct(LArrowEqual));
+                        return Some(Ok(Punct(LArrowEqual)));
                     }
-                    _ => return Ok(Punct(LArrow)),
+                    _ => return Some(Ok(Punct(LArrow))),
                 }
             }
             Some('>') => {
@@ -146,9 +154,9 @@ impl Lexer {
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Ok(Punct(RArrowEqual));
+                        return Some(Ok(Punct(RArrowEqual)));
                     }
-                    _ => return Ok(Punct(RArrow)),
+                    _ => return Some(Ok(Punct(RArrow))),
                 }
             }
             Some('/') => {
@@ -158,31 +166,29 @@ impl Lexer {
                         // start of a line comment
                         self.pop();
                         self.lex_until('\n');
-                        return Err(LexingError::WsOrComment);
+                        return None;
                     }
-                    _ => return Ok(Punct(Slash)),
+                    _ => return Some(Ok(Punct(Slash))),
                 }
             }
-            Some('"') => return self.lex_string(),
-            Some('a'..='z' | 'A'..='Z' | '_') => return Ok(self.lex_identifier()),
-            Some('0'..='9') => return self.lex_number(),
+            Some('"') => return Some(self.lex_string()),
+            Some('a'..='z' | 'A'..='Z' | '_') => return Some(Ok(self.lex_identifier())),
+            Some('0'..='9') => return Some(self.lex_number()),
             Some(w) if w.is_whitespace() => {
                 self.cur += 1;
-                return Err(LexingError::WsOrComment);
+                return None;
             }
             Some(c) => {
                 self.pop();
-                return Err(LexingError::UnknownToken {
-                    c,
-                    loc: span(self.prev, self.cur),
-                });
+                self.sink.push(UnknownToken { c, loc: self.loc() });
+                return None;
             }
             None => EOF,
         };
 
         self.pop();
 
-        Ok(t)
+        Some(Ok(t))
     }
 
     pub fn lex_identifier(&mut self) -> TokenType {
@@ -219,43 +225,22 @@ impl Lexer {
         // https://www.unicode.org/reports/tr31/ look at that maybe
         let mut word = String::new();
 
-        loop {
-            match self.peek() {
-                Some(c @ ('A'..='Z' | 'a'..='z' | '_' | '0'..='9')) => {
-                    word.push(c);
-                }
-                _ => break,
-            }
+        while let Some(c @ ('A'..='Z' | 'a'..='z' | '_' | '0'..='9')) = self.peek() {
+            word.push(c);
             self.pop();
         }
         word
     }
 
-    pub fn make_int(&mut self) -> String {
-        let mut int = String::new();
-
-        loop {
-            match self.peek() {
-                Some(c @ ('_' | '0'..='9')) => {
-                    int.push(c);
-                }
-                _ => break,
-            }
-            self.pop();
-        }
-
-        int
-    }
-
-    pub fn lex_number(&mut self) -> Result<TokenType, LexingError> {
+    pub fn lex_number(&mut self) -> Result<TokenType, Diagnostic> {
         // TODO: add support for floats.
         // TODO: add support for radix like `0x...`, `0o...`, `0b...`
-        let int = self.make_int();
+        let int = self.make_word();
 
-        Ok(TokenType::IntLit(parse_u64(&int, 10)?))
+        Ok(TokenType::IntLit(self.parse_u64(&int, 10)?))
     }
 
-    pub fn lex_string(&mut self) -> Result<TokenType, LexingError> {
+    pub fn lex_string(&mut self) -> Result<TokenType, Diagnostic> {
         let mut str = String::new();
 
         // pop the first "
@@ -264,11 +249,11 @@ impl Lexer {
         loop {
             match self.peek() {
                 Some('"') => {
-                    self.expect('"');
+                    self.pop();
                     break;
                 }
                 Some('\\') => {
-                    self.expect('\\');
+                    self.pop();
 
                     let es = match self.pop() {
                         Some(es) => es,
@@ -280,16 +265,31 @@ impl Lexer {
                         continue;
                     }
 
-                    str.push(self.make_escape_sequence(es)?);
+                    // here we change the offset of the previous token to make
+                    // the diagnostic point to the correct digit in the \xXX if
+                    // there was an error, it's kinda a hack but you know lmao
+                    let old_prev = self.prev;
+                    self.prev = self.cur;
+
+                    match self.make_escape_sequence(es) {
+                        Ok(c) => {
+                            str.push(c);
+                        }
+                        Err(d) => {
+                            self.sink.push(d);
+                        }
+                    }
+
+                    self.prev = old_prev;
                 }
                 Some(c) => {
                     str.push(c);
                     self.pop();
                 }
                 _ => {
-                    return Err(LexingError::UnterminatedStringLiteral(span(
-                        self.prev, self.cur,
-                    )));
+                    self.sink
+                        .push(UnterminatedStringLiteral { loc: self.loc() });
+                    break;
                 }
             }
         }
@@ -297,93 +297,120 @@ impl Lexer {
         Ok(TokenType::StringLit(str))
     }
 
-    pub fn make_escape_sequence(&mut self, es: char) -> Result<char, LexingError> {
+    pub fn make_escape_sequence(&mut self, es: char) -> Result<char, Diagnostic> {
         Ok(match es {
             '0' => '\0',
             'n' => '\n',
             'r' => '\r',
             't' => '\t',
+            '\\' => '\\',
             'x' => self.make_hex_es()?,
-            'u' => {
+            'u' | 'U' => {
                 // TODO: implement the lexing of unicode es
                 // in the for of \U+FFFF ig
-                todo!("support unicode escape sequences")
+                self.sink.push(UnknownCharacterEscape {
+                    es,
+                    loc: span(self.cur - 1, self.cur),
+                    is_unicode: true,
+                });
+                '\0'
             }
             _ => {
-                return Err(LexingError::UnknownEscapeSequence {
+                self.sink.push(UnknownCharacterEscape {
                     es,
-                    loc: span(self.prev, self.cur),
+                    loc: span(self.cur - 1, self.cur),
+                    is_unicode: false,
                 });
+
+                '\0'
             }
         })
     }
 
-    pub fn make_hex_es(&mut self) -> Result<char, LexingError> {
+    pub fn make_hex_es(&mut self) -> Result<char, Diagnostic> {
         let mut str = String::with_capacity(2);
         for _ in 0..2 {
             str.push(match self.pop() {
                 Some(c) => c,
                 None => {
-                    return Err(LexingError::UnterminatedStringLiteral(span(
-                        self.prev, self.cur,
-                    )));
+                    self.sink
+                        .push(UnterminatedStringLiteral { loc: self.loc() });
+                    // it's the poisoned value.
+                    str.push_str("00");
+                    break;
                 }
             })
         }
 
-        Ok(parse_u64(&str, 16)? as u8 as char)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Error)]
-pub enum ParseUIntError {
-    #[error("radix must be between 2 and 36 inclusive")]
-    InvalidRadix,
-    #[error("invalid character in integer")]
-    InvalidCharacter(Span),
-    #[error("digit in number is greater than the radix")]
-    DigitOutOfRange(Span),
-    #[error("too big integer literal too fit in 64 bits")]
-    IntegerOverflow,
-}
-
-/// Parse a number passed as input into a u64 using the radix.
-///
-/// # Note
-///
-/// The radix is 'inclusive' if you want to parse a number as a decimal, then
-/// `radix = 10` and if you want to parse a number as hexadecimal `radix = 16`
-/// etc etc...
-pub fn parse_u64(input: &str, radix: u8) -> Result<u64, ParseUIntError> {
-    if !(2..=36).contains(&radix) {
-        return Err(ParseUIntError::InvalidRadix);
+        Ok(self.parse_u64(&str, 16)? as u8 as char)
     }
 
-    let mut result: u64 = 0;
-
-    for (i, c) in input.char_indices().peekable() {
-        let digit = match c {
-            '0'..='9' => (c as u8 - b'0') as u32,
-            'a'..='z' => (c as u8 - b'a' + 10) as u32,
-            'A'..='Z' => (c as u8 - b'A' + 10) as u32,
-            '_' => continue,
-            _ => {
-                return Err(ParseUIntError::InvalidCharacter(span(i, i + 1)));
-            }
-        };
-
-        if digit >= radix.into() {
-            return Err(ParseUIntError::DigitOutOfRange(span(i, i + 1)));
+    /// Parse a number passed as input into a u64 using the radix.
+    ///
+    /// # Note
+    ///
+    /// The radix is 'inclusive' if you want to parse a number as a decimal, then
+    /// `radix = 10` and if you want to parse a number as hexadecimal `radix = 16`
+    /// etc etc...
+    pub fn parse_u64(&mut self, input: &str, radix: u8) -> Result<u64, Diagnostic> {
+        if !(2..=36).contains(&radix) {
+            panic!("invalid radix provided, {radix}, it must be between 2 and 36 included.")
         }
 
-        result = match result
-            .checked_mul(radix as u64)
-            .and_then(|r| r.checked_add(digit as u64))
-        {
-            Some(val) => val,
-            None => return Err(ParseUIntError::IntegerOverflow),
-        };
-    }
+        let mut result: u64 = 0;
+        // did the literal is too big too fit in a u64
+        let mut overflowed = false;
+        // don't emit the integer too large if there was an overflow, deal one
+        // thing at a time
+        let mut had_invalid_digit = false;
 
-    Ok(result)
+        for (i, c) in input.char_indices().peekable() {
+            let digit = match c {
+                '0'..='9' => (c as u8 - b'0') as u32,
+                'a'..='z' => (c as u8 - b'a' + 10) as u32,
+                'A'..='Z' => (c as u8 - b'A' + 10) as u32,
+                '_' => continue,
+                _ => {
+                    had_invalid_digit = true;
+                    let pos = self.prev + i;
+                    self.sink.push(InvalidDigitInNumber {
+                        c,
+                        loc_c: span(pos, pos + 1),
+                        loc_i: self.loc(),
+                    });
+
+                    // the poisoned value
+                    0
+                }
+            };
+
+            if digit >= radix.into() {
+                had_invalid_digit = true;
+                let pos = self.prev + i;
+                self.sink.push(InvalidDigitInNumber {
+                    c,
+                    loc_c: span(pos, pos + 1),
+                    loc_i: self.loc(),
+                });
+            }
+
+            let prev_result = result;
+            result = match result
+                .checked_mul(radix as u64)
+                .and_then(|r| r.checked_add(digit as u64))
+            {
+                Some(val) => val,
+                None => {
+                    overflowed = true;
+                    prev_result
+                }
+            };
+        }
+
+        if overflowed && !had_invalid_digit {
+            self.sink.push(TooLargeIntegerLiteral { loc: self.loc() })
+        }
+
+        Ok(result)
+    }
 }
