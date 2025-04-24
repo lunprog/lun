@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, ops::Range};
 
 pub mod token;
 
@@ -29,6 +29,18 @@ pub fn span(start: impl Into<usize>, end: impl Into<usize>) -> Span {
 impl Display for Span {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}..{}", self.start, self.end)
+    }
+}
+
+impl From<Span> for Range<usize> {
+    fn from(value: Span) -> Self {
+        value.start..value.end
+    }
+}
+
+impl<I: Into<usize>, J: Into<usize>> From<(I, J)> for Span {
+    fn from((start, end): (I, J)) -> Self {
+        span(start, end)
     }
 }
 

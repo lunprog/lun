@@ -11,3 +11,5 @@ Language heavily inspired by Lua so its name come from it kinda:
   https://github.com/zesterer/ariadne, or `miette`, create a Diagnotic Collector
   `DiagnosticSink`, that we store in the lexer, parser etc and we return it if,
   we encoutered errors in the current phase.
+- Reimplement with `salsa` to enable incremental compilation and some crazy
+  things

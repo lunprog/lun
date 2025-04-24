@@ -25,6 +25,7 @@ use crate::{
 };
 
 pub use l2_bytecode as bytecode;
+pub use l2_diagnostic as diagnostic;
 pub use l2_lexer as lexer;
 pub use l2_parser as parser;
 pub use l2_utils as utils;

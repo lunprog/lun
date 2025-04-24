@@ -1,11 +1,11 @@
 [package]
-name = "l2_lexer"
-description = "Lexer for l2."
+name = "l2_diagnostic"
+description = "Diagnostics for l2."
 version.workspace = true
 edition = "2024"
 
 [dependencies]
 l2_utils = { workspace = true }
-l2_diagnostic = { workspace = true }
 
 thiserror = { workspace = true }
+codespan-reporting = { workspace = true }
