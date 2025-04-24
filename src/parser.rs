@@ -85,6 +85,14 @@ impl Parser {
     pub fn peek_tt(&self) -> Option<&TokenType> {
         self.peek_tok().map(|t| &t.tt)
     }
+
+    pub fn parse(&mut self) -> PResult<Chunk> {
+        <Chunk as AstNode>::parse(self)
+    }
+
+    pub fn parse_node<T: AstNode>(&mut self) -> PResult<T> {
+        T::parse(&mut *self)
+    }
 }
 
 /// A node of the AST that can be parsed.
@@ -195,6 +203,12 @@ macro_rules! parse {
 pub struct Chunk {
     pub stmts: Vec<Statement>,
     pub loc: Span,
+}
+
+impl AstNode for Chunk {
+    fn parse(parser: &mut Parser) -> PResult<Self> {
+        todo!("chunk parsing :D")
+    }
 }
 
 #[derive(Debug, Clone)]

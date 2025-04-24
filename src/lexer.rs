@@ -215,6 +215,8 @@ impl Lexer {
     /// Lexes the input while the content is alphanumeric with underscore(s) returns the content and if the
     /// string is numeric, in a tuple.
     pub fn make_word(&mut self) -> String {
+        // TODO: maybe add support for a wider amount of characters in unicode.
+        // https://www.unicode.org/reports/tr31/ look at that maybe
         let mut word = String::new();
 
         loop {

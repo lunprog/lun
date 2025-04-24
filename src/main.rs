@@ -1,24 +1,37 @@
 use std::{error::Error, process::ExitCode, time::Instant};
 
-use l2::{blob::Blob, lexer::Lexer, vm::VM};
+use l2::{
+    blob::Blob,
+    lexer::Lexer,
+    parser::{AstNode, Expression, Parser},
+    vm::VM,
+};
 
 fn run() -> Result<(), Box<dyn Error>> {
+    //     let source_code = r#"
+    // fun main(args: list(string))
+    //     print("Hello world!")
+    // end
+    //     "#;
     let source_code = r#"
-fun main(args: list(string))
-    print("Hello world!")
-end
+1 + 1 * 9@
     "#;
 
     let mut lexer = Lexer::new(source_code.to_owned());
 
-    let mut start = Instant::now();
-
     let tt = lexer.lex()?;
 
+    let mut parser = Parser::new(tt);
+
+    let mut start = Instant::now();
+    let ast = parser.parse()?;
     let mut elapsed = start.elapsed();
 
-    // dbg!(tt);
-    println!("{elapsed:?} to lex.\n");
+    dbg!(ast);
+    println!("{elapsed:?} to parse.\n");
+
+    let expr = Expression::parse(&mut parser)?;
+    dbg!(expr);
 
     let mut blob = Blob::new();
 
