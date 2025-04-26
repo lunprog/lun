@@ -13,6 +13,7 @@ Language heavily inspired by Lua so its name come from it kinda:
   we encoutered errors in the current phase.
 - Reimplement with `salsa` to enable incremental compilation and some crazy
   things
+
 TODO: implement a tests suit in `tests/` that check every stage of `l2` and
 source code files have the following format to expect errors or a result:
 ```l2

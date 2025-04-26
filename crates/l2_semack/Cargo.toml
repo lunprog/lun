@@ -1,6 +1,6 @@
 [package]
-name = "l2_typeck"
-description = "Type checker of l2."
+name = "l2_semack"
+description = "Sematic checker of l2."
 version.workspace = true
 license.workspace = true
 edition = "2024"

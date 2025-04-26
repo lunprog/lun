@@ -1,4 +1,5 @@
-//! L2 is a simple, staticaly typed programming language that aims to replace Lua,
+//! L2 is a simple, staticaly typed programming language heavily inspired by
+//! Lua.
 //!
 //! # Hello world example
 //!

@@ -22,7 +22,7 @@ dependencies = [
  "l2_diagnostic",
  "l2_lexer",
  "l2_parser",
- "l2_typeck",
+ "l2_semack",
  "l2_utils",
  "l2_vm",
  "thiserror",
@@ -63,7 +63,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "l2_typeck"
+name = "l2_semack"
 version = "0.1.0"
 dependencies = [
  "l2_diagnostic",
