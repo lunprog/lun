@@ -35,6 +35,7 @@ impl Lexer {
         }
     }
 
+    /// Lex the whole source code and return a **finished** TokenTree.
     pub fn produce(&mut self) -> StageResult<TokenTree> {
         let mut tt = TokenTree::new();
 
@@ -58,6 +59,8 @@ impl Lexer {
         if self.sink.failed() {
             return StageResult::Part(tt, self.sink.clone());
         }
+
+        tt.finish();
 
         StageResult::Good(tt)
     }

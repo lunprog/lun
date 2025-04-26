@@ -4,27 +4,44 @@ use std::fmt::{self, Debug, Display};
 
 use crate::Span;
 
-// TODO(UREGENT+): ensure we have an eof token at the end and that we can't
-// modify the tokens after finished it, add a `finished` field and while it's
-// false we can mutate the TokenTree but can't get the tokens and as soon
-// as `finished` is true, we can get tokens but can't push new ones. In the
-// `finish()` method assert the presence of a EOF token.
-
-/// A list of Tokens, and always ending with a `end of file` token (not ensured
-/// tho, maybe in the future)
+/// A list of Tokens, and always ending with a `end of file` token
 #[derive(Clone, Default)]
 pub struct TokenTree {
     toks: Vec<Token>,
+    finished: bool,
 }
 
 impl TokenTree {
+    /// Create a new empty TokenTree.
     pub fn new() -> TokenTree {
-        TokenTree { toks: Vec::new() }
+        TokenTree {
+            toks: Vec::new(),
+            finished: false,
+        }
+    }
+
+    /// Finish a TokenTree, will ensure the last token is an end of file token
+    /// so if it's not this function will **panic**.
+    #[track_caller]
+    pub fn finish(&mut self) {
+        assert!(!self.finished, "TokenTree already finished");
+        assert_eq!(
+            self.toks.last().map(|t| &t.tt),
+            Some(&TokenType::EOF),
+            "the last token of a TokenTree must be the end of file token."
+        );
+
+        self.finished = true;
     }
 
     /// Pushes the TokenType with its start and end offsets and return `true`
     /// if the token is End Of File
+    #[track_caller]
     pub fn push(&mut self, tt: TokenType, start: usize, end: usize) -> bool {
+        assert_eq!(
+            self.finished, false,
+            "can't push a token to the TokenTree if it's already finished"
+        );
         let is_eof = tt == TokenType::EOF;
 
         self.toks.push(Token {
@@ -35,11 +52,31 @@ impl TokenTree {
         is_eof
     }
 
+    /// Get the token a the index `idx` returns None if the token isn't found
+    ///
+    /// # Panic
+    ///
+    /// This function will panic if you call it on a non-finished TokenTree
+    #[track_caller]
     pub fn get(&self, idx: usize) -> Option<&Token> {
+        assert_eq!(
+            self.finished, true,
+            "can't access tokens while the TokenTree isn't finished."
+        );
         self.toks.get(idx)
     }
 
+    /// Get the last token of a finished TokenTree will always be the EOF token
+    ///
+    /// # Panic
+    ///
+    /// This function will panic if you call it on a non-finished TokenTree
+    #[track_caller]
     pub fn last(&self) -> Option<&Token> {
+        assert_eq!(
+            self.finished, true,
+            "can't access tokens while the TokenTree isn't finished."
+        );
         self.toks.last()
     }
 }
@@ -81,7 +118,7 @@ impl Display for TokenType {
             IntLit(_) => write!(f, "integer literal"),
             StringLit(_) => write!(f, "string literal"),
             Punct(p) => Display::fmt(p, f),
-            EOF => write!(f, "end of file"),
+            EOF => write!(f, "\"<eof>\""),
         }
     }
 }
