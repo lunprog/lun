@@ -99,9 +99,12 @@ pub fn parse_expr_precedence(
             break;
         };
 
-        // TODO(URGENT): make Precedence::from(tt) return an option and if it's None,
-        // we break.
-        if precedence > Precedence::from(tt) {
+        let Some(pr) = Precedence::from(tt) else {
+            // the next token isn't a binary operator
+            break;
+        };
+
+        if precedence > pr {
             break;
         }
 
@@ -248,21 +251,21 @@ impl Precedence {
     }
 }
 
-impl From<TokenType> for Precedence {
-    fn from(value: TokenType) -> Self {
+impl Precedence {
+    fn from(value: TokenType) -> Option<Precedence> {
         use TokenType::Punct;
         match value {
-            Punct(Punctuation::Equal2 | Punctuation::BangEqual) => Precedence::Equality,
+            Punct(Punctuation::Equal2 | Punctuation::BangEqual) => Some(Precedence::Equality),
             Punct(
                 Punctuation::LArrow
                 | Punctuation::RArrow
                 | Punctuation::LArrowEqual
                 | Punctuation::RArrowEqual,
-            ) => Precedence::Comparison,
-            Punct(Punctuation::Plus | Punctuation::Minus) => Precedence::Term,
-            Punct(Punctuation::Star | Punctuation::Slash) => Precedence::Factor,
-            Punct(Punctuation::LParen) => Precedence::Call,
-            _ => panic!("unknown precedence of token {value:?}"),
+            ) => Some(Precedence::Comparison),
+            Punct(Punctuation::Plus | Punctuation::Minus) => Some(Precedence::Term),
+            Punct(Punctuation::Star | Punctuation::Slash) => Some(Precedence::Factor),
+            Punct(Punctuation::LParen) => Some(Precedence::Call),
+            _ => None,
         }
     }
 }
@@ -338,7 +341,12 @@ pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> Result<Express
         }
         None => return Err(parser.eof_diag()),
     };
-    let mut pr = Precedence::from(tok.clone());
+
+    let Some(mut pr) = Precedence::from(tok.clone()) else {
+        // we can't reach here because we already checked that our token is a
+        // binary operator like those we want in this function
+        unreachable!()
+    };
 
     if pr.associativity() == Associativity::LeftToRight {
         pr = pr.next();
