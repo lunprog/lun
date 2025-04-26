@@ -27,25 +27,44 @@ impl AstNode for Expression {
 
 #[derive(Debug, Clone)]
 pub enum Expr {
-    /// Integer literal expression
+    /// integer literal expression
+    ///
+    /// integer
     IntLit(u64),
-    /// Boolean literal expression
+    /// boolean literal expression
+    ///
+    /// ("true" | "false")
     BoolLit(bool),
-    /// String literal expression
+    /// string literal expression
+    ///
+    /// string
     StringLit(String),
-    /// Grouping expression (just parenthesis)
+    /// grouping expression (just parenthesis)
+    ///
+    /// "(" expr ")"
     Grouping(Box<Expression>),
-    /// An identifier expression
+    /// an identifier expression
+    ///
+    /// ident
     Ident(String),
-    /// Binary operation
+    /// binary operation
+    ///
+    /// expr op expr
     Binary {
         lhs: Box<Expression>,
         op: BinOp,
         rhs: Box<Expression>,
     },
-    Unary {
-        op: UnaryOp,
-        expr: Box<Expression>,
+    /// unary operation
+    ///
+    /// op expr
+    Unary { op: UnaryOp, expr: Box<Expression> },
+    /// function call expression
+    ///
+    /// expr "(" ( expr ),* ")"
+    FunCall {
+        called: Box<Expression>,
+        args: Vec<Expression>,
     },
 }
 
@@ -113,9 +132,9 @@ pub fn parse_expr_precedence(
         // we match a token here, because, in the future there will be
         // binary operators that are Keyword, like Logical And.
         lhs = match parser.peek_tt() {
-            // Some(Punct(Punctuation::LParen)) => {
-            //     parse!(@fn parser => parse_call_expr, Box::new(lhs))
-            // }
+            Some(Punct(Punctuation::LParen)) => {
+                parse!(@fn parser => parse_funcall_expr, Box::new(lhs))
+            }
             Some(maybe_bin_op) if BinOp::from_tt(maybe_bin_op.clone()).is_some() => {
                 parse!(@fn parser => parse_binary_expr, lhs)
             }
@@ -397,5 +416,33 @@ pub fn parse_unary_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     Ok(Expression {
         loc: Span::from_ends(start, expr.loc.clone()),
         expr: Expr::Unary { op, expr },
+    })
+}
+
+/// parses the call expression
+pub fn parse_funcall_expr(
+    parser: &mut Parser,
+    called: Box<Expression>,
+) -> Result<Expression, Diagnostic> {
+    let start = called.loc.clone();
+    expect_token!(parser => [Punct(Punctuation::LParen), ()], Punctuation::LParen);
+
+    let mut args = Vec::new();
+
+    loop {
+        if let Some(Punct(Punctuation::RParen)) = parser.peek_tt() {
+            break;
+        }
+
+        args.push(parse!(parser => Expression));
+
+        expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], [Punctuation::Colon, Punctuation::LParen]);
+    }
+
+    let ((), end) = expect_token!(parser => [Punct(Punctuation::RParen), ()], Punctuation::RParen);
+
+    Ok(Expression {
+        expr: Expr::FunCall { called, args },
+        loc: Span::from_ends(start, end),
     })
 }
