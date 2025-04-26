@@ -226,9 +226,11 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
             let typ = if let Some(Punct(Punctuation::Equal)) = parser.peek_tt() {
                 parser.pop();
-                Some(parse!(parser => Expression))
-            } else {
                 None
+            } else {
+                let typ = parse!(parser => Expression);
+                expect_token!(parser => [Punct(Punctuation::Equal), ()], Punctuation::Equal);
+                Some(typ)
             };
 
             let value = parse!(parser => Expression);

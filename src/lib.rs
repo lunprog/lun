@@ -38,7 +38,7 @@ pub fn run() -> StageResult<()> {
     //     print("Hello world!")
     // end
     //     "#;
-    let source_code = r#"local a: integer = 12"#;
+    let source_code = r#"local a: integer = 12 ; b := "hello" "#;
 
     let sink = DiagnosticSink::new("test.l2".to_owned(), source_code.to_owned());
 
