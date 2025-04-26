@@ -38,9 +38,7 @@ pub fn run() -> StageResult<()> {
     //     print("Hello world!")
     // end
     //     "#;
-    let source_code = r#"
-1 + 1 * 93 = 18446744073709551615 "BLAH BLAH BLAH\xAC\xDC"
-        "#;
+    let source_code = r#"local a: integer = 12"#;
 
     let sink = DiagnosticSink::new("test.l2".to_owned(), source_code.to_owned());
 
@@ -56,10 +54,6 @@ pub fn run() -> StageResult<()> {
         }
     };
 
-    if sink.failed() {
-        return StageResult::Fail(sink);
-    }
-
     let mut parser = Parser::new(tt, sink.clone());
 
     let ast = match parser.produce() {
@@ -71,10 +65,6 @@ pub fn run() -> StageResult<()> {
             return StageResult::Fail(sink);
         }
     };
-
-    if sink.failed() {
-        return StageResult::Fail(sink);
-    }
 
     dbg!(ast);
 

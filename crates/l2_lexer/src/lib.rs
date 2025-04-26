@@ -124,6 +124,7 @@ impl Lexer {
             Some('*') => Punct(Star),
             Some(':') => Punct(Colon),
             Some(',') => Punct(Comma),
+            Some(';') => Punct(SemiColon),
             Some('=') => {
                 self.pop();
                 match self.peek() {
@@ -194,26 +195,29 @@ impl Lexer {
     pub fn lex_identifier(&mut self) -> TokenType {
         let word = self.make_word();
 
-        use TokenType::KW;
+        use TokenType::Kw;
 
         match word.as_str() {
-            Keyword::BREAK => KW(Keyword::Break),
-            Keyword::CLASS => KW(Keyword::Class),
-            Keyword::CONTINUE => KW(Keyword::Continue),
-            Keyword::DO => KW(Keyword::Do),
-            Keyword::END => KW(Keyword::End),
-            Keyword::FALSE => KW(Keyword::False),
-            Keyword::FOR => KW(Keyword::For),
-            Keyword::FUN => KW(Keyword::Fun),
-            Keyword::IMPL => KW(Keyword::Impl),
-            Keyword::LOCAL => KW(Keyword::Local),
-            Keyword::NOT => KW(Keyword::Not),
-            Keyword::RETURN => KW(Keyword::Return),
-            Keyword::SELF => KW(Keyword::Zelf),
-            Keyword::THEN => KW(Keyword::Then),
-            Keyword::TRAIT => KW(Keyword::Trait),
-            Keyword::TRUE => KW(Keyword::True),
-            Keyword::WHILE => KW(Keyword::While),
+            Keyword::BREAK => Kw(Keyword::Break),
+            Keyword::CLASS => Kw(Keyword::Class),
+            Keyword::CONTINUE => Kw(Keyword::Continue),
+            Keyword::DO => Kw(Keyword::Do),
+            Keyword::ELSE => Kw(Keyword::Else),
+            Keyword::END => Kw(Keyword::End),
+            Keyword::FALSE => Kw(Keyword::False),
+            Keyword::FOR => Kw(Keyword::For),
+            Keyword::FUN => Kw(Keyword::Fun),
+            Keyword::IF => Kw(Keyword::If),
+            Keyword::IMPL => Kw(Keyword::Impl),
+            Keyword::IN => Kw(Keyword::In),
+            Keyword::LOCAL => Kw(Keyword::Local),
+            Keyword::NOT => Kw(Keyword::Not),
+            Keyword::RETURN => Kw(Keyword::Return),
+            Keyword::SELF => Kw(Keyword::Zelf),
+            Keyword::THEN => Kw(Keyword::Then),
+            Keyword::TRAIT => Kw(Keyword::Trait),
+            Keyword::TRUE => Kw(Keyword::True),
+            Keyword::WHILE => Kw(Keyword::While),
             _ => TokenType::Ident(word),
         }
     }

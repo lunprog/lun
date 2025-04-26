@@ -132,12 +132,12 @@ pub enum ErrorCode {
     /// ```l2
     /// local i = 1234
     /// ```
-    InvalidDigitNumber,
+    InvalidDigitNumber = 2,
     /// Too large integer literal, can't fit inside 64 bits.
     ///
     /// an integer literal must fit in 64 bits, so they must not exceed
     /// `18446744073709551615`
-    TooLargeIntegerLiteral,
+    TooLargeIntegerLiteral = 3,
     /// A string (") was not terminated.
     ///
     /// Erroneus example
@@ -149,13 +149,13 @@ pub enum ErrorCode {
     /// ```l2
     /// local s = ""
     /// ```
-    UnterminatedStringLiteral,
+    UnterminatedStringLiteral = 4,
     /// Unknown character escape
-    UnknownCharacterEscape,
+    UnknownCharacterEscape = 5,
     /// Unknown character escape
-    ExpectedToken,
+    ExpectedToken = 6,
     /// Unknown character escape
-    ReachedEOF,
+    ReachedEOF = 7,
 }
 
 impl Display for ErrorCode {

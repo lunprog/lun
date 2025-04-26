@@ -4,6 +4,14 @@ use std::fmt::{self, Debug, Display};
 
 use crate::Span;
 
+// TODO(UREGENT+): ensure we have an eof token at the end and that we can't
+// modify the tokens after finished it, add a `finished` field and while it's
+// false we can mutate the TokenTree but can't get the tokens and as soon
+// as `finished` is true, we can get tokens but can't push new ones. In the
+// `finish()` method assert the presence of a EOF token.
+
+/// A list of Tokens, and always ending with a `end of file` token (not ensured
+/// tho, maybe in the future)
 #[derive(Clone, Default)]
 pub struct TokenTree {
     toks: Vec<Token>,
@@ -51,7 +59,7 @@ pub struct Token {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TokenType {
     /// keyword
-    KW(Keyword),
+    Kw(Keyword),
     /// identifier
     Ident(String),
     /// integer literal
@@ -68,7 +76,7 @@ impl Display for TokenType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use TokenType::*;
         match self {
-            KW(kw) => write!(f, "keyword `{}`", kw),
+            Kw(kw) => write!(f, "keyword `{}`", kw),
             Ident(_) => write!(f, "identifier"),
             IntLit(_) => write!(f, "integer literal"),
             StringLit(_) => write!(f, "string literal"),
@@ -78,7 +86,9 @@ impl Display for TokenType {
     }
 }
 
-// /!\ If an identifier is added change the `lex_identifer` method of the Lexer
+// TODO: add keyword `nil` and implement the nil expression
+//
+// /!\ If a keyword is added change the `lex_identifer` method of the Lexer
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Keyword {
     /// break
@@ -89,6 +99,8 @@ pub enum Keyword {
     Continue,
     /// do
     Do,
+    /// else
+    Else,
     /// end
     End,
     /// false
@@ -97,8 +109,12 @@ pub enum Keyword {
     For,
     /// fun
     Fun,
+    /// if
+    If,
     /// impl
     Impl,
+    /// in
+    In,
     /// local
     Local,
     /// not
@@ -133,6 +149,9 @@ impl Keyword {
     /// `do` keyword.
     pub const DO: &str = "do";
 
+    /// `else` keyword.
+    pub const ELSE: &str = "else";
+
     /// `end` keyword.
     pub const END: &str = "end";
 
@@ -145,8 +164,14 @@ impl Keyword {
     /// `fun` keyword.
     pub const FUN: &str = "fun";
 
+    /// `if` keyword.
+    pub const IF: &str = "if";
+
     /// `impl` keyword.
     pub const IMPL: &str = "impl";
+
+    /// `in` keyword.
+    pub const IN: &str = "in";
 
     /// `local` keyword.
     pub const LOCAL: &str = "local";
@@ -180,11 +205,14 @@ impl Display for Keyword {
             Keyword::Class => f.write_str(Keyword::CLASS),
             Keyword::Continue => f.write_str(Keyword::CONTINUE),
             Keyword::Do => f.write_str(Keyword::DO),
+            Keyword::Else => f.write_str(Keyword::ELSE),
             Keyword::End => f.write_str(Keyword::END),
             Keyword::False => f.write_str(Keyword::FALSE),
             Keyword::For => f.write_str(Keyword::FOR),
             Keyword::Fun => f.write_str(Keyword::FUN),
+            Keyword::If => f.write_str(Keyword::IF),
             Keyword::Impl => f.write_str(Keyword::IMPL),
+            Keyword::In => f.write_str(Keyword::IN),
             Keyword::Local => f.write_str(Keyword::LOCAL),
             Keyword::Not => f.write_str(Keyword::NOT),
             Keyword::Return => f.write_str(Keyword::RETURN),
@@ -237,6 +265,8 @@ pub enum Punctuation {
     RArrow,
     /// >=
     RArrowEqual,
+    /// ;
+    SemiColon,
 }
 
 impl Display for Punctuation {
@@ -262,6 +292,7 @@ impl Display for Punctuation {
             LArrowEqual => f.write_str("<"),
             RArrow => f.write_str(">"),
             RArrowEqual => f.write_str(">="),
+            SemiColon => f.write_str(";"),
         }
     }
 }

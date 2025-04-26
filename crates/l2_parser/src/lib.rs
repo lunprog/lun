@@ -71,15 +71,19 @@ impl Parser {
     }
 
     pub fn produce(&mut self) -> StageResult<Chunk> {
-        if !self.sink.failed() {
-            match <Chunk as AstNode>::parse(self) {
-                Ok(ast) => return StageResult::Good(ast),
-                Err(diag) => {
-                    self.sink.push(diag);
-                }
+        let ast = match Chunk::parse(self) {
+            Ok(ast) => ast,
+            Err(diag) => {
+                self.sink.push(diag);
+                return StageResult::Fail(self.sink.clone());
             }
+        };
+
+        if self.sink.failed() {
+            return StageResult::Fail(self.sink.clone());
         }
-        StageResult::Fail(self.sink.clone())
+
+        StageResult::Good(ast)
     }
 
     pub fn parse_node<T: AstNode>(&mut self) -> Result<T, Diagnostic> {

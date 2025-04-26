@@ -10,6 +10,10 @@ pub struct Span {
 }
 
 impl Span {
+    /// Zero location.
+    pub const ZERO: Span = Span { start: 0, end: 0 };
+
+    #[inline(always)]
     pub const fn from_ends(start: Span, end: Span) -> Span {
         Span {
             start: start.start,

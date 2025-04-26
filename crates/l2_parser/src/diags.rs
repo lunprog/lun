@@ -1,7 +1,10 @@
 //! Diagnostics that may be emitted by the parser.
 
 use l2_diagnostic::{Diagnostic, ErrorCode, Label, ToDiagnostic};
-use l2_utils::{Span, token::TokenType};
+use l2_utils::{
+    Span,
+    token::{Punctuation, TokenType},
+};
 
 use std::fmt::{Display, Write};
 
@@ -58,10 +61,11 @@ impl ExpectedToken {
         let node = self
             .node
             .clone()
-            .map(|s| format!("in {s}"))
+            .map(|s| format!("for a {s}"))
             .unwrap_or_default();
 
-        format!("expected {}{}, found {}", expected, node, self.found)
+        // TODO: change the msg to something like `unexpected integer while parsing expression, expected ...`
+        format!("expected {} {}, found {}", expected, node, self.found)
     }
 }
 
@@ -74,6 +78,18 @@ pub trait IntoDisplayables {
 }
 
 impl IntoDisplayables for &'static str {
+    fn into_displayables(self) -> Vec<Box<dyn Display>> {
+        vec![Box::new(self)]
+    }
+}
+
+impl IntoDisplayables for Punctuation {
+    fn into_displayables(self) -> Vec<Box<dyn Display>> {
+        vec![Box::new(self)]
+    }
+}
+
+impl IntoDisplayables for TokenType {
     fn into_displayables(self) -> Vec<Box<dyn Display>> {
         vec![Box::new(self)]
     }

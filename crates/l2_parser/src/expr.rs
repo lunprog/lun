@@ -54,9 +54,12 @@ pub fn parse_expr_precedence(
     parser: &mut Parser,
     precedence: Precedence,
 ) -> Result<Expression, Diagnostic> {
+    // TODO: parsing of range expressions, `expr..expr` and `expr..=expr`, and
+    // maybe `..expr` and maybe `expr..` but not sure because the integer type
+    // can go from -u64::MAX to i64::MAX
     let mut lhs = match parser.peek_tt() {
         Some(IntLit(_)) => parse!(@fn parser => parse_intlit_expr),
-        Some(KW(Keyword::True | Keyword::False)) => parse!(@fn parser => parse_boollit_expr),
+        Some(Kw(Keyword::True | Keyword::False)) => parse!(@fn parser => parse_boollit_expr),
         // Some(Char(_)) => parse!(@fn parser => parse_charlit_expr),
         Some(StringLit(_)) => parse!(@fn parser => parse_strlit_expr),
         Some(Punct(Punctuation::LParen)) => parse!(@fn parser => parse_grouping_expr),
@@ -67,16 +70,17 @@ pub fn parse_expr_precedence(
         Some(_) => {
             // unwrap is safe because we already know the next has a token type
             let t = parser.peek_tok().unwrap().clone();
-            // TODO: make the parser retry if he failed to parse lhs with a loop
+            // TODO: make the parser retry if he failed to parse lhs with a
+            // loop, see parsing of statements also.
             return Err(ExpectedToken::new(
                 [
                     IntLit(0),
-                    KW(Keyword::False),
-                    KW(Keyword::True),
+                    Kw(Keyword::False),
+                    Kw(Keyword::True),
                     StringLit(String::new()),
                     Punct(Punctuation::LParen),
                     Ident(String::new()),
-                    KW(Keyword::Not),
+                    Kw(Keyword::Not),
                     Punct(Punctuation::Minus),
                 ],
                 t.tt,
@@ -94,9 +98,14 @@ pub fn parse_expr_precedence(
         let Some(tt) = parser.peek_tt().cloned() else {
             break;
         };
+
+        // TODO(URGENT): make Precedence::from(tt) return an option and if it's None,
+        // we break.
         if precedence > Precedence::from(tt) {
             break;
         }
+
+        // TODO(URGENT): implement parsing of FunCall in expressions
 
         // we match a token here, because, in the future there will be
         // binary operators that are Keyword, like Logical And.
@@ -126,7 +135,7 @@ pub fn parse_intlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
 /// Parse a boolean literal expression
 pub fn parse_boollit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (b, loc) = expect_token!(parser => [KW(Keyword::True), true; KW(Keyword::False), false], "bool literal");
+    let (b, loc) = expect_token!(parser => [Kw(Keyword::True), true; Kw(Keyword::False), false], "bool literal");
 
     Ok(Expression {
         expr: Expr::BoolLit(b),
@@ -362,7 +371,7 @@ impl UnaryOp {
     pub fn from_tt(tt: TokenType) -> Option<UnaryOp> {
         match tt {
             Punct(Punctuation::Minus) => Some(UnaryOp::Negation),
-            KW(Keyword::Not) => Some(UnaryOp::Not),
+            Kw(Keyword::Not) => Some(UnaryOp::Not),
             _ => None,
         }
     }
@@ -372,7 +381,7 @@ impl UnaryOp {
 pub fn parse_unary_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (op, start) = expect_token!(parser => [
         Punct(Punctuation::Minus), UnaryOp::Negation;
-        KW(Keyword::Not), UnaryOp::Not;
+        Kw(Keyword::Not), UnaryOp::Not;
     ], "minus operator or keyword not");
 
     let expr = Box::new(parse!(@fn parser => parse_expr_precedence, Precedence::Unary));
