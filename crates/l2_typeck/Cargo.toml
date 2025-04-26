@@ -1,0 +1,11 @@
+[package]
+name = "l2_typeck"
+description = "Type checker of l2."
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]
+l2_utils = { workspace = true }
+l2_diagnostic = { workspace = true }
+l2_parser = { workspace = true }

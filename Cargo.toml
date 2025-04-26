@@ -5,9 +5,10 @@ members = [
   "crates/l2_diagnostic",
   "crates/l2_lexer",
   "crates/l2_parser",
+  "crates/l2_typeck",
   "crates/l2_utils",
   "crates/l2_vm",
-  "."
+  ".",
 ]
 
 [workspace.package]
@@ -19,6 +20,7 @@ l2_bytecode = { path = "crates/l2_bytecode" }
 l2_diagnostic = { path = "crates/l2_diagnostic" }
 l2_lexer = { path = "crates/l2_lexer" }
 l2_parser = { path = "crates/l2_parser" }
+l2_typeck = { path = "crates/l2_typeck" }
 l2_utils = { path = "crates/l2_utils" }
 l2_vm = { path = "crates/l2_vm" }
 
@@ -29,6 +31,7 @@ codespan-reporting = "0.12.0"
 [package]
 name = "l2"
 version.workspace = true
+license.workspace = true
 edition = "2024"
 
 [dependencies]
@@ -36,6 +39,7 @@ l2_bytecode = { workspace = true }
 l2_diagnostic = { workspace = true }
 l2_lexer = { workspace = true }
 l2_parser = { workspace = true }
+l2_typeck = { workspace = true }
 l2_utils = { workspace = true }
 l2_vm = { workspace = true }
 
