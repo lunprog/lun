@@ -15,7 +15,7 @@ trait Display
     fun display(self, f: Formatter) -> result
 end
 
-class Person
+struct Person
     name: string,
 end
 
@@ -122,13 +122,13 @@ end
 // TYPES AND TRAITS
 // are compile time values that can be exported:
 //
-// class Test
+// struct Test
 //     field: int,
 // end
 //
 // is equivalent to:
 //
-// Test := class
+// Test := struct
 //     field: int
 // end
 //
@@ -146,7 +146,7 @@ end
 //
 // so you can write comptime functions that return a type like
 //
-// fun array(T: type, N: int) -> comptime type
+// fun array(T: comptime type, N: int) -> comptime type
 //     // built in
 // end
 //

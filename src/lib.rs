@@ -34,11 +34,6 @@ pub use l2_vm as vm;
 // TODO: add a panic hook to tell that if l2 had panicked it's a bug an it
 // should be reported.
 pub fn run() -> StageResult<()> {
-    // let source_code = r#"
-    // fun main(args: list(string))
-    //     print("Hello world!")
-    // end
-    //     "#;
     let source_code = r#"local a: integer = hello(1, 2) ; b := "hello""#;
 
     let sink = DiagnosticSink::new("test.l2".to_owned(), source_code.to_owned());

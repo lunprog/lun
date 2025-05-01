@@ -90,6 +90,7 @@ pub enum Stmt {
     // IMPORTANTLY
     // TODO: add support custom numeric literal like ` 123'custom ` is equivalent
     // to `custom("123")` idk but the idea is cool :)
+    // TODO(URGENT): add parsing of return type. `[ "->" expr ]` at the end.
     /// function call
     ///
     /// ident "(" ( expr ),* ")"
