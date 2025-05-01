@@ -70,6 +70,14 @@ impl Parser {
         self.peek_tok().map(|t| &t.tt)
     }
 
+    /// Returns true if the next token the end of a statement or chunk.
+    pub fn is_stmt_end(&self) -> bool {
+        matches!(
+            self.peek_tt(),
+            Some(Kw(Keyword::End | Keyword::Else) | Punct(Punctuation::SemiColon))
+        )
+    }
+
     pub fn produce(&mut self) -> StageResult<Chunk> {
         let ast = match Chunk::parse(self) {
             Ok(ast) => ast,

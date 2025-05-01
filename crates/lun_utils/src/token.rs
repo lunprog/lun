@@ -304,6 +304,8 @@ pub enum Punctuation {
     RArrowEqual,
     /// ;
     SemiColon,
+    /// ->
+    Arrow,
 }
 
 impl Display for Punctuation {
@@ -330,6 +332,7 @@ impl Display for Punctuation {
             RArrow => f.write_str(">"),
             RArrowEqual => f.write_str(">="),
             SemiColon => f.write_str(";"),
+            Arrow => f.write_str("->"),
         }
     }
 }

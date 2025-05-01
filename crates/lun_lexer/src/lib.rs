@@ -65,6 +65,14 @@ impl Lexer {
         StageResult::Good(tt)
     }
 
+    /// return the char that is n-chars offseted
+    pub fn peek_nth(&self, offset: isize) -> Option<char> {
+        self.chars
+            .get((self.cur as isize + offset) as usize)
+            .cloned()
+    }
+
+    /// return the character a the current position
     pub fn peek(&self) -> Option<char> {
         self.chars.get(self.cur).cloned()
     }
@@ -123,7 +131,16 @@ impl Lexer {
             Some('{') => Punct(LBrace),
             Some('}') => Punct(RBrace),
             Some('+') => Punct(Plus),
-            Some('-') => Punct(Minus),
+            Some('-') => {
+                self.pop();
+                match self.peek() {
+                    Some('>') => {
+                        self.pop();
+                        return Some(Ok(Punct(Arrow)));
+                    }
+                    _ => return Some(Ok(Punct(Minus))),
+                }
+            }
             Some('*') => Punct(Star),
             Some(':') => Punct(Colon),
             Some(',') => Punct(Comma),

@@ -43,7 +43,6 @@ impl AstNode for Chunk {
     }
 }
 
-// TODO(URGENT): add parsing for return and break stmt
 /// A lun statement
 #[derive(Debug, Clone)]
 pub struct Statement {
@@ -135,14 +134,21 @@ pub enum Stmt {
     /// function definition
     ///
     /// [ "local" ] "fun" ident "(" ( ident ":" expr ),* ")" [ "->" expr ] chunk "end"
-    // TODO(URGENT): implement the return type
     FunDef {
         local: bool,
         name: String,
         args: Vec<Arg>,
-        // rettype: Expression,
+        rettype: Option<Expression>,
         body: Chunk,
     },
+    /// return statement
+    ///
+    /// "return" [ expr ]
+    Return { val: Option<Expression> },
+    /// break statement
+    ///
+    /// "break" [ expr ]
+    Break { val: Option<Expression> },
 }
 
 #[derive(Debug, Clone)]
@@ -184,6 +190,8 @@ impl AstNode for Statement {
             Some(Kw(Keyword::While)) => parse_while_stmt(parser),
             Some(Kw(Keyword::For)) => parse_for_stmt(parser),
             Some(Kw(Keyword::Fun)) => parse_fundef_stmt(parser),
+            Some(Kw(Keyword::Return)) => parse_return_stmt(parser),
+            Some(Kw(Keyword::Break)) => parse_break_stmt(parser),
             Some(_) => {
                 // unwrap is safe because we already know the next has a token
                 // type
@@ -199,6 +207,8 @@ impl AstNode for Statement {
                         Kw(Keyword::While),
                         Kw(Keyword::For),
                         Kw(Keyword::Fun),
+                        Kw(Keyword::Return),
+                        Kw(Keyword::Break),
                     ],
                     t.tt,
                     Some("statement".to_string()),
@@ -522,6 +532,13 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
     }
     expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
 
+    let rettype = if let Some(Punct(Punctuation::Arrow)) = parser.peek_tt() {
+        parser.pop();
+        Some(parse!(parser => Expression))
+    } else {
+        None
+    };
+
     let body = parse!(parser => Chunk);
 
     let (_, end) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
@@ -531,8 +548,49 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
             local,
             name,
             args,
+            rettype,
             body,
         },
         loc: Span::from_ends(start, end),
     })
+}
+
+pub fn parse_return_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Return), ()], Kw(Keyword::Return));
+
+    if parser.is_stmt_end() {
+        Ok(Statement {
+            stmt: Stmt::Return { val: None },
+            loc: lo,
+        })
+    } else {
+        let expr = parse!(parser => Expression);
+
+        Ok(Statement {
+            stmt: Stmt::Return {
+                val: Some(expr.clone()),
+            },
+            loc: Span::from_ends(lo, expr.loc),
+        })
+    }
+}
+
+pub fn parse_break_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Break), ()], Kw(Keyword::Break));
+
+    if parser.is_stmt_end() {
+        Ok(Statement {
+            stmt: Stmt::Break { val: None },
+            loc: lo,
+        })
+    } else {
+        let expr = parse!(parser => Expression);
+
+        Ok(Statement {
+            stmt: Stmt::Break {
+                val: Some(expr.clone()),
+            },
+            loc: Span::from_ends(lo, expr.loc),
+        })
+    }
 }
