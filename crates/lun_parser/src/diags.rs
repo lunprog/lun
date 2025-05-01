@@ -2,8 +2,8 @@
 
 use lun_diag::{Diagnostic, ErrorCode, Label, ToDiagnostic};
 use lun_utils::{
-    token::{Punctuation, TokenType},
     Span,
+    token::{Punctuation, TokenType},
 };
 
 use std::fmt::{Display, Write};
@@ -61,11 +61,11 @@ impl ExpectedToken {
         let node = self
             .node
             .clone()
-            .map(|s| format!("for a {s}"))
+            .map(|s| format!(" for a {s}"))
             .unwrap_or_default();
 
         // TODO: change the msg to something like `unexpected integer while parsing expression, expected ...`
-        format!("expected {} {}, found {}", expected, node, self.found)
+        format!("expected {}{}, found {}", expected, node, self.found)
     }
 }
 

@@ -117,7 +117,7 @@ impl Display for TokenType {
             Ident(_) => write!(f, "identifier"),
             IntLit(_) => write!(f, "integer literal"),
             StringLit(_) => write!(f, "string literal"),
-            Punct(p) => Display::fmt(p, f),
+            Punct(p) => write!(f, "`{p}`"),
             EOF => write!(f, "\"<eof>\""),
         }
     }

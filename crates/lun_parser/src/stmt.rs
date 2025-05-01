@@ -43,6 +43,7 @@ impl AstNode for Chunk {
     }
 }
 
+// TODO(URGENT): add parsing for return and break stmt
 /// A lun statement
 #[derive(Debug, Clone)]
 pub struct Statement {
@@ -90,7 +91,6 @@ pub enum Stmt {
     // IMPORTANTLY
     // TODO: add support custom numeric literal like ` 123'custom ` is equivalent
     // to `custom("123")` idk but the idea is cool :)
-    // TODO(URGENT): add parsing of return type. `[ "->" expr ]` at the end.
     /// function call
     ///
     /// ident "(" ( expr ),* ")"
@@ -134,11 +134,13 @@ pub enum Stmt {
     },
     /// function definition
     ///
-    /// [ "local" ] "fun" ident "(" ( ident ":" expr ),* ")" chunk "end"
+    /// [ "local" ] "fun" ident "(" ( ident ":" expr ),* ")" [ "->" expr ] chunk "end"
+    // TODO(URGENT): implement the return type
     FunDef {
         local: bool,
         name: String,
         args: Vec<Arg>,
+        // rettype: Expression,
         body: Chunk,
     },
 }
@@ -181,6 +183,7 @@ impl AstNode for Statement {
             Some(Kw(Keyword::If)) => parse_if_stmt(parser),
             Some(Kw(Keyword::While)) => parse_while_stmt(parser),
             Some(Kw(Keyword::For)) => parse_for_stmt(parser),
+            Some(Kw(Keyword::Fun)) => parse_fundef_stmt(parser),
             Some(_) => {
                 // unwrap is safe because we already know the next has a token
                 // type
@@ -195,6 +198,7 @@ impl AstNode for Statement {
                         Kw(Keyword::Do),
                         Kw(Keyword::While),
                         Kw(Keyword::For),
+                        Kw(Keyword::Fun),
                     ],
                     t.tt,
                     Some("statement".to_string()),
@@ -496,7 +500,6 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
     loop {
         match parser.peek_tt() {
             Some(Punct(Punctuation::RParen)) => {
-                parser.pop();
                 break;
             }
             _ => {}
@@ -509,15 +512,15 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
         let typ = parse!(parser => Expression);
 
-        let (_, end_arg) =
-            expect_token!(parser => [Punct(Punctuation::Comma), ()], Punct(Punctuation::Comma));
-
         args.push(Arg {
             name,
-            typ,
-            loc: Span::from_ends(start_arg, end_arg),
+            typ: typ.clone(),
+            loc: Span::from_ends(start_arg, typ.loc),
         });
+
+        expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], Punct(Punctuation::Comma));
     }
+    expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
 
     let body = parse!(parser => Chunk);
 

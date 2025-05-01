@@ -34,7 +34,7 @@ pub use lun_vm as vm;
 // TODO: add a panic hook to tell that if lun had panicked it's a bug an it
 // should be reported.
 pub fn run() -> StageResult<()> {
-    let source_code = r#"local a: integer = hello(1, 2) ; b := "hello""#;
+    let source_code = include_str!("../examples/function.lun");
 
     let sink = DiagnosticSink::new("examples.lun".to_owned(), source_code.to_owned());
 
