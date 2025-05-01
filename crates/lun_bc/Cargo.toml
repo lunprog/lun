@@ -1,0 +1,9 @@
+[package]
+name = "lun_bc"
+description = "Bytecode of lun."
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]
+lun_utils = { workspace = true }

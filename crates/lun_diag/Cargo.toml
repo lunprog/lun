@@ -1,0 +1,12 @@
+[package]
+name = "lun_diag"
+description = "Diagnostics for lun."
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]
+lun_utils = { workspace = true }
+
+thiserror = { workspace = true }
+codespan-reporting = { workspace = true }

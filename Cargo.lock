@@ -14,73 +14,73 @@ dependencies = [
 ]
 
 [[package]]
-name = "l2"
+name = "lun"
 version = "0.1.0"
 dependencies = [
  "codespan-reporting",
- "l2_bytecode",
- "l2_diagnostic",
- "l2_lexer",
- "l2_parser",
- "l2_semack",
- "l2_utils",
- "l2_vm",
+ "lun_bc",
+ "lun_diag",
+ "lun_lexer",
+ "lun_parser",
+ "lun_semack",
+ "lun_utils",
+ "lun_vm",
  "thiserror",
 ]
 
 [[package]]
-name = "l2_bytecode"
+name = "lun_bc"
 version = "0.1.0"
 dependencies = [
- "l2_utils",
+ "lun_utils",
 ]
 
 [[package]]
-name = "l2_diagnostic"
+name = "lun_diag"
 version = "0.1.0"
 dependencies = [
  "codespan-reporting",
- "l2_utils",
+ "lun_utils",
  "thiserror",
 ]
 
 [[package]]
-name = "l2_lexer"
+name = "lun_lexer"
 version = "0.1.0"
 dependencies = [
- "l2_diagnostic",
- "l2_utils",
+ "lun_diag",
+ "lun_utils",
  "thiserror",
 ]
 
 [[package]]
-name = "l2_parser"
+name = "lun_parser"
 version = "0.1.0"
 dependencies = [
- "l2_diagnostic",
- "l2_utils",
+ "lun_diag",
+ "lun_utils",
  "thiserror",
 ]
 
 [[package]]
-name = "l2_semack"
+name = "lun_semack"
 version = "0.1.0"
 dependencies = [
- "l2_diagnostic",
- "l2_parser",
- "l2_utils",
+ "lun_diag",
+ "lun_parser",
+ "lun_utils",
 ]
 
 [[package]]
-name = "l2_utils"
+name = "lun_utils"
 version = "0.1.0"
 
 [[package]]
-name = "l2_vm"
+name = "lun_vm"
 version = "0.1.0"
 dependencies = [
- "l2_bytecode",
- "l2_utils",
+ "lun_bc",
+ "lun_utils",
 ]
 
 [[package]]

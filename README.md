@@ -1,7 +1,6 @@
-# l2
+# lun
 
-Language heavily inspired by Lua so its name come from it kinda:
-`Lua v2` -> `l2`.
+Lun is a simple, staticaly typed programming language heavily inspired by Lua.
 
 - To create the tree sitter take inspiration from:
   https://github.com/tjdevries/tree-sitter-lua
@@ -14,17 +13,19 @@ Language heavily inspired by Lua so its name come from it kinda:
 - Reimplement with `salsa` to enable incremental compilation and some crazy
   things
 
-TODO: implement a tests suit in `tests/` that check every stage of `l2` and
+TODO: implement a tests suit in `tests/` that check every stage of `lun` and
 source code files have the following format to expect errors or a result:
-```l2
+```lun
 local fun = 0
 //    ^ err: E0006
 ```
 to expect an error or
-```l2
+```lun
 local a = 2 * 4 + 3 // ok: a = 11
 ```
 to expect a value in a variable or elsewhere
+
+GOALS: be faster than python, without JIT.
 
 ## License
 

@@ -1,15 +1,15 @@
-//! L2 is a simple, staticaly typed programming language heavily inspired by
+//! Lun is a simple, staticaly typed programming language heavily inspired by
 //! Lua.
 //!
 //! # Hello world example
 //!
-//! ```l2
+//! ```lun
 //! println("Hello world!")
 //! ```
 //!
 //! # Fibonacci example
 //!
-//! ```l2
+//! ```lun
 //! fun fib(n: int) -> int
 //!     if n < 2 then return n end
 //!     return fib(n - 1) + fib(n + 1)
@@ -17,26 +17,26 @@
 //! ```
 
 use crate::{
-    bytecode::Blob,
-    diagnostic::{DiagnosticSink, StageResult},
+    bc::Blob,
+    diag::{DiagnosticSink, StageResult},
     lexer::Lexer,
     parser::Parser,
     vm::VM,
 };
 
-pub use l2_bytecode as bytecode;
-pub use l2_diagnostic as diagnostic;
-pub use l2_lexer as lexer;
-pub use l2_parser as parser;
-pub use l2_utils as utils;
-pub use l2_vm as vm;
+pub use lun_bc as bc;
+pub use lun_diag as diag;
+pub use lun_lexer as lexer;
+pub use lun_parser as parser;
+pub use lun_utils as utils;
+pub use lun_vm as vm;
 
-// TODO: add a panic hook to tell that if l2 had panicked it's a bug an it
+// TODO: add a panic hook to tell that if lun had panicked it's a bug an it
 // should be reported.
 pub fn run() -> StageResult<()> {
     let source_code = r#"local a: integer = hello(1, 2) ; b := "hello""#;
 
-    let sink = DiagnosticSink::new("test.l2".to_owned(), source_code.to_owned());
+    let sink = DiagnosticSink::new("examples.lun".to_owned(), source_code.to_owned());
 
     let mut lexer = Lexer::new(sink.clone(), source_code.to_owned());
 

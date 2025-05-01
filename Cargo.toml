@@ -1,13 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-  "crates/l2_bytecode",
-  "crates/l2_diagnostic",
-  "crates/l2_lexer",
-  "crates/l2_parser",
-  "crates/l2_semack",
-  "crates/l2_utils",
-  "crates/l2_vm",
+  "crates/lun_bc",
+  "crates/lun_diag",
+  "crates/lun_lexer",
+  "crates/lun_parser",
+  "crates/lun_semack",
+  "crates/lun_utils",
+  "crates/lun_vm",
   ".",
 ]
 
@@ -16,32 +16,32 @@ version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
-l2_bytecode = { path = "crates/l2_bytecode" }
-l2_diagnostic = { path = "crates/l2_diagnostic" }
-l2_lexer = { path = "crates/l2_lexer" }
-l2_parser = { path = "crates/l2_parser" }
-l2_semack = { path = "crates/l2_semack" }
-l2_utils = { path = "crates/l2_utils" }
-l2_vm = { path = "crates/l2_vm" }
+lun_bc = { path = "crates/lun_bc" }
+lun_diag = { path = "crates/lun_diag" }
+lun_lexer = { path = "crates/lun_lexer" }
+lun_parser = { path = "crates/lun_parser" }
+lun_semack = { path = "crates/lun_semack" }
+lun_utils = { path = "crates/lun_utils" }
+lun_vm = { path = "crates/lun_vm" }
 
 # other dependencies
 thiserror = "2.0.12"
 codespan-reporting = "0.12.0"
 
 [package]
-name = "l2"
+name = "lun"
 version.workspace = true
 license.workspace = true
 edition = "2024"
 
 [dependencies]
-l2_bytecode = { workspace = true }
-l2_diagnostic = { workspace = true }
-l2_lexer = { workspace = true }
-l2_parser = { workspace = true }
-l2_semack = { workspace = true }
-l2_utils = { workspace = true }
-l2_vm = { workspace = true }
+lun_bc = { workspace = true }
+lun_diag = { workspace = true }
+lun_lexer = { workspace = true }
+lun_parser = { workspace = true }
+lun_semack = { workspace = true }
+lun_utils = { workspace = true }
+lun_vm = { workspace = true }
 
 # other dependencies
 thiserror = { workspace = true }
