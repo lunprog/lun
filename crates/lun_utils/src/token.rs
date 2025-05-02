@@ -124,6 +124,7 @@ impl Display for TokenType {
 }
 
 // TODO: add keyword `nil` and implement the nil expression
+// TODO: add keyword `comptime` for future use
 //
 // /!\ If a keyword is added change the `lex_identifer` method of the Lexer
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

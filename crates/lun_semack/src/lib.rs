@@ -1,7 +1,12 @@
 use std::collections::HashMap;
 
-use lun_diag::DiagnosticSink;
+use ckast::{CkChunk, FromAst};
+use lun_diag::{Diagnostic, DiagnosticSink, StageResult};
+use lun_parser::expr::{BinOp, UnaryOp};
 use lun_parser::stmt::Chunk;
+use lun_utils::Span;
+
+pub mod ckast;
 
 // TODO: implement a 2 pass semantic checker:
 // 1. collect all of the global defs in a chunk
@@ -20,6 +25,19 @@ impl SemanticCk {
     pub const fn new(ast: Chunk, sink: DiagnosticSink) -> SemanticCk {
         SemanticCk { ast, sink }
     }
+
+    pub fn produce(&mut self) -> StageResult<CkChunk> {
+        // 1. create the checked ast from the unchecked ast.
+        let ckast = CkChunk::from_ast(self.ast.clone());
+        dbg!(ckast);
+
+        // 2. collect the global defs in the symbol table for the first block
+
+        // 3. resolve the type of all expressions
+
+        // 4. type check the ast and recurse at pass 2, if there is a new chunk
+        todo!()
+    }
 }
 
 /// Symbol
@@ -28,7 +46,7 @@ pub struct Symbol {
     /// local, parameter or global
     kind: SymKind,
     /// actual type of the
-    typ: SymType,
+    typ: Type,
     /// the name of the symbol
     name: String,
     /// which scope the symbol is referring to
@@ -37,7 +55,7 @@ pub struct Symbol {
 
 impl Symbol {
     /// Create a new symbol
-    pub fn new(kind: SymKind, typ: SymType, name: String, which: usize) -> Symbol {
+    pub fn new(kind: SymKind, typ: Type, name: String, which: usize) -> Symbol {
         Symbol {
             kind,
             typ,
@@ -47,7 +65,7 @@ impl Symbol {
     }
 
     /// Create a new local symbol
-    pub fn local(typ: SymType, name: String, which: usize) -> Symbol {
+    pub fn local(typ: Type, name: String, which: usize) -> Symbol {
         Symbol {
             kind: SymKind::Local,
             typ,
@@ -57,7 +75,7 @@ impl Symbol {
     }
 
     /// Create a new param symbol
-    pub fn param(typ: SymType, name: String, which: usize) -> Symbol {
+    pub fn param(typ: Type, name: String, which: usize) -> Symbol {
         Symbol {
             kind: SymKind::Param,
             typ,
@@ -67,7 +85,7 @@ impl Symbol {
     }
 
     /// Create a new global symbol
-    pub fn global(typ: SymType, name: String, which: usize) -> Symbol {
+    pub fn global(typ: Type, name: String, which: usize) -> Symbol {
         Symbol {
             kind: SymKind::Global,
             typ,
@@ -87,7 +105,7 @@ pub enum SymKind {
 
 /// Symbol type, the actual type of a symbol
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub enum SymType {
+pub enum Type {
     /// Unknown, at the end of type checking this type is an error.
     #[default]
     Unknown,

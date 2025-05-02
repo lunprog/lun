@@ -21,6 +21,7 @@ use crate::{
     diag::{DiagnosticSink, StageResult},
     lexer::Lexer,
     parser::Parser,
+    semack::SemanticCk,
     vm::VM,
 };
 
@@ -28,16 +29,20 @@ pub use lun_bc as bc;
 pub use lun_diag as diag;
 pub use lun_lexer as lexer;
 pub use lun_parser as parser;
+pub use lun_semack as semack;
 pub use lun_utils as utils;
 pub use lun_vm as vm;
 
 // TODO: add a panic hook to tell that if lun had panicked it's a bug an it
 // should be reported.
 pub fn run() -> StageResult<()> {
+    // 0. retrieve the source code
     let source_code = include_str!("../examples/function.lun");
 
+    // 1. create the sink
     let sink = DiagnosticSink::new("examples.lun".to_owned(), source_code.to_owned());
 
+    // 2. lex the source code to tokens
     let mut lexer = Lexer::new(sink.clone(), source_code.to_owned());
 
     let tt = match lexer.produce() {
@@ -50,6 +55,7 @@ pub fn run() -> StageResult<()> {
         }
     };
 
+    // 3. parse the token tree to an ast
     let mut parser = Parser::new(tt, sink.clone());
 
     let ast = match parser.produce() {
@@ -62,7 +68,22 @@ pub fn run() -> StageResult<()> {
         }
     };
 
-    dbg!(ast);
+    // 4. semantic and type checking of the ast
+
+    dbg!(&ast);
+    let mut semacker = SemanticCk::new(ast, sink.clone());
+
+    let ckast = match semacker.produce() {
+        StageResult::Good(ast) => ast,
+        StageResult::Part(_, sink) => {
+            return StageResult::Fail(sink);
+        }
+        StageResult::Fail(sink) => {
+            return StageResult::Fail(sink);
+        }
+    };
+
+    dbg!(&ckast);
 
     // THE VM PARTS
 
