@@ -42,13 +42,13 @@ impl Lexer {
         loop {
             self.prev = self.cur;
             let t = match self.make_token() {
-                Some(Ok(t)) => t,
-                Some(Err(diag)) => {
+                Ok(TokenType::__NotAToken__) => continue,
+                Ok(t) => t,
+                Err(diag) => {
                     // irrecoverable error diagnostic
                     self.sink.push(diag);
                     break;
                 }
-                None => continue,
             };
 
             if tt.push(t, self.prev, self.cur) {
@@ -114,13 +114,7 @@ impl Lexer {
         }
     }
 
-    pub fn make_token(&mut self) -> Option<Result<TokenType, Diagnostic>> {
-        // TODO: find a less ugly type than that shitty Option<Result<..>>
-        // maybe skip the whitespaces until there is something else than a ws
-        //
-        // OR (and better) create a special `__NoneToken__`(or sth else) token
-        // that has the same utility than the old `WsOrComment` error and be
-        // used when there was a recoverable error.
+    pub fn make_token(&mut self) -> Result<TokenType, Diagnostic> {
         use lun_utils::token::{Punctuation::*, TokenType::*};
 
         let t = match self.peek() {
@@ -136,9 +130,9 @@ impl Lexer {
                 match self.peek() {
                     Some('>') => {
                         self.pop();
-                        return Some(Ok(Punct(Arrow)));
+                        return Ok(Punct(Arrow));
                     }
-                    _ => return Some(Ok(Punct(Minus))),
+                    _ => return Ok(Punct(Minus)),
                 }
             }
             Some('*') => Punct(Star),
@@ -150,24 +144,24 @@ impl Lexer {
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Some(Ok(Punct(Equal2)));
+                        return Ok(Punct(Equal2));
                     }
-                    _ => return Some(Ok(Punct(Equal))),
+                    _ => return Ok(Punct(Equal)),
                 }
             }
             Some('!') => {
                 self.pop();
                 self.expect('=');
-                return Some(Ok(Punct(BangEqual)));
+                return Ok(Punct(BangEqual));
             }
             Some('<') => {
                 self.pop();
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Some(Ok(Punct(LArrowEqual)));
+                        return Ok(Punct(LArrowEqual));
                     }
-                    _ => return Some(Ok(Punct(LArrow))),
+                    _ => return Ok(Punct(LArrow)),
                 }
             }
             Some('>') => {
@@ -175,9 +169,9 @@ impl Lexer {
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Some(Ok(Punct(RArrowEqual)));
+                        return Ok(Punct(RArrowEqual));
                     }
-                    _ => return Some(Ok(Punct(RArrow))),
+                    _ => return Ok(Punct(RArrow)),
                 }
             }
             Some('/') => {
@@ -187,29 +181,29 @@ impl Lexer {
                         // start of a line comment
                         self.pop();
                         self.lex_until('\n');
-                        return None;
+                        return Ok(TokenType::__NotAToken__);
                     }
-                    _ => return Some(Ok(Punct(Slash))),
+                    _ => return Ok(Punct(Slash)),
                 }
             }
-            Some('"') => return Some(self.lex_string()),
-            Some('a'..='z' | 'A'..='Z' | '_') => return Some(Ok(self.lex_identifier())),
-            Some('0'..='9') => return Some(self.lex_number()),
+            Some('"') => return self.lex_string(),
+            Some('a'..='z' | 'A'..='Z' | '_') => return Ok(self.lex_identifier()),
+            Some('0'..='9') => return self.lex_number(),
             Some(w) if w.is_whitespace() => {
                 self.cur += 1;
-                return None;
+                return Ok(TokenType::__NotAToken__);
             }
             Some(c) => {
                 self.pop();
                 self.sink.push(UnknownToken { c, loc: self.loc() });
-                return None;
+                return Ok(TokenType::__NotAToken__);
             }
             None => EOF,
         };
 
         self.pop();
 
-        Some(Ok(t))
+        Ok(t)
     }
 
     pub fn lex_identifier(&mut self) -> TokenType {

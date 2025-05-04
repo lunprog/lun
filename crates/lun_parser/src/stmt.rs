@@ -82,14 +82,16 @@ pub enum Stmt {
     ///
     /// "do" chunk "end"
     DoBlock { body: Chunk },
-    // TODO: is the syntax like `add 1, 2, 3` in addition of `add(1, 2, 3)` a good
-    // idea? like it could be nice to have sth like that `print "Hello world!"` idk
-    // but only for statement function call
+    // TODO: is the syntax like `add 1, 2, 3` in addition of `add(1, 2, 3)`
+    // a good idea? like it could be nice to have sth like that `print "Hello
+    // world!"` idk but only for statement function call
     // TODO: add support for the syntax like in Nim `identifier"string literal"`
     // and it would be equivalent to `identifier("string literal")` AND MORE
     // IMPORTANTLY
-    // TODO: add support custom numeric literal like ` 123'custom ` is equivalent
-    // to `custom("123")` idk but the idea is cool :)
+    // TODO: add support custom numeric literal like ` 123'custom ` is
+    // equivalent to `custom("123")` idk but the idea is cool :) so if in the
+    // future we add other integer types we can do `123'i8` and it wont be some
+    // magical syntax but a numeric literal idk
     /// function call
     ///
     /// ident "(" ( expr ),* ")"
@@ -198,7 +200,7 @@ impl AstNode for Statement {
                 let t = parser.peek_tok().unwrap().clone();
                 // TODO: make the parser retry if he failed to parse the
                 // statement with a loop, see parsing of expressions also
-                return Err(ExpectedToken::new(
+                Err(ExpectedToken::new(
                     [
                         Ident(String::new()),
                         Kw(Keyword::Local),
@@ -214,11 +216,9 @@ impl AstNode for Statement {
                     Some("statement".to_string()),
                     t.loc,
                 )
-                .into_diag());
+                .into_diag())
             }
-            None => {
-                return Err(parser.eof_diag());
-            }
+            None => Err(parser.eof_diag()),
         }
     }
 }
@@ -275,9 +275,8 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
             let mut args = Vec::new();
 
             let end = loop {
-                match parser.peek_tt() {
-                    Some(Punct(Punctuation::RParen)) => break parser.pop().unwrap().loc,
-                    _ => {}
+                if let Some(Punct(Punctuation::RParen)) = parser.peek_tt() {
+                    break parser.pop().unwrap().loc;
                 }
 
                 let arg = parse!(parser => Expression);
@@ -508,11 +507,8 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
     let mut args = Vec::new();
 
     loop {
-        match parser.peek_tt() {
-            Some(Punct(Punctuation::RParen)) => {
-                break;
-            }
-            _ => {}
+        if let Some(Punct(Punctuation::RParen)) = parser.peek_tt() {
+            break;
         }
 
         let (name, start_arg) =

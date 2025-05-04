@@ -59,6 +59,7 @@ pub enum Expr {
     ///
     /// op expr
     Unary { op: UnaryOp, expr: Box<Expression> },
+    // TODO: see the todo's of FunCall in Stmt.
     /// function call expression
     ///
     /// expr "(" ( expr ),* ")"
@@ -126,8 +127,6 @@ pub fn parse_expr_precedence(
         if precedence > pr {
             break;
         }
-
-        // TODO(URGENT): implement parsing of FunCall in expressions
 
         // we match a token here, because, in the future there will be
         // binary operators that are Keyword, like Logical And.

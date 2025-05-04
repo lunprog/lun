@@ -20,10 +20,7 @@ where
     type Unchecked = Option<T::Unchecked>;
 
     fn from_ast(ast: Self::Unchecked) -> Self {
-        match ast {
-            Some(ast) => Some(from_ast(ast)),
-            None => None,
-        }
+        ast.map(from_ast)
     }
 }
 

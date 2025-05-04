@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use ckast::{CkChunk, FromAst};
-use lun_diag::{Diagnostic, DiagnosticSink, StageResult};
+use lun_diag::{DiagnosticSink, StageResult};
 use lun_parser::expr::{BinOp, UnaryOp};
 use lun_parser::stmt::Chunk;
 use lun_utils::Span;
@@ -141,6 +141,7 @@ pub struct SymbolTable {
 impl SymbolTable {
     /// Create a new Symbol Table, with the global scope.
     pub fn new() -> SymbolTable {
+        // TODO: load with atomic types like int, float etc etc
         SymbolTable {
             tabs: vec![HashMap::new()],
         }
@@ -187,11 +188,16 @@ impl SymbolTable {
     /// scopes
     pub fn lookup(&self, name: impl AsRef<str>) -> Option<&Symbol> {
         for i in (0..=self.level()).rev() {
-            match self.tabs[i].get(name.as_ref()) {
-                res @ Some(_) => return res,
-                None => {}
+            if let res @ Some(_) = self.tabs[i].get(name.as_ref()) {
+                return res;
             }
         }
         None
+    }
+}
+
+impl Default for SymbolTable {
+    fn default() -> Self {
+        SymbolTable::new()
     }
 }

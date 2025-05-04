@@ -38,10 +38,12 @@ impl TokenTree {
     /// if the token is End Of File
     #[track_caller]
     pub fn push(&mut self, tt: TokenType, start: usize, end: usize) -> bool {
-        assert_eq!(
-            self.finished, false,
+        assert!(
+            !self.finished,
             "can't push a token to the TokenTree if it's already finished"
         );
+        assert_ne!(tt, TokenType::__NotAToken__);
+
         let is_eof = tt == TokenType::EOF;
 
         self.toks.push(Token {
@@ -59,8 +61,8 @@ impl TokenTree {
     /// This function will panic if you call it on a non-finished TokenTree
     #[track_caller]
     pub fn get(&self, idx: usize) -> Option<&Token> {
-        assert_eq!(
-            self.finished, true,
+        assert!(
+            self.finished,
             "can't access tokens while the TokenTree isn't finished."
         );
         self.toks.get(idx)
@@ -73,8 +75,8 @@ impl TokenTree {
     /// This function will panic if you call it on a non-finished TokenTree
     #[track_caller]
     pub fn last(&self) -> Option<&Token> {
-        assert_eq!(
-            self.finished, true,
+        assert!(
+            self.finished,
             "can't access tokens while the TokenTree isn't finished."
         );
         self.toks.last()
@@ -107,6 +109,10 @@ pub enum TokenType {
     Punct(Punctuation),
     /// End Of File
     EOF,
+    /// this is not a token, it is used when encountering a comment or a
+    /// whitespace it can't be pushed into a TokenTree.
+    #[doc(hidden)]
+    __NotAToken__,
 }
 
 impl Display for TokenType {
@@ -119,6 +125,7 @@ impl Display for TokenType {
             StringLit(_) => write!(f, "string literal"),
             Punct(p) => write!(f, "`{p}`"),
             EOF => write!(f, "\"<eof>\""),
+            __NotAToken__ => write!(f, "not a token"),
         }
     }
 }
