@@ -7,6 +7,7 @@ use lun_parser::{
 
 use super::*;
 
+/// Convert AST to a checked AST, but not yet checked
 pub trait FromAst: Sized {
     type Unchecked;
 
@@ -62,8 +63,8 @@ pub fn from_ast<T: FromAst>(ast: T::Unchecked) -> T {
 /// [`Chunk`]: lun_parser::stmt::Chunk
 #[derive(Debug, Clone)]
 pub struct CkChunk {
-    stmts: Vec<CkStatement>,
-    loc: Span,
+    pub stmts: Vec<CkStatement>,
+    pub loc: Span,
 }
 
 impl FromAst for CkChunk {
@@ -189,6 +190,7 @@ pub enum CkStmt {
     /// [`VariableDef`]: lun_parser::stmt::Stmt::VariableDef
     VariableDef {
         local: bool,
+        // TODO: change the name of this field to `name` and same for the Stmt.
         variable: String,
         typ: Option<CkExpression>,
         value: CkExpression,

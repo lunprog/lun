@@ -70,7 +70,6 @@ pub fn run() -> StageResult<()> {
 
     // 4. semantic and type checking of the ast
 
-    dbg!(&ast);
     let mut semacker = SemanticCk::new(ast, sink.clone());
 
     let ckast = match semacker.produce() {

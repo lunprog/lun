@@ -340,6 +340,25 @@ impl BinOp {
             _ => None,
         }
     }
+
+    /// Is the binary operation rational? < <= > >= == !=
+    pub fn is_relational(&self) -> bool {
+        matches!(
+            self,
+            BinOp::CompLT
+                | BinOp::CompLE
+                | BinOp::CompGT
+                | BinOp::CompGE
+                | BinOp::CompEq
+                | BinOp::CompNe
+        )
+    }
+
+    pub fn is_logical(&self) -> bool {
+        // TODO: implement logical operators like `"not" expr`, `expr "and"
+        // expr`, `expr "or" expr`, `expr "xor" expr`
+        false
+    }
 }
 
 /// Parse binary expression, `expression op expression`

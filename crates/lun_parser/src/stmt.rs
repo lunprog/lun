@@ -50,6 +50,8 @@ pub struct Statement {
     pub loc: Span,
 }
 
+// TODO(URGENT): change the `local: bool` fields with a `vis: Visibility` field
+// it will be clearer
 #[derive(Debug, Clone)]
 pub enum Stmt {
     /// assignement
@@ -147,6 +149,7 @@ pub enum Stmt {
     ///
     /// "return" [ expr ]
     Return { val: Option<Expression> },
+    // TODO: it shouldn't contain an expression when you think about it
     /// break statement
     ///
     /// "break" [ expr ]
