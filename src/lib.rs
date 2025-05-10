@@ -45,6 +45,8 @@ pub fn run() -> StageResult<()> {
     // 2. lex the source code to tokens
     let mut lexer = Lexer::new(sink.clone(), source_code.to_owned());
 
+    // TODO(URGENT): make a bail macro like this match and make it emit the warnings
+    // if there is any.
     let tt = match lexer.produce() {
         StageResult::Good(tt) => tt,
         StageResult::Part(_, sink) => {

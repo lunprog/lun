@@ -69,7 +69,14 @@ impl SemanticCk {
                     // variable definition change the symbol's typ.
                     self.table.bind(
                         variable.clone(),
-                        Symbol::global(Type::Unknown, variable.clone(), self.table.level()),
+                        Symbol::global(
+                            Type::Unknown,
+                            variable.clone(),
+                            self.table.level(),
+                            // TODO: add a new loc that points to the variable
+                            // name
+                            stmt.loc.clone(),
+                        ),
                     );
                 }
                 CkStmt::FunDef {
@@ -109,6 +116,8 @@ impl SemanticCk {
                             },
                             name.clone(),
                             self.table.level(),
+                            // TODO: add a new loc that points to the signature
+                            stmt.loc.clone(),
                         ),
                     );
                 }
@@ -193,7 +202,13 @@ impl SemanticCk {
                     // define the symbol because we didn't do it before
                     self.table.bind(
                         variable.clone(),
-                        Symbol::local(value.typ.clone(), variable.clone(), self.table.level()),
+                        // TODO: add a new loc that point to the variable name and use it in the Symbol
+                        Symbol::local(
+                            value.typ.clone(),
+                            variable.clone(),
+                            self.table.level(),
+                            stmt.loc.clone(),
+                        ),
                     )
                 } else {
                     // just edit the type of the global variable
@@ -351,6 +366,9 @@ impl SemanticCk {
                             },
                             name.clone(),
                             self.table.level(),
+                            // TODO: add a new loc to FunDef, the location of
+                            // the signature so `name(args) -> type`
+                            stmt.loc.clone(),
                         ),
                     );
                 }
@@ -366,12 +384,12 @@ impl SemanticCk {
 
                 self.table.scope_enter();
 
-                for CkArg { name, typ, .. } in args {
+                for CkArg { name, typ, loc } in args {
                     let ty = Type::from_expr(typ.clone());
 
                     self.table.bind(
                         name.clone(),
-                        Symbol::param(ty, name.clone(), self.table.level()),
+                        Symbol::param(ty, name.clone(), self.table.level(), loc.clone()),
                     )
                 }
 
@@ -430,10 +448,8 @@ impl SemanticCk {
                 };
 
                 if sym.typ == Type::Unknown {
-                    // TODO: make this diag locate to the symbol's definition
-                    // and add a second label "used here" see the TODO of Symbol
                     self.sink.push(TypeAnnotationsNeeded {
-                        loc: expr.loc.clone(),
+                        loc: sym.loc.clone(),
                     })
                 }
                 expr.typ = sym.typ.clone();
@@ -541,46 +557,53 @@ pub struct Symbol {
     pub name: String,
     /// which scope the symbol is referring to
     pub which: usize,
+    /// location of the definition of the symbol, must point to at least the
+    /// identifier and can point to more: the identifier and the type ...
+    pub loc: Span,
 }
 
 impl Symbol {
     /// Create a new symbol
-    pub fn new(kind: SymKind, typ: Type, name: String, which: usize) -> Symbol {
+    pub fn new(kind: SymKind, typ: Type, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
             kind,
             typ,
             name,
             which,
+            loc,
         }
     }
 
     /// Create a new local symbol
-    pub fn local(typ: Type, name: String, which: usize) -> Symbol {
+    pub fn local(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
             kind: SymKind::Local,
             typ,
             name,
             which,
+            loc,
         }
     }
 
     /// Create a new param symbol
-    pub fn param(typ: Type, name: String, which: usize) -> Symbol {
+    pub fn param(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
             kind: SymKind::Param,
             typ,
             name,
             which,
+            loc,
         }
     }
 
     /// Create a new global symbol
-    pub fn global(typ: Type, name: String, which: usize) -> Symbol {
+    pub fn global(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
             kind: SymKind::Global,
             typ,
             name,
             which,
+            loc,
         }
     }
 
@@ -720,7 +743,7 @@ impl SymbolTable {
             tabs: vec![HashMap::from_iter(Type::ATOMIC_TYPES.iter().map(|a| {
                 (
                     a.to_string(),
-                    Symbol::global(Type::ComptimeType, a.to_string(), 0),
+                    Symbol::global(Type::ComptimeType, a.to_string(), 0, Span::ZERO),
                 )
             }))],
         }
