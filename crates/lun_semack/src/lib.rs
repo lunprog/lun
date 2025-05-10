@@ -6,7 +6,7 @@ use ckast::{
     CkArg, CkChunk, CkElseIf, CkExpr, CkExpression, CkStatement, CkStmt, FromAst, MaybeUnresolved,
 };
 use diags::{
-    CallRequiresFuncType, ExpectedType, ExpectedTypeFoundExpr, NotFoundInScope,
+    CallRequiresFuncType, ExpectedType, ExpectedTypeFoundExpr, NotFoundInScope, ReturnOutsideFunc,
     TypeAnnotationsNeeded,
 };
 use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic};
@@ -24,6 +24,7 @@ pub struct SemanticCk {
     ast: Chunk,
     sink: DiagnosticSink,
     table: SymbolTable,
+    retstack: ReturnStack,
 }
 
 impl SemanticCk {
@@ -32,6 +33,7 @@ impl SemanticCk {
             ast,
             sink,
             table: SymbolTable::new(),
+            retstack: ReturnStack::new(),
         }
     }
 
@@ -353,6 +355,15 @@ impl SemanticCk {
                     );
                 }
 
+                let Some(Symbol {
+                    typ: Type::Func { ret, .. },
+                    ..
+                }) = self.table.lookup(name)
+                else {
+                    unreachable!()
+                };
+                self.retstack.push(*ret.clone());
+
                 self.table.scope_enter();
 
                 for CkArg { name, typ, .. } in args {
@@ -366,21 +377,31 @@ impl SemanticCk {
 
                 self.check_chunk(body)?;
 
+                self.retstack.pop();
+
                 self.table.scope_exit();
             }
             CkStmt::Return { val } | CkStmt::Break { val } => {
-                // TODO(URGENT): ensure the thing we return is the type of
-                // the last function's return type.
-                //
-                // maybe do it with a stack based approach, like we push a new
-                // expected return type of a function when we go in FunDef's
-                // checking and after it we pop it so when checking return we
-                // can actually ensure a good type
-                //
                 // TODO: if the expected type is `Nil` and there is some val but
                 // not of type `Nil`, suggest in a Help to remove the code
+                dbg!(self.retstack.last());
                 if let Some(val) = val {
                     self.check_expr(val)?;
+
+                    let Some(func_ret) = self.retstack.last() else {
+                        return Err(ReturnOutsideFunc {
+                            loc: stmt.loc.clone(),
+                        }
+                        .into_diag());
+                    };
+
+                    if &val.typ != func_ret {
+                        self.sink.push(ExpectedType {
+                            expected: vec![func_ret.clone()],
+                            found: val.typ.clone(),
+                            loc: val.loc.clone(),
+                        })
+                    }
                 }
             }
         }
@@ -770,5 +791,36 @@ impl Debug for SymbolTable {
 impl Default for SymbolTable {
     fn default() -> Self {
         SymbolTable::new()
+    }
+}
+
+/// A stack of function's return type, it is used to ensure the return type of
+/// the `return` statement is the same as the function's return type. It is a
+/// stack because lun supports (or will support) nested functions.
+#[derive(Debug, Clone)]
+pub struct ReturnStack {
+    stack: Vec<Type>,
+}
+
+impl ReturnStack {
+    pub const fn new() -> ReturnStack {
+        ReturnStack { stack: Vec::new() }
+    }
+
+    /// Push a return type to the top of the stack
+    pub fn push(&mut self, ret: Type) {
+        self.stack.push(ret);
+    }
+
+    /// Pop the last return type out of the stack, and returns it.
+    /// Will panick if there is no more return types.
+    pub fn pop(&mut self) -> Type {
+        self.stack.pop().unwrap()
+    }
+
+    /// Returns a reference to the last return type, panics if there is no more return types.
+    #[track_caller]
+    pub fn last(&self) -> Option<&Type> {
+        self.stack.last()
     }
 }

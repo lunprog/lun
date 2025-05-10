@@ -166,6 +166,8 @@ pub enum ErrorCode {
     CallRequiresFuncType = 11,
     /// Type annotations needed
     TypeAnnotationsNeeded = 12,
+    /// Used a return statement outside of a function.
+    ReturnOutsideFunc = 13,
 }
 
 impl Display for ErrorCode {

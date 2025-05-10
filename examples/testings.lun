@@ -197,3 +197,13 @@ x: for x := 0..10 do
         // ...
     end
 end
+
+// DO-BLOCK break
+label: do
+    // ...
+    break :do // here we short cut the execution to the end of the block it can
+              // be useful, if you want to conditionally go after the block's
+              // end
+    // ...
+end
+// execution will resume here after the break
