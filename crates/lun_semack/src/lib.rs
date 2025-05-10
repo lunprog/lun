@@ -17,11 +17,6 @@ use lun_utils::Span;
 pub mod ckast;
 pub mod diags;
 
-// TODO: implement a 2 pass semantic checker:
-// 1. collect all of the global defs in a chunk
-// 2. do the type checking of that chunk
-// voilà
-
 /// Semantic checker, ensure all of the lun's semantic is correct, it also
 /// include type checking.
 #[derive(Debug, Clone)]
@@ -58,6 +53,9 @@ impl SemanticCk {
     }
 
     pub fn check_chunk(&mut self, chunk: &mut CkChunk) -> Result<(), Diagnostic> {
+        // TODO(URGENT+): make the caller enter the scope and exit the scope,
+        // because in function definition we want the params in the same scope
+        // a the chunk and currently the params are in the parent scope
         self.table.scope_enter();
 
         // 1. register global defs
@@ -620,7 +618,7 @@ impl Type {
     /// Converts a type expression to a type.
     pub fn from_expr(expr: CkExpression) -> Type {
         let CkExpr::Ident(MaybeUnresolved::Resolved(Symbol { name, .. })) = expr.expr else {
-            todo!("idk could be a bug")
+            unreachable!("the type should just be a symbol")
         };
 
         for (tyname, ty) in Type::ATOMIC_TYPES_PAIR {
@@ -629,7 +627,10 @@ impl Type {
             }
         }
 
-        todo!("idk could also be a bug")
+        unreachable!(
+            "the type was in the SymbolTable but couldn't be converted to a\
+            real type"
+        )
     }
 }
 
@@ -694,7 +695,8 @@ impl SymbolTable {
 
     /// Enter a new scope
     pub fn scope_exit(&mut self) {
-        assert_ne!(self.tabs.len(), 1, "can't exit out of the global scope")
+        assert_ne!(self.tabs.len(), 1, "can't exit out of the global scope");
+        self.tabs.pop();
     }
 
     /// Bind a name to a symbol in the current scope
