@@ -58,6 +58,38 @@ pub enum Stmt {
     ///
     /// ident "=" expr
     Assignement { variable: String, value: Expression },
+    // TODO: make the value optional so that we can define variables and
+    // initiliaze them later, like:
+    //
+    // ```lun
+    // local a: int
+    //
+    // // ...
+    //
+    // a = 24
+    // ```
+    //
+    // but we need to ensure that a is initialized when you use it, and be able
+    // to conditionally initialize it like:
+    //
+    // ```lun
+    // local a: int
+    //
+    // // ...
+    //
+    // if some_logic() then
+    //     a = 12
+    // else
+    //     a = 25
+    // end
+    //
+    // ```
+    //
+    // here `a` is initialized conditionally, if the else cause was not present
+    // `a` would be partially initialized: if the logic returned true `a` is
+    // initialized but if it returned false `a` isn't initialized, and we don't
+    // want uninitialized variables
+    //
     /// variable definition
     ///
     /// [ "local" ] ident ":" [ expr ] "=" expr

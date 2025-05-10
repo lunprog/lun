@@ -37,7 +37,7 @@ pub use lun_vm as vm;
 // should be reported.
 pub fn run() -> StageResult<()> {
     // 0. retrieve the source code
-    let source_code = include_str!("../examples/function.lun");
+    let source_code = include_str!("../examples/forward_use.lun");
 
     // 1. create the sink
     let sink = DiagnosticSink::new("examples.lun".to_owned(), source_code.to_owned());
