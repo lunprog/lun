@@ -502,6 +502,16 @@ impl SemanticCk {
 pub struct Symbol {
     // TODO: add the location where the symbol is defined, just the name, like
     // the variable name, function name etc..
+    //
+    // TODO: add a usage counter, when created it starts at 0, and when you use
+    // it increase the count by one, when you exit a scope, look for symbols
+    // with a usage of 0 and emit a warning saying:
+    //
+    // local `...` is never used
+    // global `...` is never used
+    // function `...` is never used
+    // parameter `...` is never used
+    //
     /// local, parameter or global
     pub kind: SymKind,
     /// actual type of the

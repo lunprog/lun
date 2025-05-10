@@ -172,3 +172,28 @@ end
 //
 // macro use:
 // ident "!" "(" token_stream ")"
+
+// LOOP LABELS
+
+label: while my_condition do
+    // ...
+    break :label
+    // ...
+end
+
+// in this simple example the label is useless but when you nest loops it
+// starts to be useful:
+
+x: for x := 0..10 do
+    y: for y := 0..10 do
+        // do something with x and y
+
+        if some_logic() then
+            // here we short cut the `y` for loop we directly continue the `x`
+            // loop, it was not possible before and it also works with break.
+            continue :x
+        end
+
+        // ...
+    end
+end
