@@ -7,7 +7,7 @@ use ckast::{
 };
 use diags::{
     CallRequiresFuncType, ExpectedType, ExpectedTypeFoundExpr, NeverUsedSymbol, NotFoundInScope,
-    ReturnOutsideFunc, TypeAnnotationsNeeded,
+    ReturnOutsideFunc, TypeAnnotationsNeeded, UnderscoreReservedIdent,
 };
 use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic};
 use lun_parser::expr::{BinOp, UnaryOp};
@@ -69,8 +69,19 @@ impl SemanticCk {
                 } if !*local => {
                     // when type checking the expression and type of this
                     // variable definition change the symbol's typ.
+                    let mut ckvar = variable.clone();
+                    if variable == "_" {
+                        // TODO: a better location, that points to the variable's
+                        // name is prefered here.
+                        self.sink.push(UnderscoreReservedIdent {
+                            loc: stmt.loc.clone(),
+                        });
+
+                        ckvar = String::from("\0");
+                    }
+
                     self.table.bind(
-                        variable.clone(),
+                        ckvar,
                         Symbol::global(
                             Type::Unknown,
                             variable.clone(),
@@ -109,8 +120,18 @@ impl SemanticCk {
                         Box::new(Type::Nil)
                     };
 
+                    let mut ckname = name.clone();
+                    if name == "_" {
+                        // TODO: a better location, that points to the function's
+                        // name is prefered here.
+                        self.sink.push(UnderscoreReservedIdent {
+                            loc: stmt.loc.clone(),
+                        });
+                        ckname = String::from("\0");
+                    }
+
                     self.table.bind(
-                        name.clone(),
+                        ckname,
                         Symbol::global(
                             Type::Func {
                                 args: args_true,
@@ -150,7 +171,9 @@ impl SemanticCk {
                     .into_diag());
                 };
 
-                if symbol.typ == Type::Unknown && symbol.kind != SymKind::Param {
+                if &symbol.name == "_" {
+                    // do nothing the assignement is to the _ identifier so we don't do anything
+                } else if symbol.typ == Type::Unknown && symbol.kind != SymKind::Param {
                     // we don't know the type of the local / global, so we change it
                     self.table.edit(
                         symbol.which,
@@ -202,8 +225,18 @@ impl SemanticCk {
 
                 if *local {
                     // define the symbol because we didn't do it before
+                    let mut ckvar = variable.clone();
+                    if variable == "_" {
+                        // TODO: a better location, that points to the function's
+                        // name is prefered here.
+                        self.sink.push(UnderscoreReservedIdent {
+                            loc: stmt.loc.clone(),
+                        });
+                        ckvar = String::from("\0");
+                    }
+
                     self.table.bind(
-                        variable.clone(),
+                        ckvar,
                         // TODO: add a new loc that point to the variable name and use it in the Symbol
                         Symbol::local(
                             value.typ.clone(),
@@ -356,8 +389,19 @@ impl SemanticCk {
                         Box::new(Type::Nil)
                     };
 
+                    let mut ckname = name.clone();
+                    if name == "_" {
+                        // TODO: a better location, that points to the function's
+                        // name is prefered here.
+                        self.sink.push(UnderscoreReservedIdent {
+                            loc: stmt.loc.clone(),
+                        });
+
+                        ckname = String::from("\0");
+                    }
+
                     self.table.bind(
-                        name.clone(),
+                        ckname,
                         Symbol::local(
                             Type::Func {
                                 args: args_true,
@@ -386,9 +430,19 @@ impl SemanticCk {
                 for CkArg { name, typ, loc } in args {
                     let ty = Type::from_expr(typ.clone());
 
+                    let mut ckname = name.clone();
+                    if name == "_" {
+                        // TODO: a better location, that points to the param's
+                        // name is prefered here.
+                        self.sink.push(UnderscoreReservedIdent {
+                            loc: stmt.loc.clone(),
+                        });
+                        ckname = String::from("\0");
+                    }
+
                     self.table.bind(
-                        name.clone(),
-                        Symbol::param(ty, name.clone(), self.table.level(), loc.clone()),
+                        ckname.clone(),
+                        Symbol::param(ty, ckname.clone(), self.table.level(), loc.clone()),
                     )
                 }
 
@@ -535,18 +589,6 @@ impl SemanticCk {
 /// Symbol
 #[derive(Debug, Clone)]
 pub struct Symbol {
-    // TODO: add the location where the symbol is defined, just the name, like
-    // the variable name, function name etc..
-    //
-    // TODO: add a usage counter, when created it starts at 0, and when you use
-    // it increase the count by one, when you exit a scope, look for symbols
-    // with a usage of 0 and emit a warning saying:
-    //
-    // local `...` is never used
-    // global `...` is never used
-    // function `...` is never used
-    // parameter `...` is never used
-    //
     /// local, parameter or global
     pub kind: SymKind,
     /// actual type of the
@@ -754,12 +796,21 @@ impl SymbolTable {
     pub fn new() -> SymbolTable {
         // TODO: load with atomic types like int, float etc etc
         SymbolTable {
-            tabs: vec![HashMap::from_iter(Type::ATOMIC_TYPES.iter().map(|a| {
-                (
-                    a.to_string(),
-                    Symbol::global(Type::ComptimeType, a.to_string(), 0, Span::ZERO),
-                )
-            }))],
+            tabs: vec![HashMap::from_iter(
+                // TODO: probably change this shit it's not pretty
+                Type::ATOMIC_TYPES
+                    .iter()
+                    .map(|a| {
+                        (
+                            a.to_string(),
+                            Symbol::global(Type::ComptimeType, a.to_string(), 0, Span::ZERO),
+                        )
+                    })
+                    .chain(Some((
+                        String::from("_"),
+                        Symbol::global(Type::Unknown, "_".to_string(), 0, Span::ZERO),
+                    ))),
+            )],
         }
     }
 
@@ -781,7 +832,7 @@ impl SymbolTable {
     /// Enter a new scope
     pub fn scope_exit(&mut self, sink: &mut DiagnosticSink) {
         assert_ne!(self.tabs.len(), 1, "can't exit out of the global scope");
-        for (_, sym) in self.last_map() {
+        for sym in self.last_map().values() {
             if sym.kind != SymKind::Global && sym.uses == 0 {
                 // the symbol isn't global and isn't used so we push a warning
                 sink.push(NeverUsedSymbol {
@@ -794,8 +845,9 @@ impl SymbolTable {
         self.tabs.pop();
     }
 
-    /// Bind a name to a symbol in the current scope
+    /// Bind a name to a symbol in the current scope, will panick if name == `_`
     pub fn bind(&mut self, name: String, sym: Symbol) {
+        assert_ne!(name.as_str(), "_", "`_` is a reserved identifier");
         self.last_map_mut().insert(name, sym);
     }
 
@@ -874,5 +926,11 @@ impl ReturnStack {
     #[track_caller]
     pub fn last(&self) -> Option<&Type> {
         self.stack.last()
+    }
+}
+
+impl Default for ReturnStack {
+    fn default() -> Self {
+        ReturnStack::new()
     }
 }

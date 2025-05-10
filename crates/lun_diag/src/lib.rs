@@ -181,6 +181,8 @@ pub enum ErrorCode {
     TypeAnnotationsNeeded = 12,
     /// Used a return statement outside of a function.
     ReturnOutsideFunc = 13,
+    /// `_` is a reserved identifier when you use it in a symbol's name
+    UnderscoreReservedIdentifier = 14,
 }
 
 impl Display for ErrorCode {

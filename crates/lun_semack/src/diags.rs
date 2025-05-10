@@ -117,3 +117,18 @@ impl ToDiagnostic for NeverUsedSymbol {
             .with_label(Label::primary((), self.loc))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct UnderscoreReservedIdent {
+    pub loc: Span,
+}
+
+impl ToDiagnostic for UnderscoreReservedIdent {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::error()
+            .with_code(ErrorCode::UnderscoreReservedIdentifier)
+            .with_message("`_` is a reserved identifier")
+            .with_note("you can't use `_` as a symbol name")
+            .with_label(Label::primary((), self.loc))
+    }
+}

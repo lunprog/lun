@@ -5,3 +5,5 @@ local res := add(1, 2)
 fun add(a: int, b: int) -> int
     return a + b
 end
+
+_ = res
