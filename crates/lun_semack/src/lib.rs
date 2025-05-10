@@ -40,10 +40,14 @@ impl SemanticCk {
         let mut ckast = CkChunk::from_ast(self.ast.clone());
 
         // 2. check the first chunk and it will recurse.
+        self.table.scope_enter();
+
         match self.check_chunk(&mut ckast) {
             Ok(()) => {}
             Err(diag) => self.sink.push(diag),
         }
+
+        self.table.scope_exit();
 
         if self.sink.failed() {
             return StageResult::Fail(self.sink.clone());
@@ -53,11 +57,6 @@ impl SemanticCk {
     }
 
     pub fn check_chunk(&mut self, chunk: &mut CkChunk) -> Result<(), Diagnostic> {
-        // TODO(URGENT+): make the caller enter the scope and exit the scope,
-        // because in function definition we want the params in the same scope
-        // a the chunk and currently the params are in the parent scope
-        self.table.scope_enter();
-
         // 1. register global defs
         for stmt in &mut chunk.stmts {
             match &mut stmt.stmt {
@@ -119,8 +118,6 @@ impl SemanticCk {
         for stmt in &mut chunk.stmts {
             self.check_stmt(stmt)?;
         }
-
-        self.table.scope_exit();
 
         Ok(())
     }
@@ -225,7 +222,11 @@ impl SemanticCk {
                     })
                 }
 
+                self.table.scope_enter();
+
                 self.check_chunk(body)?;
+
+                self.table.scope_exit();
 
                 for CkElseIf { cond, body, .. } in else_ifs {
                     self.check_expr(cond)?;
@@ -238,15 +239,27 @@ impl SemanticCk {
                         })
                     }
 
+                    self.table.scope_enter();
+
                     self.check_chunk(body)?;
+
+                    self.table.scope_exit();
                 }
 
                 if let Some(body) = else_body {
+                    self.table.scope_enter();
+
                     self.check_chunk(body)?;
+
+                    self.table.scope_exit();
                 }
             }
             CkStmt::DoBlock { body } => {
+                self.table.scope_enter();
+
                 self.check_chunk(body)?;
+
+                self.table.scope_exit();
             }
             CkStmt::FunCall {
                 name: MaybeUnresolved::Unresolved(id),
@@ -340,6 +353,8 @@ impl SemanticCk {
                     );
                 }
 
+                self.table.scope_enter();
+
                 for CkArg { name, typ, .. } in args {
                     let ty = Type::from_expr(typ.clone());
 
@@ -350,6 +365,8 @@ impl SemanticCk {
                 }
 
                 self.check_chunk(body)?;
+
+                self.table.scope_exit();
             }
             CkStmt::Return { val } | CkStmt::Break { val } => {
                 // TODO(URGENT): ensure the thing we return is the type of
