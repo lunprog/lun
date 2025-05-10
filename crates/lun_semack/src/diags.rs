@@ -1,6 +1,6 @@
 //! Diagnostics that maybe emitted by the Semantic Checker.
 
-use lun_diag::{ErrorCode, Label, ToDiagnostic};
+use lun_diag::{ErrorCode, Label, ToDiagnostic, WarnCode};
 use lun_utils::list_fmt;
 
 use super::*;
@@ -98,6 +98,22 @@ impl ToDiagnostic for ReturnOutsideFunc {
         Diagnostic::error()
             .with_code(ErrorCode::ReturnOutsideFunc)
             .with_message("used a return statement outside of a function body")
+            .with_label(Label::primary((), self.loc))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct NeverUsedSymbol {
+    pub kind: SymKind,
+    pub name: String,
+    pub loc: Span,
+}
+
+impl ToDiagnostic for NeverUsedSymbol {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::warning()
+            .with_code(WarnCode::NeverUsedSymbol)
+            .with_message(format!("{} `{}` is never used", self.kind, self.name))
             .with_label(Label::primary((), self.loc))
     }
 }

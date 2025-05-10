@@ -41,6 +41,11 @@ impl DiagnosticSink {
         self.errors != 0
     }
 
+    /// Returns true if there is no diag, false instead.
+    pub fn is_empty(&self) -> bool {
+        self.diags.is_empty()
+    }
+
     /// Print all diagnostics to the given writter, with default config.
     pub fn emit(&self, writer: &mut StandardStream) -> Result<(), files::Error> {
         let config = Config::default();
@@ -91,9 +96,17 @@ impl DiagnosticSink {
             self.warnings += 1;
         } else if diag.severity == Severity::Error {
             self.errors += 1;
+        } else {
+            panic!("severity {:?} not supported", diag.severity);
         }
 
         self.diags.push(diag);
+    }
+
+    pub fn merge(&mut self, other: DiagnosticSink) {
+        self.diags.extend_from_slice(&other.diags);
+        self.warnings += other.warnings;
+        self.errors += other.errors;
     }
 }
 
@@ -172,7 +185,19 @@ pub enum ErrorCode {
 
 impl Display for ErrorCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "E{:04}", *self as usize)
+        write!(f, "E{:03}", *self as usize)
+    }
+}
+/// List of all the Warning Codes in the lun compiling stages
+#[derive(Debug, Clone, Copy)]
+pub enum WarnCode {
+    /// A symbol is never used
+    NeverUsedSymbol = 1,
+}
+
+impl Display for WarnCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "W{:03}", *self as usize)
     }
 }
 
@@ -196,6 +221,22 @@ pub enum StageResult<T> {
     Good(T),
     Part(T, DiagnosticSink),
     Fail(DiagnosticSink),
+}
+
+#[macro_export]
+macro_rules! tri {
+    ($expr:expr, $sink:expr) => {
+        match $expr {
+            StageResult::Good(val) => val,
+            StageResult::Part(val, sink) => {
+                $sink.merge(sink);
+                val
+            }
+            StageResult::Fail(sink) => {
+                return StageResult::Fail(sink);
+            }
+        }
+    };
 }
 
 #[cfg(test)]

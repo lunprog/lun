@@ -18,7 +18,7 @@
 
 use crate::{
     bc::Blob,
-    diag::{DiagnosticSink, StageResult},
+    diag::{DiagnosticSink, StageResult, tri},
     lexer::Lexer,
     parser::Parser,
     semack::SemanticCk,
@@ -40,49 +40,23 @@ pub fn run() -> StageResult<()> {
     let source_code = include_str!("../examples/forward_use.lun");
 
     // 1. create the sink
-    let sink = DiagnosticSink::new("examples.lun".to_owned(), source_code.to_owned());
+    let mut sink = DiagnosticSink::new("examples.lun".to_owned(), source_code.to_owned());
 
     // 2. lex the source code to tokens
     let mut lexer = Lexer::new(sink.clone(), source_code.to_owned());
 
-    // TODO(URGENT): make a bail macro like this match and make it emit the warnings
-    // if there is any.
-    let tt = match lexer.produce() {
-        StageResult::Good(tt) => tt,
-        StageResult::Part(_, sink) => {
-            return StageResult::Fail(sink);
-        }
-        StageResult::Fail(sink) => {
-            return StageResult::Fail(sink);
-        }
-    };
+    let tt = tri!(lexer.produce(), sink);
 
     // 3. parse the token tree to an ast
     let mut parser = Parser::new(tt, sink.clone());
 
-    let ast = match parser.produce() {
-        StageResult::Good(ast) => ast,
-        StageResult::Part(_, sink) => {
-            return StageResult::Fail(sink);
-        }
-        StageResult::Fail(sink) => {
-            return StageResult::Fail(sink);
-        }
-    };
+    let ast = tri!(parser.produce(), sink);
 
     // 4. semantic and type checking of the ast
 
     let mut semacker = SemanticCk::new(ast, sink.clone());
 
-    let ckast = match semacker.produce() {
-        StageResult::Good(ast) => ast,
-        StageResult::Part(_, sink) => {
-            return StageResult::Fail(sink);
-        }
-        StageResult::Fail(sink) => {
-            return StageResult::Fail(sink);
-        }
-    };
+    let ckast = tri!(semacker.produce(), sink);
 
     dbg!(&ckast);
 
@@ -107,5 +81,9 @@ pub fn run() -> StageResult<()> {
 
     println!("RES = {}", res);
 
-    StageResult::Good(())
+    if sink.is_empty() {
+        StageResult::Good(())
+    } else {
+        StageResult::Part((), sink)
+    }
 }

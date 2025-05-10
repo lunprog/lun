@@ -6,8 +6,8 @@ use ckast::{
     CkArg, CkChunk, CkElseIf, CkExpr, CkExpression, CkStatement, CkStmt, FromAst, MaybeUnresolved,
 };
 use diags::{
-    CallRequiresFuncType, ExpectedType, ExpectedTypeFoundExpr, NotFoundInScope, ReturnOutsideFunc,
-    TypeAnnotationsNeeded,
+    CallRequiresFuncType, ExpectedType, ExpectedTypeFoundExpr, NeverUsedSymbol, NotFoundInScope,
+    ReturnOutsideFunc, TypeAnnotationsNeeded,
 };
 use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic};
 use lun_parser::expr::{BinOp, UnaryOp};
@@ -49,13 +49,15 @@ impl SemanticCk {
             Err(diag) => self.sink.push(diag),
         }
 
-        self.table.scope_exit();
+        self.table.scope_exit(&mut self.sink);
 
         if self.sink.failed() {
-            return StageResult::Fail(self.sink.clone());
+            StageResult::Fail(self.sink.clone())
+        } else if !self.sink.is_empty() {
+            StageResult::Part(ckast, self.sink.clone())
+        } else {
+            StageResult::Good(ckast)
         }
-
-        StageResult::Good(ckast)
     }
 
     pub fn check_chunk(&mut self, chunk: &mut CkChunk) -> Result<(), Diagnostic> {
@@ -140,7 +142,7 @@ impl SemanticCk {
                 // otherwise we set the type of variable to the type of value.
                 self.check_expr(value)?;
 
-                let Some(symbol) = self.table.lookup(&*variable) else {
+                let Some(symbol) = self.table.lookup(&*variable, true).cloned() else {
                     return Err(NotFoundInScope {
                         name: variable.clone(),
                         loc: stmt.loc.clone(),
@@ -153,7 +155,7 @@ impl SemanticCk {
                     self.table.edit(
                         symbol.which,
                         symbol.name.clone(),
-                        symbol.clone().typ(value.clone().typ),
+                        symbol.typ(value.clone().typ),
                     );
                 } else {
                     // we know the type of the variable and need to ensure the value is of the same type.
@@ -212,15 +214,12 @@ impl SemanticCk {
                     )
                 } else {
                     // just edit the type of the global variable
-                    let Some(sym) = self.table.lookup(variable) else {
+                    let Some(sym) = self.table.lookup(variable, false).cloned() else {
                         unreachable!()
                     };
 
-                    self.table.edit(
-                        sym.which,
-                        sym.name.clone(),
-                        sym.clone().typ(value.typ.clone()),
-                    );
+                    self.table
+                        .edit(sym.which, sym.name.clone(), sym.typ(value.typ.clone()));
                 }
             }
             CkStmt::IfThenElse {
@@ -243,7 +242,7 @@ impl SemanticCk {
 
                 self.check_chunk(body)?;
 
-                self.table.scope_exit();
+                self.table.scope_exit(&mut self.sink);
 
                 for CkElseIf { cond, body, .. } in else_ifs {
                     self.check_expr(cond)?;
@@ -260,7 +259,7 @@ impl SemanticCk {
 
                     self.check_chunk(body)?;
 
-                    self.table.scope_exit();
+                    self.table.scope_exit(&mut self.sink);
                 }
 
                 if let Some(body) = else_body {
@@ -268,7 +267,7 @@ impl SemanticCk {
 
                     self.check_chunk(body)?;
 
-                    self.table.scope_exit();
+                    self.table.scope_exit(&mut self.sink);
                 }
             }
             CkStmt::DoBlock { body } => {
@@ -276,13 +275,13 @@ impl SemanticCk {
 
                 self.check_chunk(body)?;
 
-                self.table.scope_exit();
+                self.table.scope_exit(&mut self.sink);
             }
             CkStmt::FunCall {
                 name: MaybeUnresolved::Unresolved(id),
                 args,
             } => {
-                let Some(sym) = self.table.lookup(&*id).cloned() else {
+                let Some(sym) = self.table.lookup(&*id, true).cloned() else {
                     return Err(NotFoundInScope {
                         name: id.clone(),
                         loc: stmt.loc.clone(),
@@ -376,7 +375,7 @@ impl SemanticCk {
                 let Some(Symbol {
                     typ: Type::Func { ret, .. },
                     ..
-                }) = self.table.lookup(name)
+                }) = self.table.lookup(name, false)
                 else {
                     unreachable!()
                 };
@@ -397,12 +396,11 @@ impl SemanticCk {
 
                 self.retstack.pop();
 
-                self.table.scope_exit();
+                self.table.scope_exit(&mut self.sink);
             }
             CkStmt::Return { val } | CkStmt::Break { val } => {
                 // TODO: if the expected type is `Nil` and there is some val but
                 // not of type `Nil`, suggest in a Help to remove the code
-                dbg!(self.retstack.last());
                 if let Some(val) = val {
                     self.check_expr(val)?;
 
@@ -439,7 +437,7 @@ impl SemanticCk {
             }
             CkExpr::Grouping(expr) => self.check_expr(expr)?,
             CkExpr::Ident(MaybeUnresolved::Unresolved(name)) => {
-                let Some(sym) = self.table.lookup(&*name) else {
+                let Some(sym) = self.table.lookup(&*name, true) else {
                     return Err(NotFoundInScope {
                         name: name.clone(),
                         loc: expr.loc.clone(),
@@ -560,6 +558,8 @@ pub struct Symbol {
     /// location of the definition of the symbol, must point to at least the
     /// identifier and can point to more: the identifier and the type ...
     pub loc: Span,
+    /// count of how many times this symbol is used
+    pub uses: usize,
 }
 
 impl Symbol {
@@ -571,6 +571,7 @@ impl Symbol {
             name,
             which,
             loc,
+            uses: 0,
         }
     }
 
@@ -582,6 +583,7 @@ impl Symbol {
             name,
             which,
             loc,
+            uses: 0,
         }
     }
 
@@ -593,6 +595,7 @@ impl Symbol {
             name,
             which,
             loc,
+            uses: 0,
         }
     }
 
@@ -604,6 +607,7 @@ impl Symbol {
             name,
             which,
             loc,
+            uses: 0,
         }
     }
 
@@ -634,6 +638,16 @@ pub enum SymKind {
     Local,
     Param,
     Global,
+}
+
+impl Display for SymKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SymKind::Local => f.write_str("local"),
+            SymKind::Param => f.write_str("parameter"),
+            SymKind::Global => f.write_str("global"),
+        }
+    }
 }
 
 /// Symbol type, the actual type of a symbol
@@ -765,8 +779,18 @@ impl SymbolTable {
     }
 
     /// Enter a new scope
-    pub fn scope_exit(&mut self) {
+    pub fn scope_exit(&mut self, sink: &mut DiagnosticSink) {
         assert_ne!(self.tabs.len(), 1, "can't exit out of the global scope");
+        for (_, sym) in self.last_map() {
+            if sym.kind != SymKind::Global && sym.uses == 0 {
+                // the symbol isn't global and isn't used so we push a warning
+                sink.push(NeverUsedSymbol {
+                    kind: sym.kind.clone(),
+                    name: sym.name.clone(),
+                    loc: sym.loc.clone(),
+                })
+            }
+        }
         self.tabs.pop();
     }
 
@@ -789,10 +813,15 @@ impl SymbolTable {
     /// Lookup for a symbol with the given name, starting at the current scope
     /// ending at the global scope, returns None if there is no symbol in any
     /// scopes
-    pub fn lookup(&self, name: impl AsRef<str>) -> Option<&Symbol> {
+    pub fn lookup(&mut self, name: impl AsRef<str>, used: bool) -> Option<&Symbol> {
         for i in (0..=self.level()).rev() {
-            if let res @ Some(_) = self.tabs[i].get(name.as_ref()) {
-                return res;
+            if let res @ Some(_) = self.tabs[i].get_mut(name.as_ref()) {
+                if used {
+                    if let Some(val) = res {
+                        val.uses += 1;
+                    }
+                }
+                return self.tabs[i].get(name.as_ref());
             }
         }
         None

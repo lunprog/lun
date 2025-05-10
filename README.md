@@ -12,6 +12,8 @@ Lun is a simple, staticaly typed programming language heavily inspired by Lua.
   we encoutered errors in the current phase.
 - Reimplement with `salsa` to enable incremental compilation and some crazy
   things
+- Using `cranelift`, make this an AOT language? it pretty much already kinda
+  looks like one, BUT very painful and will probably never happen
 
 TODO: implement a tests suit in `tests/` that check every stage of `lun` and
 source code files have the following format to expect errors or a result:
