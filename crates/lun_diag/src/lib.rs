@@ -156,6 +156,16 @@ pub enum ErrorCode {
     ExpectedToken = 6,
     /// Unknown character escape
     ReachedEOF = 7,
+    /// Expected type
+    ExpectedType = 8,
+    /// Expected a type found an expression
+    ExpectedTypeFoundExpr = 9,
+    /// Cannot find symbol in this scope
+    NotFoundInScope = 10,
+    /// Call to a function require the type to be a function type
+    CallRequiresFuncType = 11,
+    /// Type annotations needed
+    TypeAnnotationsNeeded = 12,
 }
 
 impl Display for ErrorCode {

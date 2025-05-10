@@ -2,11 +2,11 @@
 
 use lun_diag::{Diagnostic, ErrorCode, Label, ToDiagnostic};
 use lun_utils::{
-    Span,
+    Span, list_fmt,
     token::{Punctuation, TokenType},
 };
 
-use std::fmt::{Display, Write};
+use std::fmt::Display;
 
 pub struct ExpectedToken {
     /// what token was expected?
@@ -39,24 +39,7 @@ impl ExpectedToken {
         let len = self.expected.len();
         assert_ne!(len, 0);
 
-        let expected = if len == 1 {
-            self.expected[0].to_string()
-        } else {
-            let mut res = String::new();
-
-            for (idx, token) in self.expected.iter().enumerate() {
-                if idx == self.expected.len() - 2 {
-                    write!(res, "{token} ")
-                } else if idx == self.expected.len() - 1 {
-                    write!(res, "or {token}")
-                } else {
-                    write!(res, "{token}, ")
-                }
-                .unwrap();
-            }
-
-            res
-        };
+        let expected = list_fmt(&self.expected);
 
         let node = self
             .node

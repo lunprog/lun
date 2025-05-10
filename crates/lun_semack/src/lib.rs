@@ -1,16 +1,21 @@
 use std::collections::HashMap;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::iter::zip;
 
 use ckast::{
     CkArg, CkChunk, CkElseIf, CkExpr, CkExpression, CkStatement, CkStmt, FromAst, MaybeUnresolved,
 };
-use lun_diag::{DiagnosticSink, StageResult};
+use diags::{
+    CallRequiresFuncType, ExpectedType, ExpectedTypeFoundExpr, NotFoundInScope,
+    TypeAnnotationsNeeded,
+};
+use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic};
 use lun_parser::expr::{BinOp, UnaryOp};
 use lun_parser::stmt::Chunk;
 use lun_utils::Span;
 
 pub mod ckast;
+pub mod diags;
 
 // TODO: implement a 2 pass semantic checker:
 // 1. collect all of the global defs in a chunk
@@ -40,7 +45,10 @@ impl SemanticCk {
         let mut ckast = CkChunk::from_ast(self.ast.clone());
 
         // 2. check the first chunk and it will recurse.
-        self.check_chunk(&mut ckast);
+        match self.check_chunk(&mut ckast) {
+            Ok(()) => {}
+            Err(diag) => self.sink.push(diag),
+        }
 
         if self.sink.failed() {
             return StageResult::Fail(self.sink.clone());
@@ -49,9 +57,9 @@ impl SemanticCk {
         StageResult::Good(ckast)
     }
 
-    pub fn check_chunk(&mut self, chunk: &mut CkChunk) {
-        // TODO(URGENT): make this return Result<(), Diagnostic>
+    pub fn check_chunk(&mut self, chunk: &mut CkChunk) -> Result<(), Diagnostic> {
         self.table.scope_enter();
+
         // 1. register global defs
         for stmt in &mut chunk.stmts {
             match &mut stmt.stmt {
@@ -75,20 +83,19 @@ impl SemanticCk {
                     // true type of the arguments
                     let mut args_true = Vec::new();
                     for CkArg { typ, .. } in args {
-                        self.check_expr(typ);
+                        self.check_expr(typ)?;
 
-                        // TODO(URGENT): emit a diag.
-                        assert_eq!(
-                            typ.typ,
-                            Type::ComptimeType,
-                            "expected a type found an expression"
-                        );
+                        if typ.typ != Type::ComptimeType {
+                            self.sink.push(ExpectedTypeFoundExpr {
+                                loc: typ.loc.clone(),
+                            });
+                        }
 
                         args_true.push(Type::from_expr(typ.clone()));
                     }
 
                     let ret_true = if let Some(typ) = rettype {
-                        self.check_expr(typ);
+                        self.check_expr(typ)?;
                         Box::new(Type::from_expr(typ.clone()))
                     } else {
                         Box::new(Type::Nil)
@@ -112,22 +119,27 @@ impl SemanticCk {
 
         // 2. type check, if you encounter another chunk recurse this function
         for stmt in &mut chunk.stmts {
-            self.check_stmt(stmt);
+            self.check_stmt(stmt)?;
         }
 
         self.table.scope_exit();
+
+        Ok(())
     }
 
-    pub fn check_stmt(&mut self, stmt: &mut CkStatement) {
+    pub fn check_stmt(&mut self, stmt: &mut CkStatement) -> Result<(), Diagnostic> {
         match &mut stmt.stmt {
             CkStmt::Assignement { variable, value } => {
                 // if the variable has a type then we ensure that value is of the same type,
                 // otherwise we set the type of variable to the type of value.
-                self.check_expr(value);
+                self.check_expr(value)?;
 
-                let Some(symbol) = self.table.lookup(variable) else {
-                    // TODO(URGENT): return a diag
-                    panic!("cannot find variable `...` in this scope")
+                let Some(symbol) = self.table.lookup(&*variable) else {
+                    return Err(NotFoundInScope {
+                        name: variable.clone(),
+                        loc: stmt.loc.clone(),
+                    }
+                    .into_diag());
                 };
 
                 if symbol.typ == Type::Unknown && symbol.kind != SymKind::Param {
@@ -139,8 +151,13 @@ impl SemanticCk {
                     );
                 } else {
                     // we know the type of the variable and need to ensure the value is of the same type.
-                    // TODO(URGENT): emit a diag.
-                    assert_eq!(symbol.typ, value.typ);
+                    if symbol.typ != value.typ {
+                        self.sink.push(ExpectedType {
+                            expected: vec![symbol.typ.clone()],
+                            found: value.typ.clone(),
+                            loc: value.loc.clone(),
+                        })
+                    }
                 }
             }
             CkStmt::VariableDef {
@@ -150,25 +167,29 @@ impl SemanticCk {
                 value,
             } => {
                 // check the value
-                self.check_expr(value);
+                self.check_expr(value)?;
 
                 // check the type
                 if let Some(ty) = typ {
-                    self.check_expr(ty);
+                    self.check_expr(ty)?;
 
-                    // TODO(URGENT): emit a diag.
-                    assert_eq!(
-                        ty.typ,
-                        Type::ComptimeType,
-                        "expected a type found an expression"
-                    );
+                    if ty.typ != Type::ComptimeType {
+                        self.sink.push(
+                            ExpectedTypeFoundExpr {
+                                loc: ty.loc.clone(),
+                            }
+                            .into_diag(),
+                        );
+                    }
 
-                    // TODO(URGENT): emit a diag.
-                    assert_eq!(
-                        value.typ,
-                        Type::from_expr(ty.clone()),
-                        "expected type ... found ..."
-                    );
+                    let expected_ty = Type::from_expr(ty.clone());
+                    if value.typ != expected_ty {
+                        self.sink.push(ExpectedType {
+                            expected: vec![expected_ty],
+                            found: value.typ.clone(),
+                            loc: value.loc.clone(),
+                        })
+                    }
                 }
 
                 if *local {
@@ -196,44 +217,72 @@ impl SemanticCk {
                 else_ifs,
                 else_body,
             } => {
-                self.check_expr(cond);
+                self.check_expr(cond)?;
 
-                // TODO(URGENT): emit diag
-                assert_eq!(cond.typ, Type::Bool);
+                if cond.typ != Type::Bool {
+                    self.sink.push(ExpectedType {
+                        expected: vec![Type::Bool],
+                        found: cond.typ.clone(),
+                        loc: cond.loc.clone(),
+                    })
+                }
 
-                self.check_chunk(body);
+                self.check_chunk(body)?;
 
                 for CkElseIf { cond, body, .. } in else_ifs {
-                    self.check_expr(cond);
+                    self.check_expr(cond)?;
 
-                    // TODO(URGENT): emit diag
-                    assert_eq!(cond.typ, Type::Bool);
+                    if cond.typ != Type::Bool {
+                        self.sink.push(ExpectedType {
+                            expected: vec![Type::Bool],
+                            found: cond.typ.clone(),
+                            loc: cond.loc.clone(),
+                        })
+                    }
 
-                    self.check_chunk(body);
+                    self.check_chunk(body)?;
                 }
 
                 if let Some(body) = else_body {
-                    self.check_chunk(body);
+                    self.check_chunk(body)?;
                 }
             }
             CkStmt::DoBlock { body } => {
-                self.check_chunk(body);
+                self.check_chunk(body)?;
             }
             CkStmt::FunCall {
                 name: MaybeUnresolved::Unresolved(id),
                 args,
             } => {
-                // TODO(URGENT): emit a diag
-                let sym = self.table.lookup(id).unwrap().clone();
+                let Some(sym) = self.table.lookup(&*id).cloned() else {
+                    return Err(NotFoundInScope {
+                        name: id.clone(),
+                        loc: stmt.loc.clone(),
+                    }
+                    .into_diag());
+                };
 
-                let Type::Func { args: args_ty, ret } = &sym.typ else {
-                    panic!("function call requires function type");
+                let Type::Func {
+                    args: args_ty,
+                    ret: _,
+                } = &sym.typ
+                else {
+                    return Err(CallRequiresFuncType {
+                        is_expr: false,
+                        loc: stmt.loc.clone(),
+                    }
+                    .into_diag());
                 };
 
                 for (arg, ty) in zip(args, args_ty) {
-                    self.check_expr(arg);
-                    // TODO(URGENT): emit a diag
-                    assert_eq!(&arg.typ, ty, "expected type ... found ...");
+                    self.check_expr(arg)?;
+                    if &arg.typ != ty {
+                        self.sink.push(ExpectedType {
+                            expected: vec![arg.typ.clone()],
+                            found: ty.clone(),
+                            loc: arg.loc.clone(),
+                        })
+                    }
                 }
 
                 // TODO: emit a warning diag if the return type of the function
@@ -244,9 +293,13 @@ impl SemanticCk {
                 ..
             } => unreachable!(),
             CkStmt::While { .. } | CkStmt::NumericFor { .. } | CkStmt::GenericFor { .. } => {
-                // TODO(URGENT): return a diag
                 // TODO: implement loops checking
-                todo!("EMIT A DIAGNOSTIC INSTEAD")
+                return Err(
+                    Diagnostic::error()
+                        .with_message("`while` loops, generic `for` loops and numeric `for` loops aren't yet checked")
+                        .with_label(Label::primary((), stmt.loc.clone())
+                        )
+                );
             }
             CkStmt::FunDef {
                 local,
@@ -258,20 +311,19 @@ impl SemanticCk {
                 if *local {
                     let mut args_true = Vec::new();
                     for CkArg { typ, .. } in &mut *args {
-                        self.check_expr(typ);
+                        self.check_expr(typ)?;
 
-                        // TODO(URGENT): emit a diag.
-                        assert_eq!(
-                            typ.typ,
-                            Type::ComptimeType,
-                            "expected a type found an expression"
-                        );
+                        if typ.typ != Type::ComptimeType {
+                            self.sink.push(ExpectedTypeFoundExpr {
+                                loc: typ.loc.clone(),
+                            });
+                        }
 
                         args_true.push(Type::from_expr(typ.clone()));
                     }
 
                     let ret_true = if let Some(typ) = rettype {
-                        self.check_expr(typ);
+                        self.check_expr(typ)?;
                         Box::new(Type::from_expr(typ.clone()))
                     } else {
                         Box::new(Type::Nil)
@@ -299,7 +351,7 @@ impl SemanticCk {
                     )
                 }
 
-                self.check_chunk(body);
+                self.check_chunk(body)?;
             }
             CkStmt::Return { val } | CkStmt::Break { val } => {
                 // TODO(URGENT): ensure the thing we return is the type of
@@ -313,13 +365,14 @@ impl SemanticCk {
                 // TODO: if the expected type is `Nil` and there is some val but
                 // not of type `Nil`, suggest in a Help to remove the code
                 if let Some(val) = val {
-                    self.check_expr(val);
+                    self.check_expr(val)?;
                 }
             }
         }
+        Ok(())
     }
 
-    pub fn check_expr(&mut self, expr: &mut CkExpression) {
+    pub fn check_expr(&mut self, expr: &mut CkExpression) -> Result<(), Diagnostic> {
         match &mut expr.expr {
             CkExpr::IntLit(_) => {
                 expr.typ = Type::Integer;
@@ -330,13 +383,23 @@ impl SemanticCk {
             CkExpr::StringLit(_) => {
                 expr.typ = Type::String;
             }
-            CkExpr::Grouping(expr) => self.check_expr(expr),
+            CkExpr::Grouping(expr) => self.check_expr(expr)?,
             CkExpr::Ident(MaybeUnresolved::Unresolved(name)) => {
-                // TODO(URGENT): remove this unwrap and return a diag
-                let sym = self.table.lookup(name).unwrap();
+                let Some(sym) = self.table.lookup(&*name) else {
+                    return Err(NotFoundInScope {
+                        name: name.clone(),
+                        loc: expr.loc.clone(),
+                    }
+                    .into_diag());
+                };
 
-                // TODO(URGENT): emit an error, the symbol's type isn't known
-                assert_ne!(sym.typ, Type::Unknown);
+                if sym.typ == Type::Unknown {
+                    // TODO: make this diag locate to the symbol's definition
+                    // and add a second label "used here" see the TODO of Symbol
+                    self.sink.push(TypeAnnotationsNeeded {
+                        loc: expr.loc.clone(),
+                    })
+                }
                 expr.typ = sym.typ.clone();
                 expr.expr = CkExpr::Ident(MaybeUnresolved::Resolved(sym.clone()));
             }
@@ -344,11 +407,16 @@ impl SemanticCk {
                 unreachable!("i think it's a bug not sure tho")
             }
             CkExpr::Binary { lhs, op, rhs } => {
-                self.check_expr(lhs);
-                self.check_expr(rhs);
+                self.check_expr(lhs)?;
+                self.check_expr(rhs)?;
 
-                // TODO(URGENT): emit a diag (not return)
-                assert_eq!(lhs.typ, rhs.typ);
+                if lhs.typ != rhs.typ {
+                    self.sink.push(ExpectedType {
+                        expected: vec![lhs.typ.clone()],
+                        found: rhs.typ.clone(),
+                        loc: rhs.loc.clone(),
+                    });
+                }
 
                 expr.typ = if op.is_relational() | op.is_logical() {
                     Type::Bool
@@ -357,46 +425,68 @@ impl SemanticCk {
                 };
             }
             CkExpr::Unary { op, expr: exp } => match op {
-                // TODO(URGENT): emit diags.
                 UnaryOp::Negation => {
-                    assert!(matches!(exp.typ, Type::Integer | Type::Float));
+                    if exp.typ != Type::Integer || exp.typ != Type::Float {
+                        self.sink.push(ExpectedType {
+                            expected: vec![Type::Integer, Type::Float],
+                            found: exp.typ.clone(),
+                            loc: exp.loc.clone(),
+                        })
+                    }
                     expr.typ = exp.typ.clone();
                 }
                 UnaryOp::Not => {
-                    assert_eq!(exp.typ, Type::Bool);
+                    if exp.typ != Type::Bool {
+                        self.sink.push(ExpectedType {
+                            expected: vec![Type::Bool],
+                            found: exp.typ.clone(),
+                            loc: exp.loc.clone(),
+                        });
+                    }
                     expr.typ = Type::Bool;
                 }
             },
             CkExpr::FunCall { called, args } => {
-                self.check_expr(called);
+                self.check_expr(called)?;
 
                 let Type::Func {
                     args: args_ty,
                     ret: ret_ty,
                 } = &called.typ
                 else {
-                    // TODO(URGENT): return a diag
-                    panic!("call expression requires function type");
+                    return Err(ExpectedTypeFoundExpr {
+                        loc: called.loc.clone(),
+                    }
+                    .into_diag());
                 };
 
                 assert!(called.typ.is_func());
 
                 for (val, ty) in zip(args, args_ty) {
-                    self.check_expr(val);
-                    // TODO(URGENT): emit a diag
-                    assert_eq!(&val.typ, ty, "expected type ... found type ...");
+                    self.check_expr(val)?;
+
+                    if &val.typ != ty {
+                        self.sink.push(ExpectedType {
+                            expected: vec![ty.clone()],
+                            found: val.typ.clone(),
+                            loc: val.loc.clone(),
+                        })
+                    }
                 }
 
                 expr.typ = *ret_ty.clone();
             }
         }
         debug_assert_ne!(expr.typ, Type::Unknown);
+        Ok(())
     }
 }
 
 /// Symbol
 #[derive(Debug, Clone)]
 pub struct Symbol {
+    // TODO: add the location where the symbol is defined, just the name, like
+    // the variable name, function name etc..
     /// local, parameter or global
     pub kind: SymKind,
     /// actual type of the
@@ -540,6 +630,22 @@ impl Type {
         }
 
         todo!("idk could also be a bug")
+    }
+}
+
+impl Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Type::Unknown => f.write_str("unknown"),
+            Type::Integer => f.write_str("integer"),
+            Type::Float => f.write_str("float"),
+            Type::Bool => f.write_str("bool"),
+            Type::String => f.write_str("string"),
+            Type::Nil => f.write_str("nil"),
+            // TODO: implement a proper display for function type, like `func(int, float) -> bool`
+            Type::Func { .. } => f.write_str("func"),
+            Type::ComptimeType => f.write_str("comptime type"),
+        }
     }
 }
 

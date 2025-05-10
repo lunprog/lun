@@ -1,4 +1,7 @@
-use std::{fmt::Display, ops::Range};
+use std::{
+    fmt::{Display, Write},
+    ops::Range,
+};
 
 pub mod token;
 
@@ -124,6 +127,25 @@ where
     I: PartialEq + From<u8>,
 {
     if num == I::from(1u8) { "" } else { "s" }
+}
+
+pub fn list_fmt(list: &[impl Display]) -> String {
+    if list.len() == 1 {
+        return list[0].to_string();
+    }
+    let mut res = String::new();
+
+    for (idx, token) in list.iter().enumerate() {
+        if idx == list.len() - 2 {
+            write!(res, "{token} ")
+        } else if idx == list.len() - 1 {
+            write!(res, "or {token}")
+        } else {
+            write!(res, "{token}, ")
+        }
+        .unwrap();
+    }
+    res
 }
 
 #[cfg(test)]
