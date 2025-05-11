@@ -99,12 +99,12 @@ impl FromAst for CkStatement {
             },
             Stmt::VariableDef {
                 local,
-                variable,
+                name,
                 typ,
                 value,
             } => CkStmt::VariableDef {
                 local,
-                variable,
+                name,
                 typ: from_ast(typ),
                 value: from_ast(value),
             },
@@ -190,8 +190,7 @@ pub enum CkStmt {
     /// [`VariableDef`]: lun_parser::stmt::Stmt::VariableDef
     VariableDef {
         local: bool,
-        // TODO: change the name of this field to `name` and same for the Stmt.
-        variable: String,
+        name: String,
         typ: Option<CkExpression>,
         value: CkExpression,
     },

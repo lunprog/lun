@@ -153,7 +153,7 @@ pub enum ErrorCode {
     TooLargeIntegerLiteral = 3,
     /// A string (") was not terminated.
     ///
-    /// Erroneus example
+    /// Erroneous example
     /// ```lun
     /// local s = "
     /// ```

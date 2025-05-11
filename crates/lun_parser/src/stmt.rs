@@ -95,7 +95,7 @@ pub enum Stmt {
     /// [ "local" ] ident ":" [ expr ] "=" expr
     VariableDef {
         local: bool,
-        variable: String,
+        name: String,
         typ: Option<Expression>,
         value: Expression,
     },
@@ -267,7 +267,7 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
         (false, None)
     };
 
-    let (variable, lo) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+    let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
     match parser.peek_tt() {
         Some(Punct(Punctuation::Colon)) => {
@@ -288,7 +288,7 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
                 loc: Span::from_ends(local_loc.unwrap_or(lo), value.loc.clone()),
                 stmt: Stmt::VariableDef {
                     local,
-                    variable,
+                    name,
                     typ,
                     value,
                 },
@@ -321,10 +321,7 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
             };
 
             Ok(Statement {
-                stmt: Stmt::FunCall {
-                    name: variable,
-                    args,
-                },
+                stmt: Stmt::FunCall { name, args },
                 loc: Span::from_ends(lo, hi),
             })
         }
@@ -345,7 +342,10 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
             Ok(Statement {
                 loc: Span::from_ends(lo, value.loc.clone()),
-                stmt: Stmt::Assignement { variable, value },
+                stmt: Stmt::Assignement {
+                    variable: name,
+                    value,
+                },
             })
         }
     }

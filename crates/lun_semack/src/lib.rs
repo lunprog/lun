@@ -64,27 +64,25 @@ impl SemanticCk {
         // 1. register global defs
         for stmt in &mut chunk.stmts {
             match &mut stmt.stmt {
-                CkStmt::VariableDef {
-                    local, variable, ..
-                } if !*local => {
+                CkStmt::VariableDef { local, name, .. } if !*local => {
                     // when type checking the expression and type of this
                     // variable definition change the symbol's typ.
-                    let mut ckvar = variable.clone();
-                    if variable == "_" {
+                    let mut ckname = name.clone();
+                    if name == "_" {
                         // TODO: a better location, that points to the variable's
                         // name is prefered here.
                         self.sink.push(UnderscoreReservedIdent {
                             loc: stmt.loc.clone(),
                         });
 
-                        ckvar = String::from("\0");
+                        ckname = String::from("\0");
                     }
 
                     self.table.bind(
-                        ckvar,
+                        ckname,
                         Symbol::global(
                             Type::Unknown,
-                            variable.clone(),
+                            name.clone(),
                             self.table.level(),
                             // TODO: add a new loc that points to the variable
                             // name
@@ -193,7 +191,7 @@ impl SemanticCk {
             }
             CkStmt::VariableDef {
                 local,
-                variable,
+                name,
                 typ,
                 value,
             } => {
@@ -225,29 +223,29 @@ impl SemanticCk {
 
                 if *local {
                     // define the symbol because we didn't do it before
-                    let mut ckvar = variable.clone();
-                    if variable == "_" {
+                    let mut ckname = name.clone();
+                    if name == "_" {
                         // TODO: a better location, that points to the function's
                         // name is prefered here.
                         self.sink.push(UnderscoreReservedIdent {
                             loc: stmt.loc.clone(),
                         });
-                        ckvar = String::from("\0");
+                        ckname = String::from("\0");
                     }
 
                     self.table.bind(
-                        ckvar,
+                        ckname,
                         // TODO: add a new loc that point to the variable name and use it in the Symbol
                         Symbol::local(
                             value.typ.clone(),
-                            variable.clone(),
+                            name.clone(),
                             self.table.level(),
                             stmt.loc.clone(),
                         ),
                     )
                 } else {
                     // just edit the type of the global variable
-                    let Some(sym) = self.table.lookup(variable, false).cloned() else {
+                    let Some(sym) = self.table.lookup(name, false).cloned() else {
                         unreachable!()
                     };
 
