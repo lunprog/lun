@@ -176,15 +176,13 @@ pub fn parse_strlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
 /// Parse a grouping expression
 pub fn parse_grouping_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let ((), start) =
-        expect_token!(parser => [Punct(Punctuation::LParen), ()], [Punctuation::LParen]);
+    let ((), lo) = expect_token!(parser => [Punct(Punctuation::LParen), ()], [Punctuation::LParen]);
     let expr = Box::new(parse!(parser => Expression));
-    let ((), end) =
-        expect_token!(parser => [Punct(Punctuation::RParen), ()], [Punctuation::RParen]);
+    let ((), hi) = expect_token!(parser => [Punct(Punctuation::RParen), ()], [Punctuation::RParen]);
 
     Ok(Expression {
         expr: Expr::Grouping(expr),
-        loc: Span::from_ends(start, end),
+        loc: Span::from_ends(lo, hi),
     })
 }
 
@@ -424,7 +422,7 @@ impl UnaryOp {
 
 /// Parse unary expression, `op expression`
 pub fn parse_unary_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (op, start) = expect_token!(parser => [
+    let (op, lo) = expect_token!(parser => [
         Punct(Punctuation::Minus), UnaryOp::Negation;
         Kw(Keyword::Not), UnaryOp::Not;
     ], "minus operator or keyword not");
@@ -432,7 +430,7 @@ pub fn parse_unary_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let expr = Box::new(parse!(@fn parser => parse_expr_precedence, Precedence::Unary));
 
     Ok(Expression {
-        loc: Span::from_ends(start, expr.loc.clone()),
+        loc: Span::from_ends(lo, expr.loc.clone()),
         expr: Expr::Unary { op, expr },
     })
 }
@@ -442,7 +440,7 @@ pub fn parse_funcall_expr(
     parser: &mut Parser,
     called: Box<Expression>,
 ) -> Result<Expression, Diagnostic> {
-    let start = called.loc.clone();
+    let lo = called.loc.clone();
     expect_token!(parser => [Punct(Punctuation::LParen), ()], Punctuation::LParen);
 
     let mut args = Vec::new();
@@ -457,10 +455,10 @@ pub fn parse_funcall_expr(
         expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], [Punctuation::Colon, Punctuation::LParen]);
     }
 
-    let ((), end) = expect_token!(parser => [Punct(Punctuation::RParen), ()], Punctuation::RParen);
+    let ((), hi) = expect_token!(parser => [Punct(Punctuation::RParen), ()], Punctuation::RParen);
 
     Ok(Expression {
         expr: Expr::FunCall { called, args },
-        loc: Span::from_ends(start, end),
+        loc: Span::from_ends(lo, hi),
     })
 }

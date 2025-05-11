@@ -37,7 +37,7 @@ impl TokenTree {
     /// Pushes the TokenType with its start and end offsets and return `true`
     /// if the token is End Of File
     #[track_caller]
-    pub fn push(&mut self, tt: TokenType, start: usize, end: usize) -> bool {
+    pub fn push(&mut self, tt: TokenType, lo: usize, hi: usize) -> bool {
         assert!(
             !self.finished,
             "can't push a token to the TokenTree if it's already finished"
@@ -48,7 +48,7 @@ impl TokenTree {
 
         self.toks.push(Token {
             tt,
-            loc: Span { start, end },
+            loc: Span { lo, hi },
         });
 
         is_eof

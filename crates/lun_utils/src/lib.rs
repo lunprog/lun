@@ -7,47 +7,46 @@ pub mod token;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Span {
-    // TODO: maybe rename `start` to `lo` and `end` to `hi`.
-    pub start: usize,
-    pub end: usize,
+    pub lo: usize,
+    pub hi: usize,
 }
 
 impl Span {
     /// Zero location.
-    pub const ZERO: Span = Span { start: 0, end: 0 };
+    pub const ZERO: Span = Span { lo: 0, hi: 0 };
 
     #[inline(always)]
-    pub const fn from_ends(start: Span, end: Span) -> Span {
+    pub const fn from_ends(lo: Span, hi: Span) -> Span {
         Span {
-            start: start.start,
-            end: end.end,
+            lo: lo.lo,
+            hi: hi.hi,
         }
     }
 }
 
 #[inline(always)]
-pub fn span(start: impl Into<usize>, end: impl Into<usize>) -> Span {
+pub fn span(lo: impl Into<usize>, hi: impl Into<usize>) -> Span {
     Span {
-        start: start.into(),
-        end: end.into(),
+        lo: lo.into(),
+        hi: hi.into(),
     }
 }
 
 impl Display for Span {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}..{}", self.start, self.end)
+        write!(f, "{}..{}", self.lo, self.hi)
     }
 }
 
 impl From<Span> for Range<usize> {
     fn from(value: Span) -> Self {
-        value.start..value.end
+        value.lo..value.hi
     }
 }
 
 impl<I: Into<usize>, J: Into<usize>> From<(I, J)> for Span {
-    fn from((start, end): (I, J)) -> Self {
-        span(start, end)
+    fn from((lo, hi): (I, J)) -> Self {
+        span(lo, hi)
     }
 }
 

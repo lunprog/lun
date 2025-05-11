@@ -14,8 +14,8 @@ impl AstNode for Chunk {
         let mut stmts = Vec::new();
 
         // note, here it's fine to unwrap we know there is always a EOF token at the end.
-        let start = parser.peek_tok().unwrap().loc.clone();
-        let mut end = start.clone();
+        let lo = parser.peek_tok().unwrap().loc.clone();
+        let mut hi = lo.clone();
 
         loop {
             match parser.peek_tt() {
@@ -26,7 +26,7 @@ impl AstNode for Chunk {
             }
 
             let stmt = parse!(parser => Statement);
-            end = stmt.loc.clone();
+            hi = stmt.loc.clone();
 
             stmts.push(stmt);
 
@@ -38,7 +38,7 @@ impl AstNode for Chunk {
 
         Ok(Chunk {
             stmts,
-            loc: Span::from_ends(start, end),
+            loc: Span::from_ends(lo, hi),
         })
     }
 }
@@ -309,7 +309,7 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
             let mut args = Vec::new();
 
-            let end = loop {
+            let hi = loop {
                 if let Some(Punct(Punctuation::RParen)) = parser.peek_tt() {
                     break parser.pop().unwrap().loc;
                 }
@@ -325,7 +325,7 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
                     name: variable,
                     args,
                 },
-                loc: Span::from_ends(lo, end),
+                loc: Span::from_ends(lo, hi),
             })
         }
         _ => {
@@ -353,7 +353,7 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
 /// parses if statements
 pub fn parse_if_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
-    let (_, start) = expect_token!(parser => [Kw(Keyword::If), ()], Kw(Keyword::If));
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::If), ()], Kw(Keyword::If));
 
     let cond = parse!(parser => Expression);
 
@@ -389,7 +389,7 @@ pub fn parse_if_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
         None
     };
 
-    let (_, end) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
+    let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
 
     Ok(Statement {
         stmt: Stmt::IfThenElse {
@@ -398,27 +398,27 @@ pub fn parse_if_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
             else_ifs,
             else_body,
         },
-        loc: Span::from_ends(start, end),
+        loc: Span::from_ends(lo, hi),
     })
 }
 
 /// parses do block statement
 pub fn parse_do_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
-    let (_, start) = expect_token!(parser => [Kw(Keyword::Do), ()], Kw(Keyword::Do));
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Do), ()], Kw(Keyword::Do));
 
     let body = parse!(parser => Chunk);
 
-    let (_, end) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
+    let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
 
     Ok(Statement {
         stmt: Stmt::DoBlock { body },
-        loc: Span::from_ends(start, end),
+        loc: Span::from_ends(lo, hi),
     })
 }
 
 /// parses while statement
 pub fn parse_while_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
-    let (_, start) = expect_token!(parser => [Kw(Keyword::While), ()], Kw(Keyword::While));
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::While), ()], Kw(Keyword::While));
 
     let cond = parse!(parser => Expression);
 
@@ -426,17 +426,17 @@ pub fn parse_while_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
     let body = parse!(parser => Chunk);
 
-    let (_, end) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
+    let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
 
     Ok(Statement {
         stmt: Stmt::While { cond, body },
-        loc: Span::from_ends(start, end),
+        loc: Span::from_ends(lo, hi),
     })
 }
 
 /// parses numeric and generic for statement
 pub fn parse_for_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
-    let (_, start) = expect_token!(parser => [Kw(Keyword::For), ()], Kw(Keyword::For));
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::For), ()], Kw(Keyword::For));
 
     let (variable, _) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
@@ -469,7 +469,7 @@ pub fn parse_for_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
             let body = parse!(parser => Chunk);
 
-            let (_, end) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
+            let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
 
             Ok(Statement {
                 stmt: Stmt::NumericFor {
@@ -479,7 +479,7 @@ pub fn parse_for_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
                     step,
                     body,
                 },
-                loc: Span::from_ends(start, end),
+                loc: Span::from_ends(lo, hi),
             })
         }
         Some(Kw(Keyword::In)) => {
@@ -495,7 +495,7 @@ pub fn parse_for_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
             let body = parse!(parser => Chunk);
 
-            let (_, end) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
+            let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
 
             Ok(Statement {
                 stmt: Stmt::GenericFor {
@@ -503,7 +503,7 @@ pub fn parse_for_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
                     iterator,
                     body,
                 },
-                loc: Span::from_ends(start, end),
+                loc: Span::from_ends(lo, hi),
             })
         }
         Some(_) => {
@@ -533,7 +533,7 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Fun), ()], Kw(Keyword::Fun));
 
-    let start = local_loc.unwrap_or(lo);
+    let lo = local_loc.unwrap_or(lo);
 
     let (name, _) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
@@ -546,8 +546,7 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
             break;
         }
 
-        let (name, start_arg) =
-            expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+        let (name, lo_arg) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
 
@@ -556,7 +555,7 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
         args.push(Arg {
             name,
             typ: typ.clone(),
-            loc: Span::from_ends(start_arg, typ.loc),
+            loc: Span::from_ends(lo_arg, typ.loc),
         });
 
         expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], Punct(Punctuation::Comma));
@@ -572,7 +571,7 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
     let body = parse!(parser => Chunk);
 
-    let (_, end) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
+    let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
 
     Ok(Statement {
         stmt: Stmt::FunDef {
@@ -582,7 +581,7 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
             rettype,
             body,
         },
-        loc: Span::from_ends(start, end),
+        loc: Span::from_ends(lo, hi),
     })
 }
 
