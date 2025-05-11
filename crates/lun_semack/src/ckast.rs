@@ -100,11 +100,13 @@ impl FromAst for CkStatement {
             Stmt::VariableDef {
                 local,
                 name,
+                name_loc,
                 typ,
                 value,
             } => CkStmt::VariableDef {
                 local,
                 name,
+                name_loc,
                 typ: from_ast(typ),
                 value: from_ast(value),
             },
@@ -155,12 +157,14 @@ impl FromAst for CkStatement {
             Stmt::FunDef {
                 local,
                 name,
+                name_loc,
                 args,
                 rettype,
                 body,
             } => CkStmt::FunDef {
                 local,
                 name,
+                name_loc,
                 args: from_ast(args),
                 rettype: from_ast(rettype),
                 body: from_ast(body),
@@ -191,6 +195,7 @@ pub enum CkStmt {
     VariableDef {
         local: bool,
         name: String,
+        name_loc: Span,
         typ: Option<CkExpression>,
         value: CkExpression,
     },
@@ -242,6 +247,7 @@ pub enum CkStmt {
     FunDef {
         local: bool,
         name: String,
+        name_loc: Span,
         args: Vec<CkArg>,
         rettype: Option<CkExpression>,
         body: CkChunk,
@@ -284,6 +290,7 @@ impl FromAst for CkElseIf {
 #[derive(Debug, Clone)]
 pub struct CkArg {
     pub name: String,
+    pub name_loc: Span,
     pub typ: CkExpression,
     pub loc: Span,
 }
@@ -294,6 +301,7 @@ impl FromAst for CkArg {
     fn from_ast(ast: Self::Unchecked) -> Self {
         CkArg {
             name: ast.name,
+            name_loc: ast.name_loc,
             typ: from_ast(ast.typ),
             loc: ast.loc,
         }

@@ -96,6 +96,7 @@ pub enum Stmt {
     VariableDef {
         local: bool,
         name: String,
+        name_loc: Span,
         typ: Option<Expression>,
         value: Expression,
     },
@@ -173,6 +174,7 @@ pub enum Stmt {
     FunDef {
         local: bool,
         name: String,
+        name_loc: Span,
         args: Vec<Arg>,
         rettype: Option<Expression>,
         body: Chunk,
@@ -198,6 +200,7 @@ pub struct ElseIf {
 #[derive(Debug, Clone)]
 pub struct Arg {
     pub name: String,
+    pub name_loc: Span,
     pub typ: Expression,
     pub loc: Span,
 }
@@ -285,10 +288,11 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
             let value = parse!(parser => Expression);
             Ok(Statement {
-                loc: Span::from_ends(local_loc.unwrap_or(lo), value.loc.clone()),
+                loc: Span::from_ends(local_loc.unwrap_or(lo.clone()), value.loc.clone()),
                 stmt: Stmt::VariableDef {
                     local,
                     name,
+                    name_loc: lo,
                     typ,
                     value,
                 },
@@ -535,7 +539,7 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
     let lo = local_loc.unwrap_or(lo);
 
-    let (name, _) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+    let (name, name_loc) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
     expect_token!(parser => [Punct(Punctuation::LParen), ()], Punctuation::LParen);
 
@@ -554,6 +558,7 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
         args.push(Arg {
             name,
+            name_loc: lo_arg.clone(),
             typ: typ.clone(),
             loc: Span::from_ends(lo_arg, typ.loc),
         });
@@ -577,6 +582,7 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
         stmt: Stmt::FunDef {
             local,
             name,
+            name_loc,
             args,
             rettype,
             body,

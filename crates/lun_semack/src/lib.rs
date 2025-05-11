@@ -64,15 +64,18 @@ impl SemanticCk {
         // 1. register global defs
         for stmt in &mut chunk.stmts {
             match &mut stmt.stmt {
-                CkStmt::VariableDef { local, name, .. } if !*local => {
+                CkStmt::VariableDef {
+                    local,
+                    name,
+                    name_loc,
+                    ..
+                } if !*local => {
                     // when type checking the expression and type of this
                     // variable definition change the symbol's typ.
                     let mut ckname = name.clone();
                     if name == "_" {
-                        // TODO: a better location, that points to the variable's
-                        // name is prefered here.
                         self.sink.push(UnderscoreReservedIdent {
-                            loc: stmt.loc.clone(),
+                            loc: name_loc.clone(),
                         });
 
                         ckname = String::from("\0");
@@ -84,9 +87,7 @@ impl SemanticCk {
                             Type::Unknown,
                             name.clone(),
                             self.table.level(),
-                            // TODO: add a new loc that points to the variable
-                            // name
-                            stmt.loc.clone(),
+                            name_loc.clone(),
                         ),
                     );
                 }
@@ -192,6 +193,7 @@ impl SemanticCk {
             CkStmt::VariableDef {
                 local,
                 name,
+                name_loc,
                 typ,
                 value,
             } => {
@@ -225,10 +227,8 @@ impl SemanticCk {
                     // define the symbol because we didn't do it before
                     let mut ckname = name.clone();
                     if name == "_" {
-                        // TODO: a better location, that points to the function's
-                        // name is prefered here.
                         self.sink.push(UnderscoreReservedIdent {
-                            loc: stmt.loc.clone(),
+                            loc: name_loc.clone(),
                         });
                         ckname = String::from("\0");
                     }
@@ -362,6 +362,7 @@ impl SemanticCk {
             CkStmt::FunDef {
                 local,
                 name,
+                name_loc,
                 args,
                 rettype,
                 body,
@@ -389,10 +390,8 @@ impl SemanticCk {
 
                     let mut ckname = name.clone();
                     if name == "_" {
-                        // TODO: a better location, that points to the function's
-                        // name is prefered here.
                         self.sink.push(UnderscoreReservedIdent {
-                            loc: stmt.loc.clone(),
+                            loc: name_loc.clone(),
                         });
 
                         ckname = String::from("\0");
@@ -407,9 +406,7 @@ impl SemanticCk {
                             },
                             name.clone(),
                             self.table.level(),
-                            // TODO: add a new loc to FunDef, the location of
-                            // the signature so `name(args) -> type`
-                            stmt.loc.clone(),
+                            name_loc.clone(),
                         ),
                     );
                 }
@@ -425,22 +422,26 @@ impl SemanticCk {
 
                 self.table.scope_enter();
 
-                for CkArg { name, typ, loc } in args {
+                for CkArg {
+                    name,
+                    name_loc,
+                    typ,
+                    loc: _,
+                } in args
+                {
                     let ty = Type::from_expr(typ.clone());
 
                     let mut ckname = name.clone();
                     if name == "_" {
-                        // TODO: a better location, that points to the param's
-                        // name is prefered here.
                         self.sink.push(UnderscoreReservedIdent {
-                            loc: stmt.loc.clone(),
+                            loc: name_loc.clone(),
                         });
                         ckname = String::from("\0");
                     }
 
                     self.table.bind(
                         ckname.clone(),
-                        Symbol::param(ty, ckname.clone(), self.table.level(), loc.clone()),
+                        Symbol::param(ty, ckname.clone(), self.table.level(), name_loc.clone()),
                     )
                 }
 
