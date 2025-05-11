@@ -64,6 +64,8 @@ pub enum Expr {
     ///
     /// expr "(" ( expr ),* ")"
     FunCall {
+        // TODO: rename this field something that looks like `function operand`
+        // do the same for CkExpr::FunCall and (Ck)Stmt::FunCall
         called: Box<Expression>,
         args: Vec<Expression>,
     },

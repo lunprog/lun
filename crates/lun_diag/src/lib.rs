@@ -164,24 +164,100 @@ pub enum ErrorCode {
     /// ```
     UnterminatedStringLiteral = 4,
     /// Unknown character escape
+    ///
+    /// The character escape in the string or character literal you provided
+    /// doesn't exist.
+    ///
+    /// Existing escapes are:
+    /// ```
+    /// \0   -> 0x00
+    /// \n   -> new line
+    /// \r   -> carriage return
+    /// \t   -> tabulation
+    /// \\   -> \
+    /// \xNN -> 8bit code point escape where NN are exactly two hex digits
+    /// ```
     UnknownCharacterEscape = 5,
-    /// Unknown character escape
+    /// Expected some token found something else.
+    ///
+    /// You're code isn't proper Lun syntax, you may have made a mistake or
+    /// something else
+    // TODO: this error code is kinda dumb fr
     ExpectedToken = 6,
-    /// Unknown character escape
+    /// Reached End of file to early
     ReachedEOF = 7,
-    /// Expected type
+    /// Expected type found another type
+    ///
+    /// Erroneous code example:
+    /// ```lun
+    /// local a := 12
+    /// test(a)
+    /// //   ^ E008: the function expected the type `bool` for the first
+    /// //           argument but was provided with `int`
+    ///
+    /// fun test(a: bool)
+    ///     // ...
+    /// end
+    /// ```
     ExpectedType = 8,
     /// Expected a type found an expression
+    ///
+    /// You provided an expression where Lun was expecting a type.
+    ///
+    /// Erroneous code example:
+    /// ```lun
+    /// fun test(a: 12)
+    ///     //      ^^ E009: here Lun was expecting a type like `bool`, `int`,
+    ///     //               `float` but you provided an expression `12`
+    /// end
+    /// ```
     ExpectedTypeFoundExpr = 9,
     /// Cannot find symbol in this scope
+    ///
+    /// The variable, the function or the type you provided in the current
+    /// scope. You may have made a misspelling error or the type is just not in
+    /// the current scope.
+    ///
+    /// Erroneous code example:
+    /// ```lun
+    /// local a := hello_world()
+    /// //         ^^^^^^^^^^^ E010: `hello_world` is not in scope, Lun doesn't
+    /// //                           know what you're trying to refer to.
+    /// ```
     NotFoundInScope = 10,
     /// Call to a function require the type to be a function type
+    ///
+    /// You tried to call a function but the function operand is not a function.
+    ///
+    /// Erroneous code example:
+    /// ```lun
+    /// _ = 123("hello world")
+    /// //  ^^^ E011: `123` is of type `int` you can't call an int Lun was
+    /// //            expecting a function, with a type like `func(..) -> ..`
+    /// ```
     CallRequiresFuncType = 11,
     /// Type annotations needed
     TypeAnnotationsNeeded = 12,
     /// Used a return statement outside of a function.
     ReturnOutsideFunc = 13,
     /// `_` is a reserved identifier when you use it in a symbol's name
+    ///
+    /// You can't define types, functions, local and global variable with the
+    /// name `_` because it's a reserved identifier, not a keyword but it is used
+    /// to be able to ignore values when you don't need them like that:
+    ///
+    /// ```lun
+    /// _ = my_function()
+    ///
+    /// // here `_` is assigned the result of my_function but actually the
+    /// // function is just called and it's value is thrown away. You can assign
+    /// // `_` multiple times with the type you want each time there is no type
+    /// // checking when you assign `_` to something
+    ///
+    /// _ = 123
+    /// _ = true
+    /// _ = 45.6
+    /// ```
     UnderscoreReservedIdentifier = 14,
 }
 
