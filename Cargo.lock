@@ -19,6 +19,7 @@ version = "0.1.0"
 dependencies = [
  "codespan-reporting",
  "lun_bc",
+ "lun_codegen",
  "lun_diag",
  "lun_lexer",
  "lun_parser",
@@ -32,6 +33,16 @@ dependencies = [
 name = "lun_bc"
 version = "0.1.0"
 dependencies = [
+ "lun_utils",
+]
+
+[[package]]
+name = "lun_codegen"
+version = "0.1.0"
+dependencies = [
+ "lun_bc",
+ "lun_diag",
+ "lun_semack",
  "lun_utils",
 ]
 

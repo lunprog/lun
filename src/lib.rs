@@ -18,6 +18,7 @@
 
 use crate::{
     bc::Blob,
+    codegen::CodeGenerator,
     diag::{DiagnosticSink, StageResult, tri},
     lexer::Lexer,
     parser::Parser,
@@ -26,6 +27,7 @@ use crate::{
 };
 
 pub use lun_bc as bc;
+pub use lun_codegen as codegen;
 pub use lun_diag as diag;
 pub use lun_lexer as lexer;
 pub use lun_parser as parser;
@@ -59,6 +61,12 @@ pub fn run() -> StageResult<()> {
     let ckast = tri!(semacker.produce(), sink);
 
     dbg!(&ckast);
+
+    // 5. code generation
+    let mut codegenerator = CodeGenerator::new(ckast, sink.clone());
+    let blob = tri!(codegenerator.produce(), sink);
+
+    dbg!(blob);
 
     // THE VM PARTS
 
