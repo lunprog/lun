@@ -214,6 +214,7 @@ impl Lexer {
         match word.as_str() {
             Keyword::BREAK => Kw(Keyword::Break),
             Keyword::CLASS => Kw(Keyword::Class),
+            Keyword::COMPTIME => Kw(Keyword::Comptime),
             Keyword::CONTINUE => Kw(Keyword::Continue),
             Keyword::DO => Kw(Keyword::Do),
             Keyword::ELSE => Kw(Keyword::Else),
@@ -225,7 +226,9 @@ impl Lexer {
             Keyword::IMPL => Kw(Keyword::Impl),
             Keyword::IN => Kw(Keyword::In),
             Keyword::LOCAL => Kw(Keyword::Local),
+            Keyword::NIL => Kw(Keyword::Nil),
             Keyword::NOT => Kw(Keyword::Not),
+            Keyword::PUB => Kw(Keyword::Pub),
             Keyword::RETURN => Kw(Keyword::Return),
             Keyword::SELF => Kw(Keyword::Zelf),
             Keyword::THEN => Kw(Keyword::Then),

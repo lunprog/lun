@@ -140,6 +140,8 @@ pub enum Keyword {
     Break,
     /// class
     Class,
+    /// comptime
+    Comptime,
     /// continue
     Continue,
     /// do
@@ -162,8 +164,12 @@ pub enum Keyword {
     In,
     /// local
     Local,
+    /// nil
+    Nil,
     /// not
     Not,
+    /// pub
+    Pub,
     /// return
     Return,
     /// self
@@ -189,6 +195,9 @@ impl Keyword {
 
     /// `class` keyword.
     pub const CLASS: &str = "class";
+
+    /// `comptime` keyword.
+    pub const COMPTIME: &str = "comptime";
 
     /// `continue` keyword.
     pub const CONTINUE: &str = "continue";
@@ -223,8 +232,14 @@ impl Keyword {
     /// `local` keyword.
     pub const LOCAL: &str = "local";
 
+    /// `nil` keyword.
+    pub const NIL: &str = "nil";
+
     /// `not` keyword.
     pub const NOT: &str = "not";
+
+    /// `pub` keyword.
+    pub const PUB: &str = "pub";
 
     /// `return` keyword.
     pub const RETURN: &str = "return";
@@ -253,6 +268,7 @@ impl Display for Keyword {
         match self {
             Keyword::Break => f.write_str(Keyword::BREAK),
             Keyword::Class => f.write_str(Keyword::CLASS),
+            Keyword::Comptime => f.write_str(Keyword::COMPTIME),
             Keyword::Continue => f.write_str(Keyword::CONTINUE),
             Keyword::Do => f.write_str(Keyword::DO),
             Keyword::Else => f.write_str(Keyword::ELSE),
@@ -264,7 +280,9 @@ impl Display for Keyword {
             Keyword::Impl => f.write_str(Keyword::IMPL),
             Keyword::In => f.write_str(Keyword::IN),
             Keyword::Local => f.write_str(Keyword::LOCAL),
+            Keyword::Nil => f.write_str(Keyword::NIL),
             Keyword::Not => f.write_str(Keyword::NOT),
+            Keyword::Pub => f.write_str(Keyword::PUB),
             Keyword::Return => f.write_str(Keyword::RETURN),
             Keyword::Zelf => f.write_str(Keyword::SELF),
             Keyword::Then => f.write_str(Keyword::THEN),
