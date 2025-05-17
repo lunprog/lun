@@ -132,24 +132,11 @@ impl FromAst for CkStatement {
                 cond: from_ast(cond),
                 body: from_ast(body),
             },
-            Stmt::NumericFor {
-                variable,
-                var_type,
-                var_value,
-                step,
-                body,
-            } => CkStmt::NumericFor {
-                variable,
-                var_type: from_ast(var_type),
-                var_value: from_ast(var_value),
-                step: from_ast(step),
-                body: from_ast(body),
-            },
-            Stmt::GenericFor {
+            Stmt::For {
                 variable,
                 iterator,
                 body,
-            } => CkStmt::GenericFor {
+            } => CkStmt::For {
                 variable,
                 iterator: from_ast(iterator),
                 body: from_ast(body),
@@ -223,20 +210,10 @@ pub enum CkStmt {
     ///
     /// [`While`]: lun_parser::stmt::Stmt::While
     While { cond: CkExpression, body: CkChunk },
-    /// see [`NumericFor`]
-    ///
-    /// [`NumericFor`]: lun_parser::stmt::Stmt::NumericFor
-    NumericFor {
-        variable: String,
-        var_type: Option<CkExpression>,
-        var_value: CkExpression,
-        step: Option<CkExpression>,
-        body: CkChunk,
-    },
     /// see [`GenericFor`]
     ///
     /// [`GenericFor`]: lun_parser::stmt::Stmt::GenericFor
-    GenericFor {
+    For {
         variable: String,
         iterator: CkExpression,
         body: CkChunk,

@@ -364,7 +364,7 @@ impl SemanticCk {
                 name: MaybeUnresolved::Resolved(_),
                 ..
             } => unreachable!(),
-            CkStmt::While { .. } | CkStmt::NumericFor { .. } | CkStmt::GenericFor { .. } => {
+            CkStmt::While { .. } | CkStmt::For { .. } => {
                 // TODO: implement loops checking
                 return Err(
                     Diagnostic::error()

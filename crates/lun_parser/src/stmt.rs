@@ -151,27 +151,10 @@ pub enum Stmt {
     ///
     /// "while" expr "do" chunk "end"
     While { cond: Expression, body: Chunk },
-    /// numeric for statement
-    ///
-    /// "for" ident ":" [ expr ] "=" expr [ "," expr ] "do" chunk "end"
-    ///                              ^ in typeck, must be of range type.
-    NumericFor {
-        /// variable that will contain the value that will change based on the
-        /// step
-        variable: String,
-        /// the type of the variable, optional as usual
-        var_type: Option<Expression>,
-        /// initial value of the variable
-        var_value: Expression,
-        /// the step by which we increment the variable
-        step: Option<Expression>,
-        /// the body we run every step
-        body: Chunk,
-    },
-    /// generic for statement
+    /// for statement
     ///
     /// "for" ident "in" expr "do" chunk "end"
-    GenericFor {
+    For {
         /// the variable that contains values of the iterator
         variable: String,
         /// the iterator
@@ -425,90 +408,31 @@ pub fn parse_while_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
 /// parses numeric and generic for statement
 pub fn parse_for_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    // "for" ident "in" expr "do" chunk "end"
     let (_, lo) = expect_token!(parser => [Kw(Keyword::For), ()], Kw(Keyword::For));
 
     let (variable, _) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
-    match parser.peek_tt() {
-        Some(Punct(Punctuation::Colon)) => {
-            // numeric for:
-            // "for" ident ":" [ expr ] "=" expr [ "," expr ] "do" chunk "end"
-            //
-            // pop the colon
-            parser.pop();
+    // pop the `in` keyword
+    parser.pop();
+    expect_token!(parser => [Kw(Keyword::In), ()], Kw(Keyword::In));
 
-            let var_type = if let Some(Punct(Punctuation::Equal)) = parser.peek_tt() {
-                None
-            } else {
-                Some(parse!(parser => Expression))
-            };
+    let iterator = parse!(parser => Expression);
 
-            expect_token!(parser => [Punct(Punctuation::Equal), ()], Punctuation::Equal);
+    expect_token!(parser => [Kw(Keyword::Do), ()], Kw(Keyword::Do));
 
-            let var_value = parse!(parser => Expression);
+    let body = parse!(parser => Chunk);
 
-            let step = if let Some(Punct(Punctuation::Comma)) = parser.peek_tt() {
-                None
-            } else {
-                parser.pop();
-                Some(parse!(parser => Expression))
-            };
+    let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
 
-            expect_token!(parser => [Kw(Keyword::Do), ()], Kw(Keyword::Do));
-
-            let body = parse!(parser => Chunk);
-
-            let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
-
-            Ok(Statement {
-                stmt: Stmt::NumericFor {
-                    variable,
-                    var_type,
-                    var_value,
-                    step,
-                    body,
-                },
-                loc: Span::from_ends(lo, hi),
-            })
-        }
-        Some(Kw(Keyword::In)) => {
-            // generic for:
-            // "for" ident "in" expr "do" chunk "end"
-            //
-            // pop the `in` keyword
-            parser.pop();
-
-            let iterator = parse!(parser => Expression);
-
-            expect_token!(parser => [Kw(Keyword::Do), ()], Kw(Keyword::Do));
-
-            let body = parse!(parser => Chunk);
-
-            let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
-
-            Ok(Statement {
-                stmt: Stmt::GenericFor {
-                    variable,
-                    iterator,
-                    body,
-                },
-                loc: Span::from_ends(lo, hi),
-            })
-        }
-        Some(_) => {
-            // we can unwrap because we know there is a token
-            let t = parser.pop().unwrap();
-
-            Err(ExpectedToken::new(
-                [Punct(Punctuation::Colon), Kw(Keyword::In)],
-                t.tt,
-                Some("for statement"),
-                t.loc,
-            )
-            .into_diag())
-        }
-        None => Err(parser.eof_diag()),
-    }
+    Ok(Statement {
+        stmt: Stmt::For {
+            variable,
+            iterator,
+            body,
+        },
+        loc: Span::from_ends(lo, hi),
+    })
 }
 
 /// parses function definition
