@@ -1,7 +1,7 @@
 //! The virtual machine for lun's bytecode.
 
 use lun_bc::{Blob, OpCode};
-use lun_utils::{read_dword, read_word};
+use lun_utils::{read_bword, read_dword, read_word};
 
 use std::mem;
 // TODO: use bytemuck for casting types everywhere
@@ -115,17 +115,23 @@ impl VM {
         byte
     }
 
-    fn read_word(&mut self) -> u16 {
-        let word = read_word(&self.blob.code, self.ip);
-        self.ip += 2;
-        word
+    // fn read_word(&mut self) -> u16 {
+    //     let word = read_word(&self.blob.code, self.ip);
+    //     self.ip += 2;
+    //     word
+    // }
+
+    fn read_bword(&mut self) -> u32 {
+        let bword = read_bword(&self.blob.code, self.ip);
+        self.ip += 3;
+        bword
     }
 
-    fn read_dword(&mut self) -> u32 {
-        let dword = read_dword(&self.blob.code, self.ip);
-        self.ip += 4;
-        dword
-    }
+    // fn read_dword(&mut self) -> u32 {
+    //     let dword = read_dword(&self.blob.code, self.ip);
+    //     self.ip += 4;
+    //     dword
+    // }
 
     pub fn run(&mut self) -> u64 {
         loop {
@@ -137,10 +143,9 @@ impl VM {
             match OpCode::from_u8(opcode).unwrap() {
                 OpCode::Ret => break,
                 OpCode::Const => {
-                    let offset = self.read_dword();
-                    let size = self.read_word();
+                    let index = self.read_bword();
 
-                    let val = self.blob.dpool.read_many(offset as usize, size as usize);
+                    let val = self.blob.dpool.read(index as usize);
                     self.stack.push(val);
                 }
                 OpCode::Neg => {

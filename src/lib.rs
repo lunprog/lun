@@ -73,9 +73,10 @@ pub fn run() -> StageResult<()> {
     let mut blob = Blob::new();
 
     let a = blob.dpool.write_integer(10) as u32;
-    blob.write_const(a, size_of::<i64>() as u16);
+    blob.write_const(a);
     let b = blob.dpool.write_integer(4) as u32;
-    blob.write_const(b, size_of::<i64>() as u16);
+    dbg!(&blob.dpool);
+    blob.write_const(b);
 
     blob.write_sub();
 

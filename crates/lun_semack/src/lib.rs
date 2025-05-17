@@ -92,7 +92,7 @@ impl SemanticCk {
                     );
                 }
                 CkStmt::FunDef {
-                    vis,
+                    vis: _,
                     name,
                     args,
                     rettype,

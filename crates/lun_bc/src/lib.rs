@@ -1,7 +1,8 @@
 //! Bytecode of lun.
 
 use lun_utils::{
-    read_dword, read_many, read_qword, read_word, write_dword, write_qword, write_word,
+    read_bword, read_dword, read_many, read_qword, read_word, write_bword, write_dword,
+    write_qword, write_word,
 };
 
 #[repr(u8)]
@@ -18,26 +19,17 @@ pub enum OpCode {
     ///
     /// The size of this instruction is 8 bits, 1 byte.
     Ret = 0,
-    // TODO: for SECURITY reasons we should try to avoid offsets and have an
-    // index so it's not possible to take a small part of something and so the
-    // `const` instruction could just be:
-    //
-    // [ const  ][      24 bit index      ]
-    // ^ 8bit    ^ 24 bit index => 32 bits, 24 bit less in the bytecode.
-    //
-    // and if we really need to, add a `longconst`, long const to load with a 56 bit index.
-    /// Loads a constant from the data pool on the top of the stack with an
-    /// offset and a size
+    /// Loads a constant from the data pool on the top of the stack with the
+    /// given index in the pool
     ///
     /// # Format
     ///
     /// ```text
-    /// [ const  ][         32-bit offset          ][   16bit size   ]
-    /// ^ opcode  ^ offset in the datapool          ^ the size of the
-    ///                                              constant to load
+    /// [ const  ][          index         ]
+    /// ^ 8bit    ^ 24 bit index
     /// ```
     ///
-    /// The size of this instruction is 56 bits, 7 bytes.
+    /// The size of this instruction is 32 bits, 4 bytes.
     Const = 1,
     /// Negates the integers at the top of the stack.
     ///
@@ -167,13 +159,12 @@ impl Blob {
         }
     }
 
-    /// Write a `const` instruction
-    pub fn write_const(&mut self, offset: u32, size: u16) {
+    /// Write a `const` instruction, index MUST fit in 24bits otherwise it panics
+    pub fn write_const(&mut self, index: u32) {
         // SAFETY: we're good it's an existing opcode.
         unsafe {
             self.write_raw(OpCode::Const as u8);
-            write_dword(&mut self.code, offset);
-            write_word(&mut self.code, size);
+            write_bword(&mut self.code, index);
         }
     }
 
@@ -242,15 +233,15 @@ impl Blob {
         match OpCode::from_u8(inst).expect("This opcode doesn't exist") {
             OpCode::Ret => self.byte_instruction(OpCode::RET_OP, offset),
             OpCode::Const => {
-                let off = read_dword(&self.code, offset + 1) as usize;
-                let size = read_word(&self.code, offset + 5) as usize;
-                println!("const offset={:X}, size={:X}", off, size,);
+                let index = read_bword(&self.code, offset + 1) as usize;
+                println!("const {}", index);
                 // TODO: this print in little endian format but it could be
                 // confusing so maybe print it into big endian, so `0xDEADBEEF`
                 // won't show as `[EF, BE, AD, DE, 0, 0, 0, 0]`.
                 // but `[0, 0, 0, 0, DE, AD, BE, EF]`.
+                let Data { offset: off, size } = self.dpool.map[index];
                 println!("      => {:X?}", &self.dpool.data[off..off + size]);
-                offset + 7
+                offset + 4
             }
             OpCode::Neg => self.byte_instruction(OpCode::NEG_OP, offset),
             OpCode::Add => self.byte_instruction(OpCode::ADD_OP, offset),
@@ -267,10 +258,17 @@ impl Blob {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Data {
+    offset: usize,
+    size: usize,
+}
+
 /// An immutable pool of data that contains all of the constants of the program
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DataPool {
     pub(crate) data: Vec<u8>,
+    pub(crate) map: Vec<Data>,
 }
 
 impl DataPool {
@@ -278,24 +276,22 @@ impl DataPool {
     pub fn new() -> DataPool {
         DataPool {
             data: Vec::with_capacity(8),
+            map: Vec::new(),
         }
     }
 
-    /// Write a byte of data to the pool and returns the offset where it was
-    /// written
-    #[must_use]
-    #[inline(always)]
-    pub fn write_raw(&mut self, byte: u8) -> usize {
-        let offset = self.data.len();
-        self.data.push(byte);
-        offset
-    }
-
     /// Write an integer (64 bits in lun), to the data pool in little endian
-    /// format, and returns an offset where it was written
+    /// format, and returns the index of that constant
     #[must_use]
     pub fn write_integer(&mut self, int: u64) -> usize {
-        write_qword(&mut self.data, int)
+        let offset = write_qword(&mut self.data, int);
+
+        self.map.push(Data {
+            offset,
+            size: size_of_val(&int),
+        });
+
+        self.map.len() - 1
     }
 
     /// Read a 64-bit little-endian integer from the data pool at the given offset.
@@ -306,7 +302,8 @@ impl DataPool {
 
     /// Reads a variable amount of data from the data pool at the given offset
     /// and size. Panics if there are not enough bytes to read a full u64.
-    pub fn read_many(&self, offset: usize, size: usize) -> &[u8] {
-        read_many(&self.data, offset, size)
+    pub fn read(&self, index: usize) -> &[u8] {
+        let data = self.map[index].clone();
+        read_many(&self.data, data.offset, data.size)
     }
 }
