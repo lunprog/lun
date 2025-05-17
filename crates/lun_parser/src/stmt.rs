@@ -58,22 +58,20 @@ pub enum Stmt {
     ///
     /// ident "=" expr
     Assignement { variable: String, value: Expression },
-    // TODO: make the value optional so that we can define variables and
-    // initiliaze them later, like:
+    // TODO: add checking for uninitialized variables
     //
     // ```lun
-    // local a: int
+    // var a: int
     //
     // // ...
     //
     // a = 24
     // ```
-    //
-    // but we need to ensure that a is initialized when you use it, and be able
-    // to conditionally initialize it like:
+    // here `a` is defined, we can use it after the `a = 24` but between the
+    // definition and the initialization we can't
     //
     // ```lun
-    // local a: int
+    // var a: int
     //
     // // ...
     //
@@ -84,21 +82,34 @@ pub enum Stmt {
     // end
     //
     // ```
+    // here everything is fine, we can use `a` after the condition so it is
+    // initialized
     //
-    // here `a` is initialized conditionally, if the else cause was not present
-    // `a` would be partially initialized: if the logic returned true `a` is
-    // initialized but if it returned false `a` isn't initialized, and we don't
-    // want uninitialized variables
+    // ```lun
+    // var a: int
+    //
+    // if something do
+    //     a = 12
+    // else if something_else do
+    //     a = 34
+    // end
+    // ```
+    // here we can't use `a` because it is partially initialized, the compiler
+    // is not sure if `a` is initialized, even tho `something_else = !something`
     //
     /// variable definition
     ///
-    /// [ "local" ] ident ":" [ expr ] "=" expr
+    /// "var" ident [ ":" expr ] [ "=" expr ]
+    ///
+    /// OR
+    ///
+    /// ident ":" [ expr ] "=" expr
     VariableDef {
         local: bool,
         name: String,
         name_loc: Span,
         typ: Option<Expression>,
-        value: Expression,
+        value: Option<Expression>,
     },
     /// if then else statement
     ///
@@ -209,7 +220,6 @@ impl AstNode for Statement {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         match parser.peek_tt() {
             Some(Kw(Keyword::Local)) => match parser.nth_tt(1) {
-                Some(Ident(_)) => parse_ident_stmt(parser),
                 Some(Kw(Keyword::Fun)) => parse_fundef_stmt(parser),
                 Some(_) => {
                     // we can unwrap here, we know there is a token
@@ -232,6 +242,7 @@ impl AstNode for Statement {
             Some(Kw(Keyword::Fun)) => parse_fundef_stmt(parser),
             Some(Kw(Keyword::Return)) => parse_return_stmt(parser),
             Some(Kw(Keyword::Break)) => parse_break_stmt(parser),
+            Some(Kw(Keyword::Var)) => parse_var_stmt(parser),
             Some(_) => {
                 // unwrap is safe because we already know the next has a token
                 // type
@@ -263,13 +274,6 @@ impl AstNode for Statement {
 
 /// parses both assignement, variable definition and function call in statements
 pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
-    let (local, local_loc) = if let Some(Kw(Keyword::Local)) = parser.peek_tt() {
-        let loc = parser.pop().unwrap().loc;
-        (true, Some(loc))
-    } else {
-        (false, None)
-    };
-
     let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
     match parser.peek_tt() {
@@ -288,26 +292,17 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
             let value = parse!(parser => Expression);
             Ok(Statement {
-                loc: Span::from_ends(local_loc.unwrap_or(lo.clone()), value.loc.clone()),
+                loc: Span::from_ends(lo.clone(), value.loc.clone()),
                 stmt: Stmt::VariableDef {
-                    local,
+                    local: true,
                     name,
                     name_loc: lo,
                     typ,
-                    value,
+                    value: Some(value),
                 },
             })
         }
         Some(Punct(Punctuation::LParen)) => {
-            if local {
-                // a function call can't be prefixed by "local"
-                parser.sink.push(ExpectedToken::new(
-                    Ident(String::new()),
-                    Kw(Keyword::Local),
-                    Some("statement"),
-                    local_loc.unwrap(),
-                ));
-            }
             // we pop the ( no need of expect_token! we already know it is (
             parser.pop();
 
@@ -330,16 +325,6 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
             })
         }
         _ => {
-            if local {
-                // a variable assignement can't be prefixed by "local"
-                parser.sink.push(ExpectedToken::new(
-                    Ident(String::new()),
-                    Kw(Keyword::Local),
-                    Some("statement"),
-                    local_loc.unwrap(),
-                ));
-            }
-
             expect_token!(parser => [Punct(Punctuation::Equal), ()], Punctuation::Equal);
 
             let value = parse!(parser => Expression);
@@ -629,4 +614,43 @@ pub fn parse_break_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
             loc: Span::from_ends(lo, expr.loc),
         })
     }
+}
+
+pub fn parse_var_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    // "var" ident [ ":" expr ] [ "=" expr ]
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Var), ()], Kw(Keyword::Var));
+
+    let (name, name_loc) =
+        expect_token!(parser => [Ident(name), name.clone()], Ident(String::new()));
+
+    let typ = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
+        parser.pop();
+        Some(parse!(parser => Expression))
+    } else {
+        None
+    };
+
+    let value = if let Some(Punct(Punctuation::Equal)) = parser.peek_tt() {
+        parser.pop();
+        Some(parse!(parser => Expression))
+    } else {
+        None
+    };
+
+    let hi = value
+        .clone()
+        .map(|v| v.loc.clone())
+        .or(typ.clone().map(|t| t.loc))
+        .unwrap_or(name_loc.clone());
+
+    Ok(Statement {
+        stmt: Stmt::VariableDef {
+            local: true,
+            name,
+            name_loc,
+            typ,
+            value,
+        },
+        loc: Span::from_ends(lo, hi),
+    })
 }

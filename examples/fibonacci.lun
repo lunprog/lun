@@ -9,4 +9,4 @@ fun fib(n: int) -> int
 end
 
 fib10 := fib(10)
-fib1million := fib(1_000_000)
+var fib1million = fib(1_000_000)

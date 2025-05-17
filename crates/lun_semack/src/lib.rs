@@ -49,6 +49,7 @@ impl SemanticCk {
             Err(diag) => self.sink.push(diag),
         }
 
+        dbg!(&self.table);
         self.table.scope_exit(&mut self.sink);
 
         if self.sink.failed() {
@@ -197,9 +198,6 @@ impl SemanticCk {
                 typ,
                 value,
             } => {
-                // check the value
-                self.check_expr(value)?;
-
                 // check the type
                 if let Some(ty) = typ {
                     self.check_expr(ty)?;
@@ -212,16 +210,37 @@ impl SemanticCk {
                             .into_diag(),
                         );
                     }
-
-                    let expected_ty = Type::from_expr(ty.clone());
-                    if value.typ != expected_ty {
-                        self.sink.push(ExpectedType {
-                            expected: vec![expected_ty],
-                            found: value.typ.clone(),
-                            loc: value.loc.clone(),
-                        })
-                    }
                 }
+                if let Some(value) = value {
+                    // check the value
+                    self.check_expr(value)?;
+
+                    if let Some(ty) = typ {
+                        let expected_ty = Type::from_expr(ty.clone());
+                        if value.typ != expected_ty {
+                            self.sink.push(ExpectedType {
+                                expected: vec![expected_ty],
+                                found: value.typ.clone(),
+                                loc: value.loc.clone(),
+                            })
+                        }
+                    }
+                } else {
+                    // TODO: implement variable initialization checking
+                    self.sink.push(
+                        Diagnostic::error()
+                            .with_message("post variable initialization is not yet support")
+                            .with_label(Label::primary((), stmt.loc.clone())),
+                    )
+                }
+
+                let realtyp = if let Some(value) = value {
+                    value.typ.clone()
+                } else if let Some(typ) = typ {
+                    Type::from_expr(typ.clone())
+                } else {
+                    Type::Unknown
+                };
 
                 if *local {
                     // define the symbol because we didn't do it before
@@ -236,12 +255,7 @@ impl SemanticCk {
                     self.table.bind(
                         ckname,
                         // TODO: add a new loc that point to the variable name and use it in the Symbol
-                        Symbol::local(
-                            value.typ.clone(),
-                            name.clone(),
-                            self.table.level(),
-                            stmt.loc.clone(),
-                        ),
+                        Symbol::local(realtyp, name.clone(), self.table.level(), stmt.loc.clone()),
                     )
                 } else {
                     // just edit the type of the global variable
@@ -250,7 +264,7 @@ impl SemanticCk {
                     };
 
                     self.table
-                        .edit(sym.which, sym.name.clone(), sym.typ(value.typ.clone()));
+                        .edit(sym.which, sym.name.clone(), sym.typ(realtyp));
                 }
             }
             CkStmt::IfThenElse {
@@ -831,7 +845,16 @@ impl SymbolTable {
     /// Enter a new scope
     pub fn scope_exit(&mut self, sink: &mut DiagnosticSink) {
         assert_ne!(self.tabs.len(), 1, "can't exit out of the global scope");
+
         for sym in self.last_map().values() {
+            // type annotation needed the type is unknown
+            if sym.typ == Type::Unknown {
+                sink.push(TypeAnnotationsNeeded {
+                    loc: sym.loc.clone(),
+                })
+            }
+
+            // unused symbol check
             if sym.kind != SymKind::Global && sym.uses == 0 {
                 // the symbol isn't global and isn't used so we push a warning
                 sink.push(NeverUsedSymbol {
@@ -841,6 +864,7 @@ impl SymbolTable {
                 })
             }
         }
+
         self.tabs.pop();
     }
 

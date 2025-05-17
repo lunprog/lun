@@ -197,7 +197,7 @@ pub enum CkStmt {
         name: String,
         name_loc: Span,
         typ: Option<CkExpression>,
-        value: CkExpression,
+        value: Option<CkExpression>,
     },
     /// see [`IfThenElse`]
     ///

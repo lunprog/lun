@@ -231,6 +231,7 @@ impl Lexer {
             Keyword::THEN => Kw(Keyword::Then),
             Keyword::TRAIT => Kw(Keyword::Trait),
             Keyword::TRUE => Kw(Keyword::True),
+            Keyword::VAR => Kw(Keyword::Var),
             Keyword::WHILE => Kw(Keyword::While),
             _ => TokenType::Ident(word),
         }

@@ -177,6 +177,8 @@ pub enum Keyword {
     Trait,
     /// true
     True,
+    /// var
+    Var,
     /// while
     While,
 }
@@ -239,6 +241,9 @@ impl Keyword {
     /// `true` keyword.
     pub const TRUE: &str = "true";
 
+    /// `var` keyword.
+    pub const VAR: &str = "var";
+
     /// `while` keyword.
     pub const WHILE: &str = "while";
 }
@@ -265,6 +270,7 @@ impl Display for Keyword {
             Keyword::Then => f.write_str(Keyword::THEN),
             Keyword::Trait => f.write_str(Keyword::TRAIT),
             Keyword::True => f.write_str(Keyword::TRUE),
+            Keyword::Var => f.write_str(Keyword::VAR),
             Keyword::While => f.write_str(Keyword::WHILE),
         }
     }
