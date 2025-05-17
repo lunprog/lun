@@ -1,15 +1,3 @@
-// typed lua replacement
-// find a new name the actual one kinda sucks
-
-// every thing is public by default.
-fun main(args: list(string))
-    hello_world()
-end
-
-// local means it is only visible in the current block.
-local fun hello_world()
-    print("Hello world!")
-end
 
 trait Display
     fun display(self, f: Formatter) -> result
@@ -19,6 +7,7 @@ struct Person
     name: string,
 end
 
+// NOT REALLY SURE
 impl Display for Person
     fun display(self, f: Formatter) -> result
         // ...
@@ -41,6 +30,7 @@ fun println(fmt: string = "", ..: obj(Display))
     // here `args()` is to collect the variable number of arguments
 end
 
+// ALSO NOT SURE
 // the `obj` type represents everything.
 //
 // you can ensure an object `obj` implements a specific Trait(s) like that:
@@ -66,29 +56,23 @@ end
 // or access globals:
 // my_api.my_global
 
-local fun test2()
-    local list := [1, 2, 3, 4]
-
-    // numeric for
-    // iterate over values between expr1 and expr2 with optional step expr3
-    // if expr3 is not specified then a step of one is assumed
-    for var := expr1..expr2, expr3 do
-        print(i)
-    end
-
-    // generic for
-    // iterate on the iterator here `"Hello".chars()`, until the iterator
+fun test2()
+    // for
+    // 
+    // iterate on the iterator here `"Hello":chars()`, until the iterator
     // returns `nil`
     for c in "Hello":chars() do
         print(c)
     then
 
     // while looop
-    local i := 0
+    i := 0
     while i < len(list) do
         i += 1
         print(list[i])
     end
+
+    list := [1, 2, 3]
 
     // if condition
     if list:len() == 3 then
@@ -96,7 +80,7 @@ local fun test2()
     end
 
     // if else
-    if 0 == 0 then
+    if cond then
         // ...
     else
         // ...
@@ -128,7 +112,7 @@ end
 //
 // is equivalent to:
 //
-// Test := struct
+// Test :: struct
 //     field: int
 // end
 //
@@ -140,7 +124,7 @@ end
 //
 // is equivalent to:
 //
-// Test := trait
+// Test :: trait
 //     fun test()
 // end
 //
@@ -168,10 +152,15 @@ end
 // => the `macro` keyword
 //
 // macro definition:
-// idk
+//
+// my_macro :: macro {
+//     // from here i don't really know
+// }
 //
 // macro use:
 // ident "!" "(" token_stream ")"
+// ident "!" "[" token_stream "]"
+// ident "!" "{" token_stream "}"
 
 // LOOP LABELS
 

@@ -2,7 +2,7 @@
 
 use lun_parser::{
     expr::{Expr, Expression},
-    stmt::{Arg, ElseIf, Statement, Stmt},
+    stmt::{Arg, ElseIf, Statement, Stmt, Vis},
 };
 
 use super::*;
@@ -98,13 +98,13 @@ impl FromAst for CkStatement {
                 value: from_ast(value),
             },
             Stmt::VariableDef {
-                local,
+                vis,
                 name,
                 name_loc,
                 typ,
                 value,
             } => CkStmt::VariableDef {
-                local,
+                vis,
                 name,
                 name_loc,
                 typ: from_ast(typ),
@@ -132,37 +132,24 @@ impl FromAst for CkStatement {
                 cond: from_ast(cond),
                 body: from_ast(body),
             },
-            Stmt::NumericFor {
-                variable,
-                var_type,
-                var_value,
-                step,
-                body,
-            } => CkStmt::NumericFor {
-                variable,
-                var_type: from_ast(var_type),
-                var_value: from_ast(var_value),
-                step: from_ast(step),
-                body: from_ast(body),
-            },
-            Stmt::GenericFor {
+            Stmt::For {
                 variable,
                 iterator,
                 body,
-            } => CkStmt::GenericFor {
+            } => CkStmt::For {
                 variable,
                 iterator: from_ast(iterator),
                 body: from_ast(body),
             },
             Stmt::FunDef {
-                local,
+                vis,
                 name,
                 name_loc,
                 args,
                 rettype,
                 body,
             } => CkStmt::FunDef {
-                local,
+                vis,
                 name,
                 name_loc,
                 args: from_ast(args),
@@ -193,11 +180,11 @@ pub enum CkStmt {
     ///
     /// [`VariableDef`]: lun_parser::stmt::Stmt::VariableDef
     VariableDef {
-        local: bool,
+        vis: Vis,
         name: String,
         name_loc: Span,
         typ: Option<CkExpression>,
-        value: CkExpression,
+        value: Option<CkExpression>,
     },
     /// see [`IfThenElse`]
     ///
@@ -223,20 +210,10 @@ pub enum CkStmt {
     ///
     /// [`While`]: lun_parser::stmt::Stmt::While
     While { cond: CkExpression, body: CkChunk },
-    /// see [`NumericFor`]
-    ///
-    /// [`NumericFor`]: lun_parser::stmt::Stmt::NumericFor
-    NumericFor {
-        variable: String,
-        var_type: Option<CkExpression>,
-        var_value: CkExpression,
-        step: Option<CkExpression>,
-        body: CkChunk,
-    },
     /// see [`GenericFor`]
     ///
     /// [`GenericFor`]: lun_parser::stmt::Stmt::GenericFor
-    GenericFor {
+    For {
         variable: String,
         iterator: CkExpression,
         body: CkChunk,
@@ -245,7 +222,7 @@ pub enum CkStmt {
     ///
     /// [`FunDef`]: lun_parser::stmt::Stmt::FunDef
     FunDef {
-        local: bool,
+        vis: Vis,
         name: String,
         name_loc: Span,
         args: Vec<CkArg>,

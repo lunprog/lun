@@ -43,6 +43,14 @@ impl AstNode for Chunk {
     }
 }
 
+/// Visibility
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum Vis {
+    #[default]
+    Private,
+    Public,
+}
+
 /// A lun statement
 #[derive(Debug, Clone)]
 pub struct Statement {
@@ -58,22 +66,20 @@ pub enum Stmt {
     ///
     /// ident "=" expr
     Assignement { variable: String, value: Expression },
-    // TODO: make the value optional so that we can define variables and
-    // initiliaze them later, like:
+    // TODO: add checking for uninitialized variables
     //
     // ```lun
-    // local a: int
+    // var a: int
     //
     // // ...
     //
     // a = 24
     // ```
-    //
-    // but we need to ensure that a is initialized when you use it, and be able
-    // to conditionally initialize it like:
+    // here `a` is defined, we can use it after the `a = 24` but between the
+    // definition and the initialization we can't
     //
     // ```lun
-    // local a: int
+    // var a: int
     //
     // // ...
     //
@@ -84,21 +90,34 @@ pub enum Stmt {
     // end
     //
     // ```
+    // here everything is fine, we can use `a` after the condition so it is
+    // initialized
     //
-    // here `a` is initialized conditionally, if the else cause was not present
-    // `a` would be partially initialized: if the logic returned true `a` is
-    // initialized but if it returned false `a` isn't initialized, and we don't
-    // want uninitialized variables
+    // ```lun
+    // var a: int
+    //
+    // if something do
+    //     a = 12
+    // else if something_else do
+    //     a = 34
+    // end
+    // ```
+    // here we can't use `a` because it is partially initialized, the compiler
+    // is not sure if `a` is initialized, even tho `something_else = !something`
     //
     /// variable definition
     ///
-    /// [ "local" ] ident ":" [ expr ] "=" expr
+    /// [ "pub" ] "var" ident [ ":" expr ] [ "=" expr ]
+    ///
+    /// OR
+    ///
+    /// ident ":" [ expr ] "=" expr
     VariableDef {
-        local: bool,
+        vis: Vis,
         name: String,
         name_loc: Span,
         typ: Option<Expression>,
-        value: Expression,
+        value: Option<Expression>,
     },
     /// if then else statement
     ///
@@ -140,27 +159,10 @@ pub enum Stmt {
     ///
     /// "while" expr "do" chunk "end"
     While { cond: Expression, body: Chunk },
-    /// numeric for statement
-    ///
-    /// "for" ident ":" [ expr ] "=" expr [ "," expr ] "do" chunk "end"
-    ///                              ^ in typeck, must be of range type.
-    NumericFor {
-        /// variable that will contain the value that will change based on the
-        /// step
-        variable: String,
-        /// the type of the variable, optional as usual
-        var_type: Option<Expression>,
-        /// initial value of the variable
-        var_value: Expression,
-        /// the step by which we increment the variable
-        step: Option<Expression>,
-        /// the body we run every step
-        body: Chunk,
-    },
-    /// generic for statement
+    /// for statement
     ///
     /// "for" ident "in" expr "do" chunk "end"
-    GenericFor {
+    For {
         /// the variable that contains values of the iterator
         variable: String,
         /// the iterator
@@ -170,9 +172,9 @@ pub enum Stmt {
     },
     /// function definition
     ///
-    /// [ "local" ] "fun" ident "(" ( ident ":" expr ),* ")" [ "->" expr ] chunk "end"
+    /// [ "pub" ] "fun" ident "(" ( ident ":" expr ),* ")" [ "->" expr ] chunk "end"
     FunDef {
-        local: bool,
+        vis: Vis,
         name: String,
         name_loc: Span,
         args: Vec<Arg>,
@@ -208,15 +210,17 @@ pub struct Arg {
 impl AstNode for Statement {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         match parser.peek_tt() {
-            Some(Kw(Keyword::Local)) => match parser.nth_tt(1) {
-                Some(Ident(_)) => parse_ident_stmt(parser),
+            Some(Kw(Keyword::Pub)) => match parser.nth_tt(1) {
+                Some(Kw(Keyword::Var)) => parse_var_stmt(parser),
                 Some(Kw(Keyword::Fun)) => parse_fundef_stmt(parser),
                 Some(_) => {
-                    // we can unwrap here, we know there is a token
+                    // pop the `pub` kw
+                    parser.pop();
+                    // t is the token after `pub`
                     let t = parser.pop().unwrap();
 
                     Err(ExpectedToken::new(
-                        [Ident(String::new()), Kw(Keyword::Fun)],
+                        [Kw(Keyword::Var), Kw(Keyword::Fun)],
                         t.tt,
                         Some("statement"),
                         t.loc,
@@ -232,6 +236,7 @@ impl AstNode for Statement {
             Some(Kw(Keyword::Fun)) => parse_fundef_stmt(parser),
             Some(Kw(Keyword::Return)) => parse_return_stmt(parser),
             Some(Kw(Keyword::Break)) => parse_break_stmt(parser),
+            Some(Kw(Keyword::Var)) => parse_var_stmt(parser),
             Some(_) => {
                 // unwrap is safe because we already know the next has a token
                 // type
@@ -241,7 +246,7 @@ impl AstNode for Statement {
                 Err(ExpectedToken::new(
                     [
                         Ident(String::new()),
-                        Kw(Keyword::Local),
+                        Kw(Keyword::Pub),
                         Kw(Keyword::If),
                         Kw(Keyword::Do),
                         Kw(Keyword::While),
@@ -249,6 +254,7 @@ impl AstNode for Statement {
                         Kw(Keyword::Fun),
                         Kw(Keyword::Return),
                         Kw(Keyword::Break),
+                        Kw(Keyword::Var),
                     ],
                     t.tt,
                     Some("statement".to_string()),
@@ -263,13 +269,6 @@ impl AstNode for Statement {
 
 /// parses both assignement, variable definition and function call in statements
 pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
-    let (local, local_loc) = if let Some(Kw(Keyword::Local)) = parser.peek_tt() {
-        let loc = parser.pop().unwrap().loc;
-        (true, Some(loc))
-    } else {
-        (false, None)
-    };
-
     let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
     match parser.peek_tt() {
@@ -288,26 +287,17 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
             let value = parse!(parser => Expression);
             Ok(Statement {
-                loc: Span::from_ends(local_loc.unwrap_or(lo.clone()), value.loc.clone()),
+                loc: Span::from_ends(lo.clone(), value.loc.clone()),
                 stmt: Stmt::VariableDef {
-                    local,
+                    vis: Vis::Private,
                     name,
                     name_loc: lo,
                     typ,
-                    value,
+                    value: Some(value),
                 },
             })
         }
         Some(Punct(Punctuation::LParen)) => {
-            if local {
-                // a function call can't be prefixed by "local"
-                parser.sink.push(ExpectedToken::new(
-                    Ident(String::new()),
-                    Kw(Keyword::Local),
-                    Some("statement"),
-                    local_loc.unwrap(),
-                ));
-            }
             // we pop the ( no need of expect_token! we already know it is (
             parser.pop();
 
@@ -330,16 +320,6 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
             })
         }
         _ => {
-            if local {
-                // a variable assignement can't be prefixed by "local"
-                parser.sink.push(ExpectedToken::new(
-                    Ident(String::new()),
-                    Kw(Keyword::Local),
-                    Some("statement"),
-                    local_loc.unwrap(),
-                ));
-            }
-
             expect_token!(parser => [Punct(Punctuation::Equal), ()], Punctuation::Equal);
 
             let value = parse!(parser => Expression);
@@ -440,104 +420,45 @@ pub fn parse_while_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
 /// parses numeric and generic for statement
 pub fn parse_for_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    // "for" ident "in" expr "do" chunk "end"
     let (_, lo) = expect_token!(parser => [Kw(Keyword::For), ()], Kw(Keyword::For));
 
     let (variable, _) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
-    match parser.peek_tt() {
-        Some(Punct(Punctuation::Colon)) => {
-            // numeric for:
-            // "for" ident ":" [ expr ] "=" expr [ "," expr ] "do" chunk "end"
-            //
-            // pop the colon
-            parser.pop();
+    // pop the `in` keyword
+    parser.pop();
+    expect_token!(parser => [Kw(Keyword::In), ()], Kw(Keyword::In));
 
-            let var_type = if let Some(Punct(Punctuation::Equal)) = parser.peek_tt() {
-                None
-            } else {
-                Some(parse!(parser => Expression))
-            };
+    let iterator = parse!(parser => Expression);
 
-            expect_token!(parser => [Punct(Punctuation::Equal), ()], Punctuation::Equal);
+    expect_token!(parser => [Kw(Keyword::Do), ()], Kw(Keyword::Do));
 
-            let var_value = parse!(parser => Expression);
+    let body = parse!(parser => Chunk);
 
-            let step = if let Some(Punct(Punctuation::Comma)) = parser.peek_tt() {
-                None
-            } else {
-                parser.pop();
-                Some(parse!(parser => Expression))
-            };
+    let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
 
-            expect_token!(parser => [Kw(Keyword::Do), ()], Kw(Keyword::Do));
-
-            let body = parse!(parser => Chunk);
-
-            let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
-
-            Ok(Statement {
-                stmt: Stmt::NumericFor {
-                    variable,
-                    var_type,
-                    var_value,
-                    step,
-                    body,
-                },
-                loc: Span::from_ends(lo, hi),
-            })
-        }
-        Some(Kw(Keyword::In)) => {
-            // generic for:
-            // "for" ident "in" expr "do" chunk "end"
-            //
-            // pop the `in` keyword
-            parser.pop();
-
-            let iterator = parse!(parser => Expression);
-
-            expect_token!(parser => [Kw(Keyword::Do), ()], Kw(Keyword::Do));
-
-            let body = parse!(parser => Chunk);
-
-            let (_, hi) = expect_token!(parser => [Kw(Keyword::End), ()], Kw(Keyword::End));
-
-            Ok(Statement {
-                stmt: Stmt::GenericFor {
-                    variable,
-                    iterator,
-                    body,
-                },
-                loc: Span::from_ends(lo, hi),
-            })
-        }
-        Some(_) => {
-            // we can unwrap because we know there is a token
-            let t = parser.pop().unwrap();
-
-            Err(ExpectedToken::new(
-                [Punct(Punctuation::Colon), Kw(Keyword::In)],
-                t.tt,
-                Some("for statement"),
-                t.loc,
-            )
-            .into_diag())
-        }
-        None => Err(parser.eof_diag()),
-    }
+    Ok(Statement {
+        stmt: Stmt::For {
+            variable,
+            iterator,
+            body,
+        },
+        loc: Span::from_ends(lo, hi),
+    })
 }
 
 /// parses function definition
 pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
-    let (local, local_loc) = if let Some(Kw(Keyword::Local)) = parser.peek_tt() {
+    let (vis, pub_loc) = if let Some(Kw(Keyword::Pub)) = parser.peek_tt() {
         let loc = parser.pop().unwrap().loc;
-        (true, Some(loc))
+        (Vis::Public, Some(loc))
     } else {
-        (false, None)
+        (Vis::Private, None)
     };
 
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Fun), ()], Kw(Keyword::Fun));
 
-    let lo = local_loc.unwrap_or(lo);
+    let lo = pub_loc.unwrap_or(lo);
 
     let (name, name_loc) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
@@ -580,7 +501,7 @@ pub fn parse_fundef_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
     Ok(Statement {
         stmt: Stmt::FunDef {
-            local,
+            vis,
             name,
             name_loc,
             args,
@@ -629,4 +550,52 @@ pub fn parse_break_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
             loc: Span::from_ends(lo, expr.loc),
         })
     }
+}
+
+/// [ "pub" ] "var" ident [ ":" expr ] [ "=" expr ]
+pub fn parse_var_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    let (vis, pub_loc) = if let Some(Kw(Keyword::Pub)) = parser.peek_tt() {
+        let loc = parser.pop().unwrap().loc;
+        (Vis::Public, Some(loc))
+    } else {
+        (Vis::Private, None)
+    };
+
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Var), ()], Kw(Keyword::Var));
+
+    let lo = pub_loc.unwrap_or(lo);
+
+    let (name, name_loc) =
+        expect_token!(parser => [Ident(name), name.clone()], Ident(String::new()));
+
+    let typ = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
+        parser.pop();
+        Some(parse!(parser => Expression))
+    } else {
+        None
+    };
+
+    let value = if let Some(Punct(Punctuation::Equal)) = parser.peek_tt() {
+        parser.pop();
+        Some(parse!(parser => Expression))
+    } else {
+        None
+    };
+
+    let hi = value
+        .clone()
+        .map(|v| v.loc.clone())
+        .or(typ.clone().map(|t| t.loc))
+        .unwrap_or(name_loc.clone());
+
+    Ok(Statement {
+        stmt: Stmt::VariableDef {
+            vis,
+            name,
+            name_loc,
+            typ,
+            value,
+        },
+        loc: Span::from_ends(lo, hi),
+    })
 }

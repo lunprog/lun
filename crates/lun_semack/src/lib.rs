@@ -11,7 +11,7 @@ use diags::{
 };
 use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic};
 use lun_parser::expr::{BinOp, UnaryOp};
-use lun_parser::stmt::Chunk;
+use lun_parser::stmt::{Chunk, Vis};
 use lun_utils::Span;
 
 pub mod ckast;
@@ -65,11 +65,11 @@ impl SemanticCk {
         for stmt in &mut chunk.stmts {
             match &mut stmt.stmt {
                 CkStmt::VariableDef {
-                    local,
+                    vis,
                     name,
                     name_loc,
                     ..
-                } if !*local => {
+                } if *vis == Vis::Public => {
                     // when type checking the expression and type of this
                     // variable definition change the symbol's typ.
                     let mut ckname = name.clone();
@@ -92,12 +92,12 @@ impl SemanticCk {
                     );
                 }
                 CkStmt::FunDef {
-                    local,
+                    vis,
                     name,
                     args,
                     rettype,
                     ..
-                } if !*local => {
+                } => {
                     // true type of the arguments
                     let mut args_true = Vec::new();
                     for CkArg { typ, .. } in args {
@@ -172,7 +172,7 @@ impl SemanticCk {
 
                 if &symbol.name == "_" {
                     // do nothing the assignement is to the _ identifier so we don't do anything
-                } else if symbol.typ == Type::Unknown && symbol.kind != SymKind::Param {
+                } else if symbol.typ == Type::Unknown && symbol.kind != SymKind::Arg {
                     // we don't know the type of the local / global, so we change it
                     self.table.edit(
                         symbol.which,
@@ -191,15 +191,12 @@ impl SemanticCk {
                 }
             }
             CkStmt::VariableDef {
-                local,
+                vis,
                 name,
                 name_loc,
                 typ,
                 value,
             } => {
-                // check the value
-                self.check_expr(value)?;
-
                 // check the type
                 if let Some(ty) = typ {
                     self.check_expr(ty)?;
@@ -212,18 +209,39 @@ impl SemanticCk {
                             .into_diag(),
                         );
                     }
+                }
+                if let Some(value) = value {
+                    // check the value
+                    self.check_expr(value)?;
 
-                    let expected_ty = Type::from_expr(ty.clone());
-                    if value.typ != expected_ty {
-                        self.sink.push(ExpectedType {
-                            expected: vec![expected_ty],
-                            found: value.typ.clone(),
-                            loc: value.loc.clone(),
-                        })
+                    if let Some(ty) = typ {
+                        let expected_ty = Type::from_expr(ty.clone());
+                        if value.typ != expected_ty {
+                            self.sink.push(ExpectedType {
+                                expected: vec![expected_ty],
+                                found: value.typ.clone(),
+                                loc: value.loc.clone(),
+                            })
+                        }
                     }
+                } else {
+                    // TODO: implement variable initialization checking
+                    self.sink.push(
+                        Diagnostic::error()
+                            .with_message("post variable initialization is not yet support")
+                            .with_label(Label::primary((), stmt.loc.clone())),
+                    )
                 }
 
-                if *local {
+                let realtyp = if let Some(value) = value {
+                    value.typ.clone()
+                } else if let Some(typ) = typ {
+                    Type::from_expr(typ.clone())
+                } else {
+                    Type::Unknown
+                };
+
+                if *vis == Vis::Private {
                     // define the symbol because we didn't do it before
                     let mut ckname = name.clone();
                     if name == "_" {
@@ -236,12 +254,7 @@ impl SemanticCk {
                     self.table.bind(
                         ckname,
                         // TODO: add a new loc that point to the variable name and use it in the Symbol
-                        Symbol::local(
-                            value.typ.clone(),
-                            name.clone(),
-                            self.table.level(),
-                            stmt.loc.clone(),
-                        ),
+                        Symbol::local(realtyp, name.clone(), self.table.level(), stmt.loc.clone()),
                     )
                 } else {
                     // just edit the type of the global variable
@@ -250,7 +263,7 @@ impl SemanticCk {
                     };
 
                     self.table
-                        .edit(sym.which, sym.name.clone(), sym.typ(value.typ.clone()));
+                        .edit(sym.which, sym.name.clone(), sym.typ(realtyp));
                 }
             }
             CkStmt::IfThenElse {
@@ -350,7 +363,7 @@ impl SemanticCk {
                 name: MaybeUnresolved::Resolved(_),
                 ..
             } => unreachable!(),
-            CkStmt::While { .. } | CkStmt::NumericFor { .. } | CkStmt::GenericFor { .. } => {
+            CkStmt::While { .. } | CkStmt::For { .. } => {
                 // TODO: implement loops checking
                 return Err(
                     Diagnostic::error()
@@ -360,57 +373,13 @@ impl SemanticCk {
                 );
             }
             CkStmt::FunDef {
-                local,
+                vis: _,
                 name,
-                name_loc,
+                name_loc: _,
                 args,
-                rettype,
+                rettype: _,
                 body,
             } => {
-                if *local {
-                    let mut args_true = Vec::new();
-                    for CkArg { typ, .. } in &mut *args {
-                        self.check_expr(typ)?;
-
-                        if typ.typ != Type::ComptimeType {
-                            self.sink.push(ExpectedTypeFoundExpr {
-                                loc: typ.loc.clone(),
-                            });
-                        }
-
-                        args_true.push(Type::from_expr(typ.clone()));
-                    }
-
-                    let ret_true = if let Some(typ) = rettype {
-                        self.check_expr(typ)?;
-                        Box::new(Type::from_expr(typ.clone()))
-                    } else {
-                        Box::new(Type::Nil)
-                    };
-
-                    let mut ckname = name.clone();
-                    if name == "_" {
-                        self.sink.push(UnderscoreReservedIdent {
-                            loc: name_loc.clone(),
-                        });
-
-                        ckname = String::from("\0");
-                    }
-
-                    self.table.bind(
-                        ckname,
-                        Symbol::local(
-                            Type::Func {
-                                args: args_true,
-                                ret: ret_true,
-                            },
-                            name.clone(),
-                            self.table.level(),
-                            name_loc.clone(),
-                        ),
-                    );
-                }
-
                 let Some(Symbol {
                     typ: Type::Func { ret, .. },
                     ..
@@ -619,7 +588,7 @@ impl Symbol {
     /// Create a new local symbol
     pub fn local(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
-            kind: SymKind::Local,
+            kind: SymKind::Var,
             typ,
             name,
             which,
@@ -631,7 +600,7 @@ impl Symbol {
     /// Create a new param symbol
     pub fn param(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
-            kind: SymKind::Param,
+            kind: SymKind::Arg,
             typ,
             name,
             which,
@@ -676,16 +645,19 @@ impl Symbol {
 /// Symbol type
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SymKind {
-    Local,
-    Param,
+    /// Variable
+    Var,
+    /// Argument
+    Arg,
+    /// Global
     Global,
 }
 
 impl Display for SymKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SymKind::Local => f.write_str("local"),
-            SymKind::Param => f.write_str("parameter"),
+            SymKind::Var => f.write_str("local"),
+            SymKind::Arg => f.write_str("parameter"),
             SymKind::Global => f.write_str("global"),
         }
     }
@@ -831,7 +803,16 @@ impl SymbolTable {
     /// Enter a new scope
     pub fn scope_exit(&mut self, sink: &mut DiagnosticSink) {
         assert_ne!(self.tabs.len(), 1, "can't exit out of the global scope");
+
         for sym in self.last_map().values() {
+            // type annotation needed the type is unknown
+            if sym.typ == Type::Unknown {
+                sink.push(TypeAnnotationsNeeded {
+                    loc: sym.loc.clone(),
+                })
+            }
+
+            // unused symbol check
             if sym.kind != SymKind::Global && sym.uses == 0 {
                 // the symbol isn't global and isn't used so we push a warning
                 sink.push(NeverUsedSymbol {
@@ -841,6 +822,7 @@ impl SymbolTable {
                 })
             }
         }
+
         self.tabs.pop();
     }
 
