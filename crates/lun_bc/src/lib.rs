@@ -1,9 +1,8 @@
 //! Bytecode of lun.
 
-use lun_utils::{
-    read_bword, read_dword, read_many, read_qword, read_word, write_bword, write_dword,
-    write_qword, write_word,
-};
+use lun_utils::{read_bword, read_many, read_qword, write_bword, write_qword};
+
+pub mod bin;
 
 #[repr(u8)]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -120,19 +119,19 @@ impl OpCode {
 
 // TODO: add debug infos, like file names, the span of an instruction in the so
 // called file etc..
-/// A `blob` is a sequence of bytecode.
+/// A `BlobBc` is a sequence of bytecode.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Blob {
+pub struct BcBlob {
     /// the code we will run
     pub code: Vec<u8>,
     /// the data pool, where constants are stored.
     pub dpool: DataPool,
 }
 
-impl Blob {
+impl BcBlob {
     /// Create a new Blob with 8 bytes pre-allocated.
-    pub fn new() -> Blob {
-        Blob {
+    pub fn new() -> BcBlob {
+        BcBlob {
             code: Vec::with_capacity(8),
             dpool: DataPool::new(),
         }

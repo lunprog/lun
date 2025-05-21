@@ -1,7 +1,7 @@
 //! The virtual machine for lun's bytecode.
 
-use lun_bc::{Blob, OpCode};
-use lun_utils::{read_bword, read_dword, read_word};
+use lun_bc::{BcBlob, OpCode};
+use lun_utils::read_bword;
 
 use std::mem;
 // TODO: use bytemuck for casting types everywhere
@@ -92,7 +92,7 @@ macro_rules! binary_op {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VM {
     /// blob of code, we will execute
-    blob: Blob,
+    blob: BcBlob,
     /// instruction pointer, always points to the instruction that is about to
     /// be executed
     ip: usize,
@@ -101,7 +101,7 @@ pub struct VM {
 }
 
 impl VM {
-    pub fn new(blob: Blob) -> VM {
+    pub fn new(blob: BcBlob) -> VM {
         VM {
             blob,
             ip: 0,

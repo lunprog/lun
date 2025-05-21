@@ -210,9 +210,9 @@ pub enum CkStmt {
     ///
     /// [`While`]: lun_parser::stmt::Stmt::While
     While { cond: CkExpression, body: CkChunk },
-    /// see [`GenericFor`]
+    /// see [`For`]
     ///
-    /// [`GenericFor`]: lun_parser::stmt::Stmt::GenericFor
+    /// [`For`]: lun_parser::stmt::Stmt::For
     For {
         variable: String,
         iterator: CkExpression,

@@ -17,7 +17,7 @@
 //! ```
 
 use crate::{
-    bc::Blob,
+    bc::{BcBlob, bin::LBType},
     codegen::CodeGenerator,
     diag::{DiagnosticSink, StageResult, tri},
     lexer::Lexer,
@@ -63,14 +63,14 @@ pub fn run() -> StageResult<()> {
     dbg!(&ckast);
 
     // 5. code generation
-    let mut codegenerator = CodeGenerator::new(ckast, sink.clone());
-    let blob = tri!(codegenerator.produce(), sink);
+    let mut codegen = CodeGenerator::new(ckast, sink.clone(), LBType::Exec);
+    let blob = tri!(codegen.produce(), sink);
 
     dbg!(blob);
 
     // THE VM PARTS
 
-    let mut blob = Blob::new();
+    let mut blob = BcBlob::new();
 
     let a = blob.dpool.write_integer(10) as u32;
     blob.write_const(a);

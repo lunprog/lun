@@ -169,7 +169,7 @@ pub enum ErrorCode {
     /// doesn't exist.
     ///
     /// Existing escapes are:
-    /// ```
+    /// ```text
     /// \0   -> 0x00
     /// \n   -> new line
     /// \r   -> carriage return
