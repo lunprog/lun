@@ -16,6 +16,8 @@
 //! end
 //! ```
 
+use std::fs::File;
+
 use crate::{
     bc::{BcBlob, bin::LBType},
     codegen::CodeGenerator,
@@ -64,9 +66,12 @@ pub fn run() -> StageResult<()> {
 
     // 5. code generation
     let mut codegen = CodeGenerator::new(ckast, sink.clone(), LBType::Exec);
-    let blob = tri!(codegen.produce(), sink);
+    let lb = tri!(codegen.produce(), sink);
 
-    dbg!(blob);
+    let mut file = File::create("test.lb").unwrap();
+    lb.serialize(&mut file).unwrap();
+
+    lb.dump();
 
     // THE VM PARTS
 

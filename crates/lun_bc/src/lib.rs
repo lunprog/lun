@@ -1,5 +1,8 @@
 //! Bytecode of lun.
 
+use std::io::Write;
+
+use bin::ByteRepr;
 use lun_utils::{read_bword, read_many, read_qword, write_bword, write_qword};
 
 pub mod bin;
@@ -207,13 +210,38 @@ impl BcBlob {
         }
     }
 
+    /// Returns the bytes of the byutecode's blob
+    pub fn code_data(&self) -> Vec<u8> {
+        self.code.clone()
+    }
+
+    /// Returns the data pool constant
+    pub fn const_data(&self) -> Vec<u8> {
+        self.dpool.data.clone()
+    }
+
+    /// Returns the constant's map, the offset and size of each constant in the
+    /// constant pool
+    pub fn cmap_data(&self) -> Vec<u8> {
+        let mut cmap = Vec::new();
+
+        for Data { offset, size } in &self.dpool.map {
+            cmap.write_all(&offset.as_bytes()).unwrap();
+            cmap.write_all(&size.as_bytes()).unwrap();
+        }
+
+        cmap
+    }
+
     /// Disassemble and print the instructions in a human readable format into
     /// stdout.
     pub fn disassemble(&self, name: &str) {
         // TODO: maybe make the Display implementation the output of `disassemble`.
         // but first `dissassemble` would need to write to a `&dyn Write`.
         // TODO: maybe output the hex of each instruction like objdump does.
-        println!("== {name} ==");
+        if name.len() != 0 {
+            println!("== {name} ==");
+        }
 
         let mut offset = 0;
         while offset < self.code.len() {
@@ -238,8 +266,11 @@ impl BcBlob {
                 // confusing so maybe print it into big endian, so `0xDEADBEEF`
                 // won't show as `[EF, BE, AD, DE, 0, 0, 0, 0]`.
                 // but `[0, 0, 0, 0, DE, AD, BE, EF]`.
-                let Data { offset: off, size } = self.dpool.map[index];
-                println!("      => {:X?}", &self.dpool.data[off..off + size]);
+                // let Data { offset: off, size } = self.dpool.map[index];
+                // println!(
+                //     "      => {:X?}",
+                //     &self.dpool.data[off as usize..(off + size) as usize]
+                // );
                 offset + 4
             }
             OpCode::Neg => self.byte_instruction(OpCode::NEG_OP, offset),
@@ -259,8 +290,8 @@ impl BcBlob {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Data {
-    offset: usize,
-    size: usize,
+    offset: u64,
+    size: u64,
 }
 
 /// An immutable pool of data that contains all of the constants of the program
@@ -286,8 +317,8 @@ impl DataPool {
         let offset = write_qword(&mut self.data, int);
 
         self.map.push(Data {
-            offset,
-            size: size_of_val(&int),
+            offset: offset as u64,
+            size: size_of_val(&int) as u64,
         });
 
         self.map.len() - 1
@@ -303,6 +334,6 @@ impl DataPool {
     /// and size. Panics if there are not enough bytes to read a full u64.
     pub fn read(&self, index: usize) -> &[u8] {
         let data = self.map[index].clone();
-        read_many(&self.data, data.offset, data.size)
+        read_many(&self.data, data.offset as usize, data.size as usize)
     }
 }

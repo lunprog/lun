@@ -1,10 +1,13 @@
 //! The file type of Lun, `.lb`.
 
+use lun_utils::pluralize;
 use std::{
     fmt::Display,
     io::{Read, Write},
 };
 use thiserror::Error;
+
+use crate::{BcBlob, DataPool};
 
 /// A type that can be build from and converted to bytes.
 pub trait ByteRepr<const N: usize> {
@@ -281,6 +284,7 @@ pub struct SectionHeader {
 /// ```text
 /// .code  : contains the blob bytecode.
 /// .const : contains the constant pool
+/// .cmap  : contains the map of the constants
 /// .shstr : contains the section's name
 /// .exec  : contains special information for "lb" file of type "Exec"
 /// ```
@@ -303,6 +307,12 @@ impl LunBin {
     pub const SH_OFF_SIZE: usize = 8;
     pub const SECTION_NAME_SIZE: usize = 8;
     pub const SECTION_SIZE_SIZE: usize = 8;
+
+    pub const SECTION_CODE: &str = ".code";
+    pub const SECTION_CONST: &str = ".const";
+    pub const SECTION_CMAP: &str = ".cmap";
+    pub const SECTION_SHSTR: &str = ".shstr";
+    pub const SECTION_EXEC: &str = ".exec";
 
     pub fn serialize<W: Write>(&self, w: &mut W) -> Result<()> {
         // ===== HEADER =====
@@ -419,6 +429,69 @@ impl LunBin {
 
         Ok(bin)
     }
+
+    /// Dump as human readable content to stdout
+    pub fn dump(&self) {
+        println!("----- LUN BIN -----");
+        println!("HEADER:");
+        println!("  fvers:   {}", self.header.fvers);
+        println!("  typ:     {:?}", self.header.typ);
+        println!("  lunvers: {}", self.header.lunvers);
+        println!("  sh_num:  {}", self.header.sh_num);
+        println!("  sh_off:  {:X}", self.header.sh_off);
+
+        let mut i = 0;
+        let name_data = loop {
+            if self.sections[i].0.name == 0 {
+                break self.sections[i].1.clone();
+            }
+            i += 1;
+        };
+        let names = String::from_utf8_lossy(&name_data);
+
+        println!();
+
+        for (sh, data) in &self.sections {
+            let off = sh.name as usize + 8;
+            let size =
+                u64::from_bytes_ref(&name_data[sh.name as usize..sh.name as usize + 8]) as usize;
+
+            let name = &names[off..off + size];
+            println!("SECTION {}", name);
+            match name {
+                ".code" => {
+                    let blob = BcBlob {
+                        code: data.clone().into(),
+                        dpool: DataPool::new(),
+                    };
+                    blob.disassemble("");
+                }
+                ".cmap" => {
+                    let mut i = 0;
+                    let mut off = 0;
+                    loop {
+                        let offset = u64::from_bytes_ref(&data[off..off + 8]);
+                        let size = u64::from_bytes_ref(&data[(off + 8)..(off + 16)]);
+                        println!("const {i:04}: offset={offset:X?}, size={size:?}");
+                        i += 1;
+                        off += 8 * 2;
+
+                        if off >= data.len() {
+                            break;
+                        }
+                    }
+                }
+                _ => {
+                    if data.len() < 32 {
+                        println!("{:?}", data);
+                    } else {
+                        println!("[... {size} bytes]");
+                    }
+                }
+            }
+            println!();
+        }
+    }
 }
 
 // TODO: make this function's `size` paramter constant, so we can return an array
@@ -453,8 +526,11 @@ impl LunBinBuilder {
         self.typ = Some(typ);
     }
 
-    pub fn section(&mut self, name: String, data: Vec<u8>) {
-        self.sections.push(NotBuildSection { name, data });
+    pub fn section(&mut self, name: impl ToString, data: Vec<u8>) {
+        self.sections.push(NotBuildSection {
+            name: name.to_string(),
+            data,
+        });
     }
 
     pub fn build(self) -> Option<LunBin> {
@@ -470,6 +546,7 @@ impl LunBinBuilder {
         let sh_off = 31;
 
         // ===== SECTION =====
+        let mut sections = Vec::new();
 
         // In .shstr, strings are stored as follows:
         // the lenght in bytes of the string is first represented as a u64
@@ -479,15 +556,16 @@ impl LunBinBuilder {
         fn write_shstr(shstr: &mut Vec<u8>, str: impl ToString) -> usize {
             let str = str.to_string();
 
-            let off = str.len();
-            shstr.extend_from_slice(&(str.len() as u64).as_bytes());
-            shstr.extend_from_slice(&str.into_bytes());
+            let off = shstr.len();
+            // TODO: implement ByteRepr for String but make ByteRepr use runtime sizes
+            shstr.write_all(&(str.len() as u64).as_bytes()).unwrap();
+            shstr.write_all(&str.into_bytes()).unwrap();
             off
         }
 
-        write_shstr(&mut shstr, ".shstr");
+        // `.shstr` must be the first name in `.shstr`.
+        let shstr_name = write_shstr(&mut shstr, LunBin::SECTION_SHSTR) as u64;
 
-        let mut sections = Vec::new();
         for section in self.sections {
             let name = write_shstr(&mut shstr, section.name) as u64;
 
@@ -499,6 +577,14 @@ impl LunBinBuilder {
                 section.data.into_boxed_slice(),
             ));
         }
+
+        sections.push((
+            SectionHeader {
+                name: shstr_name,
+                size: shstr.len() as u64,
+            },
+            shstr.into_boxed_slice(),
+        ));
 
         Some(LunBin {
             header: LBHeader {

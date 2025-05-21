@@ -7,6 +7,8 @@ use lun_parser::{
 
 use super::*;
 
+pub use lun_parser::expr::{BinOp, UnaryOp};
+
 /// Convert AST to a checked AST, but not yet checked
 pub trait FromAst: Sized {
     type Unchecked;
