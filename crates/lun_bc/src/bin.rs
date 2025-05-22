@@ -485,7 +485,7 @@ impl LunBin {
                     if data.len() < 32 {
                         println!("{:?}", data);
                     } else {
-                        println!("[... {size} bytes]");
+                        println!("[... {} bytes]", data.len());
                     }
                 }
             }

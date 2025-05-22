@@ -71,9 +71,9 @@ impl CodeGenerator {
 
                 match op {
                     BinOp::Add => self.bc.write_add(),
-                    BinOp::Sub => self.bc.write_add(),
-                    BinOp::Mul => self.bc.write_add(),
-                    BinOp::Div => self.bc.write_add(),
+                    BinOp::Sub => self.bc.write_sub(),
+                    BinOp::Mul => self.bc.write_mul(),
+                    BinOp::Div => self.bc.write_div(),
                     _ => todo!("implement comparaison operators"),
                 }
             }
