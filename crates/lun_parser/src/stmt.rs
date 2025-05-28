@@ -311,6 +311,10 @@ pub fn parse_ident_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
                 let arg = parse!(parser => Expression);
                 args.push(arg);
 
+                if let Some(Punct(Punctuation::RParen)) = parser.peek_tt() {
+                    break parser.pop().unwrap().loc;
+                }
+
                 expect_token!(parser => [Punct(Punctuation::Comma), ()], Punct(Punctuation::Comma));
             };
 
