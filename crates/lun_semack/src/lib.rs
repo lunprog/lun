@@ -7,7 +7,7 @@ use ckast::{
 };
 use diags::{
     CallRequiresFuncType, ExpectedType, ExpectedTypeFoundExpr, NeverUsedSymbol, NotFoundInScope,
-    ReturnOutsideFunc, TypeAnnotationsNeeded, UnderscoreReservedIdent,
+    ReturnOutsideFunc, TypeAnnotationsNeeded, UnderscoreInExpression, UnderscoreReservedIdent,
 };
 use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic};
 use lun_parser::expr::UnaryOp;
@@ -471,6 +471,12 @@ impl SemanticCk {
                     .into_diag());
                 };
 
+                if sym.name == "_" {
+                    return Err(UnderscoreInExpression {
+                        loc: expr.loc.clone(),
+                    }
+                    .into_diag());
+                }
                 if sym.typ == Type::Unknown {
                     self.sink.push(TypeAnnotationsNeeded {
                         loc: sym.loc.clone(),
@@ -851,14 +857,15 @@ impl SymbolTable {
     /// ending at the global scope, returns None if there is no symbol in any
     /// scopes
     pub fn lookup(&mut self, name: impl AsRef<str>, used: bool) -> Option<&Symbol> {
+        let name = name.as_ref();
         for i in (0..=self.level()).rev() {
-            if let res @ Some(_) = self.tabs[i].get_mut(name.as_ref()) {
+            if let res @ Some(_) = self.tabs[i].get_mut(name) {
                 if used {
                     if let Some(val) = res {
                         val.uses += 1;
                     }
                 }
-                return self.tabs[i].get(name.as_ref());
+                return self.tabs[i].get(name);
             }
         }
         None

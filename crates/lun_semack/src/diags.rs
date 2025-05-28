@@ -132,3 +132,19 @@ impl ToDiagnostic for UnderscoreReservedIdent {
             .with_label(Label::primary((), self.loc))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct UnderscoreInExpression {
+    pub loc: Span,
+}
+
+impl ToDiagnostic for UnderscoreInExpression {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::error()
+            .with_code(ErrorCode::UnderscoreInExpression)
+            .with_message(
+                "`_` can only be used in left hand side of assignement not in expressions",
+            )
+            .with_label(Label::primary((), self.loc))
+    }
+}

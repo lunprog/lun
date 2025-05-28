@@ -259,6 +259,8 @@ pub enum ErrorCode {
     /// _ = 45.6
     /// ```
     UnderscoreReservedIdentifier = 14,
+    /// `_` in expression
+    UnderscoreInExpression = 15,
 }
 
 impl Display for ErrorCode {
