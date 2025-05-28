@@ -26,6 +26,7 @@ impl CodeGenerator {
     pub fn produce(&mut self) -> StageResult<LunBin> {
         let mut builder = LunBinBuilder::new();
         builder.typ(self.typ);
+        // TODO: make a simpler IR
 
         let CkStmt::Assignement {
             variable: _,
@@ -55,7 +56,7 @@ impl CodeGenerator {
             }
             CkExpr::BoolLit(_) => {
                 // TODO: make only two, constants true and false, no need to
-                // create new ones each time
+                // create new ones each time, or create a new opcode
                 todo!("bool literal compilation")
             }
             CkExpr::StringLit(_) => {

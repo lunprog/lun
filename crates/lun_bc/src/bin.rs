@@ -1,6 +1,5 @@
 //! The file type of Lun, `.lb`.
 
-use lun_utils::pluralize;
 use std::{
     fmt::Display,
     io::{Read, Write},
@@ -262,7 +261,7 @@ pub struct SectionHeader {
 /// [magic][fvers][typ][lunvers][sh_num][sh_off][name][size][data...][name][size][data...] ...
 /// |~~~~~~~~~~~~~~~~~ HEADER ~~~~~~~~~~~~~~~~~||~~~~ SECTION 1 ~~~~||~~~~ SECTION 2 ~~~~| ...
 ///                                             ^           <------->
-///                                           sh_off           len
+///                                           sh_off          size
 /// <------------------------------------------>                     <------------------->
 ///                HEADER SIZE: 31 bytes                         SECTION SIZE: 16 + size bytes
 /// ```
@@ -339,7 +338,7 @@ impl LunBin {
 
             assert_eq!(sh.size as usize, data.len());
             // data
-            w.write_all(&data)?;
+            w.write_all(data)?;
         }
 
         Ok(())
@@ -538,9 +537,7 @@ impl LunBinBuilder {
         // ===== HEADER =====
         let magic = LBHeader::MAGIC;
         let fvers = SmallVers::LATEST_LB_VERSION;
-        let Some(typ) = self.typ else {
-            return None;
-        };
+        let typ = self.typ?;
         let lunvers = Version::LUN_LATEST_VERSION;
         let sh_num = self.sections.len() as u64;
         let sh_off = 31;

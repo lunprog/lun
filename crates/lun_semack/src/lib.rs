@@ -10,7 +10,7 @@ use diags::{
     ReturnOutsideFunc, TypeAnnotationsNeeded, UnderscoreReservedIdent,
 };
 use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic};
-use lun_parser::expr::{BinOp, UnaryOp};
+use lun_parser::expr::UnaryOp;
 use lun_parser::stmt::{Chunk, Vis};
 use lun_utils::Span;
 

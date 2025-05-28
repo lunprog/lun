@@ -239,7 +239,7 @@ impl BcBlob {
         // TODO: maybe make the Display implementation the output of `disassemble`.
         // but first `dissassemble` would need to write to a `&dyn Write`.
         // TODO: maybe output the hex of each instruction like objdump does.
-        if name.len() != 0 {
+        if !name.is_empty() {
             println!("== {name} ==");
         }
 
