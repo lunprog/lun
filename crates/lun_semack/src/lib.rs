@@ -11,11 +11,12 @@ use diags::{
 };
 use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic};
 use lun_parser::expr::UnaryOp;
-use lun_parser::stmt::{Chunk, Vis};
+use lun_parser::stmt::Chunk;
 use lun_utils::Span;
 
 pub mod ckast;
 pub mod diags;
+pub use lun_parser::stmt::Vis;
 
 /// Semantic checker, ensure all of the lun's semantic is correct, it also
 /// include type checking.
@@ -162,13 +163,18 @@ impl SemanticCk {
                 // otherwise we set the type of variable to the type of value.
                 self.check_expr(value)?;
 
-                let Some(symbol) = self.table.lookup(&*variable, true).cloned() else {
+                let MaybeUnresolved::Unresolved(id) = variable else {
+                    panic!()
+                };
+                let Some(symbol) = self.table.lookup(&*id, true).cloned() else {
                     return Err(NotFoundInScope {
-                        name: variable.clone(),
+                        name: id.clone(),
                         loc: stmt.loc.clone(),
                     }
                     .into_diag());
                 };
+
+                *variable = MaybeUnresolved::Resolved(symbol.clone());
 
                 if &symbol.name == "_" {
                     // do nothing the assignement is to the _ identifier so we don't do anything
@@ -321,10 +327,10 @@ impl SemanticCk {
 
                 self.table.scope_exit(&mut self.sink);
             }
-            CkStmt::FunCall {
-                name: MaybeUnresolved::Unresolved(id),
-                args,
-            } => {
+            CkStmt::FunCall { name, args } => {
+                let MaybeUnresolved::Unresolved(id) = name else {
+                    panic!()
+                };
                 let Some(sym) = self.table.lookup(&*id, true).cloned() else {
                     return Err(NotFoundInScope {
                         name: id.clone(),
@@ -332,6 +338,8 @@ impl SemanticCk {
                     }
                     .into_diag());
                 };
+
+                *name = MaybeUnresolved::Resolved(sym.clone());
 
                 let Type::Func {
                     args: args_ty,
@@ -359,10 +367,6 @@ impl SemanticCk {
                 // TODO: emit a warning diag if the return type of the function
                 // is not `Nil` because the value isn't used.
             }
-            CkStmt::FunCall {
-                name: MaybeUnresolved::Resolved(_),
-                ..
-            } => unreachable!(),
             CkStmt::While { .. } | CkStmt::For { .. } => {
                 // TODO: implement loops checking
                 return Err(

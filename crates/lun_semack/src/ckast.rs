@@ -96,7 +96,7 @@ impl FromAst for CkStatement {
     fn from_ast(ast: Self::Unchecked) -> Self {
         let stmt = match ast.stmt {
             Stmt::Assignement { variable, value } => CkStmt::Assignement {
-                variable,
+                variable: MaybeUnresolved::Unresolved(variable),
                 value: from_ast(value),
             },
             Stmt::VariableDef {
@@ -175,7 +175,7 @@ pub enum CkStmt {
     ///
     /// [`Assignement`]: lun_parser::stmt::Stmt::Assignement
     Assignement {
-        variable: String,
+        variable: MaybeUnresolved,
         value: CkExpression,
     },
     /// see [`VariableDef`]
