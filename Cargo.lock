@@ -41,6 +41,7 @@ dependencies = [
  "lun_bc",
  "lun_codegen",
  "lun_diag",
+ "lun_ir",
  "lun_lexer",
  "lun_parser",
  "lun_semack",
@@ -75,6 +76,13 @@ dependencies = [
  "codespan-reporting",
  "lun_utils",
  "thiserror",
+]
+
+[[package]]
+name = "lun_ir"
+version = "0.1.0"
+dependencies = [
+ "lun_semack",
 ]
 
 [[package]]

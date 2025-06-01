@@ -97,6 +97,7 @@ impl SemanticCk {
                     name,
                     args,
                     rettype,
+                    sym,
                     ..
                 } => {
                     // true type of the arguments
@@ -130,19 +131,19 @@ impl SemanticCk {
                         ckname = String::from("\0");
                     }
 
-                    self.table.bind(
-                        ckname,
-                        Symbol::global(
-                            Type::Func {
-                                args: args_true,
-                                ret: ret_true,
-                            },
-                            name.clone(),
-                            self.table.level(),
-                            // TODO: add a new loc that points to the signature
-                            stmt.loc.clone(),
-                        ),
+                    let symbol = Symbol::global(
+                        Type::Fun {
+                            args: args_true,
+                            ret: ret_true,
+                        },
+                        name.clone(),
+                        self.table.level(),
+                        // TODO: add a new loc that points to the signature
+                        stmt.loc.clone(),
                     );
+                    *sym = MaybeUnresolved::Resolved(symbol.clone());
+
+                    self.table.bind(ckname, symbol);
                 }
                 _ => {}
             }
@@ -202,6 +203,7 @@ impl SemanticCk {
                 name_loc,
                 typ,
                 value,
+                sym,
             } => {
                 // check the type
                 if let Some(ty) = typ {
@@ -257,19 +259,20 @@ impl SemanticCk {
                         ckname = String::from("\0");
                     }
 
-                    self.table.bind(
-                        ckname,
-                        // TODO: add a new loc that point to the variable name and use it in the Symbol
-                        Symbol::local(realtyp, name.clone(), self.table.level(), stmt.loc.clone()),
-                    )
+                    let symbol =
+                        Symbol::local(realtyp, name.clone(), self.table.level(), stmt.loc.clone());
+                    *sym = MaybeUnresolved::Resolved(symbol.clone());
+                    self.table.bind(ckname, symbol)
                 } else {
                     // just edit the type of the global variable
-                    let Some(sym) = self.table.lookup(name, false).cloned() else {
+                    let Some(symbol) = self.table.lookup(name, false).cloned() else {
                         unreachable!()
                     };
 
-                    self.table
-                        .edit(sym.which, sym.name.clone(), sym.typ(realtyp));
+                    let symbol = symbol.typ(realtyp);
+                    *sym = MaybeUnresolved::Resolved(symbol.clone());
+
+                    self.table.edit(symbol.which, symbol.name.clone(), symbol);
                 }
             }
             CkStmt::IfThenElse {
@@ -341,7 +344,7 @@ impl SemanticCk {
 
                 *name = MaybeUnresolved::Resolved(sym.clone());
 
-                let Type::Func {
+                let Type::Fun {
                     args: args_ty,
                     ret: _,
                 } = &sym.typ
@@ -383,9 +386,10 @@ impl SemanticCk {
                 args,
                 rettype: _,
                 body,
+                sym: _,
             } => {
                 let Some(Symbol {
-                    typ: Type::Func { ret, .. },
+                    typ: Type::Fun { ret, .. },
                     ..
                 }) = self.table.lookup(name, false)
                 else {
@@ -531,7 +535,7 @@ impl SemanticCk {
             CkExpr::FunCall { called, args } => {
                 self.check_expr(called)?;
 
-                let Type::Func {
+                let Type::Fun {
                     args: args_ty,
                     ret: ret_ty,
                 } = &called.typ
@@ -573,6 +577,9 @@ pub struct Symbol {
     pub typ: Type,
     /// the name of the symbol
     pub name: String,
+    // TODO(URGENT): `which` is populated with bullshit, we need to keep track
+    // of the count of locals, params, and globals, increment when we make a
+    // new one and make those fields available
     /// which scope the symbol is referring to
     pub which: usize,
     /// location of the definition of the symbol, must point to at least the
@@ -689,10 +696,11 @@ pub enum Type {
     // TODO: implement strings
     /// a string, nothing for now, we can't use them
     String,
-    /// a nil value, just the `nil` literal or nothing
+    /// a nil value, just the `nil` literal or nothing, its the base return
+    /// type of a function that returns nothing
     Nil,
     /// a function type, can only be constructed from a function definition.
-    Func {
+    Fun {
         /// types of the arguments
         args: Vec<Type>,
         /// the return type
@@ -720,7 +728,7 @@ impl Type {
 
     /// returns true if the type is a function
     pub const fn is_func(&self) -> bool {
-        matches!(self, Type::Func { .. })
+        matches!(self, Type::Fun { .. })
     }
 
     /// Converts a type expression to a type.
@@ -740,6 +748,24 @@ impl Type {
             real type"
         )
     }
+
+    /// Interpret the type as a Fun and return the return type
+    #[track_caller]
+    pub fn as_fun_ret(&self) -> Type {
+        match self {
+            Self::Fun { ret, .. } => (**ret).clone(),
+            _ => panic!("{self:?} is not a function type"),
+        }
+    }
+
+    /// Interpret the type as a Fun and return the arguments types
+    #[track_caller]
+    pub fn as_fun_args(&self) -> Vec<Type> {
+        match self {
+            Self::Fun { args, .. } => args.clone(),
+            _ => panic!("{self:?} is not a function type"),
+        }
+    }
 }
 
 impl Display for Type {
@@ -752,7 +778,7 @@ impl Display for Type {
             Type::String => f.write_str("string"),
             Type::Nil => f.write_str("nil"),
             // TODO: implement a proper display for function type, like `func(int, float) -> bool`
-            Type::Func { .. } => f.write_str("func"),
+            Type::Fun { .. } => f.write_str("func"),
             Type::ComptimeType => f.write_str("comptime type"),
         }
     }

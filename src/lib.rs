@@ -22,6 +22,7 @@ use crate::{
     bc::{BcBlob, bin::LBType},
     codegen::CodeGenerator,
     diag::{DiagnosticSink, StageResult, tri},
+    ir::IrModule,
     lexer::Lexer,
     parser::Parser,
     semack::SemanticCk,
@@ -31,6 +32,7 @@ use crate::{
 pub use lun_bc as bc;
 pub use lun_codegen as codegen;
 pub use lun_diag as diag;
+pub use lun_ir as ir;
 pub use lun_lexer as lexer;
 pub use lun_parser as parser;
 pub use lun_semack as semack;
@@ -64,36 +66,41 @@ pub fn run() -> StageResult<()> {
 
     dbg!(&ckast);
 
-    // 5. code generation
-    let mut codegen = CodeGenerator::new(ckast, sink.clone(), LBType::Exec);
-    let lb = tri!(codegen.produce(), sink);
+    // 5. convert ast to ir
+    let ir = IrModule::from_ck_chunk(ckast);
+    dbg!(ir);
+    // TODO: make the codegenerator work on the ir.
 
-    let mut file = File::create("test.lb").unwrap();
-    lb.serialize(&mut file).unwrap();
+    // 6. code generation
+    // let mut codegen = CodeGenerator::new(ckast, sink.clone(), LBType::Exec);
+    // let lb = tri!(codegen.produce(), sink);
 
-    lb.dump();
+    // let mut file = File::create("test.lb").unwrap();
+    // lb.serialize(&mut file).unwrap();
+
+    // lb.dump();
 
     // THE VM PARTS
 
-    let mut blob = BcBlob::new();
+    // let mut blob = BcBlob::new();
 
-    let a = blob.dpool.write_integer(10) as u32;
-    blob.write_const(a);
-    let b = blob.dpool.write_integer(4) as u32;
-    dbg!(&blob.dpool);
-    blob.write_const(b);
+    // let a = blob.dpool.write_integer(10) as u32;
+    // blob.write_const(a);
+    // let b = blob.dpool.write_integer(4) as u32;
+    // dbg!(&blob.dpool);
+    // blob.write_const(b);
 
-    blob.write_sub();
+    // blob.write_sub();
 
-    blob.write_return();
+    // blob.write_return();
 
-    blob.disassemble("test blob");
+    // blob.disassemble("test blob");
 
-    let mut vm = VM::new(blob);
+    // let mut vm = VM::new(blob);
 
-    let res = vm.run();
+    // let res = vm.run();
 
-    println!("RES = {}", res);
+    // println!("RES = {}", res);
 
     if sink.is_empty() {
         StageResult::Good(())

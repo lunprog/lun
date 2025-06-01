@@ -107,10 +107,11 @@ impl FromAst for CkStatement {
                 value,
             } => CkStmt::VariableDef {
                 vis,
-                name,
+                name: name.clone(),
                 name_loc,
                 typ: from_ast(typ),
                 value: from_ast(value),
+                sym: MaybeUnresolved::Unresolved(name),
             },
             Stmt::IfThenElse {
                 cond,
@@ -152,11 +153,12 @@ impl FromAst for CkStatement {
                 body,
             } => CkStmt::FunDef {
                 vis,
-                name,
+                name: name.clone(),
                 name_loc,
                 args: from_ast(args),
                 rettype: from_ast(rettype),
                 body: from_ast(body),
+                sym: MaybeUnresolved::Unresolved(name),
             },
             Stmt::Return { val } => CkStmt::Return { val: from_ast(val) },
             Stmt::Break { val } => CkStmt::Break { val: from_ast(val) },
@@ -187,6 +189,8 @@ pub enum CkStmt {
         name_loc: Span,
         typ: Option<CkExpression>,
         value: Option<CkExpression>,
+        /// the symbol representing this function
+        sym: MaybeUnresolved,
     },
     /// see [`IfThenElse`]
     ///
@@ -230,6 +234,8 @@ pub enum CkStmt {
         args: Vec<CkArg>,
         rettype: Option<CkExpression>,
         body: CkChunk,
+        /// the symbol representing this function
+        sym: MaybeUnresolved,
     },
     /// see [`Return`]
     ///
@@ -384,4 +390,13 @@ pub enum CkExpr {
 pub enum MaybeUnresolved {
     Unresolved(String),
     Resolved(Symbol),
+}
+
+impl MaybeUnresolved {
+    pub fn unwrap(self) -> Symbol {
+        match self {
+            MaybeUnresolved::Unresolved(_) => panic!("Called `unwrap` on an Unresolved."),
+            MaybeUnresolved::Resolved(s) => s,
+        }
+    }
 }
