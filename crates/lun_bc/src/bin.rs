@@ -366,10 +366,6 @@ impl LunBin {
 
         let mut offset = 0usize;
         let off = &mut offset;
-        // TODO(URGENT): replace bytemuck's call with a custom trait `FromBytes`
-        // because bytemuck expects everything to be aligned well to just do a
-        // transmute but we actually can't because, in the file practically
-        // nothing is aligned.
 
         // ===== HEADER =====
 

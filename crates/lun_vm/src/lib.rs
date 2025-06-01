@@ -4,7 +4,6 @@ use lun_bc::{BcBlob, OpCode};
 use lun_utils::read_bword;
 
 use std::mem;
-// TODO: use bytemuck for casting types everywhere
 
 /// The stack of the VM
 #[derive(Debug, Clone, PartialEq, Eq)]
