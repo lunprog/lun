@@ -21,7 +21,8 @@ rfl -> flags register
 
 # Instructions
 
-Arithmetic & Logic:
+## Arithmetic & Logic
+
 ```
 [ OPCODE | RD |TYPE|RS1 |RS2 | FUNCT1 ] -> 16 bits
 
@@ -83,7 +84,8 @@ opcode = 0x00
   rd = rs1 % rs2
 ```
 
-Branching
+## Branching
+
 ```
 TODO:
 - jal rd, offset       => rd = pc + 4; pc += sext(offset)
@@ -94,7 +96,8 @@ TODO:
 - bge rs1, rs2, offset => if rs1 >= rs2 then pc += offset
 ```
 
-Memory
+## Memory
+
 ```
 LOAD
 - lb rd, offset => rd = mem(offset)[7:0]
@@ -107,6 +110,16 @@ STORE
 - sh rs1, offset => mem(offset) = rs1[15:0]
 - sw rs1, offset => mem(offset) = rs1[31:0]
 - sd rs1, offset => mem(offset) = rs1[63:0]
+```
+
+## Moves
+
+```
+- mvi rd, imm[8, 16, 32, 64] => move immediate byte : rd = imm
+  eg:
+    mvi r1, 0x00 [8] -> here the immediate is just a byte
+    mvi r1, 0xDEADBEEF [32] -> here the immediate is a word
+- mov rd, rs  => move rs into rd: rd = rs
 ```
 
 # Bus & Memory
