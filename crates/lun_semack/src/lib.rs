@@ -87,7 +87,7 @@ impl SemanticCk {
                         Symbol::global(
                             Type::Unknown,
                             name.clone(),
-                            self.table.level(),
+                            self.table.global_count(),
                             name_loc.clone(),
                         ),
                     );
@@ -137,7 +137,7 @@ impl SemanticCk {
                             ret: ret_true,
                         },
                         name.clone(),
-                        self.table.level(),
+                        self.table.global_count(),
                         // TODO: add a new loc that points to the signature
                         stmt.loc.clone(),
                     );
@@ -259,8 +259,12 @@ impl SemanticCk {
                         ckname = String::from("\0");
                     }
 
-                    let symbol =
-                        Symbol::local(realtyp, name.clone(), self.table.level(), stmt.loc.clone());
+                    let symbol = Symbol::var(
+                        realtyp,
+                        name.clone(),
+                        self.table.var_count(),
+                        stmt.loc.clone(),
+                    );
                     *sym = MaybeUnresolved::Resolved(symbol.clone());
                     self.table.bind(ckname, symbol)
                 } else {
@@ -418,7 +422,7 @@ impl SemanticCk {
 
                     self.table.bind(
                         ckname.clone(),
-                        Symbol::param(ty, ckname.clone(), self.table.level(), name_loc.clone()),
+                        Symbol::arg(ty, ckname.clone(), self.table.arg_count(), name_loc.clone()),
                     )
                 }
 
@@ -577,9 +581,6 @@ pub struct Symbol {
     pub typ: Type,
     /// the name of the symbol
     pub name: String,
-    // TODO(URGENT): `which` is populated with bullshit, we need to keep track
-    // of the count of locals, params, and globals, increment when we make a
-    // new one and make those fields available
     /// which scope the symbol is referring to
     pub which: usize,
     /// location of the definition of the symbol, must point to at least the
@@ -603,7 +604,7 @@ impl Symbol {
     }
 
     /// Create a new local symbol
-    pub fn local(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn var(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
             kind: SymKind::Var,
             typ,
@@ -615,7 +616,7 @@ impl Symbol {
     }
 
     /// Create a new param symbol
-    pub fn param(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn arg(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
             kind: SymKind::Arg,
             typ,
@@ -784,7 +785,54 @@ impl Display for Type {
     }
 }
 
-pub type SymbolMap = HashMap<String, Symbol>;
+#[derive(Debug, Clone)]
+pub struct SymbolMap {
+    map: HashMap<String, Symbol>,
+    global_count: usize,
+    var_count: usize,
+    arg_count: usize,
+}
+
+impl SymbolMap {
+    pub fn new() -> SymbolMap {
+        SymbolMap {
+            map: HashMap::new(),
+            global_count: 0,
+            var_count: 0,
+            arg_count: 0,
+        }
+    }
+
+    pub fn first_scope() -> SymbolMap {
+        SymbolMap {
+            map: HashMap::from([
+                (
+                    "int".to_string(),
+                    Symbol::global(Type::ComptimeType, "int".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "float".to_string(),
+                    Symbol::global(Type::ComptimeType, "float".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "bool".to_string(),
+                    Symbol::global(Type::ComptimeType, "bool".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "string".to_string(),
+                    Symbol::global(Type::ComptimeType, "string".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "_".to_string(),
+                    Symbol::global(Type::Unknown, "_".to_string(), 0, Span::ZERO),
+                ),
+            ]),
+            global_count: 5,
+            var_count: 0,
+            arg_count: 0,
+        }
+    }
+}
 
 /// Symbol table.
 ///
@@ -803,21 +851,7 @@ impl SymbolTable {
     pub fn new() -> SymbolTable {
         // TODO: load with atomic types like int, float etc etc
         SymbolTable {
-            tabs: vec![HashMap::from_iter(
-                // TODO: probably change this shit it's not pretty
-                Type::ATOMIC_TYPES
-                    .iter()
-                    .map(|a| {
-                        (
-                            a.to_string(),
-                            Symbol::global(Type::ComptimeType, a.to_string(), 0, Span::ZERO),
-                        )
-                    })
-                    .chain(Some((
-                        String::from("_"),
-                        Symbol::global(Type::Unknown, "_".to_string(), 0, Span::ZERO),
-                    ))),
-            )],
+            tabs: vec![SymbolMap::first_scope()],
         }
     }
 
@@ -840,7 +874,7 @@ impl SymbolTable {
     pub fn scope_exit(&mut self, sink: &mut DiagnosticSink) {
         assert_ne!(self.tabs.len(), 1, "can't exit out of the global scope");
 
-        for sym in self.last_map().values() {
+        for sym in self.last_map().map.values() {
             // type annotation needed the type is unknown
             if sym.typ == Type::Unknown {
                 sink.push(TypeAnnotationsNeeded {
@@ -865,7 +899,18 @@ impl SymbolTable {
     /// Bind a name to a symbol in the current scope, will panick if name == `_`
     pub fn bind(&mut self, name: String, sym: Symbol) {
         assert_ne!(name.as_str(), "_", "`_` is a reserved identifier");
-        self.last_map_mut().insert(name, sym);
+        match sym.kind {
+            SymKind::Var => {
+                self.last_map_mut().var_count += 1;
+            }
+            SymKind::Arg => {
+                self.last_map_mut().arg_count += 1;
+            }
+            SymKind::Global => {
+                self.last_map_mut().global_count += 1;
+            }
+        }
+        self.last_map_mut().map.insert(name, sym);
     }
 
     /// Return the current scope level
@@ -876,7 +921,7 @@ impl SymbolTable {
     /// Lookup for the symbol in the current scope, returns None if there is no
     /// symbol with this name in the current scope
     pub fn lookup_current(&self, name: impl AsRef<str>) -> Option<&Symbol> {
-        self.last_map().get(name.as_ref())
+        self.last_map().map.get(name.as_ref())
     }
 
     /// Lookup for a symbol with the given name, starting at the current scope
@@ -885,13 +930,13 @@ impl SymbolTable {
     pub fn lookup(&mut self, name: impl AsRef<str>, used: bool) -> Option<&Symbol> {
         let name = name.as_ref();
         for i in (0..=self.level()).rev() {
-            if let res @ Some(_) = self.tabs[i].get_mut(name) {
+            if let res @ Some(_) = self.tabs[i].map.get_mut(name) {
                 if used {
                     if let Some(val) = res {
                         val.uses += 1;
                     }
                 }
-                return self.tabs[i].get(name);
+                return self.tabs[i].map.get(name);
             }
         }
         None
@@ -900,7 +945,22 @@ impl SymbolTable {
     /// Edit a symbol in the scope `which` with the name `name`, will panick if
     /// the scope or the symbol doesn't exist
     pub fn edit(&mut self, which: usize, name: impl AsRef<str>, new_symbol: Symbol) {
-        *self.tabs[which].get_mut(name.as_ref()).unwrap() = new_symbol;
+        *self.tabs[which].map.get_mut(name.as_ref()).unwrap() = new_symbol;
+    }
+
+    /// Returns the Var count of the last symbol map
+    pub fn var_count(&self) -> usize {
+        self.last_map().var_count
+    }
+
+    /// Returns the Arg count of the last symbol map
+    pub fn arg_count(&self) -> usize {
+        self.last_map().arg_count
+    }
+
+    /// Returns the Global count of the last symbol map
+    pub fn global_count(&self) -> usize {
+        self.last_map().global_count
     }
 }
 

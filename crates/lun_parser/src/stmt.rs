@@ -58,8 +58,6 @@ pub struct Statement {
     pub loc: Span,
 }
 
-// TODO(URGENT): change the `local: bool` fields with a `vis: Visibility` field
-// it will be clearer
 #[derive(Debug, Clone)]
 pub enum Stmt {
     /// assignement
