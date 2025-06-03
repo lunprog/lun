@@ -19,9 +19,20 @@ rip -> instruction pointer
 rfl -> flags register
 ```
 
-# Instructions
+### `rfl` Flags
 
-## Arithmetic & Logic
+```
+0                                                            63
+|OF|                         Reserved                         |
+
+OF is a bit, when set to 1, the last arithmetic instruction overflowed,
+             when set to 0, no overflow
+```
+
+
+## Instructions
+
+### Arithmetic & Logic
 
 ```
 [ OPCODE | RD |TYPE|RS1 |RS2 | FUNCT1 ] -> 16 bits
@@ -84,7 +95,7 @@ opcode = 0x00
   rd = rs1 % rs2
 ```
 
-## Branching
+### Branching
 
 ```
 TODO:
@@ -96,7 +107,7 @@ TODO:
 - bge rs1, rs2, offset => if rs1 >= rs2 then pc += offset
 ```
 
-## Memory
+### Memory
 
 ```
 LOAD
@@ -112,7 +123,7 @@ STORE
 - sd rs1, offset => mem(offset) = rs1[63:0]
 ```
 
-## Moves
+### Moves
 
 ```
 - mvi rd, imm[8, 16, 32, 64] => move immediate byte : rd = imm
@@ -122,7 +133,7 @@ STORE
 - mov rd, rs  => move rs into rd: rd = rs
 ```
 
-# Bus & Memory
+## Bus & Memory
 
 Memory Map
 ```
@@ -161,7 +172,7 @@ region as it's protection represented as RWX (you can do everything) or ---
 `heap` has `???` because the heap grows in regions and so every region has its
 own protections, TODO: not sure about how exactly the heap would work though.
 
-## Special
+### Special
 
 ```
 addr   prot   usage
@@ -171,19 +182,18 @@ addr   prot   usage
 ...    ---    the rest of the addresses
 ```
 
-## Stack
+### Stack
 
 The stack is a descending stack, it's bottom is defined as `stack_bottom`, the
 stack cannot grow and the `stack_size` must be known before executing the
 program.
 
-## Program
+### Program
 
 The program size is the size of all the bytecode, it cannot grow, this region
 is readonly and executable obviously.
 
-## Heap
+### Heap
 
 TODO: idk how it could work because we need to support freeing of memory, with
 a garbage collector i think, but this heap thingy could not be the solution.
-
