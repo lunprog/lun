@@ -4,22 +4,28 @@ The (new) Virtual Machine reference.
 
 ## Registers
 
-General purpose registers (64 bits wide):
+Every register is 64 bit wide.
+
+### General purpose registers
+
 ```
-r0  r1  r2  r3
-r4  r5  r6  r7
-r8  r9  r10 r11
-r12 r13 r14 r15
+ra0  ra1  ra2  ra3
+ra4  ra5  ra6  rt0
+rt1  rt2  rt3  rt4
+rt5  rfl  rfp  rsp
 ```
 
-Special Registers:
 ```
-rsp -> stack pointer
-rip -> instruction pointer
-rfl -> flags register
+| regs  |       description       | saver  |
+| ra0-1 | argument / return value | caller |
+| ra2-6 | argument                | caller |
+| rt0-5 | temporary               | caller |
+| rfl   | flag reg. see below     |   X    |
+| rfp   | frame pointer           | callee |
+| rsp   | stack pointer           | callee |
 ```
 
-### `rfl` Flags
+#### `rfl` Flags
 
 ```
 0                                                            63
@@ -29,6 +35,12 @@ OF is a bit, when set to 1, the last arithmetic instruction overflowed,
              when set to 0, no overflow
 ```
 
+
+### Special Registers:
+
+```
+pc -> program counter
+```
 
 ## Instructions
 
@@ -131,6 +143,19 @@ STORE
     mvi r1, 0x00 [8] -> here the immediate is just a byte
     mvi r1, 0xDEADBEEF [32] -> here the immediate is a word
 - mov rd, rs  => move rs into rd: rd = rs
+```
+
+### Stack
+
+<!-- TODO: write the proper implementation of those instructions -->
+
+```
+- push rs => pushes the content of rs into the stack
+- pusha   => pushes all register in order
+- pop rd  => pops the content of the stack into the rd
+- popa    => pops all the register in the correct order so that pusha followed by
+          popa is a no-op
+- ret     => pops the stack and sets pc to that value
 ```
 
 ## Bus & Memory
