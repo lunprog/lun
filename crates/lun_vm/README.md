@@ -269,19 +269,25 @@ Memory Map
 │ special │
 │   ???   │ 255
 ├─────────┤
-│         │ stack_top
-┊         ┊
-┊  stack  ┊
-┊         ┊
-│   RW-   │ stack_bottom = stack_top + stack_size
-├─────────┤
-│         │ program_start
+│         │ program_start = 256
 ┊         ┊
 ┊ program ┊
 ┊         ┊
 │   R-X   │ program_end = program_start + program_size
 ├─────────┤
-│         │ heap_base
+│         │ stack_top = program_end + 1
+┊         ┊
+┊  stack  ┊
+┊         ┊
+│   RW-   │ stack_bottom = stack_top + stack_size
+├─────────┤
+│         │ 1024 bytes that are un accessible, it helps to catch stack overflow
+┊         ┊
+┊ canary  ┊
+┊         ┊
+│   ---   │
+├─────────┤
+│         │ heap_base = stack_bottom + 1025
 ┊         ┊
 ┊  heap   ┊
 ┊         ┊
@@ -289,15 +295,20 @@ Memory Map
 └─────────┘
 ```
 
-`special`, `stack`, `program`, `heap` are memory regions, those are protected
-through protections. Read, Write and eXecute are the protections, and each
-region as it's protection represented as RWX (you can do everything) or ---
+`special`, `program`, `stack`, `cannary` `heap` are memory regions, those are
+protected through protections. Read, Write and eXecute are the protections, and
+each region as it's protection represented as RWX (you can do everything) or ---
 (you can do nothing), or ??? when the protection is more complicated than that.
 
 `special` has `???` because every address has its own protection.
 
-`heap` has `???` because the heap grows in regions and so every region has its
-own protections, TODO: not sure about how exactly the heap would work though.
+`canary` is a 1024 bytes wide region of memory between the `stack` and the
+`heap`, used to protect against most of the stack overflows and detect them
+easier.
+
+`heap` has `???` because the heap grows in regions and so every region have
+their own protections, TODO: not sure about how exactly the heap would work
+though.
 
 ### Special
 
@@ -305,8 +316,7 @@ own protections, TODO: not sure about how exactly the heap would work though.
 addr   prot   usage
 -----------------
 0      ---    null pointer
-1      --X    call to foreign functions, defined by a library loaded by the VM
-...    ---    the rest of the addresses
+...    ---    reserved
 ```
 
 ### Stack
