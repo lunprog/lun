@@ -1,120 +1,322 @@
 //! Bytecode of lun.
 
-use std::io::Write;
-
-use bin::ByteRepr;
-use lun_utils::{read_bword, read_many, read_qword, write_bword, write_qword};
+use bytemuck::Contiguous;
 
 pub mod bin;
 
 #[repr(u8)]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Contiguous)]
 pub enum OpCode {
-    /// Return from the current function.
-    ///
-    /// # Format
-    ///
-    /// ```text
-    /// [  ret   ]
-    /// ^ opcode
-    /// ```
-    ///
-    /// The size of this instruction is 8 bits, 1 byte.
-    Ret = 0,
-    /// Loads a constant from the data pool on the top of the stack with the
-    /// given index in the pool
-    ///
-    /// # Format
-    ///
-    /// ```text
-    /// [ const  ][          index         ]
-    /// ^ 8bit    ^ 24 bit index
-    /// ```
-    ///
-    /// The size of this instruction is 32 bits, 4 bytes.
-    Const = 1,
-    /// Negates the integers at the top of the stack.
-    ///
-    /// # Format
-    ///
-    /// ```text
-    /// [  neg   ]
-    /// ^ opcode
-    /// ```
-    ///
-    /// The size of this instruction is 8 bits, 1 byte.
-    Neg = 2,
-    /// Add the two integers at the top of the stack and pushes the result.
-    ///
-    /// # Format
-    ///
-    /// ```text
-    /// [  add   ]
-    /// ^ opcode
-    /// ```
-    ///
-    /// The size of this instruction is 8 bits, 1 byte.
-    Add = 3,
-    /// Subtracts the two integers at the top of the stack and pushes the result
-    ///
-    /// # Format
-    ///
-    /// ```text
-    /// [  sub   ]
-    /// ^ opcode
-    /// ```
-    ///
-    /// The size of this instruction is 8 bits, 1 byte.
-    Sub = 4,
-    /// Multiplies the two integers at the top of the stack and pushes the result.
-    ///
-    /// # Format
-    ///
-    /// ```text
-    /// [  mul   ]
-    /// ^ opcode
-    /// ```
-    ///
-    /// The size of this instruction is 8 bits, 1 byte.
-    Mul = 5,
-    /// Divides the two integers at the top of the stack and pushes the result.
-    ///
-    /// # Format
-    ///
-    /// ```text
-    /// [  add   ]
-    /// ^ opcode
-    /// ```
-    ///
-    /// The size of this instruction is 8 bits, 1 byte.
-    Div = 6,
+    /// add.type rd, rs1, rs2
+    /// => rd = rs1 + rs2
+    Add = 0,
+
+    /// sub.type rd, rs1, rs2
+    /// => rd = rs1 - rs2
+    Sub = 1,
+
+    /// mul.type rd, rs1, rs2
+    /// => rd = rs1 * rs2
+    Mul = 2,
+
+    /// div.type rd, rs1, rs2
+    /// => rd = rs1 / rs2
+    Div = 3,
+
+    /// rem.type rd, rs1, rs2
+    /// => rd = rs1 % rs2
+    Rem = 4,
+
+    /// clt.type rd, rs1, rs2
+    /// => rd = rs1 < rs2
+    Clt = 5,
+
+    /// cge.type rd, rs1, rs2
+    /// => rd = rs1 >= rs2
+    Cge = 6,
+
+    /// ceq.type rd, rs1, rs2
+    /// => rd = rs1 == rs2
+    Ceq = 7,
+
+    /// cne.type rd, rs1, rs2
+    /// => rd = rs1 != rs2
+    Cne = 8,
+
+    /// and.type rd, rs1, rs2
+    /// => rd = rs1 and rs2
+    And = 9,
+
+    /// or.type rd, rs1, rs2
+    /// => rd = rs1 or rs2
+    Or = 10,
+
+    /// xor.type rd, rs1, rs2
+    /// => rd = rs1 xor rs2
+    Xor = 11,
+
+    /// call offset
+    /// => rsp = rsp - WORD_LEN/8 ; M[rsp] = rs ; pc += sext(offset)
+    Call = 12,
+
+    /// ret
+    /// => pc = M[rsp] ; rsp = rsp + WORD_LEN/8
+    Ret = 13,
+
+    /// jze rs2, offset(rs1)
+    /// => if rs == 0 then pc += sext(offset)
+    Jze = 14,
+
+    /// beq rs1, rs2, offset
+    /// => if rs1 == rs2 then pc += sext(offset)
+    Beq = 15,
+
+    /// bne rs1, rs2, offset
+    /// => if rs1 != rs2 then pc += sext(offset)
+    Bne = 16,
+
+    /// blt rs1, rs2, offset
+    /// => if rs1 < rs2 then pc += sext(offset)
+    Blt = 17,
+
+    /// bge rs1, rs2, offset
+    /// => if rs1 >= rs2 then pc += sext(offset)
+    Bge = 18,
+
+    /// ld.b rd, offset(rs)
+    /// => rd = M[rs + sext(offset)][7:0]
+    LdB = 19,
+
+    /// ld.h rd, offset(rs)
+    /// => rd = M[rs + sext(offset)][15:0]
+    LdH = 20,
+
+    /// ld.w rd, offset(rs)
+    /// => rd = M[rs + sext(offset)][31:0]
+    LdW = 21,
+
+    /// ld.d rd, offset(rs)
+    /// => rd = M[rs + sext(offset)][63:0]
+    LdD = 22,
+
+    /// st.b rs2, offset(rs1)
+    /// => M[rs1 + sext(offset)] = rs2[7:0]
+    StB = 23,
+
+    /// st.h rs2, offset(rs1)
+    /// => M[rs1 + sext(offset)] = rs2[15:0]
+    StH = 24,
+
+    /// st.w rs2, offset(rs1)
+    /// => M[rs1 + sext(offset)] = rs2[31:0]
+    StW = 25,
+
+    /// st.d rs2, offset(rs1)
+    /// => M[rs1 + sext(offset)] = rs2[63:0]
+    StD = 26,
+
+    /// li.b rd, imm(rs)
+    /// => rd = imm[7:0]
+    LiB = 27,
+
+    /// li.h rd, imm(rs)
+    /// => rd = imm[15:0]
+    LiH = 28,
+
+    /// li.w rd, imm(rs)
+    /// => rd = imm[31:0]
+    LiW = 29,
+
+    /// li.d rd, imm(rs)
+    /// => rd = imm[63:0]
+    LiD = 30,
+
+    /// mov rd, rs
+    /// => rd = rs
+    Mov = 31,
+
+    /// push rs
+    /// => rsp = rsp - WORD_LEN/8 ; M[rsp] = rs
+    Push = 32,
+
+    /// pop rd
+    /// => rd = rsp ; rsp = rsp + WORD_LEN/8
+    Pop = 33,
 }
 
 impl OpCode {
-    /// Mnemonic for `ret` opcode.
-    pub const RET_OP: &str = "ret";
-    /// Mnemonic for `const` opcode.
-    pub const CONST_OP: &str = "const";
-    /// Mnemonic for `neg` opcode.
-    pub const NEG_OP: &str = "neg";
     /// Mnemonic for `add` opcode.
-    pub const ADD_OP: &str = "add";
+    pub const ADD: &str = "add";
+    /// Opcode for `add`
+    pub const ADD_OP: usize = 0;
+
     /// Mnemonic for `sub` opcode.
-    pub const SUB_OP: &str = "sub";
+    pub const SUB: &str = "sub";
+    /// Opcode for `sub`
+    pub const SUB_OP: usize = 1;
+
     /// Mnemonic for `mul` opcode.
-    pub const MUL_OP: &str = "mul";
+    pub const MUL: &str = "mul";
+    /// Opcode for `mul`
+    pub const MUL_OP: usize = 2;
+
     /// Mnemonic for `div` opcode.
-    pub const DIV_OP: &str = "div";
+    pub const DIV: &str = "div";
+    /// Opcode for `div`
+    pub const DIV_OP: usize = 3;
+
+    /// Mnemonic for `rem` opcode.
+    pub const REM: &str = "rem";
+    /// Opcode for `rem`
+    pub const REM_OP: usize = 4;
+
+    /// Mnemonic for `clt` opcode.
+    pub const CLT: &str = "clt";
+    /// Opcode for `clt`
+    pub const CLT_OP: usize = 5;
+
+    /// Mnemonic for `cge` opcode.
+    pub const CGE: &str = "cge";
+    /// Opcode for `cge`
+    pub const CGE_OP: usize = 6;
+
+    /// Mnemonic for `ceq` opcode.
+    pub const CEQ: &str = "ceq";
+    /// Opcode for `ceq`
+    pub const CEQ_OP: usize = 7;
+
+    /// Mnemonic for `cne` opcode.
+    pub const CNE: &str = "cne";
+    /// Opcode for `cne`
+    pub const CNE_OP: usize = 8;
+
+    /// Mnemonic for `and` opcode.
+    pub const AND: &str = "and";
+    /// Opcode for `and`
+    pub const AND_OP: usize = 9;
+
+    /// Mnemonic for `or` opcode.
+    pub const OR: &str = "or";
+    /// Opcode for `or`
+    pub const OR_OP: usize = 10;
+
+    /// Mnemonic for `xor` opcode.
+    pub const XOR: &str = "xor";
+    /// Opcode for `xor`
+    pub const XOR_OP: usize = 11;
+
+    /// Mnemonic for `call` opcode.
+    pub const CALL: &str = "call";
+    /// Opcode for `call`
+    pub const CALL_OP: usize = 12;
+
+    /// Mnemonic for `ret` opcode.
+    pub const RET: &str = "ret";
+    /// Opcode for `ret`
+    pub const RET_OP: usize = 13;
+
+    /// Mnemonic for `jze` opcode.
+    pub const JZE: &str = "jze";
+    /// Opcode for `jze`
+    pub const JZE_OP: usize = 14;
+
+    /// Mnemonic for `beq` opcode.
+    pub const BEQ: &str = "beq";
+    /// Opcode for `beq`
+    pub const BEQ_OP: usize = 15;
+
+    /// Mnemonic for `bne` opcode.
+    pub const BNE: &str = "bne";
+    /// Opcode for `bne`
+    pub const BNE_OP: usize = 16;
+
+    /// Mnemonic for `blt` opcode.
+    pub const BLT: &str = "blt";
+    /// Opcode for `blt`
+    pub const BLT_OP: usize = 17;
+
+    /// Mnemonic for `bge` opcode.
+    pub const BGE: &str = "bge";
+    /// Opcode for `bge`
+    pub const BGE_OP: usize = 18;
+
+    /// Mnemonic for `ld.b` opcode.
+    pub const LD_B: &str = "ld.b";
+    /// Opcode for `ld.b`
+    pub const LD_B_OP: usize = 19;
+
+    /// Mnemonic for `ld.h` opcode.
+    pub const LD_H: &str = "ld.h";
+    /// Opcode for `ld.h`
+    pub const LD_H_OP: usize = 20;
+
+    /// Mnemonic for `ld.w` opcode.
+    pub const LD_W: &str = "ld.w";
+    /// Opcode for `ld.w`
+    pub const LD_W_OP: usize = 21;
+
+    /// Mnemonic for `ld.d` opcode.
+    pub const LD_D: &str = "ld.d";
+    /// Opcode for `ld.d`
+    pub const LD_D_OP: usize = 22;
+
+    /// Mnemonic for `st.b` opcode.
+    pub const ST_B: &str = "st.b";
+    /// Opcode for `st.b`
+    pub const ST_B_OP: usize = 23;
+
+    /// Mnemonic for `st.h` opcode.
+    pub const ST_H: &str = "st.h";
+    /// Opcode for `st.h`
+    pub const ST_H_OP: usize = 24;
+
+    /// Mnemonic for `st.w` opcode.
+    pub const ST_W: &str = "st.w";
+    /// Opcode for `st.w`
+    pub const ST_W_OP: usize = 25;
+
+    /// Mnemonic for `st.d` opcode.
+    pub const ST_D: &str = "st.d";
+    /// Opcode for `st.d`
+    pub const ST_D_OP: usize = 26;
+
+    /// Mnemonic for `li.b` opcode.
+    pub const LI_B: &str = "li.b";
+    /// Opcode for `li.b`
+    pub const LI_B_OP: usize = 27;
+
+    /// Mnemonic for `li.h` opcode.
+    pub const LI_H: &str = "li.h";
+    /// Opcode for `li.h`
+    pub const LI_H_OP: usize = 28;
+
+    /// Mnemonic for `li.w` opcode.
+    pub const LI_W: &str = "li.w";
+    /// Opcode for `li.w`
+    pub const LI_W_OP: usize = 29;
+
+    /// Mnemonic for `li.d` opcode.
+    pub const LI_D: &str = "li.d";
+    /// Opcode for `li.d`
+    pub const LI_D_OP: usize = 30;
+
+    /// Mnemonic for `mov` opcode.
+    pub const MOV: &str = "mov";
+    /// Opcode for `mov`
+    pub const MOV_OP: usize = 31;
+
+    /// Mnemonic for `push` opcode.
+    pub const PUSH: &str = "push";
+    /// Opcode for `push`
+    pub const PUSH_OP: usize = 32;
+
+    /// Mnemonic for `pop` opcode.
+    pub const POP: &str = "pop";
+    /// Opcode for `pop`
+    pub const POP_OP: usize = 33;
 
     pub fn from_u8(op: u8) -> Option<OpCode> {
         match op {
-            _ if op == OpCode::Ret as u8 => Some(OpCode::Ret),
-            _ if op == OpCode::Const as u8 => Some(OpCode::Const),
-            _ if op == OpCode::Neg as u8 => Some(OpCode::Neg),
-            _ if op == OpCode::Add as u8 => Some(OpCode::Add),
-            _ if op == OpCode::Sub as u8 => Some(OpCode::Sub),
-            _ if op == OpCode::Mul as u8 => Some(OpCode::Mul),
-            _ if op == OpCode::Div as u8 => Some(OpCode::Div),
             _ => None,
         }
     }
@@ -127,16 +329,13 @@ impl OpCode {
 pub struct BcBlob {
     /// the code we will run
     pub code: Vec<u8>,
-    /// the data pool, where constants are stored.
-    pub dpool: DataPool,
 }
 
 impl BcBlob {
-    /// Create a new Blob with 8 bytes pre-allocated.
+    /// Create a new Blob.
     pub fn new() -> BcBlob {
         BcBlob {
-            code: Vec::with_capacity(8),
-            dpool: DataPool::new(),
+            code: Vec::with_capacity(16),
         }
     }
 
@@ -153,84 +352,9 @@ impl BcBlob {
         self.code.push(byte);
     }
 
-    /// Write a `ret` instruction
-    pub fn write_return(&mut self) {
-        // SAFETY: we're good it's an existing opcode.
-        unsafe {
-            self.write_raw(OpCode::Ret as u8);
-        }
-    }
-
-    /// Write a `const` instruction, index MUST fit in 24bits otherwise it panics
-    pub fn write_const(&mut self, index: u32) {
-        // SAFETY: we're good it's an existing opcode.
-        unsafe {
-            self.write_raw(OpCode::Const as u8);
-            write_bword(&mut self.code, index);
-        }
-    }
-
-    /// Write a `ret` instruction
-    pub fn write_neg(&mut self) {
-        // SAFETY: we're good it's an existing opcode.
-        unsafe {
-            self.write_raw(OpCode::Neg as u8);
-        }
-    }
-
-    /// Write a `add` instruction
-    pub fn write_add(&mut self) {
-        // SAFETY: we're good it's an existing opcode.
-        unsafe {
-            self.write_raw(OpCode::Add as u8);
-        }
-    }
-
-    /// Write a `sub` instruction
-    pub fn write_sub(&mut self) {
-        // SAFETY: we're good it's an existing opcode.
-        unsafe {
-            self.write_raw(OpCode::Sub as u8);
-        }
-    }
-
-    /// Write a `mul` instruction
-    pub fn write_mul(&mut self) {
-        // SAFETY: we're good it's an existing opcode.
-        unsafe {
-            self.write_raw(OpCode::Mul as u8);
-        }
-    }
-
-    /// Write a `div` instruction
-    pub fn write_div(&mut self) {
-        // SAFETY: we're good it's an existing opcode.
-        unsafe {
-            self.write_raw(OpCode::Div as u8);
-        }
-    }
-
     /// Returns the bytes of the byutecode's blob
     pub fn code_data(&self) -> Vec<u8> {
         self.code.clone()
-    }
-
-    /// Returns the data pool constant
-    pub fn const_data(&self) -> Vec<u8> {
-        self.dpool.data.clone()
-    }
-
-    /// Returns the constant's map, the offset and size of each constant in the
-    /// constant pool
-    pub fn cmap_data(&self) -> Vec<u8> {
-        let mut cmap = Vec::new();
-
-        for Data { offset, size } in &self.dpool.map {
-            cmap.write_all(&offset.as_bytes()).unwrap();
-            cmap.write_all(&size.as_bytes()).unwrap();
-        }
-
-        cmap
     }
 
     /// Disassemble and print the instructions in a human readable format into
@@ -258,82 +382,7 @@ impl BcBlob {
         print!("{:04X?}  ", offset);
         let inst = self.code[offset];
         match OpCode::from_u8(inst).expect("This opcode doesn't exist") {
-            OpCode::Ret => self.byte_instruction(OpCode::RET_OP, offset),
-            OpCode::Const => {
-                let index = read_bword(&self.code, offset + 1) as usize;
-                println!("const {}", index);
-                // TODO: this print in little endian format but it could be
-                // confusing so maybe print it into big endian, so `0xDEADBEEF`
-                // won't show as `[EF, BE, AD, DE, 0, 0, 0, 0]`.
-                // but `[0, 0, 0, 0, DE, AD, BE, EF]`.
-                // let Data { offset: off, size } = self.dpool.map[index];
-                // println!(
-                //     "      => {:X?}",
-                //     &self.dpool.data[off as usize..(off + size) as usize]
-                // );
-                offset + 4
-            }
-            OpCode::Neg => self.byte_instruction(OpCode::NEG_OP, offset),
-            OpCode::Add => self.byte_instruction(OpCode::ADD_OP, offset),
-            OpCode::Sub => self.byte_instruction(OpCode::SUB_OP, offset),
-            OpCode::Mul => self.byte_instruction(OpCode::MUL_OP, offset),
-            OpCode::Div => self.byte_instruction(OpCode::DIV_OP, offset),
+            _ => todo!("TODO(URGENT)"),
         }
-    }
-
-    /// Disassemble an instruction that only fits in one byte (it's common).
-    pub(crate) fn byte_instruction(&self, name: &str, offset: usize) -> usize {
-        println!("{name}");
-        offset + 1
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Data {
-    offset: u64,
-    size: u64,
-}
-
-/// An immutable pool of data that contains all of the constants of the program
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct DataPool {
-    pub(crate) data: Vec<u8>,
-    pub(crate) map: Vec<Data>,
-}
-
-impl DataPool {
-    /// Create a new DataPool with 8 bytes pre-allocated.
-    pub fn new() -> DataPool {
-        DataPool {
-            data: Vec::with_capacity(8),
-            map: Vec::new(),
-        }
-    }
-
-    /// Write an integer (64 bits in lun), to the data pool in little endian
-    /// format, and returns the index of that constant
-    #[must_use]
-    pub fn write_integer(&mut self, int: u64) -> usize {
-        let offset = write_qword(&mut self.data, int);
-
-        self.map.push(Data {
-            offset: offset as u64,
-            size: size_of_val(&int) as u64,
-        });
-
-        self.map.len() - 1
-    }
-
-    /// Read a 64-bit little-endian integer from the data pool at the given offset.
-    /// Panics if there are not enough bytes to read a full u64.
-    pub fn read_integer(&self, offset: u64) -> u64 {
-        read_qword(&self.data, offset as usize)
-    }
-
-    /// Reads a variable amount of data from the data pool at the given offset
-    /// and size. Panics if there are not enough bytes to read a full u64.
-    pub fn read(&self, index: usize) -> &[u8] {
-        let data = self.map[index].clone();
-        read_many(&self.data, data.offset as usize, data.size as usize)
     }
 }

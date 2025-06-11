@@ -39,8 +39,6 @@ impl CodeGenerator {
         self.gen_expr(value.clone()).unwrap();
 
         builder.section(LunBin::SECTION_CODE, self.bc.code_data());
-        builder.section(LunBin::SECTION_CONST, self.bc.const_data());
-        builder.section(LunBin::SECTION_CMAP, self.bc.cmap_data());
 
         if self.sink.failed() {
             return StageResult::Fail(self.sink.clone());
@@ -50,9 +48,8 @@ impl CodeGenerator {
 
     pub fn gen_expr(&mut self, expr: CkExpression) -> Result<(), Diagnostic> {
         match expr.expr {
-            CkExpr::IntLit(i) => {
-                let idx = self.bc.dpool.write_integer(i);
-                self.bc.write_const(idx as u32);
+            CkExpr::IntLit(_) => {
+                todo!()
             }
             CkExpr::BoolLit(_) => {
                 // TODO: make only two, constants true and false, no need to

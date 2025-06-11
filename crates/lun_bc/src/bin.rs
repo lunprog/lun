@@ -6,7 +6,7 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::{BcBlob, DataPool};
+use crate::BcBlob;
 
 /// A type that can be build from and converted to bytes.
 pub trait ByteRepr<const N: usize> {
@@ -457,7 +457,6 @@ impl LunBin {
                 ".code" => {
                     let blob = BcBlob {
                         code: data.clone().into(),
-                        dpool: DataPool::new(),
                     };
                     blob.disassemble("");
                 }
