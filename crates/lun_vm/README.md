@@ -281,13 +281,13 @@ Memory Map
 ┊         ┊
 │   RW-   │ stack_bottom = stack_top + stack_size
 ├─────────┤
-│         │ 1024 bytes that are un accessible, it helps to catch stack overflow
+│         │ canary_start = stack_bottom + 1
 ┊         ┊
-┊ canary  ┊
+┊ canary  ┊ 1024 bytes that are un accessible, it helps to catch stack overflow
 ┊         ┊
-│   ---   │
+│   ---   │ canary_end = canary_start + 1024
 ├─────────┤
-│         │ heap_base = stack_bottom + 1025
+│         │ heap_base = canary_end + 1
 ┊         ┊
 ┊  heap   ┊
 ┊         ┊
