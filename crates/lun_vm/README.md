@@ -2,6 +2,8 @@
 
 The (new) Virtual Machine reference.
 
+The VM is in 64bit, so the word length is 64bit, `WORD_LEN = 64`
+
 ## Registers
 
 Every register is 64 bit wide.
@@ -9,16 +11,17 @@ Every register is 64 bit wide.
 ### General purpose registers
 
 ```
-ra0  ra1  ra2  ra3
-ra4  ra5  ra6  rt0
+rze  ra0  ra1  ra2
+ra3  ra4  ra5  rt0
 rt1  rt2  rt3  rt4
 rt5  rfl  rfp  rsp
 ```
 
 ```
 | regs  |       description       | saver  |
+| rze   | hard-wired zero         |   X    |
 | ra0-1 | argument / return value | caller |
-| ra2-6 | argument                | caller |
+| ra2-5 | argument                | caller |
 | rt0-5 | temporary               | caller |
 | rfl   | flag reg. see below     |   X    |
 | rfp   | frame pointer           | callee |
@@ -47,115 +50,214 @@ pc -> program counter
 ### Arithmetic & Logic
 
 ```
-[ OPCODE | RD |TYPE|RS1 |RS2 | FUNCT1 ] -> 16 bits
+- add.type rd, rs1, rs2
+  -> opcode = 0
+  => rd = rs1 + rs2
 
-where TYPE is a 4bit value as follows:
--  0: u8 arithmetics
--  1: u16 arithmetics
--  2: u32 arithmetics
--  3: u64 arithmetics
--  4: u128 arithmetics
--  5: i8 arithmetics
--  6: i16 arithmetics
--  7: i32 arithmetics
--  8: i64 arithmetics
--  9: i128 arithmetics
-- 10: f16 arithmetics
-- 11: f32 arithmetics
-- 12: f64 arithmetics
-- 13: f128 arithmetics
-- 14: undefined
-- 15: undefined
+- sub.type rd, rs1, rs2
+  -> opcode = 1
+  => rd = rs1 - rs2
 
-opcode = 0x00
+- mul.type rd, rs1, rs2
+  -> opcode = 2
+  => rd = rs1 * rs2
 
-- ADD:
-  funct1 = 0
-  rd = rs1 + rs2
-- SUB:
-  funct1 = 1
-  rd = rs1 - rs2
-- MUL:
-  funct1 = 2
-  rd = rs1 * rs2
-- DIV:
-  funct1 = 3
-  rd = rs1 / rs2
-- REM:
-  funct1 = 4
-  rd = rs1 % rs2
-- CLT:
-  funct1 = 5
-  rd = rs1 < rs2
-- CGE:
-  funct1 = 6
-  rd = rs1 >= rs2
-- CEQ:
-  funct1 = 7
-  rd = rs1 == rs2
-- CNE:
-  funct1 = 8
-  rd = rs1 != rs2
-- AND:
-  funct1 = 9
-  rd = rs1 % rs2
-- OR:
-  funct1 = 10
-  rd = rs1 % rs2
-- XOR:
-  funct1 = 11
-  rd = rs1 % rs2
+- div.type rd, rs1, rs2
+  -> opcode = 3
+  => rd = rs1 / rs2
+
+- rem.type rd, rs1, rs2
+  -> opcode = 4
+  => rd = rs1 % rs2
+
+- clt.type rd, rs1, rs2
+  -> opcode = 5
+  => rd = rs1 < rs2
+
+- cge.type rd, rs1, rs2
+  -> opcode = 6
+  => rd = rs1 >= rs2
+
+- ceq.type rd, rs1, rs2
+  -> opcode = 7
+  => rd = rs1 == rs2
+
+- cne.type rd, rs1, rs2
+  -> opcode = 8
+  => rd = rs1 != rs2
+
+- and.type rd, rs1, rs2
+  -> opcode = 9
+  => rd = rs1 and rs2
+
+- or.type rd, rs1, rs2
+  -> opcode = 10
+  => rd = rs1 or rs2
+
+- xor.type rd, rs1, rs2
+  -> opcode = 11
+  => rd = rs1 xor rs2
+
+WHERE type is 4bit value:
+0      -> u8
+1      -> u16
+2      -> u32
+3      -> u64
+4      -> i8
+5      -> i16
+6      -> i32
+7      -> i64
+8      -> f16
+9      -> f32
+10     -> f64
+11..15 -> reserved
+
+LAYOUT
+
+OPCODE | type | rd | rs1 | rs2
+  8b   |  4b  | 4b | 4b  | 4b
+=> 24 bits total
 ```
 
 ### Branching
 
 ```
-TODO:
-- jal rd, offset       => rd = pc + 4; pc += sext(offset)
-- jalr rd, rs1, offset => t = pc + 4; pc = rs1 + offset ; rd = t
-- beq rs1, rs2, offset => if rs1 == rs2 then pc += offset
-- bne rs1, rs2, offset => if rs1 != rs2 then pc += offset
-- blt rs1, rs2, offset => if rs1 < rs2 then pc += offset
-- bge rs1, rs2, offset => if rs1 >= rs2 then pc += offset
+- call offset
+  -> opcode = 12
+  -> layout = opcode | imm = 40b
+  -> offset is 32b immediate
+  => rsp = rsp - WORD_LEN/8 ; M[rsp] = rs ; pc += sext(offset)
+
+- ret
+  -> opcode = 13
+  -> layout = opcode = 8b
+  => pc = M[rsp] ; rsp = rsp + WORD_LEN/8
+
+- jze rs2, offset(rs1)
+  -> opcode = 14
+  -> layout = opcode | rs1 | rs2 | offset = 32b
+  -> offset is a 16b immediate
+  => if rs == 0 then pc += sext(offset)
+
+- beq rs1, rs2, offset
+  -> opcode = 15
+  -> layout = opcode | rs1 | rs2 | offset = 32b
+  -> offset is a 16b immediate
+  => if rs1 == rs2 then pc += sext(offset)
+
+- bne rs1, rs2, offset
+  -> opcode = 16
+  -> layout = opcode | rs1 | rs2 | offset = 32b
+  -> offset is a 16b immediate
+  => if rs1 != rs2 then pc += sext(offset)
+
+- blt rs1, rs2, offset
+  -> opcode = 17
+  -> layout = opcode | rs1 | rs2 | offset = 32b
+  -> offset is a 16b immediate
+  => if rs1 < rs2 then pc += sext(offset)
+
+- bge rs1, rs2, offset
+  -> opcode = 18
+  -> layout = opcode | rs1 | rs2 | offset = 32b
+  -> offset is a 16b immediate
+  => if rs1 >= rs2 then pc += sext(offset)
 ```
 
 ### Memory
 
 ```
-LOAD
-- lb rd, offset => rd = mem(offset)[7:0]
-- lh rd, offset => rd = mem(offset)[15:0]
-- lw rd, offset => rd = mem(offset)[31:0]
-- ld rd, offset => rd = mem(offset)[63:0]
+- ld.b rd, offset(rs)
+  -> opcode = 19
+  -> layout = opcode | rd | rs | offset = 32b
+  -> offset is a 16b immediate
+  => rd = M[rs + sext(offset)][7:0]
+- ld.h rd, offset(rs)
+  -> opcode = 20
+  -> layout = opcode | rd | rs | offset = 32b
+  -> offset is a 16b immediate
+  => rd = M[rs + sext(offset)][15:0]
+- ld.w rd, offset(rs)
+  -> opcode = 21
+  -> layout = opcode | rd | rs | offset = 32b
+  -> offset is a 16b immediate
+  => rd = M[rs + sext(offset)][31:0]
+- ld.d rd, offset(rs)
+  -> opcode = 22
+  -> layout = opcode | rd | rs | offset = 32b
+  -> offset is a 16b immediate
+  => rd = M[rs + sext(offset)][63:0]
 
-STORE
-- sb rs1, offset => mem(offset) = rs1[7:0]
-- sh rs1, offset => mem(offset) = rs1[15:0]
-- sw rs1, offset => mem(offset) = rs1[31:0]
-- sd rs1, offset => mem(offset) = rs1[63:0]
+
+- st.b rs2, offset(rs1)
+  -> opcode = 23
+  -> layout = opcode | rs1 | rs2 | offset = 32b
+  -> offset is a 16b immediate
+  => M[rs1 + sext(offset)] = rs2[7:0]
+
+- st.h rs2, offset(rs1)
+  -> opcode = 24
+  -> layout = opcode | rs1 | rs2 | offset = 32b
+  -> offset is a 16b immediate
+  => M[rs1 + sext(offset)] = rs2[15:0]
+
+- st.w rs2, offset(rs1)
+  -> opcode = 25
+  -> layout = opcode | rs1 | rs2 | offset = 32b
+  -> offset is a 16b immediate
+  => M[rs1 + sext(offset)] = rs2[31:0]
+
+- st.d rs2, offset(rs1)
+  -> opcode = 26
+  -> layout = opcode | rs1 | rs2 | offset = 32b
+  -> offset is a 16b immediate
+  => M[rs1 + sext(offset)] = rs2[63:0]
 ```
 
 ### Moves
 
 ```
-- mvi rd, imm[8, 16, 32, 64] => move immediate byte : rd = imm
-  eg:
-    mvi r1, 0x00 [8] -> here the immediate is just a byte
-    mvi r1, 0xDEADBEEF [32] -> here the immediate is a word
-- mov rd, rs  => move rs into rd: rd = rs
+- li.b rd, imm(rs)
+  -> opcode = 27
+  -> layout = opcode | rs | rs1 | imm = 24b
+  -> offset is a 8b immediate
+  => rd = imm[7:0]
+
+- li.h rd, imm(rs)
+  -> opcode = 28
+  -> layout = opcode | rs | rs1 | imm = 32b
+  -> offset is a 16b immediate
+  => rd = imm[15:0]
+
+- li.w rd, imm(rs)
+  -> opcode = 29
+  -> layout = opcode | rs | rs1 | imm = 48b
+  -> offset is a 32b immediate
+  => rd = imm[31:0]
+
+- li.d rd, imm(rs)
+  -> opcode = 30
+  -> layout = opcode | rs | rs1 | imm = 80b
+  -> offset is a 64b immediate
+  => rd = imm[63:0]
+
+- mov rd, rs
+  -> opcode = 31
+  -> layout = opcode | rd | rs = 16b
+  => rd = rs
 ```
 
 ### Stack
 
-<!-- TODO: write the proper implementation of those instructions -->
-
 ```
-- push rs => pushes the content of rs into the stack
-- pusha   => pushes all register in order
-- pop rd  => pops the content of the stack into the rd
-- popa    => pops all the register in the correct order so that pusha followed by
-          popa is a no-op
-- ret     => pops the stack and sets pc to that value
+- push rs
+  -> opcode = 32
+  -> layout = opcode | 0000 | rs = 16b
+  => rsp = rsp - WORD_LEN/8 ; M[rsp] = rs
+- pop rd
+  -> opcode = 33
+  -> layout = opcode | 0000 | rd = 16b
+  => rd = rsp ; rsp = rsp + WORD_LEN/8
 ```
 
 ## Bus & Memory
