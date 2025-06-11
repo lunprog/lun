@@ -52,10 +52,10 @@ impl<I: Into<usize>, J: Into<usize>> From<(I, J)> for Span {
 
 /// Write a u64 in little endian format at the end of the Vec, and returns the
 /// offset where it was written
-pub fn write_qword(bytes: &mut Vec<u8>, qword: u64) -> usize {
+pub fn write_dword(bytes: &mut Vec<u8>, dword: u64) -> usize {
     let offset = bytes.len();
 
-    let qword_bytes = qword.to_le_bytes();
+    let qword_bytes = dword.to_le_bytes();
     bytes.extend_from_slice(&qword_bytes);
 
     offset
@@ -63,10 +63,10 @@ pub fn write_qword(bytes: &mut Vec<u8>, qword: u64) -> usize {
 
 /// Write a u32 in little endian format at the end of the Vec, and returns the
 /// offset where it was written
-pub fn write_dword(bytes: &mut Vec<u8>, dword: u32) -> usize {
+pub fn write_word(bytes: &mut Vec<u8>, word: u32) -> usize {
     let offset = bytes.len();
 
-    let dword_bytes = dword.to_le_bytes();
+    let dword_bytes = word.to_le_bytes();
     bytes.extend_from_slice(&dword_bytes);
 
     offset
@@ -74,16 +74,16 @@ pub fn write_dword(bytes: &mut Vec<u8>, dword: u32) -> usize {
 
 /// Write a 24bit value, (byte+word) in little endian format at the end of the
 /// Vec, and returns the offset where it was written
-pub fn write_bword(bytes: &mut Vec<u8>, bword: u32) -> usize {
-    if bword > 0x00FF_FFFF {
+pub fn write_b_word(bytes: &mut Vec<u8>, b_word: u32) -> usize {
+    if b_word > 0x00FF_FFFF {
         panic!("a byte+word must fit in 24bits")
     }
     let offset = bytes.len();
 
     let bword_bytes = [
-        (bword & 0xFF) as u8,
-        ((bword >> 8) & 0xFF) as u8,
-        ((bword >> 16) & 0xFF) as u8,
+        (b_word & 0xFF) as u8,
+        ((b_word >> 8) & 0xFF) as u8,
+        ((b_word >> 16) & 0xFF) as u8,
     ];
     bytes.extend_from_slice(&bword_bytes);
 
@@ -92,10 +92,10 @@ pub fn write_bword(bytes: &mut Vec<u8>, bword: u32) -> usize {
 
 /// Write a u16 in little endian format at the end of the Vec, and returns the
 /// offset where it was written
-pub fn write_word(bytes: &mut Vec<u8>, word: u16) -> usize {
+pub fn write_half(bytes: &mut Vec<u8>, half: u16) -> usize {
     let offset = bytes.len();
 
-    let word_bytes = word.to_le_bytes();
+    let word_bytes = half.to_le_bytes();
     bytes.extend_from_slice(&word_bytes);
 
     offset
@@ -103,37 +103,37 @@ pub fn write_word(bytes: &mut Vec<u8>, word: u16) -> usize {
 
 /// Reads a 64 bit little-endian u64 from the Slice at the given offset.
 /// Panics if there are not enough bytes to read a full u64.
-pub fn read_qword(bytes: &[u8], offset: usize) -> u64 {
+pub fn read_dword(bytes: &[u8], offset: usize) -> u64 {
     let end = offset + 8;
-    let qword = &bytes[offset..end];
-    u64::from_le_bytes(qword.try_into().expect("Slice should be 8 bytes long"))
+    let dword = &bytes[offset..end];
+    u64::from_le_bytes(dword.try_into().expect("Slice should be 8 bytes long"))
 }
 
 /// Reads a 32 bit little-endian u32 from the Slice at the given offset.
 /// Panics if there are not enough bytes to read a full u32.
-pub fn read_dword(bytes: &[u8], offset: usize) -> u32 {
+pub fn read_word(bytes: &[u8], offset: usize) -> u32 {
     let end = offset + 4;
-    let dword = &bytes[offset..end];
-    u32::from_le_bytes(dword.try_into().expect("Slice should be 4 bytes long"))
+    let word = &bytes[offset..end];
+    u32::from_le_bytes(word.try_into().expect("Slice should be 4 bytes long"))
 }
 
 /// Reads a 24 bit little-endian byte+word from the Slice at the given offset.
 /// Panics if there are not enough bytes to read a full byte+word.
 ///
 /// This function is guaranteed to return a u32 that fits in 24 bits.
-pub fn read_bword(bytes: &[u8], offset: usize) -> u32 {
+pub fn read_b_word(bytes: &[u8], offset: usize) -> u32 {
     let end = offset + 3;
-    let bword = &bytes[offset..end];
+    let b_word = &bytes[offset..end];
 
-    (bword[0] as u32) | ((bword[1] as u32) << 8) | ((bword[2] as u32) << 16)
+    (b_word[0] as u32) | ((b_word[1] as u32) << 8) | ((b_word[2] as u32) << 16)
 }
 
 /// Reads a 16 bit little-endian u16 from the Slice at the given offset.
 /// Panics if there are not enough bytes to read a full u16.
-pub fn read_word(bytes: &[u8], offset: usize) -> u16 {
+pub fn read_half(bytes: &[u8], offset: usize) -> u16 {
     let end = offset + 2;
-    let word = &bytes[offset..end];
-    u16::from_le_bytes(word.try_into().expect("Slice should be 2 bytes long"))
+    let half = &bytes[offset..end];
+    u16::from_le_bytes(half.try_into().expect("Slice should be 2 bytes long"))
 }
 
 /// Reads a 64 bit little-endian u64 from the Slice at the given offset.
