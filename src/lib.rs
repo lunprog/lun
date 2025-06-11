@@ -16,17 +16,13 @@
 //! end
 //! ```
 
-use std::fs::File;
-
 use crate::{
-    bc::{BcBlob, bin::LBType},
-    codegen::CodeGenerator,
+    bc::{ArithType, BcBlob, Reg},
     diag::{DiagnosticSink, StageResult, tri},
     ir::IrModule,
     lexer::Lexer,
     parser::Parser,
     semack::SemanticCk,
-    vm::Vm,
 };
 
 pub use lun_bc as bc;
@@ -70,6 +66,35 @@ pub fn run() -> StageResult<()> {
     let ir = IrModule::from_ck_chunk(ckast);
     dbg!(ir);
     // TODO: make the codegenerator work on the ir.
+
+    let mut blob = BcBlob::new();
+    blob.write_add(ArithType::u8, Reg::rt0, Reg::ra0, Reg::ra1);
+
+    blob.write_mul(ArithType::u8, Reg::ra0, Reg::rt0, Reg::ra2);
+
+    blob.write_call(0xDEAD_BEEF);
+
+    blob.write_ret();
+
+    blob.write_call(0xDEAD_BEEF);
+
+    blob.write_jze(Reg::rsp, 0xDEAD, Reg::ra0);
+    blob.write_jze(Reg::rsp, 0xDEAD, Reg::rze);
+
+    blob.write_beq(Reg::ra0, Reg::rze, 0xBEEF);
+
+    blob.write_ld_b(Reg::rt0, 0x4, Reg::rsp);
+
+    blob.write_st_b(Reg::rt0, 0x4, Reg::rsp);
+    blob.write_st_h(Reg::rt0, 0x4, Reg::rsp);
+    blob.write_st_w(Reg::rt0, 0x4, Reg::rsp);
+    blob.write_st_d(Reg::rt0, 0x4, Reg::rsp);
+
+    blob.write_li_b(Reg::rt1, 0xFF, Reg::ra1);
+    blob.write_li_h(Reg::rt1, 0xFF00, Reg::ra1);
+    blob.write_li_w(Reg::rt1, 0xFF0000, Reg::ra1);
+    blob.write_li_d(Reg::rt1, 0xDEAD_BEEF, Reg::ra1);
+    blob.disassemble("test blob");
 
     // 6. code generation
     // let mut codegen = CodeGenerator::new(ckast, sink.clone(), LBType::Exec);

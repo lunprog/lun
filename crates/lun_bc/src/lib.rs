@@ -1,12 +1,15 @@
 //! Bytecode of lun.
 
+use std::fmt::Display;
+
 use bytemuck::Contiguous;
+use lun_utils::{read_dword, read_half, read_word, write_dword, write_half, write_word};
 
 pub mod bin;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Contiguous)]
-pub enum OpCode {
+pub enum Opcode {
     /// add.type rd, rs1, rs2
     /// => rd = rs1 + rs2
     Add = 0,
@@ -144,180 +147,254 @@ pub enum OpCode {
     Pop = 33,
 }
 
-impl OpCode {
+impl Opcode {
     /// Mnemonic for `add` opcode.
     pub const ADD: &str = "add";
     /// Opcode for `add`
-    pub const ADD_OP: usize = 0;
+    pub const ADD_OP: u8 = 0;
 
     /// Mnemonic for `sub` opcode.
     pub const SUB: &str = "sub";
     /// Opcode for `sub`
-    pub const SUB_OP: usize = 1;
+    pub const SUB_OP: u8 = 1;
 
     /// Mnemonic for `mul` opcode.
     pub const MUL: &str = "mul";
     /// Opcode for `mul`
-    pub const MUL_OP: usize = 2;
+    pub const MUL_OP: u8 = 2;
 
     /// Mnemonic for `div` opcode.
     pub const DIV: &str = "div";
     /// Opcode for `div`
-    pub const DIV_OP: usize = 3;
+    pub const DIV_OP: u8 = 3;
 
     /// Mnemonic for `rem` opcode.
     pub const REM: &str = "rem";
     /// Opcode for `rem`
-    pub const REM_OP: usize = 4;
+    pub const REM_OP: u8 = 4;
 
     /// Mnemonic for `clt` opcode.
     pub const CLT: &str = "clt";
     /// Opcode for `clt`
-    pub const CLT_OP: usize = 5;
+    pub const CLT_OP: u8 = 5;
 
     /// Mnemonic for `cge` opcode.
     pub const CGE: &str = "cge";
     /// Opcode for `cge`
-    pub const CGE_OP: usize = 6;
+    pub const CGE_OP: u8 = 6;
 
     /// Mnemonic for `ceq` opcode.
     pub const CEQ: &str = "ceq";
     /// Opcode for `ceq`
-    pub const CEQ_OP: usize = 7;
+    pub const CEQ_OP: u8 = 7;
 
     /// Mnemonic for `cne` opcode.
     pub const CNE: &str = "cne";
     /// Opcode for `cne`
-    pub const CNE_OP: usize = 8;
+    pub const CNE_OP: u8 = 8;
 
     /// Mnemonic for `and` opcode.
     pub const AND: &str = "and";
     /// Opcode for `and`
-    pub const AND_OP: usize = 9;
+    pub const AND_OP: u8 = 9;
 
     /// Mnemonic for `or` opcode.
     pub const OR: &str = "or";
     /// Opcode for `or`
-    pub const OR_OP: usize = 10;
+    pub const OR_OP: u8 = 10;
 
     /// Mnemonic for `xor` opcode.
     pub const XOR: &str = "xor";
     /// Opcode for `xor`
-    pub const XOR_OP: usize = 11;
+    pub const XOR_OP: u8 = 11;
 
     /// Mnemonic for `call` opcode.
     pub const CALL: &str = "call";
     /// Opcode for `call`
-    pub const CALL_OP: usize = 12;
+    pub const CALL_OP: u8 = 12;
 
     /// Mnemonic for `ret` opcode.
     pub const RET: &str = "ret";
     /// Opcode for `ret`
-    pub const RET_OP: usize = 13;
+    pub const RET_OP: u8 = 13;
 
     /// Mnemonic for `jze` opcode.
     pub const JZE: &str = "jze";
     /// Opcode for `jze`
-    pub const JZE_OP: usize = 14;
+    pub const JZE_OP: u8 = 14;
 
     /// Mnemonic for `beq` opcode.
     pub const BEQ: &str = "beq";
     /// Opcode for `beq`
-    pub const BEQ_OP: usize = 15;
+    pub const BEQ_OP: u8 = 15;
 
     /// Mnemonic for `bne` opcode.
     pub const BNE: &str = "bne";
     /// Opcode for `bne`
-    pub const BNE_OP: usize = 16;
+    pub const BNE_OP: u8 = 16;
 
     /// Mnemonic for `blt` opcode.
     pub const BLT: &str = "blt";
     /// Opcode for `blt`
-    pub const BLT_OP: usize = 17;
+    pub const BLT_OP: u8 = 17;
 
     /// Mnemonic for `bge` opcode.
     pub const BGE: &str = "bge";
     /// Opcode for `bge`
-    pub const BGE_OP: usize = 18;
+    pub const BGE_OP: u8 = 18;
 
     /// Mnemonic for `ld.b` opcode.
     pub const LD_B: &str = "ld.b";
     /// Opcode for `ld.b`
-    pub const LD_B_OP: usize = 19;
+    pub const LD_B_OP: u8 = 19;
 
     /// Mnemonic for `ld.h` opcode.
     pub const LD_H: &str = "ld.h";
     /// Opcode for `ld.h`
-    pub const LD_H_OP: usize = 20;
+    pub const LD_H_OP: u8 = 20;
 
     /// Mnemonic for `ld.w` opcode.
     pub const LD_W: &str = "ld.w";
     /// Opcode for `ld.w`
-    pub const LD_W_OP: usize = 21;
+    pub const LD_W_OP: u8 = 21;
 
     /// Mnemonic for `ld.d` opcode.
     pub const LD_D: &str = "ld.d";
     /// Opcode for `ld.d`
-    pub const LD_D_OP: usize = 22;
+    pub const LD_D_OP: u8 = 22;
 
     /// Mnemonic for `st.b` opcode.
     pub const ST_B: &str = "st.b";
     /// Opcode for `st.b`
-    pub const ST_B_OP: usize = 23;
+    pub const ST_B_OP: u8 = 23;
 
     /// Mnemonic for `st.h` opcode.
     pub const ST_H: &str = "st.h";
     /// Opcode for `st.h`
-    pub const ST_H_OP: usize = 24;
+    pub const ST_H_OP: u8 = 24;
 
     /// Mnemonic for `st.w` opcode.
     pub const ST_W: &str = "st.w";
     /// Opcode for `st.w`
-    pub const ST_W_OP: usize = 25;
+    pub const ST_W_OP: u8 = 25;
 
     /// Mnemonic for `st.d` opcode.
     pub const ST_D: &str = "st.d";
     /// Opcode for `st.d`
-    pub const ST_D_OP: usize = 26;
+    pub const ST_D_OP: u8 = 26;
 
     /// Mnemonic for `li.b` opcode.
     pub const LI_B: &str = "li.b";
     /// Opcode for `li.b`
-    pub const LI_B_OP: usize = 27;
+    pub const LI_B_OP: u8 = 27;
 
     /// Mnemonic for `li.h` opcode.
     pub const LI_H: &str = "li.h";
     /// Opcode for `li.h`
-    pub const LI_H_OP: usize = 28;
+    pub const LI_H_OP: u8 = 28;
 
     /// Mnemonic for `li.w` opcode.
     pub const LI_W: &str = "li.w";
     /// Opcode for `li.w`
-    pub const LI_W_OP: usize = 29;
+    pub const LI_W_OP: u8 = 29;
 
     /// Mnemonic for `li.d` opcode.
     pub const LI_D: &str = "li.d";
     /// Opcode for `li.d`
-    pub const LI_D_OP: usize = 30;
+    pub const LI_D_OP: u8 = 30;
 
     /// Mnemonic for `mov` opcode.
     pub const MOV: &str = "mov";
     /// Opcode for `mov`
-    pub const MOV_OP: usize = 31;
+    pub const MOV_OP: u8 = 31;
 
     /// Mnemonic for `push` opcode.
     pub const PUSH: &str = "push";
     /// Opcode for `push`
-    pub const PUSH_OP: usize = 32;
+    pub const PUSH_OP: u8 = 32;
 
     /// Mnemonic for `pop` opcode.
     pub const POP: &str = "pop";
     /// Opcode for `pop`
-    pub const POP_OP: usize = 33;
+    pub const POP_OP: u8 = 33;
+}
 
-    pub fn from_u8(op: u8) -> Option<OpCode> {
-        match op {
-            _ => None,
+#[repr(u8)]
+#[allow(non_camel_case_types)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Contiguous)]
+pub enum Reg {
+    rze = 0,
+    ra0 = 1,
+    ra1 = 2,
+    ra2 = 3,
+    ra3 = 4,
+    ra4 = 5,
+    ra5 = 6,
+    rt0 = 7,
+    rt1 = 8,
+    rt2 = 9,
+    rt3 = 10,
+    rt4 = 11,
+    rt5 = 12,
+    rfl = 13,
+    rfp = 14,
+    rsp = 15,
+}
+
+impl Display for Reg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::rze => f.write_str("rze"),
+            Self::ra0 => f.write_str("ra0"),
+            Self::ra1 => f.write_str("ra1"),
+            Self::ra2 => f.write_str("ra2"),
+            Self::ra3 => f.write_str("ra3"),
+            Self::ra4 => f.write_str("ra4"),
+            Self::ra5 => f.write_str("ra5"),
+            Self::rt0 => f.write_str("rt0"),
+            Self::rt1 => f.write_str("rt1"),
+            Self::rt2 => f.write_str("rt2"),
+            Self::rt3 => f.write_str("rt3"),
+            Self::rt4 => f.write_str("rt4"),
+            Self::rt5 => f.write_str("rt5"),
+            Self::rfl => f.write_str("rfl"),
+            Self::rfp => f.write_str("rfp"),
+            Self::rsp => f.write_str("rsp"),
+        }
+    }
+}
+
+#[repr(u8)]
+#[allow(non_camel_case_types)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Contiguous)]
+pub enum ArithType {
+    u8 = 0,
+    u16 = 1,
+    u32 = 2,
+    u64 = 3,
+    i8 = 4,
+    i16 = 5,
+    i32 = 6,
+    i64 = 7,
+    f16 = 8,
+    f32 = 9,
+    f64 = 10,
+}
+
+impl Display for ArithType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::u8 => f.write_str("u8"),
+            Self::u16 => f.write_str("u16"),
+            Self::u32 => f.write_str("u32"),
+            Self::u64 => f.write_str("u64"),
+            Self::i8 => f.write_str("i8"),
+            Self::i16 => f.write_str("i16"),
+            Self::i32 => f.write_str("i32"),
+            Self::i64 => f.write_str("i64"),
+            Self::f16 => f.write_str("f16"),
+            Self::f32 => f.write_str("f32"),
+            Self::f64 => f.write_str("f64"),
         }
     }
 }
@@ -352,6 +429,207 @@ impl BcBlob {
         self.code.push(byte);
     }
 
+    fn write_arithmetic_inst(&mut self, opcode: u8, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        // opcode
+        self.code.push(opcode);
+        // type and rd
+        let type_rd = (typ as u8) << 4 | rd as u8;
+        self.code.push(type_rd);
+        // rs1 and rs2
+        let rs1_rs2 = (rs1 as u8) << 4 | rs2 as u8;
+        self.code.push(rs1_rs2);
+    }
+
+    /// Write `add` inst
+    pub fn write_add(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::ADD_OP, typ, rd, rs1, rs2);
+    }
+    /// Write `sub` inst
+    pub fn write_sub(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::SUB_OP, typ, rd, rs1, rs2);
+    }
+
+    /// Write `mul` inst
+    pub fn write_mul(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::MUL_OP, typ, rd, rs1, rs2);
+    }
+
+    /// Write `div` inst
+    pub fn write_div(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::DIV_OP, typ, rd, rs1, rs2);
+    }
+
+    /// Write `rem` inst
+    pub fn write_rem(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::REM_OP, typ, rd, rs1, rs2);
+    }
+
+    /// Write `clt` inst
+    pub fn write_clt(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::CLT_OP, typ, rd, rs1, rs2);
+    }
+
+    /// Write `cge` inst
+    pub fn write_cge(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::CGE_OP, typ, rd, rs1, rs2);
+    }
+
+    /// Write `ceq` inst
+    pub fn write_ceq(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::CEQ_OP, typ, rd, rs1, rs2);
+    }
+
+    /// Write `cne` inst
+    pub fn write_cne(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::CNE_OP, typ, rd, rs1, rs2);
+    }
+
+    /// Write `and` inst
+    pub fn write_and(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::AND_OP, typ, rd, rs1, rs2);
+    }
+
+    /// Write `or` inst
+    pub fn write_or(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::OR_OP, typ, rd, rs1, rs2);
+    }
+
+    /// Write `xor` inst
+    pub fn write_xor(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+        self.write_arithmetic_inst(Opcode::XOR_OP, typ, rd, rs1, rs2);
+    }
+
+    /// Write `call` inst
+    pub fn write_call(&mut self, imm: u32) {
+        // opcode
+        self.code.push(Opcode::CALL_OP);
+        // imm
+        write_word(&mut self.code, imm);
+    }
+
+    /// Write `ret` inst
+    pub fn write_ret(&mut self) {
+        // opcode
+        self.code.push(Opcode::RET_OP);
+    }
+
+    /// opcode | reg1 | reg2
+    /// 8b     | 4b   | 4b   } 16b
+    fn write_reg_reg(&mut self, opcode: u8, reg1: Reg, reg2: Reg) {
+        // opcode
+        self.code.push(opcode);
+        // reg1 and reg2
+        let reg1_reg2 = (reg1 as u8) << 4 | reg2 as u8;
+        self.code.push(reg1_reg2);
+    }
+
+    /// opcode | reg1 | reg2 | imm16
+    /// 8b     | 4b   | 4b   | 16b   } 32b
+    fn write_reg_reg_imm16(&mut self, opcode: u8, reg1: Reg, reg2: Reg, imm16: u16) {
+        self.write_reg_reg(opcode, reg1, reg2);
+        // offset
+        write_half(&mut self.code, imm16);
+    }
+
+    /// Write the `jze` inst
+    pub fn write_jze(&mut self, rs2: Reg, offset: u16, rs1: Reg) {
+        self.write_reg_reg_imm16(Opcode::JZE_OP, rs2, rs1, offset);
+    }
+
+    /// Write the `beq` inst
+    pub fn write_beq(&mut self, rs1: Reg, rs2: Reg, offset: u16) {
+        self.write_reg_reg_imm16(Opcode::BEQ_OP, rs1, rs2, offset);
+    }
+
+    /// Write the `bne` inst
+    pub fn write_bne(&mut self, rs1: Reg, rs2: Reg, offset: u16) {
+        self.write_reg_reg_imm16(Opcode::BNE_OP, rs1, rs2, offset);
+    }
+
+    /// Write the `blt` inst
+    pub fn write_blt(&mut self, rs1: Reg, rs2: Reg, offset: u16) {
+        self.write_reg_reg_imm16(Opcode::BLT_OP, rs1, rs2, offset);
+    }
+
+    /// Write the `bge` inst
+    pub fn write_bge(&mut self, rs1: Reg, rs2: Reg, offset: u16) {
+        self.write_reg_reg_imm16(Opcode::BGE_OP, rs1, rs2, offset);
+    }
+
+    /// Write the `ld.b` inst
+    pub fn write_ld_b(&mut self, rd: Reg, offset: u16, rs: Reg) {
+        self.write_reg_reg_imm16(Opcode::LD_B_OP, rd, rs, offset);
+    }
+
+    /// Write the `st.b` inst
+    pub fn write_st_b(&mut self, rs2: Reg, offset: u16, rs1: Reg) {
+        self.write_reg_reg_imm16(Opcode::ST_B_OP, rs2, rs1, offset);
+    }
+
+    /// Write the `st.h` inst
+    pub fn write_st_h(&mut self, rs2: Reg, offset: u16, rs1: Reg) {
+        self.write_reg_reg_imm16(Opcode::ST_H_OP, rs2, rs1, offset);
+    }
+
+    /// Write the `st.w` inst
+    pub fn write_st_w(&mut self, rs2: Reg, offset: u16, rs1: Reg) {
+        self.write_reg_reg_imm16(Opcode::ST_W_OP, rs2, rs1, offset);
+    }
+
+    /// Write the `st.d` inst
+    pub fn write_st_d(&mut self, rs2: Reg, offset: u16, rs1: Reg) {
+        self.write_reg_reg_imm16(Opcode::ST_D_OP, rs2, rs1, offset);
+    }
+
+    /// Write the `li.b` inst
+    pub fn write_li_b(&mut self, rd: Reg, imm8: u8, rs: Reg) {
+        self.write_reg_reg(Opcode::LI_B_OP, rd, rs);
+        // imm8
+        self.code.push(imm8);
+    }
+
+    /// Write the `li.h` inst
+    pub fn write_li_h(&mut self, rd: Reg, imm16: u16, rs: Reg) {
+        self.write_reg_reg_imm16(Opcode::LI_H_OP, rd, rs, imm16);
+    }
+
+    /// Write the `li.w` inst
+    pub fn write_li_w(&mut self, rd: Reg, imm32: u32, rs: Reg) {
+        self.write_reg_reg(Opcode::LI_W_OP, rd, rs);
+
+        // imm32
+        write_word(&mut self.code, imm32);
+    }
+
+    /// Write the `li.d` inst
+    pub fn write_li_d(&mut self, rd: Reg, imm64: u64, rs: Reg) {
+        self.write_reg_reg(Opcode::LI_D_OP, rd, rs);
+
+        // imm64
+        write_dword(&mut self.code, imm64);
+    }
+
+    /// Write the `mov` inst
+    pub fn write_mov(&mut self, rd: Reg, rs: Reg) {
+        self.write_reg_reg(Opcode::MOV_OP, rd, rs);
+    }
+
+    /// Write the `push` inst
+    pub fn write_push(&mut self, rs: Reg) {
+        // opcode
+        self.code.push(Opcode::PUSH_OP);
+        // rs
+        self.code.push(rs as u8);
+    }
+
+    /// Write the `pop` inst
+    pub fn write_pop(&mut self, rd: Reg) {
+        // opcode
+        self.code.push(Opcode::POP_OP);
+        // rs
+        self.code.push(rd as u8);
+    }
+
     /// Returns the bytes of the byutecode's blob
     pub fn code_data(&self) -> Vec<u8> {
         self.code.clone()
@@ -380,9 +658,158 @@ impl BcBlob {
         // etc etc and keep the same for every instruction in the disassemble's
         // output
         print!("{:04X?}  ", offset);
-        let inst = self.code[offset];
-        match OpCode::from_u8(inst).expect("This opcode doesn't exist") {
-            _ => todo!("TODO(URGENT)"),
+        let opcode = self.code[offset];
+
+        match Opcode::from_integer(opcode).unwrap() {
+            Opcode::Add => self.dissassemble_arithmetic(offset, Opcode::ADD),
+            Opcode::Sub => self.dissassemble_arithmetic(offset, Opcode::SUB),
+            Opcode::Mul => self.dissassemble_arithmetic(offset, Opcode::MUL),
+            Opcode::Div => self.dissassemble_arithmetic(offset, Opcode::DIV),
+            Opcode::Rem => self.dissassemble_arithmetic(offset, Opcode::REM),
+            Opcode::Clt => self.dissassemble_arithmetic(offset, Opcode::CLT),
+            Opcode::Cge => self.dissassemble_arithmetic(offset, Opcode::CGE),
+            Opcode::Ceq => self.dissassemble_arithmetic(offset, Opcode::CEQ),
+            Opcode::Cne => self.dissassemble_arithmetic(offset, Opcode::CNE),
+            Opcode::And => self.dissassemble_arithmetic(offset, Opcode::AND),
+            Opcode::Or => self.dissassemble_arithmetic(offset, Opcode::OR),
+            Opcode::Xor => self.dissassemble_arithmetic(offset, Opcode::XOR),
+            Opcode::Call => {
+                let imm = read_word(&self.code, offset + 1);
+                // TODO: be able to retrieve what is the function name at this addr
+                println!("call 0x{imm:08X}");
+                offset + 5
+            }
+            Opcode::Ret => {
+                println!("ret");
+                offset + 1
+            }
+            Opcode::Jze => self.dissassemble_reg_imm16_reg(offset, Opcode::JZE),
+            Opcode::Beq => self.dissassemble_reg_reg_imm16(offset, Opcode::BEQ),
+            Opcode::Bne => self.dissassemble_reg_reg_imm16(offset, Opcode::BNE),
+            Opcode::Blt => self.dissassemble_reg_reg_imm16(offset, Opcode::BLT),
+            Opcode::Bge => self.dissassemble_reg_reg_imm16(offset, Opcode::BGE),
+            Opcode::LdB => self.dissassemble_reg_imm16_reg(offset, Opcode::LD_B),
+            Opcode::LdH => self.dissassemble_reg_imm16_reg(offset, Opcode::LD_H),
+            Opcode::LdW => self.dissassemble_reg_imm16_reg(offset, Opcode::LD_W),
+            Opcode::LdD => self.dissassemble_reg_imm16_reg(offset, Opcode::LD_D),
+            Opcode::StB => self.dissassemble_reg_imm16_reg(offset, Opcode::ST_B),
+            Opcode::StH => self.dissassemble_reg_imm16_reg(offset, Opcode::ST_H),
+            Opcode::StW => self.dissassemble_reg_imm16_reg(offset, Opcode::ST_W),
+            Opcode::StD => self.dissassemble_reg_imm16_reg(offset, Opcode::ST_D),
+            Opcode::LiB => {
+                let rd_rs = self.code[offset + 1];
+                let imm8 = self.code[offset + 2];
+
+                let rs = Reg::from_integer(rd_rs & 0b1111).unwrap();
+                let rd = Reg::from_integer((rd_rs & 0b1111_0000) >> 4).unwrap();
+
+                print!("li.b {rd}, 0x{imm8:02X}");
+                if rs != Reg::rze {
+                    print!("({rs})");
+                }
+                println!();
+
+                offset + 3
+            }
+            Opcode::LiH => self.dissassemble_reg_imm16_reg(offset, Opcode::LI_H),
+            Opcode::LiW => {
+                let rd_rs = self.code[offset + 1];
+                let imm32 = read_word(&self.code, offset + 2);
+
+                let rs = Reg::from_integer(rd_rs & 0b1111).unwrap();
+                let rd = Reg::from_integer((rd_rs & 0b1111_0000) >> 4).unwrap();
+
+                print!("li.w {rd}, 0x{imm32:X}");
+                if rs != Reg::rze {
+                    print!("({rs})");
+                }
+                println!();
+
+                offset + 6
+            }
+            Opcode::LiD => {
+                let rd_rs = self.code[offset + 1];
+                let imm64 = read_dword(&self.code, offset + 2);
+
+                let rs = Reg::from_integer(rd_rs & 0b1111).unwrap();
+                let rd = Reg::from_integer((rd_rs & 0b1111_0000) >> 4).unwrap();
+
+                print!("li.d {rd}, 0x{imm64:X}");
+                if rs != Reg::rze {
+                    print!("({rs})");
+                }
+                println!();
+
+                offset + 10
+            }
+            Opcode::Mov => {
+                let rd_rs = self.code[offset + 1];
+
+                let rs = Reg::from_integer(rd_rs & 0b1111).unwrap();
+                let rd = Reg::from_integer((rd_rs & 0b1111_0000) >> 4).unwrap();
+
+                println!("mov {rd}, {rs}");
+
+                offset + 2
+            }
+            Opcode::Push => self.dissassemble_reg(offset, Opcode::PUSH),
+            Opcode::Pop => self.dissassemble_reg(offset, Opcode::POP),
         }
+    }
+
+    fn dissassemble_arithmetic(&self, offset: usize, name: &str) -> usize {
+        let type_rd = self.code[offset + 1];
+        let rs1_rs2 = self.code[offset + 2];
+        let typ = ArithType::from_integer((type_rd & 0b1111_0000) >> 4).unwrap();
+        let rd = Reg::from_integer(type_rd & 0b1111).unwrap();
+        let rs1 = Reg::from_integer((rs1_rs2 & 0b1111_0000) >> 4).unwrap();
+        let rs2 = Reg::from_integer(rs1_rs2 & 0b1111).unwrap();
+        println!("{name}.{typ} {rd}, {rs1}, {rs2}");
+        offset + 3
+    }
+
+    /// dissassemble an instruction of the format:
+    ///
+    /// inst reg2, imm16(reg1)
+    fn dissassemble_reg_imm16_reg(&self, offset: usize, name: &str) -> usize {
+        let reg2_reg1 = self.code[offset + 1];
+        let imm16 = read_half(&self.code, offset + 2);
+
+        let reg1 = Reg::from_integer(reg2_reg1 & 0b1111).unwrap();
+        let reg2 = Reg::from_integer((reg2_reg1 & 0b1111_0000) >> 4).unwrap();
+
+        print!("{name} {reg2}, 0x{imm16:X}");
+        if reg1 != Reg::rze {
+            print!("({reg1})");
+        }
+        println!();
+
+        offset + 4
+    }
+
+    /// dissassemble an instruction of the format:
+    ///
+    /// inst reg1, reg2, imm16
+    fn dissassemble_reg_reg_imm16(&self, offset: usize, name: &str) -> usize {
+        let reg2_reg1 = self.code[offset + 1];
+        let imm16 = read_half(&self.code, offset + 2);
+
+        let reg1 = Reg::from_integer(reg2_reg1 & 0b1111).unwrap();
+        let reg2 = Reg::from_integer((reg2_reg1 & 0b1111_0000) >> 4).unwrap();
+
+        println!("{name} {reg1}, {reg2}, 0x{imm16:X}");
+        offset + 4
+    }
+
+    /// dissassemble an instruction of the format:
+    ///
+    /// inst reg
+    fn dissassemble_reg(&self, offset: usize, name: &str) -> usize {
+        let zero_reg = self.code[offset + 1];
+
+        let reg = Reg::from_integer(zero_reg & 0b1111).unwrap();
+
+        println!("{name} {reg}");
+        offset + 4
     }
 }
