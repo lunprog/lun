@@ -1,163 +1,180 @@
 //! The virtual machine for lun's bytecode.
 
-use lun_bc::{BcBlob, OpCode};
-use lun_utils::read_bword;
+use std::ops::{Index, IndexMut};
 
-use std::mem;
+use lun_bc::BcBlob;
 
-/// The stack of the VM
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct Stack {
-    pub stack: Vec<u8>,
-    /// stack pointer, always points at the element just past the element
-    /// containing the top value
-    pub sp: usize,
-}
+/// A double word.
+pub type DWord = u64;
 
-impl Stack {
-    // TODO: maybe adjust it later.
-    /// Default capacity of the stack, it can grow as the program runs.
-    pub const DEFAULT_CAPACITY: usize = 0x4000;
-    /// The default minimum amount of bytes we allocate when the stack isn't big enough.
-    pub const DEFAULT_GROWTH: usize = 0x800;
-
-    pub fn new() -> Stack {
-        Stack {
-            stack: vec![0; Stack::DEFAULT_CAPACITY],
-            sp: 0,
-        }
-    }
-
-    pub fn push(&mut self, val: &[u8]) {
-        if val.len() + self.sp > self.stack.len() {
-            self.grow(Stack::DEFAULT_GROWTH);
-        }
-        self.stack
-            .splice(self.sp..self.sp + val.len(), val.iter().cloned());
-        self.sp += val.len();
-    }
-
-    pub fn grow(&mut self, additional: usize) {
-        self.stack.reserve(additional);
-
-        // we don't do it with `additional` because calling reserve might
-        // allocate more than what we wanted.
-        let added = self.stack.capacity() - self.stack.len();
-
-        for _ in 0..added {
-            self.stack.push(0);
-        }
-    }
-
-    pub fn pop(&mut self, size: usize) -> &[u8] {
-        let bytes = &self.stack[self.sp - size..self.sp];
-        self.sp -= size;
-        bytes
-    }
-
-    pub fn pop_qword(&mut self) -> u64 {
-        let bytes = self.pop(size_of::<u64>()).try_into().unwrap();
-        u64::from_le_bytes(bytes)
-    }
-
-    pub fn push_qword(&mut self, int: u64) {
-        let bytes = int.to_le_bytes();
-        self.push(&bytes);
-    }
-
-    pub fn pop_integer(&mut self) -> i64 {
-        // SAFETY: no worries, it's safe just some integer transmutes ;)
-        unsafe { mem::transmute::<u64, i64>(self.pop_qword()) }
-    }
-
-    pub fn push_integer(&mut self, int: i64) {
-        unsafe {
-            // SAFETY: no worries, it's safe just some integer transmutes ;)
-            self.push_qword(mem::transmute::<i64, u64>(int));
-        }
-    }
-}
-
-macro_rules! binary_op {
-    ($self:expr, $op:tt) => ({
-        let b = $self.stack.pop_integer();
-        let a = $self.stack.pop_integer();
-
-        $self.stack.push_integer(a $op b);
-    });
-}
-
-/// The Virtual Machine of lun.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct VM {
-    /// blob of code, we will execute
-    blob: BcBlob,
-    /// instruction pointer, always points to the instruction that is about to
-    /// be executed
-    ip: usize,
+#[derive(Debug, Clone)]
+pub struct Vm {
+    /// general purpose registers
+    r: Registers,
+    /// register instruction pointer
+    pc: DWord,
+    /// program_end address
+    program_end: DWord,
+    /// stack bottom address
+    stack_bottom: DWord,
+    /// canary end address
+    canary_end: DWord,
+    /// the canary
+    program: BcBlob,
     /// the stack
-    stack: Stack,
+    stack: Vec<u8>,
 }
 
-impl VM {
-    pub fn new(blob: BcBlob) -> VM {
-        VM {
-            blob,
-            ip: 0,
-            stack: Stack::new(),
+impl Vm {
+    pub const CANARY_SIZE: DWord = 1024;
+    pub const SPECIAL_END: DWord = 255;
+    pub const PROGRAM_START: DWord = Vm::SPECIAL_END + 1;
+
+    pub fn new(stack_size: DWord, program: BcBlob, pc: DWord) -> Vm {
+        let program_end = Vm::PROGRAM_START + program.code.len() as DWord;
+        let stack_top = program_end + 1;
+        let stack_bottom = stack_top + stack_size;
+        let canary_start = stack_bottom + 1;
+        let canary_end = canary_start + Vm::CANARY_SIZE;
+
+        Vm {
+            r: Registers([0; 16]),
+            pc,
+            program_end,
+            stack_bottom,
+            canary_end,
+            program,
+            stack: vec![0; stack_size as usize],
         }
     }
 
-    fn read_byte(&mut self) -> u8 {
-        let byte = self.blob.code[self.ip];
-        self.ip += 1;
-        byte
+    pub fn run(&self) {
+        println!("HELLO FROM THE VM :)")
     }
 
-    // fn read_word(&mut self) -> u16 {
-    //     let word = read_word(&self.blob.code, self.ip);
-    //     self.ip += 2;
-    //     word
-    // }
-
-    fn read_bword(&mut self) -> u32 {
-        let bword = read_bword(&self.blob.code, self.ip);
-        self.ip += 3;
-        bword
+    #[inline(always)]
+    pub const fn stack_top(&self) -> DWord {
+        self.program_end + 1
     }
 
-    // fn read_dword(&mut self) -> u32 {
-    //     let dword = read_dword(&self.blob.code, self.ip);
-    //     self.ip += 4;
-    //     dword
-    // }
+    #[inline(always)]
+    pub const fn canary_start(&self) -> DWord {
+        self.stack_bottom + 1
+    }
 
-    pub fn run(&mut self) -> u64 {
-        loop {
-            // TODO: handle runtime errors, remove the unwrap
-            // maybe handle them like in real ISA, like traps/interrupts that
-            // can recover idk from the code.
-            let opcode = self.read_byte();
-            // Dispatch the opcode
-            match OpCode::from_u8(opcode).unwrap() {
-                OpCode::Ret => break,
-                OpCode::Const => {
-                    let index = self.read_bword();
+    #[inline(always)]
+    pub const fn heap_base(&self) -> DWord {
+        self.canary_end + 1
+    }
 
-                    let val = self.blob.dpool.read(index as usize);
-                    self.stack.push(val);
-                }
-                OpCode::Neg => {
-                    let int = self.stack.pop_integer();
-                    self.stack.push_integer(-int);
-                }
-                OpCode::Add => binary_op!(self, +),
-                OpCode::Sub => binary_op!(self, -),
-                OpCode::Mul => binary_op!(self, *),
-                OpCode::Div => binary_op!(self, /),
+    pub fn read(&self, addr: DWord, size: Size) -> DWord {
+        let usize = size as usize;
+        if addr % size as u64 != 0 {
+            // TODO: throw an interrupt
+            panic!("non-aligned address")
+        }
+
+        let val = if (0..=255).contains(&addr) {
+            // TODO: throw interrupts
+            panic!("cannot read special region.")
+        } else if (Self::PROGRAM_START..=self.program_end).contains(&addr) {
+            let daddr = addr as usize - Vm::PROGRAM_START as usize;
+            &self.program.code[daddr..(daddr + usize)]
+        } else if (self.stack_top()..self.stack_bottom).contains(&addr) {
+            let daddr = addr as usize - self.stack_top() as usize;
+            &self.stack[daddr..(daddr + usize)]
+        } else {
+            // TODO: throw interrupts
+            panic!("unknown address")
+        };
+
+        match size {
+            Size::Byte => *bytemuck::from_bytes::<u8>(val) as DWord,
+            Size::Half => *bytemuck::from_bytes::<u16>(val) as DWord,
+            Size::Word => *bytemuck::from_bytes::<u32>(val) as DWord,
+            Size::Double => *bytemuck::from_bytes::<u64>(val) as DWord,
+        }
+    }
+
+    pub fn write(&mut self, addr: DWord, size: Size, value: DWord) {
+        let usize = size as usize;
+        if addr % size as u64 != 0 {
+            // TODO: throw an interrupt
+            panic!("non-aligned address");
+        }
+
+        // Get mutable slice to write into
+        let dest = if (0..=255).contains(&addr) {
+            // TODO: throw interrupt
+            panic!("cannot write to special region.");
+        } else if (Self::PROGRAM_START..=self.program_end).contains(&addr) {
+            // Program region is read-only
+            // TODO: throw interrupt
+            panic!("cannot write to program region.");
+        } else if (self.stack_top()..self.stack_bottom).contains(&addr) {
+            let daddr = addr as usize - self.stack_top() as usize;
+            &mut self.stack[daddr..(daddr + usize)]
+        } else {
+            // TODO: throw interrupt
+            panic!("unknown address");
+        };
+
+        match size {
+            Size::Byte => {
+                let val = value as u8;
+                let bytes = bytemuck::bytes_of(&val);
+                dest.copy_from_slice(bytes);
+            }
+            Size::Half => {
+                let val = value as u16;
+                let bytes = bytemuck::bytes_of(&val);
+                dest.copy_from_slice(bytes);
+            }
+            Size::Word => {
+                let val = value as u32;
+                let bytes = bytemuck::bytes_of(&val);
+                dest.copy_from_slice(bytes);
+            }
+            Size::Double => {
+                let val = value as u64;
+                let bytes = bytemuck::bytes_of(&val);
+                dest.copy_from_slice(bytes);
             }
         }
-
-        self.stack.pop_qword()
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct Registers([DWord; 16]);
+
+impl Index<u8> for Registers {
+    type Output = DWord;
+
+    fn index(&self, index: u8) -> &Self::Output {
+        assert!((0..16).contains(&index));
+        if index == 0 {
+            &0
+        } else {
+            &self.0[index as usize]
+        }
+    }
+}
+
+impl IndexMut<u8> for Registers {
+    fn index_mut(&mut self, index: u8) -> &mut Self::Output {
+        assert!((0..16).contains(&index));
+        // NOTE: here we are fine because, we check that index is 0..16 and if
+        // you write something to rze, you will not be able to read it using the
+        // index expr.
+        self.0.index_mut(index as usize)
+    }
+}
+
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
+pub enum Size {
+    Byte = 1,
+    Half = 2,
+    Word = 4,
+    Double = 8,
 }

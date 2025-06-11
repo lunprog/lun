@@ -31,6 +31,7 @@ lun_vm = { path = "crates/lun_vm" }
 # other dependencies
 thiserror = "2.0.12"
 codespan-reporting = "0.12.0"
+bytemuck = { version = "1.23.0", features = ["must_cast", "derive"] }
 
 [package]
 name = "lun"

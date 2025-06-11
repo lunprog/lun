@@ -8,3 +8,6 @@ edition = "2024"
 [dependencies]
 lun_utils = { workspace = true }
 lun_bc = { workspace = true }
+
+# other dependencies
+bytemuck = { workspace = true }

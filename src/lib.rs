@@ -26,7 +26,7 @@ use crate::{
     lexer::Lexer,
     parser::Parser,
     semack::SemanticCk,
-    vm::VM,
+    vm::Vm,
 };
 
 pub use lun_bc as bc;
