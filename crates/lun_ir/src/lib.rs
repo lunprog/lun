@@ -35,7 +35,7 @@ impl<T: IntoIr> IntoIr for Option<T> {
     }
 }
 
-/// A lun module, for now a file basically
+/// A lun module is a translation unit of Lun.
 #[derive(Debug, Clone)]
 pub struct IrModule {
     pub defs: Vec<IrDefinition>,
