@@ -31,11 +31,24 @@ rt5  rfl  rfp  rsp
 #### `rfl` Flags
 
 ```
-0                                                            63
-|OF|                         Reserved                         |
+63                                                            0
+|                      Reserved                      |SF|CF|OF|
 
-OF is a bit, when set to 1, the last arithmetic instruction overflowed,
-             when set to 0, no overflow
+ name | position |                        description                         |
+------|----------|------------------------------------------------------------|
+  OF  |    0     | used to detect signed arithmetic errors. It is set when    |
+      |          | the result of an arithmetic operation appears incorrect    |
+      |          | when interpreted as a signed value, due to the result      |
+      |          | wrapping around the representable signed range.            |
+------|----------|------------------------------------------------------------|
+  CF  |    1     | used to detect unsigned arithmetic errors. It is set when  |
+      |          | an arithmetic operation (typically addition or             |
+      |          | subtraction) generates a carry out of the most significant |
+      |          | bit (MSB), indicating that the result has exceeded the     |
+      |          | maximum representable value in unsigned interpretation.    |
+------|----------|------------------------------------------------------------|
+  SF  |    2     | used to detect negative arithmetic results. SF is set when |
+      |          | the MSB of the result is 1, it is set to 0 otherwise       |
 ```
 
 
