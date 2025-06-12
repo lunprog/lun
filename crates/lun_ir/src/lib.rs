@@ -222,10 +222,6 @@ pub enum IrExpression {
     ///
     /// [`StringLit`]: lun_parser::expr::Expr::StringLit
     StringLit(String),
-    /// see [`Grouping`]
-    ///
-    /// [`Grouping`]: lun_parser::expr::Expr::Grouping
-    Grouping(Box<IrExpression>),
     /// see [`Ident`]
     ///
     /// [`Ident`]: lun_parser::expr::Expr::Ident
