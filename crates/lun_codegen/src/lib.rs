@@ -2,8 +2,8 @@ use lun_bc::{
     BcBlob,
     bin::{LBType, LunBin, LunBinBuilder},
 };
-use lun_diag::{Diagnostic, DiagnosticSink, StageResult};
-use lun_semack::ckast::{BinOp, CkChunk, CkExpr, CkExpression, CkStmt, UnaryOp};
+use lun_diag::{DiagnosticSink, StageResult};
+use lun_semack::ckast::CkChunk;
 
 #[derive(Debug, Clone)]
 pub struct CodeGenerator {

@@ -469,7 +469,10 @@ impl SemanticCk {
             CkExpr::StringLit(_) => {
                 expr.typ = Type::String;
             }
-            CkExpr::Grouping(expr) => self.check_expr(expr)?,
+            CkExpr::Grouping(e) => {
+                self.check_expr(e)?;
+                expr.typ = e.typ.clone();
+            }
             CkExpr::Ident(MaybeUnresolved::Unresolved(name)) => {
                 let Some(sym) = self.table.lookup(&*name, true) else {
                     return Err(NotFoundInScope {

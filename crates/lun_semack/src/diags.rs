@@ -22,6 +22,8 @@ impl ToDiagnostic for ExpectedType {
                 self.found,
             ))
             .with_label(Label::primary((), self.loc))
+        // TODO: maybe change the message of this error to `mismatched types`
+        // and put the `expected type {} found type {}` on the primary label
     }
 }
 
