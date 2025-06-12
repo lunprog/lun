@@ -136,7 +136,7 @@ impl Vm {
                 dest.copy_from_slice(bytes);
             }
             Size::Double => {
-                let val = value as u64;
+                let val = value;
                 let bytes = bytemuck::bytes_of(&val);
                 dest.copy_from_slice(bytes);
             }
@@ -151,7 +151,8 @@ impl Index<u8> for Registers {
     type Output = DWord;
 
     fn index(&self, index: u8) -> &Self::Output {
-        assert!((0..16).contains(&index));
+        debug_assert!((0..16).contains(&index), "There is only 16 registers");
+
         if index == 0 {
             &0
         } else {
@@ -162,7 +163,7 @@ impl Index<u8> for Registers {
 
 impl IndexMut<u8> for Registers {
     fn index_mut(&mut self, index: u8) -> &mut Self::Output {
-        assert!((0..16).contains(&index));
+        debug_assert!((0..16).contains(&index), "There is only 16 registers");
         // NOTE: here we are fine because, we check that index is 0..16 and if
         // you write something to rze, you will not be able to read it using the
         // index expr.
