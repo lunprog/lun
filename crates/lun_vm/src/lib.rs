@@ -6,6 +6,7 @@ use std::{
 };
 
 use bytemuck::Contiguous;
+use half::f16;
 use lun_bc::{AFunct, BcBlob, Opcode, Reg};
 
 /// A double word.
@@ -31,6 +32,79 @@ pub struct Vm {
     done: bool,
 }
 
+macro_rules! inst_impl {
+    (arithmetic; $self:ident, $wrap_fn:ident, $op:tt) => {{
+        // fetch & decode
+        let (funct, rd, rs1, rs2) = $self.decode_arithmetic_inst();
+        $self.pc += 3;
+
+        // execute
+        match funct {
+            AFunct::X => {
+                $self.x[rd] = $self.x[rs1].$wrap_fn($self.x[rs2]);
+            }
+            AFunct::F16 => {
+                let t_rs1 = f16::from_bits($self.x[rs1] as u16);
+                let t_rs2 = f16::from_bits($self.x[rs2] as u16);
+                let res = t_rs1 $op t_rs2;
+                $self.x[rd] = res.to_bits() as DWord;
+            }
+            AFunct::F32 => {
+                let t_rs1 = f32::from_bits($self.x[rs1] as u32);
+                let t_rs2 = f32::from_bits($self.x[rs2] as u32);
+                let res = t_rs1 $op t_rs2;
+                $self.x[rd] = res.to_bits() as DWord;
+            }
+            AFunct::F64 => {
+                let t_rs1 = f64::from_bits($self.x[rs1] as u64);
+                let t_rs2 = f64::from_bits($self.x[rs2] as u64);
+                let res = t_rs1 $op t_rs2;
+                $self.x[rd] = res.to_bits() as DWord;
+            }
+        }
+    }};
+    (comparison; $self:ident, $op:tt) => {{
+        // fetch & decode
+        let (funct, rd, rs1, rs2) = $self.decode_arithmetic_inst();
+        $self.pc += 3;
+
+        // execute
+        match funct {
+            AFunct::X => {
+                $self.x[rd] = ($self.x[rs1] $op $self.x[rs2]) as DWord;
+            }
+            AFunct::F16 => {
+                let t_rs1 = f16::from_bits($self.x[rs1] as u16);
+                let t_rs2 = f16::from_bits($self.x[rs2] as u16);
+                $self.x[rd] = (t_rs1 $op t_rs2) as DWord;
+            }
+            AFunct::F32 => {
+                let t_rs1 = f32::from_bits($self.x[rs1] as u32);
+                let t_rs2 = f32::from_bits($self.x[rs2] as u32);
+                $self.x[rd] = (t_rs1 $op t_rs2) as DWord;
+            }
+            AFunct::F64 => {
+                let t_rs1 = f64::from_bits($self.x[rs1] as u64);
+                let t_rs2 = f64::from_bits($self.x[rs2] as u64);
+                $self.x[rd] = (t_rs1 $op t_rs2) as DWord;
+            }
+        }
+    }};
+    (bitwise; $self:ident, $op:tt) => {{
+        // fetch & decode
+        let (funct, rd, rs1, rs2) = $self.decode_arithmetic_inst();
+        $self.pc += 3;
+
+        // execute
+        if let AFunct::X = funct {
+            $self.x[rd] = ($self.x[rs1] $op $self.x[rs2]) as DWord;
+        } else {
+            // TODO: throw exception
+            panic!("cannot perform bitwise operation on floating point number");
+        }
+    }};
+}
+
 impl Vm {
     /// The size of the canary, 1024 bytes.
     pub const CANARY_SIZE: DWord = 1024;
@@ -45,6 +119,8 @@ impl Vm {
     ///
     /// Note: this default may change at any time between versions.
     pub const BASE_STACK: DWord = 0x8000;
+
+    pub const XLEN: DWord = 64;
 
     pub fn new(stack_size: DWord, program: BcBlob) -> Vm {
         let program_end = Vm::PROGRAM_START + program.code.len() as DWord;
@@ -74,15 +150,39 @@ impl Vm {
             let opcode = Opcode::from_integer(self.read(self.pc, Size::Byte) as u8);
 
             match opcode {
-                Some(Opcode::Add) => {
-                    let (funct, rd, rs1, rs2) = self.decode_arithmetic_inst();
-                    self.pc += 3;
-                    dbg!(
-                        funct,
-                        Reg::from_integer(rd),
-                        Reg::from_integer(rs1),
-                        Reg::from_integer(rs2)
-                    );
+                Some(Opcode::Add) => inst_impl!(arithmetic; self, wrapping_add, +),
+                Some(Opcode::Sub) => inst_impl!(arithmetic; self, wrapping_sub, -),
+                Some(Opcode::Mul) => inst_impl!(arithmetic; self, wrapping_mul, *),
+                Some(Opcode::Div) => inst_impl!(arithmetic; self, wrapping_div, /),
+                Some(Opcode::Rem) => inst_impl!(arithmetic; self, wrapping_rem, %),
+                Some(Opcode::Clt) => inst_impl!(comparison; self, <),
+                Some(Opcode::Cge) => inst_impl!(comparison; self, >=),
+                Some(Opcode::Ceq) => inst_impl!(comparison; self, ==),
+                Some(Opcode::Cne) => inst_impl!(comparison; self, !=),
+                Some(Opcode::And) => inst_impl!(bitwise; self, &),
+                Some(Opcode::Or) => inst_impl!(bitwise; self, |),
+                Some(Opcode::Xor) => inst_impl!(bitwise; self, ^),
+                Some(Opcode::Call) => {
+                    // fetch & decode
+                    let imm32 = self.read(self.pc + 1, Size::Word);
+                    self.pc += 5;
+
+                    // execute
+
+                    // decrement stack pointer
+                    self.x[Reg::sp] -= Vm::XLEN / 8;
+                    // save return address, next instruction address, on the stack
+                    self.write(self.x[Reg::sp], Size::Double, self.pc + 5);
+                    // jump to the immediate target
+                    self.pc = imm32;
+                }
+                Some(Opcode::Ret) => {
+                    // fetch & decode
+                    self.pc += 1;
+
+                    // execute
+                    self.pc = self.read(self.x[Reg::sp], Size::Double);
+                    self.x[Reg::sp] += Vm::XLEN / 8;
                 }
                 Some(_) => todo!(),
                 None => panic!("invalid instruction exception"), // TODO: make excetpions.
@@ -242,6 +342,22 @@ impl IndexMut<u8> for Registers {
         // you write something to rze, you will not be able to read it using the
         // index expr.
         self.0.index_mut(index as usize)
+    }
+}
+
+impl Index<Reg> for Registers {
+    type Output = DWord;
+
+    #[inline(always)]
+    fn index(&self, index: Reg) -> &Self::Output {
+        <Self as Index<u8>>::index(self, index as u8)
+    }
+}
+
+impl IndexMut<Reg> for Registers {
+    #[inline(always)]
+    fn index_mut(&mut self, index: Reg) -> &mut Self::Output {
+        <Self as IndexMut<u8>>::index_mut(self, index as u8)
     }
 }
 

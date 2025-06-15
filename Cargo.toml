@@ -32,6 +32,7 @@ lun_vm = { path = "crates/lun_vm" }
 thiserror = "2.0.12"
 codespan-reporting = "0.12.0"
 bytemuck = { version = "1.23.0", features = ["must_cast", "derive"] }
+half = "2.6.0"
 
 [package]
 name = "lun"
@@ -53,3 +54,4 @@ lun_vm = { workspace = true }
 # other dependencies
 thiserror = { workspace = true }
 codespan-reporting = { workspace = true }
+half = { workspace = true }
