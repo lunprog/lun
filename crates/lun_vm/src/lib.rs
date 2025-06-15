@@ -191,6 +191,10 @@ impl Vm {
         }
     }
 
+    /// decodes (expect for the opcode) inst with layout:
+    /// opcode | funct | rd | rs1 | rs2 = 24b
+    ///
+    /// returns: (funct, rd, rs1, rs2)
     fn decode_arithmetic_inst(&self) -> (AFunct, u8, u8, u8) {
         let funct_rd = self.read(self.pc + 1, Size::Byte) as u8;
         let rs1_rs2 = self.read(self.pc + 2, Size::Byte) as u8;
@@ -218,12 +222,9 @@ impl Vm {
         self.canary_end + 1
     }
 
+    #[track_caller]
     pub fn read(&self, addr: DWord, size: Size) -> DWord {
         let usize = size as usize;
-        if addr % size as u64 != 0 {
-            // TODO: throw an interrupt
-            panic!("non-aligned address")
-        }
 
         let val = if (0..=255).contains(&addr) {
             // TODO: throw interrupts
@@ -240,19 +241,16 @@ impl Vm {
         };
 
         match size {
-            Size::Byte => *bytemuck::from_bytes::<u8>(val) as DWord,
-            Size::Half => *bytemuck::from_bytes::<u16>(val) as DWord,
-            Size::Word => *bytemuck::from_bytes::<u32>(val) as DWord,
-            Size::Double => *bytemuck::from_bytes::<u64>(val) as DWord,
+            Size::Byte => u8::from_le_bytes(val.try_into().unwrap()) as DWord,
+            Size::Half => u16::from_le_bytes(val.try_into().unwrap()) as DWord,
+            Size::Word => u32::from_le_bytes(val.try_into().unwrap()) as DWord,
+            Size::Double => u64::from_le_bytes(val.try_into().unwrap()) as DWord,
         }
     }
 
+    #[track_caller]
     pub fn write(&mut self, addr: DWord, size: Size, value: DWord) {
         let usize = size as usize;
-        if addr % size as u64 != 0 {
-            // TODO: throw an interrupt
-            panic!("non-aligned address");
-        }
 
         // Get mutable slice to write into
         let dest = if (0..=255).contains(&addr) {
@@ -273,23 +271,23 @@ impl Vm {
         match size {
             Size::Byte => {
                 let val = value as u8;
-                let bytes = bytemuck::bytes_of(&val);
-                dest.copy_from_slice(bytes);
+                let bytes = val.to_le_bytes();
+                dest.copy_from_slice(&bytes);
             }
             Size::Half => {
                 let val = value as u16;
-                let bytes = bytemuck::bytes_of(&val);
-                dest.copy_from_slice(bytes);
+                let bytes = val.to_le_bytes();
+                dest.copy_from_slice(&bytes);
             }
             Size::Word => {
                 let val = value as u32;
-                let bytes = bytemuck::bytes_of(&val);
-                dest.copy_from_slice(bytes);
+                let bytes = val.to_le_bytes();
+                dest.copy_from_slice(&bytes);
             }
             Size::Double => {
                 let val = value;
-                let bytes = bytemuck::bytes_of(&val);
-                dest.copy_from_slice(bytes);
+                let bytes = val.to_le_bytes();
+                dest.copy_from_slice(&bytes);
             }
         }
     }
