@@ -103,6 +103,26 @@ macro_rules! inst_impl {
             panic!("cannot perform bitwise operation on floating point number");
         }
     }};
+    (load; $self:ident, $size:ident) => {{
+        // fetch & decode
+        let (rd, rs, offset) = $self.dissassemble_reg_imm16_reg();
+        $self.pc += 4;
+
+        // execute
+        $self.x[rd] = $self.read($self.x[rs].wrapping_add_signed(offset as i64), Size::$size);
+    }};
+    (store; $self:ident, $size:ident) => {{
+        // fetch & decode
+        let (rs1, rs2, offset) = $self.dissassemble_reg_imm16_reg();
+        $self.pc += 4;
+
+        // execute
+        $self.write(
+            $self.x[rs1].wrapping_add_signed(offset as i64),
+            Size::$size,
+            $self.x[rs2],
+        );
+    }};
 }
 
 impl Vm {
@@ -245,6 +265,14 @@ impl Vm {
                     self.pc += offset as u64;
                 }
             }
+            Some(Opcode::LdB) => inst_impl!(load; self, Byte),
+            Some(Opcode::LdH) => inst_impl!(load; self, Half),
+            Some(Opcode::LdW) => inst_impl!(load; self, Word),
+            Some(Opcode::LdD) => inst_impl!(load; self, Double),
+            Some(Opcode::StB) => inst_impl!(store; self, Byte),
+            Some(Opcode::StH) => inst_impl!(store; self, Half),
+            Some(Opcode::StW) => inst_impl!(store; self, Word),
+            Some(Opcode::StD) => inst_impl!(store; self, Double),
             Some(_) => todo!(),
             None => panic!("invalid instruction exception"), // TODO: make excetpions.
         }
