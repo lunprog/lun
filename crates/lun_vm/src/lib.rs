@@ -129,8 +129,12 @@ impl Vm {
         let canary_start = stack_bottom + 1;
         let canary_end = canary_start + Vm::CANARY_SIZE;
 
+        // setup general purpose registers
+        let mut x = Registers([0; 16]);
+        x[Reg::sp] = stack_bottom;
+
         Vm {
-            x: Registers([0; 16]),
+            x,
             pc: Vm::PROGRAM_START,
             program_end,
             stack_bottom,
@@ -147,47 +151,102 @@ impl Vm {
 
     pub fn run(&mut self) {
         while !self.done {
-            let opcode = Opcode::from_integer(self.read(self.pc, Size::Byte) as u8);
-
-            match opcode {
-                Some(Opcode::Add) => inst_impl!(arithmetic; self, wrapping_add, +),
-                Some(Opcode::Sub) => inst_impl!(arithmetic; self, wrapping_sub, -),
-                Some(Opcode::Mul) => inst_impl!(arithmetic; self, wrapping_mul, *),
-                Some(Opcode::Div) => inst_impl!(arithmetic; self, wrapping_div, /),
-                Some(Opcode::Rem) => inst_impl!(arithmetic; self, wrapping_rem, %),
-                Some(Opcode::Clt) => inst_impl!(comparison; self, <),
-                Some(Opcode::Cge) => inst_impl!(comparison; self, >=),
-                Some(Opcode::Ceq) => inst_impl!(comparison; self, ==),
-                Some(Opcode::Cne) => inst_impl!(comparison; self, !=),
-                Some(Opcode::And) => inst_impl!(bitwise; self, &),
-                Some(Opcode::Or) => inst_impl!(bitwise; self, |),
-                Some(Opcode::Xor) => inst_impl!(bitwise; self, ^),
-                Some(Opcode::Call) => {
-                    // fetch & decode
-                    let imm32 = self.read(self.pc + 1, Size::Word);
-                    self.pc += 5;
-
-                    // execute
-
-                    // decrement stack pointer
-                    self.x[Reg::sp] -= Vm::XLEN / 8;
-                    // save return address, next instruction address, on the stack
-                    self.write(self.x[Reg::sp], Size::Double, self.pc + 5);
-                    // jump to the immediate target
-                    self.pc = imm32;
-                }
-                Some(Opcode::Ret) => {
-                    // fetch & decode
-                    self.pc += 1;
-
-                    // execute
-                    self.pc = self.read(self.x[Reg::sp], Size::Double);
-                    self.x[Reg::sp] += Vm::XLEN / 8;
-                }
-                Some(_) => todo!(),
-                None => panic!("invalid instruction exception"), // TODO: make excetpions.
-            }
+            self.step();
             break;
+        }
+    }
+
+    pub fn step(&mut self) {
+        let opcode = Opcode::from_integer(self.read(self.pc, Size::Byte) as u8);
+
+        match opcode {
+            Some(Opcode::Add) => inst_impl!(arithmetic; self, wrapping_add, +),
+            Some(Opcode::Sub) => inst_impl!(arithmetic; self, wrapping_sub, -),
+            Some(Opcode::Mul) => inst_impl!(arithmetic; self, wrapping_mul, *),
+            Some(Opcode::Div) => inst_impl!(arithmetic; self, wrapping_div, /),
+            Some(Opcode::Rem) => inst_impl!(arithmetic; self, wrapping_rem, %),
+            Some(Opcode::Clt) => inst_impl!(comparison; self, <),
+            Some(Opcode::Cge) => inst_impl!(comparison; self, >=),
+            Some(Opcode::Ceq) => inst_impl!(comparison; self, ==),
+            Some(Opcode::Cne) => inst_impl!(comparison; self, !=),
+            Some(Opcode::And) => inst_impl!(bitwise; self, &),
+            Some(Opcode::Or) => inst_impl!(bitwise; self, |),
+            Some(Opcode::Xor) => inst_impl!(bitwise; self, ^),
+            Some(Opcode::Call) => {
+                // fetch & decode
+                let imm32 = self.read(self.pc + 1, Size::Word);
+                self.pc += 5;
+
+                // execute
+
+                // decrement stack pointer
+                self.x[Reg::sp] -= Vm::XLEN / 8;
+                // save return address, next instruction address, on the stack
+                self.write(self.x[Reg::sp], Size::Double, self.pc + 5);
+                // jump to the immediate target
+                self.pc = imm32;
+            }
+            Some(Opcode::Ret) => {
+                // fetch & decode
+                self.pc += 1;
+
+                // execute
+                self.pc = self.read(self.x[Reg::sp], Size::Double);
+                self.x[Reg::sp] += Vm::XLEN / 8;
+            }
+            Some(Opcode::Jze) => {
+                // fetch & decode
+                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg();
+                self.pc += 4;
+
+                // execute
+                if self.x[rs2] == 0 {
+                    self.pc = self.pc.wrapping_add_signed(offset as i64);
+                    self.pc += self.x[rs1];
+                }
+            }
+            Some(Opcode::Beq) => {
+                // fetch & decode
+                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg();
+                self.pc += 4;
+
+                // execute
+                if self.x[rs1] == self.x[rs2] {
+                    self.pc += offset as u64;
+                }
+            }
+            Some(Opcode::Bne) => {
+                // fetch & decode
+                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg();
+                self.pc += 4;
+
+                // execute
+                if self.x[rs1] != self.x[rs2] {
+                    self.pc += offset as u64;
+                }
+            }
+            Some(Opcode::Blt) => {
+                // fetch & decode
+                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg();
+                self.pc += 4;
+
+                // execute
+                if self.x[rs1] < self.x[rs2] {
+                    self.pc += offset as u64;
+                }
+            }
+            Some(Opcode::Bge) => {
+                // fetch & decode
+                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg();
+                self.pc += 4;
+
+                // execute
+                if self.x[rs1] >= self.x[rs2] {
+                    self.pc += offset as u64;
+                }
+            }
+            Some(_) => todo!(),
+            None => panic!("invalid instruction exception"), // TODO: make excetpions.
         }
     }
 
@@ -205,6 +264,19 @@ impl Vm {
         let rs2 = rs1_rs2 & 0b1111;
 
         (funct, rd, rs1, rs2)
+    }
+
+    /// decodes (expect for the opcode) inst with layout:
+    /// opcode | reg1 | reg2 | imm16 = 32b
+    ///
+    /// returns: (reg1, reg2, imm16)
+    fn dissassemble_reg_imm16_reg(&self) -> (u8, u8, u16) {
+        let reg1_reg2 = self.read(self.pc + 1, Size::Byte) as u8;
+        let imm16 = self.read(self.pc + 2, Size::Half) as u16;
+        let reg1 = reg1_reg2 >> 4;
+        let reg2 = reg1_reg2 & 0b1111;
+
+        (reg1, reg2, imm16)
     }
 
     #[inline(always)]

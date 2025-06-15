@@ -67,7 +67,7 @@ pub enum Opcode {
     Ret = 13,
 
     /// jze rs2, offset(rs1)
-    /// => if rs == 0 then pc += sext(offset)
+    /// => if x[rs2] == 0 then pc += sext(offset) + x[rs1]
     Jze = 14,
 
     /// beq rs1, rs2, offset
