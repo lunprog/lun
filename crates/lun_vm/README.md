@@ -2,7 +2,7 @@
 
 The (new) Virtual Machine reference.
 
-The VM is in 64bit, so the word length is 64bit, `WORD_LEN = 64`
+The VM is in 64bit, so the word length is 64bit, `XLEN = 64`
 
 ## Registers
 
@@ -107,16 +107,16 @@ OPCODE | funct | rd | rs1 | rs2
 ### Branching
 
 ```
-- call offset
+- call imm32
   -> opcode = 12
   -> layout = opcode | imm = 40b
-  -> offset is 32b immediate
-  => x[sp] = x[sp] - WORD_LEN/8 ; M[ x[sp] ] = rs ; pc += sext(offset)
+  -> imm32 is 32b immediate
+  => X[sp] -= XLEN / 8; M[x[sp]] = pc + 5; pc = imm32
 
 - ret
   -> opcode = 13
   -> layout = opcode = 8b
-  => pc = M[x[sp]] ; x[sp] += WORD_LEN/8
+  => pc = M[x[sp]] ; x[sp] += XLEN/8
 
 - jze rs2, offset(rs1)
   -> opcode = 14
@@ -238,11 +238,11 @@ OPCODE | funct | rd | rs1 | rs2
 - push rs
   -> opcode = 32
   -> layout = opcode | 0000 | rs = 16b
-  => x[sp] = x[sp] - WORD_LEN/8 ; M[x[sp]] = x[rs]
+  => x[sp] = x[sp] - XLEN/8 ; M[x[sp]] = x[rs]
 - pop rd
   -> opcode = 33
   -> layout = opcode | 0000 | rd = 16b
-  => x[rd] = M[x[sp]] ; x[sp] += WORD_LEN/8
+  => x[rd] = M[x[sp]] ; x[sp] += XLEN/8
 ```
 
 ## Bus & Memory

@@ -59,7 +59,7 @@ pub enum Opcode {
     Xor = 11,
 
     /// call offset
-    /// => rsp = rsp - WORD_LEN/8 ; M[rsp] = rs ; pc += sext(offset)
+    /// => X[sp] -= XLEN / 8; M[x[sp]] = pc + 5; pc = imm32
     Call = 12,
 
     /// ret
@@ -364,6 +364,7 @@ impl Display for Reg {
     }
 }
 
+// TODO: maybe add a function for integer arithmetics with overflow check.
 /// Arithmetic function
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Contiguous)]
