@@ -319,7 +319,24 @@ impl Vm {
                 // execute
                 self.x[rd] = self.x[rs];
             }
-            Some(_) => todo!(),
+            Some(Opcode::Push) => {
+                // fetch & decode
+                let rs = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
+                self.pc += 2;
+
+                // execute
+                self.x[Reg::sp] -= Vm::XLEN / 8;
+                self.write(self.x[Reg::sp], Size::Double, self.x[rs]);
+            }
+            Some(Opcode::Pop) => {
+                // fetch & decode
+                let rd = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
+                self.pc += 2;
+
+                // execute
+                self.x[rd] = self.read(self.x[Reg::sp], Size::Double);
+                self.x[Reg::sp] += Vm::XLEN / 8;
+            }
             None => panic!("invalid instruction exception"), // TODO: make excetpions.
         }
     }
