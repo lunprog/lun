@@ -273,6 +273,52 @@ impl Vm {
             Some(Opcode::StH) => inst_impl!(store; self, Half),
             Some(Opcode::StW) => inst_impl!(store; self, Word),
             Some(Opcode::StD) => inst_impl!(store; self, Double),
+            Some(Opcode::LiB) => {
+                // fetch & decode
+                let rd = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
+                let imm = self.read(self.pc + 2, Size::Byte) as u8;
+                self.pc += 3;
+
+                // execute
+                self.x[rd] = imm as DWord;
+            }
+            Some(Opcode::LiH) => {
+                // fetch & decode
+                let rd = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
+                let imm = self.read(self.pc + 2, Size::Half) as u16;
+                self.pc += 4;
+
+                // execute
+                self.x[rd] = imm as DWord;
+            }
+            Some(Opcode::LiW) => {
+                // fetch & decode
+                let rd = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
+                let imm = self.read(self.pc + 2, Size::Word) as u32;
+                self.pc += 6;
+
+                // execute
+                self.x[rd] = imm as DWord;
+            }
+            Some(Opcode::LiD) => {
+                // fetch & decode
+                let rd = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
+                let imm = self.read(self.pc + 2, Size::Double) as u64;
+                self.pc += 10;
+
+                // execute
+                self.x[rd] = imm as DWord;
+            }
+            Some(Opcode::Mov) => {
+                // fetch & decode
+                let rd_rs = self.read(self.pc + 1, Size::Byte) as u8;
+                let rd = rd_rs >> 4;
+                let rs = rd_rs & 0b1111;
+                self.pc += 2;
+
+                // execute
+                self.x[rd] = self.x[rs];
+            }
             Some(_) => todo!(),
             None => panic!("invalid instruction exception"), // TODO: make excetpions.
         }
