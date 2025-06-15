@@ -202,27 +202,27 @@ OPCODE | funct | rd | rs1 | rs2
 ### Moves
 
 ```
-- li.b rd, imm(rs)
+- li.b rd, imm
   -> opcode = 27
-  -> layout = opcode | rs | rs1 | imm = 24b
+  -> layout = opcode |0000| rd | imm = 24b
   -> offset is a 8b immediate
   => x[rd] = imm[7:0]
 
-- li.h rd, imm(rs)
+- li.h rd, imm
   -> opcode = 28
-  -> layout = opcode | rs | rs1 | imm = 32b
+  -> layout = opcode |0000| rd | imm = 32b
   -> offset is a 16b immediate
   => x[rd] = imm[15:0]
 
-- li.w rd, imm(rs)
+- li.w rd, imm
   -> opcode = 29
-  -> layout = opcode | rs | rs1 | imm = 48b
+  -> layout = opcode |0000| rd | imm = 48b
   -> offset is a 32b immediate
   => x[rd] = imm[31:0]
 
-- li.d rd, imm(rs)
+- li.d rd, imm
   -> opcode = 30
-  -> layout = opcode | rs | rs1 | imm = 80b
+  -> layout = opcode |0000| rd | imm = 80b
   -> offset is a 64b immediate
   => x[rd] = imm[63:0]
 
