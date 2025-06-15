@@ -122,7 +122,7 @@ OPCODE | funct | rd | rs1 | rs2
   -> opcode = 14
   -> layout = opcode | rs1 | rs2 | offset = 32b
   -> offset is a 16b immediate
-  => if x[rs] == 0 then pc += sext(offset)
+  => if x[rs2] == 0 then pc += sext(offset) + x[rs1]
 
 - beq rs1, rs2, offset
   -> opcode = 15
