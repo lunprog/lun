@@ -10,49 +10,28 @@ Every register is 64 bit wide.
 
 ### General purpose registers
 
-```
-rze  ra0  ra1  ra2
-ra3  ra4  ra5  rt0
-rt1  rt2  rt3  rt4
-rt5  rfl  rfp  rsp
-```
+registers are named `x0` to `x15`.
 
+ABI name:
 ```
-| regs  |       description       | saver  |
-| rze   | hard-wired zero         |   X    |
-| ra0-1 | argument / return value | caller |
-| ra2-5 | argument                | caller |
-| rt0-5 | temporary               | caller |
-| rfl   | flag reg. see below     |   X    |
-| rfp   | frame pointer           | callee |
-| rsp   | stack pointer           | callee |
+zr  a0  a1  a2
+a3  a4  t0  t1
+t2  t3  s0  s1
+s2  s3  fp  sp
 ```
 
-#### `rfl` Flags
-
 ```
-63                                                            0
-|                      Reserved                      |SF|CF|OF|
-
- name | position |                        description                         |
-------|----------|------------------------------------------------------------|
-  OF  |    0     | used to detect signed arithmetic errors. It is set when    |
-      |          | the result of an arithmetic operation appears incorrect    |
-      |          | when interpreted as a signed value, due to the result      |
-      |          | wrapping around the representable signed range.            |
-------|----------|------------------------------------------------------------|
-  CF  |    1     | used to detect unsigned arithmetic errors. It is set when  |
-      |          | an arithmetic operation (typically addition or             |
-      |          | subtraction) generates a carry out of the most significant |
-      |          | bit (MSB), indicating that the result has exceeded the     |
-      |          | maximum representable value in unsigned interpretation.    |
-------|----------|------------------------------------------------------------|
-  SF  |    2     | used to detect negative arithmetic results. SF is set when |
-      |          | the MSB of the result is 1, it is set to 0 otherwise       |
+| regs |       description       | saver  |
+| zr   | hard-wired zero         |   X    |
+| a0-1 | argument / return value | caller |
+| a2-4 | argument                | caller |
+| t0-3 | temporary               | caller |
+| s0-3 | saved registers         | callee |
+| fp   | frame pointer           | callee |
+| sp   | stack pointer           | callee |
 ```
 
-
-### Special Registers:
+### Special Register:
 
 ```
 pc -> program counter
@@ -63,72 +42,65 @@ pc -> program counter
 ### Arithmetic & Logic
 
 ```
-- add.type rd, rs1, rs2
+- add.funct rd, rs1, rs2
   -> opcode = 0
-  => rd = rs1 + rs2
+  => x[rd] = x[rs1] + x[rs2]
 
-- sub.type rd, rs1, rs2
+- sub.funct rd, rs1, rs2
   -> opcode = 1
-  => rd = rs1 - rs2
+  => x[rd] = x[rs1] - x[rs2]
 
-- mul.type rd, rs1, rs2
+- mul.funct rd, rs1, rs2
   -> opcode = 2
-  => rd = rs1 * rs2
+  => x[rd] = x[rs1] * x[rs2]
 
-- div.type rd, rs1, rs2
+- div.funct rd, rs1, rs2
   -> opcode = 3
-  => rd = rs1 / rs2
+  => x[rd] = x[rs1] / x[rs2]
 
-- rem.type rd, rs1, rs2
+- rem.funct rd, rs1, rs2
   -> opcode = 4
-  => rd = rs1 % rs2
+  => x[rd] = x[rs1] % x[rs2]
 
-- clt.type rd, rs1, rs2
+- clt.funct rd, rs1, rs2
   -> opcode = 5
-  => rd = rs1 < rs2
+  => x[rd] = x[rs1] < x[rs2]
 
-- cge.type rd, rs1, rs2
+- cge.funct rd, rs1, rs2
   -> opcode = 6
-  => rd = rs1 >= rs2
+  => x[rd] = x[rs1] >= x[rs2]
 
-- ceq.type rd, rs1, rs2
+- ceq.funct rd, rs1, rs2
   -> opcode = 7
-  => rd = rs1 == rs2
+  => x[rd] = x[rs1] == x[rs2]
 
-- cne.type rd, rs1, rs2
+- cne.funct rd, rs1, rs2
   -> opcode = 8
-  => rd = rs1 != rs2
+  => x[rd] = x[rs1] != x[rs2]
 
-- and.type rd, rs1, rs2
+- and.funct rd, rs1, rs2
   -> opcode = 9
-  => rd = rs1 and rs2
+  => x[rd] = x[rs1] and x[rs2]
 
-- or.type rd, rs1, rs2
+- or.funct rd, rs1, rs2
   -> opcode = 10
-  => rd = rs1 or rs2
+  => x[rd] = x[rs1] or x[rs2]
 
-- xor.type rd, rs1, rs2
+- xor.funct rd, rs1, rs2
   -> opcode = 11
-  => rd = rs1 xor rs2
+  => x[rd] = x[rs1] xor x[rs2]
 
-WHERE type is 4bit value:
-0      -> u8
-1      -> u16
-2      -> u32
-3      -> u64
-4      -> i8
-5      -> i16
-6      -> i32
-7      -> i64
-8      -> f16
-9      -> f32
-10     -> f64
-11..15 -> reserved
+WHERE funct is:
+ funct | 4b val |     description     | instruction example |
+   X   |   0    | integer arithmetics | add s0, t0, t1      |
+  f16  |   1    | f16 arithmetics     | add.f16 s0, t0, t1  |
+  f32  |   2    | f32 arithmetics     | add.f32 s0, t0, t1  |
+  f64  |   3    | f64 arithmetics     | add.f64 s0, t0, t1  |
 
-LAYOUT
+  LAYOUT :
 
-OPCODE | type | rd | rs1 | rs2
-  8b   |  4b  | 4b | 4b  | 4b
+OPCODE | funct | rd | rs1 | rs2
+  8b   |  4b   | 4b | 4b  | 4b
 => 24 bits total
 ```
 
@@ -139,42 +111,42 @@ OPCODE | type | rd | rs1 | rs2
   -> opcode = 12
   -> layout = opcode | imm = 40b
   -> offset is 32b immediate
-  => rsp = rsp - WORD_LEN/8 ; M[rsp] = rs ; pc += sext(offset)
+  => x[sp] = x[sp] - WORD_LEN/8 ; M[ x[sp] ] = rs ; pc += sext(offset)
 
 - ret
   -> opcode = 13
   -> layout = opcode = 8b
-  => pc = M[rsp] ; rsp = rsp + WORD_LEN/8
+  => pc = M[x[sp]] ; x[sp] += WORD_LEN/8
 
 - jze rs2, offset(rs1)
   -> opcode = 14
   -> layout = opcode | rs1 | rs2 | offset = 32b
   -> offset is a 16b immediate
-  => if rs == 0 then pc += sext(offset)
+  => if x[rs] == 0 then pc += sext(offset)
 
 - beq rs1, rs2, offset
   -> opcode = 15
   -> layout = opcode | rs1 | rs2 | offset = 32b
   -> offset is a 16b immediate
-  => if rs1 == rs2 then pc += sext(offset)
+  => if x[rs1] == x[rs2] then pc += sext(offset)
 
 - bne rs1, rs2, offset
   -> opcode = 16
   -> layout = opcode | rs1 | rs2 | offset = 32b
   -> offset is a 16b immediate
-  => if rs1 != rs2 then pc += sext(offset)
+  => if x[rs1] != x[rs2] then pc += sext(offset)
 
 - blt rs1, rs2, offset
   -> opcode = 17
   -> layout = opcode | rs1 | rs2 | offset = 32b
   -> offset is a 16b immediate
-  => if rs1 < rs2 then pc += sext(offset)
+  => if x[rs1] < x[rs2] then pc += sext(offset)
 
 - bge rs1, rs2, offset
   -> opcode = 18
   -> layout = opcode | rs1 | rs2 | offset = 32b
   -> offset is a 16b immediate
-  => if rs1 >= rs2 then pc += sext(offset)
+  => if x[rs1] >= x[rs2] then pc += sext(offset)
 ```
 
 ### Memory
@@ -184,47 +156,47 @@ OPCODE | type | rd | rs1 | rs2
   -> opcode = 19
   -> layout = opcode | rd | rs | offset = 32b
   -> offset is a 16b immediate
-  => rd = M[rs + sext(offset)][7:0]
+  => x[rd] = M[x[rs] + sext(offset)][7:0]
 - ld.h rd, offset(rs)
   -> opcode = 20
   -> layout = opcode | rd | rs | offset = 32b
   -> offset is a 16b immediate
-  => rd = M[rs + sext(offset)][15:0]
+  => x[rd] = M[x[rs] + sext(offset)][15:0]
 - ld.w rd, offset(rs)
   -> opcode = 21
   -> layout = opcode | rd | rs | offset = 32b
   -> offset is a 16b immediate
-  => rd = M[rs + sext(offset)][31:0]
+  => x[rd] = M[x[rs] + sext(offset)][31:0]
 - ld.d rd, offset(rs)
   -> opcode = 22
   -> layout = opcode | rd | rs | offset = 32b
   -> offset is a 16b immediate
-  => rd = M[rs + sext(offset)][63:0]
+  => x[rd] = M[x[rs] + sext(offset)][63:0]
 
 
 - st.b rs2, offset(rs1)
   -> opcode = 23
   -> layout = opcode | rs1 | rs2 | offset = 32b
   -> offset is a 16b immediate
-  => M[rs1 + sext(offset)] = rs2[7:0]
+  => M[x[rs1] + sext(offset)] = x[rs2][7:0]
 
 - st.h rs2, offset(rs1)
   -> opcode = 24
   -> layout = opcode | rs1 | rs2 | offset = 32b
   -> offset is a 16b immediate
-  => M[rs1 + sext(offset)] = rs2[15:0]
+  => M[x[rs1] + sext(offset)] = x[rs2][15:0]
 
 - st.w rs2, offset(rs1)
   -> opcode = 25
   -> layout = opcode | rs1 | rs2 | offset = 32b
   -> offset is a 16b immediate
-  => M[rs1 + sext(offset)] = rs2[31:0]
+  => M[x[rs1] + sext(offset)] = x[rs2][31:0]
 
 - st.d rs2, offset(rs1)
   -> opcode = 26
   -> layout = opcode | rs1 | rs2 | offset = 32b
   -> offset is a 16b immediate
-  => M[rs1 + sext(offset)] = rs2[63:0]
+  => M[x[rs1] + sext(offset)] = x[rs2][63:0]
 ```
 
 ### Moves
@@ -234,30 +206,30 @@ OPCODE | type | rd | rs1 | rs2
   -> opcode = 27
   -> layout = opcode | rs | rs1 | imm = 24b
   -> offset is a 8b immediate
-  => rd = imm[7:0]
+  => x[rd] = imm[7:0]
 
 - li.h rd, imm(rs)
   -> opcode = 28
   -> layout = opcode | rs | rs1 | imm = 32b
   -> offset is a 16b immediate
-  => rd = imm[15:0]
+  => x[rd] = imm[15:0]
 
 - li.w rd, imm(rs)
   -> opcode = 29
   -> layout = opcode | rs | rs1 | imm = 48b
   -> offset is a 32b immediate
-  => rd = imm[31:0]
+  => x[rd] = imm[31:0]
 
 - li.d rd, imm(rs)
   -> opcode = 30
   -> layout = opcode | rs | rs1 | imm = 80b
   -> offset is a 64b immediate
-  => rd = imm[63:0]
+  => x[rd] = imm[63:0]
 
 - mov rd, rs
   -> opcode = 31
   -> layout = opcode | rd | rs = 16b
-  => rd = rs
+  => x[rd] = rs
 ```
 
 ### Stack
@@ -266,11 +238,11 @@ OPCODE | type | rd | rs1 | rs2
 - push rs
   -> opcode = 32
   -> layout = opcode | 0000 | rs = 16b
-  => rsp = rsp - WORD_LEN/8 ; M[rsp] = rs
+  => x[sp] = x[sp] - WORD_LEN/8 ; M[x[sp]] = x[rs]
 - pop rd
   -> opcode = 33
   -> layout = opcode | 0000 | rd = 16b
-  => rd = rsp ; rsp = rsp + WORD_LEN/8
+  => x[rd] = M[x[sp]] ; x[sp] += WORD_LEN/8
 ```
 
 ## Bus & Memory

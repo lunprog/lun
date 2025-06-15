@@ -323,78 +323,64 @@ impl Opcode {
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Contiguous)]
 pub enum Reg {
-    rze = 0,
-    ra0 = 1,
-    ra1 = 2,
-    ra2 = 3,
-    ra3 = 4,
-    ra4 = 5,
-    ra5 = 6,
-    rt0 = 7,
-    rt1 = 8,
-    rt2 = 9,
-    rt3 = 10,
-    rt4 = 11,
-    rt5 = 12,
-    rfl = 13,
-    rfp = 14,
-    rsp = 15,
+    zr = 0,
+    a0 = 1,
+    a1 = 2,
+    a2 = 3,
+    a3 = 4,
+    a4 = 5,
+    t0 = 6,
+    t1 = 7,
+    t2 = 8,
+    t3 = 9,
+    s0 = 10,
+    s1 = 11,
+    s2 = 12,
+    s3 = 13,
+    fp = 14,
+    sp = 15,
 }
 
 impl Display for Reg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::rze => f.write_str("rze"),
-            Self::ra0 => f.write_str("ra0"),
-            Self::ra1 => f.write_str("ra1"),
-            Self::ra2 => f.write_str("ra2"),
-            Self::ra3 => f.write_str("ra3"),
-            Self::ra4 => f.write_str("ra4"),
-            Self::ra5 => f.write_str("ra5"),
-            Self::rt0 => f.write_str("rt0"),
-            Self::rt1 => f.write_str("rt1"),
-            Self::rt2 => f.write_str("rt2"),
-            Self::rt3 => f.write_str("rt3"),
-            Self::rt4 => f.write_str("rt4"),
-            Self::rt5 => f.write_str("rt5"),
-            Self::rfl => f.write_str("rfl"),
-            Self::rfp => f.write_str("rfp"),
-            Self::rsp => f.write_str("rsp"),
+            Self::zr => f.write_str("zr"),
+            Self::a0 => f.write_str("a0"),
+            Self::a1 => f.write_str("a1"),
+            Self::a2 => f.write_str("a2"),
+            Self::a3 => f.write_str("a3"),
+            Self::a4 => f.write_str("a4"),
+            Self::t0 => f.write_str("t0"),
+            Self::t1 => f.write_str("t1"),
+            Self::t2 => f.write_str("t2"),
+            Self::t3 => f.write_str("t3"),
+            Self::s0 => f.write_str("s0"),
+            Self::s1 => f.write_str("s1"),
+            Self::s2 => f.write_str("s2"),
+            Self::s3 => f.write_str("s3"),
+            Self::fp => f.write_str("fp"),
+            Self::sp => f.write_str("sp"),
         }
     }
 }
 
+/// Arithmetic function
 #[repr(u8)]
-#[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Contiguous)]
-pub enum ArithType {
-    u8 = 0,
-    u16 = 1,
-    u32 = 2,
-    u64 = 3,
-    i8 = 4,
-    i16 = 5,
-    i32 = 6,
-    i64 = 7,
-    f16 = 8,
-    f32 = 9,
-    f64 = 10,
+pub enum AFunct {
+    X = 0,
+    F16 = 1,
+    F32 = 2,
+    F64 = 3,
 }
 
-impl Display for ArithType {
+impl Display for AFunct {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::u8 => f.write_str("u8"),
-            Self::u16 => f.write_str("u16"),
-            Self::u32 => f.write_str("u32"),
-            Self::u64 => f.write_str("u64"),
-            Self::i8 => f.write_str("i8"),
-            Self::i16 => f.write_str("i16"),
-            Self::i32 => f.write_str("i32"),
-            Self::i64 => f.write_str("i64"),
-            Self::f16 => f.write_str("f16"),
-            Self::f32 => f.write_str("f32"),
-            Self::f64 => f.write_str("f64"),
+            Self::X => f.write_str("x"),
+            Self::F16 => f.write_str("f16"),
+            Self::F32 => f.write_str("f32"),
+            Self::F64 => f.write_str("f64"),
         }
     }
 }
@@ -429,7 +415,7 @@ impl BcBlob {
         self.code.push(byte);
     }
 
-    fn write_arithmetic_inst(&mut self, opcode: u8, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    fn write_arithmetic_inst(&mut self, opcode: u8, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         // opcode
         self.code.push(opcode);
         // type and rd
@@ -441,61 +427,61 @@ impl BcBlob {
     }
 
     /// Write `add` inst
-    pub fn write_add(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_add(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::ADD_OP, typ, rd, rs1, rs2);
     }
     /// Write `sub` inst
-    pub fn write_sub(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_sub(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::SUB_OP, typ, rd, rs1, rs2);
     }
 
     /// Write `mul` inst
-    pub fn write_mul(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_mul(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::MUL_OP, typ, rd, rs1, rs2);
     }
 
     /// Write `div` inst
-    pub fn write_div(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_div(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::DIV_OP, typ, rd, rs1, rs2);
     }
 
     /// Write `rem` inst
-    pub fn write_rem(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_rem(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::REM_OP, typ, rd, rs1, rs2);
     }
 
     /// Write `clt` inst
-    pub fn write_clt(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_clt(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::CLT_OP, typ, rd, rs1, rs2);
     }
 
     /// Write `cge` inst
-    pub fn write_cge(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_cge(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::CGE_OP, typ, rd, rs1, rs2);
     }
 
     /// Write `ceq` inst
-    pub fn write_ceq(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_ceq(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::CEQ_OP, typ, rd, rs1, rs2);
     }
 
     /// Write `cne` inst
-    pub fn write_cne(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_cne(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::CNE_OP, typ, rd, rs1, rs2);
     }
 
     /// Write `and` inst
-    pub fn write_and(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_and(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::AND_OP, typ, rd, rs1, rs2);
     }
 
     /// Write `or` inst
-    pub fn write_or(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_or(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::OR_OP, typ, rd, rs1, rs2);
     }
 
     /// Write `xor` inst
-    pub fn write_xor(&mut self, typ: ArithType, rd: Reg, rs1: Reg, rs2: Reg) {
+    pub fn write_xor(&mut self, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         self.write_arithmetic_inst(Opcode::XOR_OP, typ, rd, rs1, rs2);
     }
 
@@ -704,7 +690,7 @@ impl BcBlob {
                 let rd = Reg::from_integer((rd_rs & 0b1111_0000) >> 4).unwrap();
 
                 print!("li.b {rd}, 0x{imm8:02X}");
-                if rs != Reg::rze {
+                if rs != Reg::zr {
                     print!("({rs})");
                 }
                 println!();
@@ -720,7 +706,7 @@ impl BcBlob {
                 let rd = Reg::from_integer((rd_rs & 0b1111_0000) >> 4).unwrap();
 
                 print!("li.w {rd}, 0x{imm32:X}");
-                if rs != Reg::rze {
+                if rs != Reg::zr {
                     print!("({rs})");
                 }
                 println!();
@@ -735,7 +721,7 @@ impl BcBlob {
                 let rd = Reg::from_integer((rd_rs & 0b1111_0000) >> 4).unwrap();
 
                 print!("li.d {rd}, 0x{imm64:X}");
-                if rs != Reg::rze {
+                if rs != Reg::zr {
                     print!("({rs})");
                 }
                 println!();
@@ -760,7 +746,7 @@ impl BcBlob {
     fn dissassemble_arithmetic(&self, offset: usize, name: &str) -> usize {
         let type_rd = self.code[offset + 1];
         let rs1_rs2 = self.code[offset + 2];
-        let typ = ArithType::from_integer((type_rd & 0b1111_0000) >> 4).unwrap();
+        let typ = AFunct::from_integer((type_rd & 0b1111_0000) >> 4).unwrap();
         let rd = Reg::from_integer(type_rd & 0b1111).unwrap();
         let rs1 = Reg::from_integer((rs1_rs2 & 0b1111_0000) >> 4).unwrap();
         let rs2 = Reg::from_integer(rs1_rs2 & 0b1111).unwrap();
@@ -779,7 +765,7 @@ impl BcBlob {
         let reg2 = Reg::from_integer((reg2_reg1 & 0b1111_0000) >> 4).unwrap();
 
         print!("{name} {reg2}, 0x{imm16:X}");
-        if reg1 != Reg::rze {
+        if reg1 != Reg::zr {
             print!("({reg1})");
         }
         println!();

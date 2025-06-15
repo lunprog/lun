@@ -1,8 +1,12 @@
 //! The virtual machine for lun's bytecode.
 
-use std::ops::{Index, IndexMut};
+use std::{
+    fmt::Debug,
+    ops::{Index, IndexMut},
+};
 
-use lun_bc::BcBlob;
+use bytemuck::Contiguous;
+use lun_bc::{AFunct, BcBlob, Opcode, Reg};
 
 /// A double word.
 pub type DWord = u64;
@@ -10,7 +14,7 @@ pub type DWord = u64;
 #[derive(Debug, Clone)]
 pub struct Vm {
     /// general purpose registers
-    r: Registers,
+    x: Registers,
     /// register instruction pointer
     pc: DWord,
     /// program_end address
@@ -23,14 +27,26 @@ pub struct Vm {
     program: BcBlob,
     /// the stack
     stack: Vec<u8>,
+    /// is execution finished
+    done: bool,
 }
 
 impl Vm {
+    /// The size of the canary, 1024 bytes.
     pub const CANARY_SIZE: DWord = 1024;
+
+    /// Address where the special memory region is ending
     pub const SPECIAL_END: DWord = 255;
+
+    /// Address where the program is loaded.
     pub const PROGRAM_START: DWord = Vm::SPECIAL_END + 1;
 
-    pub fn new(stack_size: DWord, program: BcBlob, pc: DWord) -> Vm {
+    /// Default stack size.
+    ///
+    /// Note: this default may change at any time between versions.
+    pub const BASE_STACK: DWord = 0x8000;
+
+    pub fn new(stack_size: DWord, program: BcBlob) -> Vm {
         let program_end = Vm::PROGRAM_START + program.code.len() as DWord;
         let stack_top = program_end + 1;
         let stack_bottom = stack_top + stack_size;
@@ -38,18 +54,53 @@ impl Vm {
         let canary_end = canary_start + Vm::CANARY_SIZE;
 
         Vm {
-            r: Registers([0; 16]),
-            pc,
+            x: Registers([0; 16]),
+            pc: Vm::PROGRAM_START,
             program_end,
             stack_bottom,
             canary_end,
             program,
             stack: vec![0; stack_size as usize],
+            done: false,
         }
     }
 
-    pub fn run(&self) {
-        println!("HELLO FROM THE VM :)")
+    pub fn debug_regs(&self) {
+        println!("{:#?}", self.x);
+    }
+
+    pub fn run(&mut self) {
+        while !self.done {
+            let opcode = Opcode::from_integer(self.read(self.pc, Size::Byte) as u8);
+
+            match opcode {
+                Some(Opcode::Add) => {
+                    let (typ, rd, rs1, rs2) = self.decode_arithmetic_inst();
+                    self.pc += 3;
+                    dbg!(
+                        typ,
+                        Reg::from_integer(rd),
+                        Reg::from_integer(rs1),
+                        Reg::from_integer(rs2)
+                    );
+                }
+                Some(_) => todo!(),
+                None => panic!("invalid instruction exception"), // TODO: make excetpions.
+            }
+            break;
+        }
+    }
+
+    fn decode_arithmetic_inst(&self) -> (AFunct, u8, u8, u8) {
+        let type_rd = self.read(self.pc + 1, Size::Byte) as u8;
+        let rs1_rs2 = self.read(self.pc + 2, Size::Byte) as u8;
+
+        let typ = AFunct::from_integer(type_rd >> 4).unwrap();
+        let rd = type_rd & 0b1111;
+        let rs1 = rs1_rs2 >> 4;
+        let rs2 = rs1_rs2 & 0b1111;
+
+        (typ, rd, rs1, rs2)
     }
 
     #[inline(always)]
@@ -144,8 +195,31 @@ impl Vm {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Registers([DWord; 16]);
+
+impl Debug for Registers {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Registers")
+            .field("zr", &self.0[0])
+            .field("a0", &self.0[1])
+            .field("a1", &self.0[2])
+            .field("a2", &self.0[3])
+            .field("a3", &self.0[4])
+            .field("a4", &self.0[5])
+            .field("t0", &self.0[6])
+            .field("t1", &self.0[7])
+            .field("t2", &self.0[8])
+            .field("t3", &self.0[9])
+            .field("s0", &self.0[10])
+            .field("s1", &self.0[11])
+            .field("s2", &self.0[12])
+            .field("s3", &self.0[13])
+            .field("fp", &self.0[14])
+            .field("sp", &self.0[15])
+            .finish()
+    }
+}
 
 impl Index<u8> for Registers {
     type Output = DWord;

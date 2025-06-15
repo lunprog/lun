@@ -17,12 +17,13 @@
 //! ```
 
 use crate::{
-    bc::{ArithType, BcBlob, Reg},
+    bc::{AFunct, BcBlob, Reg},
     diag::{DiagnosticSink, StageResult, tri},
     ir::IrModule,
     lexer::Lexer,
     parser::Parser,
     semack::SemanticCk,
+    vm::Vm,
 };
 
 pub use lun_bc as bc;
@@ -68,9 +69,9 @@ pub fn run() -> StageResult<()> {
     // TODO: make the codegenerator work on the ir.
 
     let mut blob = BcBlob::new();
-    blob.write_add(ArithType::u8, Reg::rt0, Reg::ra0, Reg::ra1);
+    blob.write_add(AFunct::X, Reg::t1, Reg::a0, Reg::a1);
 
-    blob.write_mul(ArithType::u8, Reg::ra0, Reg::rt0, Reg::ra2);
+    blob.write_mul(AFunct::X, Reg::a0, Reg::t1, Reg::a2);
 
     blob.write_call(0xDEAD_BEEF);
 
@@ -78,23 +79,27 @@ pub fn run() -> StageResult<()> {
 
     blob.write_call(0xDEAD_BEEF);
 
-    blob.write_jze(Reg::rsp, 0xDEAD, Reg::ra0);
-    blob.write_jze(Reg::rsp, 0xDEAD, Reg::rze);
+    blob.write_jze(Reg::sp, 0xDEAD, Reg::a0);
+    blob.write_jze(Reg::sp, 0xDEAD, Reg::zr);
 
-    blob.write_beq(Reg::ra0, Reg::rze, 0xBEEF);
+    blob.write_beq(Reg::a0, Reg::zr, 0xBEEF);
 
-    blob.write_ld_b(Reg::rt0, 0x4, Reg::rsp);
+    blob.write_ld_b(Reg::t1, 0x4, Reg::sp);
 
-    blob.write_st_b(Reg::rt0, 0x4, Reg::rsp);
-    blob.write_st_h(Reg::rt0, 0x4, Reg::rsp);
-    blob.write_st_w(Reg::rt0, 0x4, Reg::rsp);
-    blob.write_st_d(Reg::rt0, 0x4, Reg::rsp);
+    blob.write_st_b(Reg::t1, 0x4, Reg::sp);
+    blob.write_st_h(Reg::t1, 0x4, Reg::sp);
+    blob.write_st_w(Reg::t1, 0x4, Reg::sp);
+    blob.write_st_d(Reg::t1, 0x4, Reg::sp);
 
-    blob.write_li_b(Reg::rt1, 0xFF, Reg::ra1);
-    blob.write_li_h(Reg::rt1, 0xFF00, Reg::ra1);
-    blob.write_li_w(Reg::rt1, 0xFF0000, Reg::ra1);
-    blob.write_li_d(Reg::rt1, 0xDEAD_BEEF, Reg::ra1);
+    blob.write_li_b(Reg::t2, 0xFF, Reg::a1);
+    blob.write_li_h(Reg::t2, 0xFF00, Reg::a1);
+    blob.write_li_w(Reg::t2, 0xFF0000, Reg::a1);
+    blob.write_li_d(Reg::t2, 0xDEAD_BEEF, Reg::a1);
     blob.disassemble("test blob");
+
+    let mut vm = Vm::new(Vm::BASE_STACK, blob);
+    vm.debug_regs();
+    vm.run();
 
     // 6. code generation
     // let mut codegen = CodeGenerator::new(ckast, sink.clone(), LBType::Exec);
