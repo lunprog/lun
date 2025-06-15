@@ -75,10 +75,10 @@ impl Vm {
 
             match opcode {
                 Some(Opcode::Add) => {
-                    let (typ, rd, rs1, rs2) = self.decode_arithmetic_inst();
+                    let (funct, rd, rs1, rs2) = self.decode_arithmetic_inst();
                     self.pc += 3;
                     dbg!(
-                        typ,
+                        funct,
                         Reg::from_integer(rd),
                         Reg::from_integer(rs1),
                         Reg::from_integer(rs2)
@@ -92,15 +92,15 @@ impl Vm {
     }
 
     fn decode_arithmetic_inst(&self) -> (AFunct, u8, u8, u8) {
-        let type_rd = self.read(self.pc + 1, Size::Byte) as u8;
+        let funct_rd = self.read(self.pc + 1, Size::Byte) as u8;
         let rs1_rs2 = self.read(self.pc + 2, Size::Byte) as u8;
 
-        let typ = AFunct::from_integer(type_rd >> 4).unwrap();
-        let rd = type_rd & 0b1111;
+        let funct = AFunct::from_integer(funct_rd >> 4).unwrap();
+        let rd = funct_rd & 0b1111;
         let rs1 = rs1_rs2 >> 4;
         let rs2 = rs1_rs2 & 0b1111;
 
-        (typ, rd, rs1, rs2)
+        (funct, rd, rs1, rs2)
     }
 
     #[inline(always)]

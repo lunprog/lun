@@ -10,51 +10,51 @@ pub mod bin;
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Contiguous)]
 pub enum Opcode {
-    /// add.type rd, rs1, rs2
+    /// add.funct rd, rs1, rs2
     /// => rd = rs1 + rs2
     Add = 0,
 
-    /// sub.type rd, rs1, rs2
+    /// sub.funct rd, rs1, rs2
     /// => rd = rs1 - rs2
     Sub = 1,
 
-    /// mul.type rd, rs1, rs2
+    /// mul.funct rd, rs1, rs2
     /// => rd = rs1 * rs2
     Mul = 2,
 
-    /// div.type rd, rs1, rs2
+    /// div.funct rd, rs1, rs2
     /// => rd = rs1 / rs2
     Div = 3,
 
-    /// rem.type rd, rs1, rs2
+    /// rem.funct rd, rs1, rs2
     /// => rd = rs1 % rs2
     Rem = 4,
 
-    /// clt.type rd, rs1, rs2
+    /// clt.funct rd, rs1, rs2
     /// => rd = rs1 < rs2
     Clt = 5,
 
-    /// cge.type rd, rs1, rs2
+    /// cge.funct rd, rs1, rs2
     /// => rd = rs1 >= rs2
     Cge = 6,
 
-    /// ceq.type rd, rs1, rs2
+    /// ceq.funct rd, rs1, rs2
     /// => rd = rs1 == rs2
     Ceq = 7,
 
-    /// cne.type rd, rs1, rs2
+    /// cne.funct rd, rs1, rs2
     /// => rd = rs1 != rs2
     Cne = 8,
 
-    /// and.type rd, rs1, rs2
+    /// and.funct rd, rs1, rs2
     /// => rd = rs1 and rs2
     And = 9,
 
-    /// or.type rd, rs1, rs2
+    /// or.funct rd, rs1, rs2
     /// => rd = rs1 or rs2
     Or = 10,
 
-    /// xor.type rd, rs1, rs2
+    /// xor.funct rd, rs1, rs2
     /// => rd = rs1 xor rs2
     Xor = 11,
 
@@ -415,12 +415,12 @@ impl BcBlob {
         self.code.push(byte);
     }
 
-    fn write_arithmetic_inst(&mut self, opcode: u8, typ: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
+    fn write_arithmetic_inst(&mut self, opcode: u8, funct: AFunct, rd: Reg, rs1: Reg, rs2: Reg) {
         // opcode
         self.code.push(opcode);
-        // type and rd
-        let type_rd = (typ as u8) << 4 | rd as u8;
-        self.code.push(type_rd);
+        // funct and rd
+        let funct_rd = (funct as u8) << 4 | rd as u8;
+        self.code.push(funct_rd);
         // rs1 and rs2
         let rs1_rs2 = (rs1 as u8) << 4 | rs2 as u8;
         self.code.push(rs1_rs2);
@@ -744,13 +744,17 @@ impl BcBlob {
     }
 
     fn dissassemble_arithmetic(&self, offset: usize, name: &str) -> usize {
-        let type_rd = self.code[offset + 1];
+        let funct_rd = self.code[offset + 1];
         let rs1_rs2 = self.code[offset + 2];
-        let typ = AFunct::from_integer((type_rd & 0b1111_0000) >> 4).unwrap();
-        let rd = Reg::from_integer(type_rd & 0b1111).unwrap();
+        let funct = AFunct::from_integer((funct_rd & 0b1111_0000) >> 4).unwrap();
+        let rd = Reg::from_integer(funct_rd & 0b1111).unwrap();
         let rs1 = Reg::from_integer((rs1_rs2 & 0b1111_0000) >> 4).unwrap();
         let rs2 = Reg::from_integer(rs1_rs2 & 0b1111).unwrap();
-        println!("{name}.{typ} {rd}, {rs1}, {rs2}");
+        print!("{name}");
+        if funct != AFunct::X {
+            print!(".{funct}");
+        }
+        println!(" {rd}, {rs1}, {rs2}");
         offset + 3
     }
 

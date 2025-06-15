@@ -71,7 +71,7 @@ pub fn run() -> StageResult<()> {
     let mut blob = BcBlob::new();
     blob.write_add(AFunct::X, Reg::t1, Reg::a0, Reg::a1);
 
-    blob.write_mul(AFunct::X, Reg::a0, Reg::t1, Reg::a2);
+    blob.write_mul(AFunct::F16, Reg::a0, Reg::t1, Reg::a2);
 
     blob.write_call(0xDEAD_BEEF);
 
