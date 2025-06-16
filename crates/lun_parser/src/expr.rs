@@ -1,5 +1,7 @@
 //! Parsing of lun's expressions.
 
+use crate::stmt::Block;
+
 use super::*;
 
 /// The associativity, is used to parse the binary operations
@@ -69,6 +71,22 @@ pub enum Expr {
         called: Box<Expression>,
         args: Vec<Expression>,
     },
+    /// function definition
+    ///
+    /// "fun" "(" ( ident ":" expr ),* ")" [ "->" expr ] block
+    FunDefinition {
+        args: Vec<Arg>,
+        rettype: Option<Box<Expression>>,
+        body: Block,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub struct Arg {
+    pub name: String,
+    pub name_loc: Span,
+    pub typ: Expression,
+    pub loc: Span,
 }
 
 /// Parses an expression given the following precedence.
@@ -86,6 +104,7 @@ pub fn parse_expr_precedence(
         Some(StringLit(_)) => parse!(@fn parser => parse_strlit_expr),
         Some(Punct(Punctuation::LParen)) => parse!(@fn parser => parse_grouping_expr),
         Some(Ident(_)) => parse!(@fn parser => parse_ident_expr),
+        Some(Kw(Keyword::Fun)) => parse!(@fn parser => parse_fundef_expr),
         Some(tt) if UnaryOp::from_tt(tt.clone()).is_some() => {
             parse!(@fn parser => parse_unary_expr)
         }
@@ -461,6 +480,56 @@ pub fn parse_funcall_expr(
 
     Ok(Expression {
         expr: Expr::FunCall { called, args },
+        loc: Span::from_ends(lo, hi),
+    })
+}
+
+/// parses the function definition expression
+pub fn parse_fundef_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Fun), ()], Kw(Keyword::Fun));
+
+    expect_token!(parser => [Punct(Punctuation::LParen), ()], Punctuation::LParen);
+
+    let mut args = Vec::new();
+
+    loop {
+        if let Some(Punct(Punctuation::RParen)) = parser.peek_tt() {
+            break;
+        }
+
+        let (name, lo_arg) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+
+        expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
+
+        let typ = parse!(parser => Expression);
+
+        args.push(Arg {
+            name,
+            name_loc: lo_arg.clone(),
+            typ: typ.clone(),
+            loc: Span::from_ends(lo_arg, typ.loc),
+        });
+
+        expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], Punct(Punctuation::Comma));
+    }
+    expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
+
+    let rettype = if let Some(Punct(Punctuation::Arrow)) = parser.peek_tt() {
+        parser.pop();
+        Some(Box::new(parse!(parser => Expression)))
+    } else {
+        None
+    };
+
+    let body = parse!(parser => Block);
+    let hi = body.loc.clone();
+
+    Ok(Expression {
+        expr: Expr::FunDefinition {
+            args,
+            rettype,
+            body,
+        },
         loc: Span::from_ends(lo, hi),
     })
 }

@@ -1,8 +1,29 @@
 //! Parsing of lun's statements and chunk.
 
+use super::*;
+
 use crate::definition::Vis;
 
-use super::*;
+/// Block of Lun statements
+#[derive(Debug, Clone)]
+pub struct Block {
+    pub stmts: Vec<Statement>,
+    pub loc: Span,
+}
+
+impl AstNode for Block {
+    fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
+        let (_, lo) =
+            expect_token!(parser => [Punct(Punctuation::LBrace), ()], Punctuation::LBrace);
+        let (_, hi) =
+            expect_token!(parser => [Punct(Punctuation::RBrace), ()], Punctuation::RBrace);
+
+        Ok(Block {
+            stmts: Vec::new(),
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+}
 
 /// Every source file is a Chunk, a Chunk is a sequence of Statements
 #[derive(Debug, Clone)]
