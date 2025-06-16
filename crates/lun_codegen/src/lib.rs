@@ -3,18 +3,18 @@ use lun_bc::{
     bin::{LBType, LunBin, LunBinBuilder},
 };
 use lun_diag::{DiagnosticSink, StageResult};
-use lun_semack::ckast::CkChunk;
+use lun_semack::ckast::CkBlock;
 
 #[derive(Debug, Clone)]
 pub struct CodeGenerator {
-    ast: CkChunk,
+    ast: CkBlock,
     sink: DiagnosticSink,
     typ: LBType,
     bc: BcBlob,
 }
 
 impl CodeGenerator {
-    pub fn new(ast: CkChunk, sink: DiagnosticSink, typ: LBType) -> CodeGenerator {
+    pub fn new(ast: CkBlock, sink: DiagnosticSink, typ: LBType) -> CodeGenerator {
         CodeGenerator {
             ast,
             sink,

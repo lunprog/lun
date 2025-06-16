@@ -1,17 +1,10 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
-use std::iter::zip;
 
-use ckast::{
-    CkArg, CkChunk, CkElseIf, CkExpr, CkExpression, CkStatement, CkStmt, FromAst, MaybeUnresolved,
-};
-use diags::{
-    CallRequiresFuncType, ExpectedType, ExpectedTypeFoundExpr, NeverUsedSymbol, NotFoundInScope,
-    ReturnOutsideFunc, TypeAnnotationsNeeded, UnderscoreInExpression, UnderscoreReservedIdent,
-};
-use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic};
-use lun_parser::expr::UnaryOp;
-use lun_parser::stmt::Chunk;
+use ckast::{CkBlock, CkExpr, CkExpression, MaybeUnresolved};
+use diags::{NeverUsedSymbol, TypeAnnotationsNeeded};
+use lun_diag::{Diagnostic, DiagnosticSink, StageResult};
+use lun_parser::definition::Program;
 use lun_utils::Span;
 
 pub mod ckast;
@@ -22,14 +15,14 @@ pub use lun_parser::definition::Vis;
 /// include type checking.
 #[derive(Debug, Clone)]
 pub struct SemanticCk {
-    ast: Chunk,
+    ast: Program,
     sink: DiagnosticSink,
     table: SymbolTable,
     retstack: ReturnStack,
 }
 
 impl SemanticCk {
-    pub fn new(ast: Chunk, sink: DiagnosticSink) -> SemanticCk {
+    pub fn new(ast: Program, sink: DiagnosticSink) -> SemanticCk {
         SemanticCk {
             ast,
             sink,
@@ -38,541 +31,537 @@ impl SemanticCk {
         }
     }
 
-    pub fn produce(&mut self) -> StageResult<CkChunk> {
-        // 1. create the checked ast from the unchecked ast.
-        let mut ckast = CkChunk::from_ast(self.ast.clone());
+    pub fn produce(&mut self) -> StageResult<CkBlock> {
+        todo!("remake me :)");
+        // // 1. create the checked ast from the unchecked ast.
+        // let mut ckast = CkChunk::from_ast(self.ast.clone());
 
-        // 2. check the first chunk and it will recurse.
-        self.table.scope_enter();
+        // // 2. check the first chunk and it will recurse.
+        // self.table.scope_enter();
 
-        match self.check_chunk(&mut ckast) {
-            Ok(()) => {}
-            Err(diag) => self.sink.push(diag),
-        }
+        // match self.check_chunk(&mut ckast) {
+        //     Ok(()) => {}
+        //     Err(diag) => self.sink.push(diag),
+        // }
 
-        self.table.scope_exit(&mut self.sink);
+        // self.table.scope_exit(&mut self.sink);
 
-        if self.sink.failed() {
-            StageResult::Fail(self.sink.clone())
-        } else if !self.sink.is_empty() {
-            StageResult::Part(ckast, self.sink.clone())
-        } else {
-            StageResult::Good(ckast)
-        }
+        // if self.sink.failed() {
+        //     StageResult::Fail(self.sink.clone())
+        // } else if !self.sink.is_empty() {
+        //     StageResult::Part(ckast, self.sink.clone())
+        // } else {
+        //     StageResult::Good(ckast)
+        // }
     }
 
-    pub fn check_chunk(&mut self, chunk: &mut CkChunk) -> Result<(), Diagnostic> {
-        // 1. register global defs
-        for stmt in &mut chunk.stmts {
-            match &mut stmt.stmt {
-                CkStmt::VariableDef {
-                    vis,
-                    name,
-                    name_loc,
-                    ..
-                } if *vis == Vis::Public => {
-                    // when type checking the expression and type of this
-                    // variable definition change the symbol's typ.
-                    let mut ckname = name.clone();
-                    if name == "_" {
-                        self.sink.push(UnderscoreReservedIdent {
-                            loc: name_loc.clone(),
-                        });
+    // pub fn check_chunk(&mut self, chunk: &mut CkChunk) -> Result<(), Diagnostic> {
+    //     // 1. register global defs
+    //     for stmt in &mut chunk.stmts {
+    //         match &mut stmt.stmt {
+    //             CkStmt::VariableDef { name, name_loc, .. } => {
+    //                 // when type checking the expression and type of this
+    //                 // variable definition change the symbol's typ.
+    //                 let mut ckname = name.clone();
+    //                 if name == "_" {
+    //                     self.sink.push(UnderscoreReservedIdent {
+    //                         loc: name_loc.clone(),
+    //                     });
 
-                        ckname = String::from("\0");
-                    }
+    //                     ckname = String::from("\0");
+    //                 }
 
-                    self.table.bind(
-                        ckname,
-                        Symbol::global(
-                            Type::Unknown,
-                            name.clone(),
-                            self.table.global_count(),
-                            name_loc.clone(),
-                        ),
-                    );
-                }
-                CkStmt::FunDef {
-                    vis: _,
-                    name,
-                    args,
-                    rettype,
-                    sym,
-                    ..
-                } => {
-                    // true type of the arguments
-                    let mut args_true = Vec::new();
-                    for CkArg { typ, .. } in args {
-                        self.check_expr(typ)?;
+    //                 self.table.bind(
+    //                     ckname,
+    //                     Symbol::global(
+    //                         Type::Unknown,
+    //                         name.clone(),
+    //                         self.table.global_count(),
+    //                         name_loc.clone(),
+    //                     ),
+    //                 );
+    //             }
+    //             CkStmt::FunDef {
+    //                 vis: _,
+    //                 name,
+    //                 args,
+    //                 rettype,
+    //                 sym,
+    //                 ..
+    //             } => {
+    //                 // true type of the arguments
+    //                 let mut args_true = Vec::new();
+    //                 for CkArg { typ, .. } in args {
+    //                     self.check_expr(typ)?;
 
-                        if typ.typ != Type::ComptimeType {
-                            self.sink.push(ExpectedTypeFoundExpr {
-                                loc: typ.loc.clone(),
-                            });
-                        }
+    //                     if typ.typ != Type::ComptimeType {
+    //                         self.sink.push(ExpectedTypeFoundExpr {
+    //                             loc: typ.loc.clone(),
+    //                         });
+    //                     }
 
-                        args_true.push(Type::from_expr(typ.clone()));
-                    }
+    //                     args_true.push(Type::from_expr(typ.clone()));
+    //                 }
 
-                    let ret_true = if let Some(typ) = rettype {
-                        self.check_expr(typ)?;
-                        Box::new(Type::from_expr(typ.clone()))
-                    } else {
-                        Box::new(Type::Nil)
-                    };
+    //                 let ret_true = if let Some(typ) = rettype {
+    //                     self.check_expr(typ)?;
+    //                     Box::new(Type::from_expr(typ.clone()))
+    //                 } else {
+    //                     Box::new(Type::Nil)
+    //                 };
 
-                    let mut ckname = name.clone();
-                    if name == "_" {
-                        // TODO: a better location, that points to the function's
-                        // name is prefered here.
-                        self.sink.push(UnderscoreReservedIdent {
-                            loc: stmt.loc.clone(),
-                        });
-                        ckname = String::from("\0");
-                    }
+    //                 let mut ckname = name.clone();
+    //                 if name == "_" {
+    //                     // TODO: a better location, that points to the function's
+    //                     // name is prefered here.
+    //                     self.sink.push(UnderscoreReservedIdent {
+    //                         loc: stmt.loc.clone(),
+    //                     });
+    //                     ckname = String::from("\0");
+    //                 }
 
-                    let symbol = Symbol::global(
-                        Type::Fun {
-                            args: args_true,
-                            ret: ret_true,
-                        },
-                        name.clone(),
-                        self.table.global_count(),
-                        // TODO: add a new loc that points to the signature
-                        stmt.loc.clone(),
-                    );
-                    *sym = MaybeUnresolved::Resolved(symbol.clone());
+    //                 let symbol = Symbol::global(
+    //                     Type::Fun {
+    //                         args: args_true,
+    //                         ret: ret_true,
+    //                     },
+    //                     name.clone(),
+    //                     self.table.global_count(),
+    //                     // TODO: add a new loc that points to the signature
+    //                     stmt.loc.clone(),
+    //                 );
+    //                 *sym = MaybeUnresolved::Resolved(symbol.clone());
 
-                    self.table.bind(ckname, symbol);
-                }
-                _ => {}
-            }
-        }
+    //                 self.table.bind(ckname, symbol);
+    //             }
+    //             _ => {}
+    //         }
+    //     }
 
-        // 2. type check, if you encounter another chunk recurse this function
-        for stmt in &mut chunk.stmts {
-            self.check_stmt(stmt)?;
-        }
+    //     // 2. type check, if you encounter another chunk recurse this function
+    //     for stmt in &mut chunk.stmts {
+    //         self.check_stmt(stmt)?;
+    //     }
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
-    pub fn check_stmt(&mut self, stmt: &mut CkStatement) -> Result<(), Diagnostic> {
-        match &mut stmt.stmt {
-            CkStmt::Assignement { variable, value } => {
-                // if the variable has a type then we ensure that value is of the same type,
-                // otherwise we set the type of variable to the type of value.
-                self.check_expr(value)?;
+    // pub fn check_stmt(&mut self, stmt: &mut CkStatement) -> Result<(), Diagnostic> {
+    //     match &mut stmt.stmt {
+    //         CkStmt::Assignement { variable, value } => {
+    //             // if the variable has a type then we ensure that value is of the same type,
+    //             // otherwise we set the type of variable to the type of value.
+    //             self.check_expr(value)?;
 
-                let MaybeUnresolved::Unresolved(id) = variable else {
-                    panic!()
-                };
-                let Some(symbol) = self.table.lookup(&*id, true).cloned() else {
-                    return Err(NotFoundInScope {
-                        name: id.clone(),
-                        loc: stmt.loc.clone(),
-                    }
-                    .into_diag());
-                };
+    //             let MaybeUnresolved::Unresolved(id) = variable else {
+    //                 panic!()
+    //             };
+    //             let Some(symbol) = self.table.lookup(&*id, true).cloned() else {
+    //                 return Err(NotFoundInScope {
+    //                     name: id.clone(),
+    //                     loc: stmt.loc.clone(),
+    //                 }
+    //                 .into_diag());
+    //             };
 
-                *variable = MaybeUnresolved::Resolved(symbol.clone());
+    //             *variable = MaybeUnresolved::Resolved(symbol.clone());
 
-                if &symbol.name == "_" {
-                    // do nothing the assignement is to the _ identifier so we don't do anything
-                } else if symbol.typ == Type::Unknown && symbol.kind != SymKind::Arg {
-                    // we don't know the type of the local / global, so we change it
-                    self.table.edit(
-                        symbol.which,
-                        symbol.name.clone(),
-                        symbol.typ(value.clone().typ),
-                    );
-                } else {
-                    // we know the type of the variable and need to ensure the value is of the same type.
-                    if symbol.typ != value.typ {
-                        self.sink.push(ExpectedType {
-                            expected: vec![symbol.typ.clone()],
-                            found: value.typ.clone(),
-                            loc: value.loc.clone(),
-                        })
-                    }
-                }
-            }
-            CkStmt::VariableDef {
-                vis,
-                name,
-                name_loc,
-                typ,
-                value,
-                sym,
-            } => {
-                // check the type
-                if let Some(ty) = typ {
-                    self.check_expr(ty)?;
+    //             if &symbol.name == "_" {
+    //                 // do nothing the assignement is to the _ identifier so we don't do anything
+    //             } else if symbol.typ == Type::Unknown && symbol.kind != SymKind::Arg {
+    //                 // we don't know the type of the local / global, so we change it
+    //                 self.table.edit(
+    //                     symbol.which,
+    //                     symbol.name.clone(),
+    //                     symbol.typ(value.clone().typ),
+    //                 );
+    //             } else {
+    //                 // we know the type of the variable and need to ensure the value is of the same type.
+    //                 if symbol.typ != value.typ {
+    //                     self.sink.push(ExpectedType {
+    //                         expected: vec![symbol.typ.clone()],
+    //                         found: value.typ.clone(),
+    //                         loc: value.loc.clone(),
+    //                     })
+    //                 }
+    //             }
+    //         }
+    //         CkStmt::VariableDef {
+    //             vis,
+    //             name,
+    //             name_loc,
+    //             typ,
+    //             value,
+    //             sym,
+    //         } => {
+    //             // check the type
+    //             if let Some(ty) = typ {
+    //                 self.check_expr(ty)?;
 
-                    if ty.typ != Type::ComptimeType {
-                        self.sink.push(
-                            ExpectedTypeFoundExpr {
-                                loc: ty.loc.clone(),
-                            }
-                            .into_diag(),
-                        );
-                    }
-                }
-                if let Some(value) = value {
-                    // check the value
-                    self.check_expr(value)?;
+    //                 if ty.typ != Type::ComptimeType {
+    //                     self.sink.push(
+    //                         ExpectedTypeFoundExpr {
+    //                             loc: ty.loc.clone(),
+    //                         }
+    //                         .into_diag(),
+    //                     );
+    //                 }
+    //             }
+    //             if let Some(value) = value {
+    //                 // check the value
+    //                 self.check_expr(value)?;
 
-                    if let Some(ty) = typ {
-                        let expected_ty = Type::from_expr(ty.clone());
-                        if value.typ != expected_ty {
-                            self.sink.push(ExpectedType {
-                                expected: vec![expected_ty],
-                                found: value.typ.clone(),
-                                loc: value.loc.clone(),
-                            })
-                        }
-                    }
-                } else {
-                    // TODO: implement variable initialization checking
-                    self.sink.push(
-                        Diagnostic::error()
-                            .with_message("post variable initialization is not yet support")
-                            .with_label(Label::primary((), stmt.loc.clone())),
-                    )
-                }
+    //                 if let Some(ty) = typ {
+    //                     let expected_ty = Type::from_expr(ty.clone());
+    //                     if value.typ != expected_ty {
+    //                         self.sink.push(ExpectedType {
+    //                             expected: vec![expected_ty],
+    //                             found: value.typ.clone(),
+    //                             loc: value.loc.clone(),
+    //                         })
+    //                     }
+    //                 }
+    //             } else {
+    //                 // TODO: implement variable initialization checking
+    //                 self.sink.push(
+    //                     Diagnostic::error()
+    //                         .with_message("post variable initialization is not yet support")
+    //                         .with_label(Label::primary((), stmt.loc.clone())),
+    //                 )
+    //             }
 
-                let realtyp = if let Some(value) = value {
-                    value.typ.clone()
-                } else if let Some(typ) = typ {
-                    Type::from_expr(typ.clone())
-                } else {
-                    Type::Unknown
-                };
+    //             let realtyp = if let Some(value) = value {
+    //                 value.typ.clone()
+    //             } else if let Some(typ) = typ {
+    //                 Type::from_expr(typ.clone())
+    //             } else {
+    //                 Type::Unknown
+    //             };
 
-                if *vis == Vis::Private {
-                    // define the symbol because we didn't do it before
-                    let mut ckname = name.clone();
-                    if name == "_" {
-                        self.sink.push(UnderscoreReservedIdent {
-                            loc: name_loc.clone(),
-                        });
-                        ckname = String::from("\0");
-                    }
+    //             if *vis == Vis::Private {
+    //                 // define the symbol because we didn't do it before
+    //                 let mut ckname = name.clone();
+    //                 if name == "_" {
+    //                     self.sink.push(UnderscoreReservedIdent {
+    //                         loc: name_loc.clone(),
+    //                     });
+    //                     ckname = String::from("\0");
+    //                 }
 
-                    let symbol = Symbol::var(
-                        realtyp,
-                        name.clone(),
-                        self.table.var_count(),
-                        stmt.loc.clone(),
-                    );
-                    *sym = MaybeUnresolved::Resolved(symbol.clone());
-                    self.table.bind(ckname, symbol)
-                } else {
-                    // just edit the type of the global variable
-                    let Some(symbol) = self.table.lookup(name, false).cloned() else {
-                        unreachable!()
-                    };
+    //                 let symbol = Symbol::var(
+    //                     realtyp,
+    //                     name.clone(),
+    //                     self.table.var_count(),
+    //                     stmt.loc.clone(),
+    //                 );
+    //                 *sym = MaybeUnresolved::Resolved(symbol.clone());
+    //                 self.table.bind(ckname, symbol)
+    //             } else {
+    //                 // just edit the type of the global variable
+    //                 let Some(symbol) = self.table.lookup(name, false).cloned() else {
+    //                     unreachable!()
+    //                 };
 
-                    let symbol = symbol.typ(realtyp);
-                    *sym = MaybeUnresolved::Resolved(symbol.clone());
+    //                 let symbol = symbol.typ(realtyp);
+    //                 *sym = MaybeUnresolved::Resolved(symbol.clone());
 
-                    self.table.edit(symbol.which, symbol.name.clone(), symbol);
-                }
-            }
-            CkStmt::IfThenElse {
-                cond,
-                body,
-                else_ifs,
-                else_body,
-            } => {
-                self.check_expr(cond)?;
+    //                 self.table.edit(symbol.which, symbol.name.clone(), symbol);
+    //             }
+    //         }
+    //         CkStmt::IfThenElse {
+    //             cond,
+    //             body,
+    //             else_ifs,
+    //             else_body,
+    //         } => {
+    //             self.check_expr(cond)?;
 
-                if cond.typ != Type::Bool {
-                    self.sink.push(ExpectedType {
-                        expected: vec![Type::Bool],
-                        found: cond.typ.clone(),
-                        loc: cond.loc.clone(),
-                    })
-                }
+    //             if cond.typ != Type::Bool {
+    //                 self.sink.push(ExpectedType {
+    //                     expected: vec![Type::Bool],
+    //                     found: cond.typ.clone(),
+    //                     loc: cond.loc.clone(),
+    //                 })
+    //             }
 
-                self.table.scope_enter();
+    //             self.table.scope_enter();
 
-                self.check_chunk(body)?;
+    //             self.check_chunk(body)?;
 
-                self.table.scope_exit(&mut self.sink);
+    //             self.table.scope_exit(&mut self.sink);
 
-                for CkElseIf { cond, body, .. } in else_ifs {
-                    self.check_expr(cond)?;
+    //             for CkElseIf { cond, body, .. } in else_ifs {
+    //                 self.check_expr(cond)?;
 
-                    if cond.typ != Type::Bool {
-                        self.sink.push(ExpectedType {
-                            expected: vec![Type::Bool],
-                            found: cond.typ.clone(),
-                            loc: cond.loc.clone(),
-                        })
-                    }
+    //                 if cond.typ != Type::Bool {
+    //                     self.sink.push(ExpectedType {
+    //                         expected: vec![Type::Bool],
+    //                         found: cond.typ.clone(),
+    //                         loc: cond.loc.clone(),
+    //                     })
+    //                 }
 
-                    self.table.scope_enter();
+    //                 self.table.scope_enter();
 
-                    self.check_chunk(body)?;
+    //                 self.check_chunk(body)?;
 
-                    self.table.scope_exit(&mut self.sink);
-                }
+    //                 self.table.scope_exit(&mut self.sink);
+    //             }
 
-                if let Some(body) = else_body {
-                    self.table.scope_enter();
+    //             if let Some(body) = else_body {
+    //                 self.table.scope_enter();
 
-                    self.check_chunk(body)?;
+    //                 self.check_chunk(body)?;
 
-                    self.table.scope_exit(&mut self.sink);
-                }
-            }
-            CkStmt::DoBlock { body } => {
-                self.table.scope_enter();
+    //                 self.table.scope_exit(&mut self.sink);
+    //             }
+    //         }
+    //         CkStmt::DoBlock { body } => {
+    //             self.table.scope_enter();
 
-                self.check_chunk(body)?;
+    //             self.check_chunk(body)?;
 
-                self.table.scope_exit(&mut self.sink);
-            }
-            CkStmt::FunCall { name, args } => {
-                let MaybeUnresolved::Unresolved(id) = name else {
-                    panic!()
-                };
-                let Some(sym) = self.table.lookup(&*id, true).cloned() else {
-                    return Err(NotFoundInScope {
-                        name: id.clone(),
-                        loc: stmt.loc.clone(),
-                    }
-                    .into_diag());
-                };
+    //             self.table.scope_exit(&mut self.sink);
+    //         }
+    //         CkStmt::FunCall { name, args } => {
+    //             let MaybeUnresolved::Unresolved(id) = name else {
+    //                 panic!()
+    //             };
+    //             let Some(sym) = self.table.lookup(&*id, true).cloned() else {
+    //                 return Err(NotFoundInScope {
+    //                     name: id.clone(),
+    //                     loc: stmt.loc.clone(),
+    //                 }
+    //                 .into_diag());
+    //             };
 
-                *name = MaybeUnresolved::Resolved(sym.clone());
+    //             *name = MaybeUnresolved::Resolved(sym.clone());
 
-                let Type::Fun {
-                    args: args_ty,
-                    ret: _,
-                } = &sym.typ
-                else {
-                    return Err(CallRequiresFuncType {
-                        is_expr: false,
-                        loc: stmt.loc.clone(),
-                    }
-                    .into_diag());
-                };
+    //             let Type::Fun {
+    //                 args: args_ty,
+    //                 ret: _,
+    //             } = &sym.typ
+    //             else {
+    //                 return Err(CallRequiresFuncType {
+    //                     is_expr: false,
+    //                     loc: stmt.loc.clone(),
+    //                 }
+    //                 .into_diag());
+    //             };
 
-                for (arg, ty) in zip(args, args_ty) {
-                    self.check_expr(arg)?;
-                    if &arg.typ != ty {
-                        self.sink.push(ExpectedType {
-                            expected: vec![arg.typ.clone()],
-                            found: ty.clone(),
-                            loc: arg.loc.clone(),
-                        })
-                    }
-                }
+    //             for (arg, ty) in zip(args, args_ty) {
+    //                 self.check_expr(arg)?;
+    //                 if &arg.typ != ty {
+    //                     self.sink.push(ExpectedType {
+    //                         expected: vec![arg.typ.clone()],
+    //                         found: ty.clone(),
+    //                         loc: arg.loc.clone(),
+    //                     })
+    //                 }
+    //             }
 
-                // TODO: emit a warning diag if the return type of the function
-                // is not `Nil` because the value isn't used.
-            }
-            CkStmt::While { .. } | CkStmt::For { .. } => {
-                // TODO: implement loops checking
-                return Err(
-                    Diagnostic::error()
-                        .with_message("`while` loops, generic `for` loops and numeric `for` loops aren't yet checked")
-                        .with_label(Label::primary((), stmt.loc.clone())
-                        )
-                );
-            }
-            CkStmt::FunDef {
-                vis: _,
-                name,
-                name_loc: _,
-                args,
-                rettype: _,
-                body,
-                sym: _,
-            } => {
-                let Some(Symbol {
-                    typ: Type::Fun { ret, .. },
-                    ..
-                }) = self.table.lookup(name, false)
-                else {
-                    unreachable!()
-                };
-                self.retstack.push(*ret.clone());
+    //             // TODO: emit a warning diag if the return type of the function
+    //             // is not `Nil` because the value isn't used.
+    //         }
+    //         CkStmt::While { .. } | CkStmt::For { .. } => {
+    //             // TODO: implement loops checking
+    //             return Err(
+    //                 Diagnostic::error()
+    //                     .with_message("`while` loops, generic `for` loops and numeric `for` loops aren't yet checked")
+    //                     .with_label(Label::primary((), stmt.loc.clone())
+    //                     )
+    //             );
+    //         }
+    //         CkStmt::FunDef {
+    //             vis: _,
+    //             name,
+    //             name_loc: _,
+    //             args,
+    //             rettype: _,
+    //             body,
+    //             sym: _,
+    //         } => {
+    //             let Some(Symbol {
+    //                 typ: Type::Fun { ret, .. },
+    //                 ..
+    //             }) = self.table.lookup(name, false)
+    //             else {
+    //                 unreachable!()
+    //             };
+    //             self.retstack.push(*ret.clone());
 
-                self.table.scope_enter();
+    //             self.table.scope_enter();
 
-                for CkArg {
-                    name,
-                    name_loc,
-                    typ,
-                    loc: _,
-                } in args
-                {
-                    let ty = Type::from_expr(typ.clone());
+    //             for CkArg {
+    //                 name,
+    //                 name_loc,
+    //                 typ,
+    //                 loc: _,
+    //             } in args
+    //             {
+    //                 let ty = Type::from_expr(typ.clone());
 
-                    let mut ckname = name.clone();
-                    if name == "_" {
-                        self.sink.push(UnderscoreReservedIdent {
-                            loc: name_loc.clone(),
-                        });
-                        ckname = String::from("\0");
-                    }
+    //                 let mut ckname = name.clone();
+    //                 if name == "_" {
+    //                     self.sink.push(UnderscoreReservedIdent {
+    //                         loc: name_loc.clone(),
+    //                     });
+    //                     ckname = String::from("\0");
+    //                 }
 
-                    self.table.bind(
-                        ckname.clone(),
-                        Symbol::arg(ty, ckname.clone(), self.table.arg_count(), name_loc.clone()),
-                    )
-                }
+    //                 self.table.bind(
+    //                     ckname.clone(),
+    //                     Symbol::arg(ty, ckname.clone(), self.table.arg_count(), name_loc.clone()),
+    //                 )
+    //             }
 
-                self.check_chunk(body)?;
+    //             self.check_chunk(body)?;
 
-                self.retstack.pop();
+    //             self.retstack.pop();
 
-                self.table.scope_exit(&mut self.sink);
-            }
-            CkStmt::Return { val } | CkStmt::Break { val } => {
-                // TODO: if the expected type is `Nil` and there is some val but
-                // not of type `Nil`, suggest in a Help to remove the code
-                if let Some(val) = val {
-                    self.check_expr(val)?;
+    //             self.table.scope_exit(&mut self.sink);
+    //         }
+    //         CkStmt::Return { val } | CkStmt::Break { val } => {
+    //             // TODO: if the expected type is `Nil` and there is some val but
+    //             // not of type `Nil`, suggest in a Help to remove the code
+    //             if let Some(val) = val {
+    //                 self.check_expr(val)?;
 
-                    let Some(func_ret) = self.retstack.last() else {
-                        return Err(ReturnOutsideFunc {
-                            loc: stmt.loc.clone(),
-                        }
-                        .into_diag());
-                    };
+    //                 let Some(func_ret) = self.retstack.last() else {
+    //                     return Err(ReturnOutsideFunc {
+    //                         loc: stmt.loc.clone(),
+    //                     }
+    //                     .into_diag());
+    //                 };
 
-                    if &val.typ != func_ret {
-                        self.sink.push(ExpectedType {
-                            expected: vec![func_ret.clone()],
-                            found: val.typ.clone(),
-                            loc: val.loc.clone(),
-                        })
-                    }
-                }
-            }
-        }
-        Ok(())
-    }
+    //                 if &val.typ != func_ret {
+    //                     self.sink.push(ExpectedType {
+    //                         expected: vec![func_ret.clone()],
+    //                         found: val.typ.clone(),
+    //                         loc: val.loc.clone(),
+    //                     })
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     Ok(())
+    // }
 
-    pub fn check_expr(&mut self, expr: &mut CkExpression) -> Result<(), Diagnostic> {
-        match &mut expr.expr {
-            CkExpr::IntLit(_) => {
-                expr.typ = Type::Integer;
-            }
-            CkExpr::BoolLit(_) => {
-                expr.typ = Type::Bool;
-            }
-            CkExpr::StringLit(_) => {
-                expr.typ = Type::String;
-            }
-            CkExpr::Grouping(e) => {
-                self.check_expr(e)?;
-                expr.typ = e.typ.clone();
-            }
-            CkExpr::Ident(MaybeUnresolved::Unresolved(name)) => {
-                let Some(sym) = self.table.lookup(&*name, true) else {
-                    return Err(NotFoundInScope {
-                        name: name.clone(),
-                        loc: expr.loc.clone(),
-                    }
-                    .into_diag());
-                };
+    // pub fn check_expr(&mut self, expr: &mut CkExpression) -> Result<(), Diagnostic> {
+    //     match &mut expr.expr {
+    //         CkExpr::IntLit(_) => {
+    //             expr.typ = Type::Integer;
+    //         }
+    //         CkExpr::BoolLit(_) => {
+    //             expr.typ = Type::Bool;
+    //         }
+    //         CkExpr::StringLit(_) => {
+    //             expr.typ = Type::String;
+    //         }
+    //         CkExpr::Grouping(e) => {
+    //             self.check_expr(e)?;
+    //             expr.typ = e.typ.clone();
+    //         }
+    //         CkExpr::Ident(MaybeUnresolved::Unresolved(name)) => {
+    //             let Some(sym) = self.table.lookup(&*name, true) else {
+    //                 return Err(NotFoundInScope {
+    //                     name: name.clone(),
+    //                     loc: expr.loc.clone(),
+    //                 }
+    //                 .into_diag());
+    //             };
 
-                if sym.name == "_" {
-                    return Err(UnderscoreInExpression {
-                        loc: expr.loc.clone(),
-                    }
-                    .into_diag());
-                }
-                if sym.typ == Type::Unknown {
-                    self.sink.push(TypeAnnotationsNeeded {
-                        loc: sym.loc.clone(),
-                    })
-                }
-                expr.typ = sym.typ.clone();
-                expr.expr = CkExpr::Ident(MaybeUnresolved::Resolved(sym.clone()));
-            }
-            CkExpr::Ident(MaybeUnresolved::Resolved(_)) => {
-                unreachable!("i think it's a bug not sure tho")
-            }
-            CkExpr::Binary { lhs, op, rhs } => {
-                self.check_expr(lhs)?;
-                self.check_expr(rhs)?;
+    //             if sym.name == "_" {
+    //                 return Err(UnderscoreInExpression {
+    //                     loc: expr.loc.clone(),
+    //                 }
+    //                 .into_diag());
+    //             }
+    //             if sym.typ == Type::Unknown {
+    //                 self.sink.push(TypeAnnotationsNeeded {
+    //                     loc: sym.loc.clone(),
+    //                 })
+    //             }
+    //             expr.typ = sym.typ.clone();
+    //             expr.expr = CkExpr::Ident(MaybeUnresolved::Resolved(sym.clone()));
+    //         }
+    //         CkExpr::Ident(MaybeUnresolved::Resolved(_)) => {
+    //             unreachable!("i think it's a bug not sure tho")
+    //         }
+    //         CkExpr::Binary { lhs, op, rhs } => {
+    //             self.check_expr(lhs)?;
+    //             self.check_expr(rhs)?;
 
-                if lhs.typ != rhs.typ {
-                    self.sink.push(ExpectedType {
-                        expected: vec![lhs.typ.clone()],
-                        found: rhs.typ.clone(),
-                        loc: rhs.loc.clone(),
-                    });
-                }
+    //             if lhs.typ != rhs.typ {
+    //                 self.sink.push(ExpectedType {
+    //                     expected: vec![lhs.typ.clone()],
+    //                     found: rhs.typ.clone(),
+    //                     loc: rhs.loc.clone(),
+    //                 });
+    //             }
 
-                expr.typ = if op.is_relational() | op.is_logical() {
-                    Type::Bool
-                } else {
-                    lhs.typ.clone()
-                };
-            }
-            CkExpr::Unary { op, expr: exp } => match op {
-                UnaryOp::Negation => {
-                    if exp.typ != Type::Integer || exp.typ != Type::Float {
-                        self.sink.push(ExpectedType {
-                            expected: vec![Type::Integer, Type::Float],
-                            found: exp.typ.clone(),
-                            loc: exp.loc.clone(),
-                        })
-                    }
-                    expr.typ = exp.typ.clone();
-                }
-                UnaryOp::Not => {
-                    if exp.typ != Type::Bool {
-                        self.sink.push(ExpectedType {
-                            expected: vec![Type::Bool],
-                            found: exp.typ.clone(),
-                            loc: exp.loc.clone(),
-                        });
-                    }
-                    expr.typ = Type::Bool;
-                }
-            },
-            CkExpr::FunCall { called, args } => {
-                self.check_expr(called)?;
+    //             expr.typ = if op.is_relational() | op.is_logical() {
+    //                 Type::Bool
+    //             } else {
+    //                 lhs.typ.clone()
+    //             };
+    //         }
+    //         CkExpr::Unary { op, expr: exp } => match op {
+    //             UnaryOp::Negation => {
+    //                 if exp.typ != Type::Integer || exp.typ != Type::Float {
+    //                     self.sink.push(ExpectedType {
+    //                         expected: vec![Type::Integer, Type::Float],
+    //                         found: exp.typ.clone(),
+    //                         loc: exp.loc.clone(),
+    //                     })
+    //                 }
+    //                 expr.typ = exp.typ.clone();
+    //             }
+    //             UnaryOp::Not => {
+    //                 if exp.typ != Type::Bool {
+    //                     self.sink.push(ExpectedType {
+    //                         expected: vec![Type::Bool],
+    //                         found: exp.typ.clone(),
+    //                         loc: exp.loc.clone(),
+    //                     });
+    //                 }
+    //                 expr.typ = Type::Bool;
+    //             }
+    //         },
+    //         CkExpr::FunCall { called, args } => {
+    //             self.check_expr(called)?;
 
-                let Type::Fun {
-                    args: args_ty,
-                    ret: ret_ty,
-                } = &called.typ
-                else {
-                    return Err(ExpectedTypeFoundExpr {
-                        loc: called.loc.clone(),
-                    }
-                    .into_diag());
-                };
+    //             let Type::Fun {
+    //                 args: args_ty,
+    //                 ret: ret_ty,
+    //             } = &called.typ
+    //             else {
+    //                 return Err(ExpectedTypeFoundExpr {
+    //                     loc: called.loc.clone(),
+    //                 }
+    //                 .into_diag());
+    //             };
 
-                assert!(called.typ.is_func());
+    //             assert!(called.typ.is_func());
 
-                for (val, ty) in zip(args, args_ty) {
-                    self.check_expr(val)?;
+    //             for (val, ty) in zip(args, args_ty) {
+    //                 self.check_expr(val)?;
 
-                    if &val.typ != ty {
-                        self.sink.push(ExpectedType {
-                            expected: vec![ty.clone()],
-                            found: val.typ.clone(),
-                            loc: val.loc.clone(),
-                        })
-                    }
-                }
+    //                 if &val.typ != ty {
+    //                     self.sink.push(ExpectedType {
+    //                         expected: vec![ty.clone()],
+    //                         found: val.typ.clone(),
+    //                         loc: val.loc.clone(),
+    //                     })
+    //                 }
+    //             }
 
-                expr.typ = *ret_ty.clone();
-            }
-        }
-        debug_assert_ne!(expr.typ, Type::Unknown);
-        Ok(())
-    }
+    //             expr.typ = *ret_ty.clone();
+    //         }
+    //     }
+    //     debug_assert_ne!(expr.typ, Type::Unknown);
+    //     Ok(())
+    // }
 }
 
 /// Symbol

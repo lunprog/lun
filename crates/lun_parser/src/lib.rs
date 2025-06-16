@@ -6,7 +6,6 @@ use definition::Program;
 use diags::*;
 use expr::Expression;
 use lun_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic};
-use stmt::Chunk;
 
 use lun_utils::{
     Span,

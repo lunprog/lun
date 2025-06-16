@@ -1,9 +1,8 @@
 //! Checked AST.
 
 use lun_parser::{
-    definition::Vis,
-    expr::{Expr, Expression},
-    stmt::{Arg, ElseIf, Statement, Stmt},
+    expr::{Arg, Expr, Expression},
+    stmt::{Block, Statement, Stmt},
 };
 
 use super::*;
@@ -65,16 +64,16 @@ pub fn from_ast<T: FromAst>(ast: T::Unchecked) -> T {
 ///
 /// [`Chunk`]: lun_parser::stmt::Chunk
 #[derive(Debug, Clone)]
-pub struct CkChunk {
+pub struct CkBlock {
     pub stmts: Vec<CkStatement>,
     pub loc: Span,
 }
 
-impl FromAst for CkChunk {
-    type Unchecked = Chunk;
+impl FromAst for CkBlock {
+    type Unchecked = Block;
 
     fn from_ast(chunk: Self::Unchecked) -> Self {
-        CkChunk {
+        CkBlock {
             stmts: from_ast(chunk.stmts),
             loc: chunk.loc,
         }
@@ -96,73 +95,19 @@ impl FromAst for CkStatement {
 
     fn from_ast(ast: Self::Unchecked) -> Self {
         let stmt = match ast.stmt {
-            Stmt::Assignement { variable, value } => CkStmt::Assignement {
-                variable: MaybeUnresolved::Unresolved(variable),
-                value: from_ast(value),
-            },
             Stmt::VariableDef {
-                vis,
                 name,
                 name_loc,
                 typ,
                 value,
             } => CkStmt::VariableDef {
-                vis,
                 name: name.clone(),
                 name_loc,
                 typ: from_ast(typ),
                 value: from_ast(value),
                 sym: MaybeUnresolved::Unresolved(name),
             },
-            Stmt::IfThenElse {
-                cond,
-                body,
-                else_ifs,
-                else_body,
-            } => CkStmt::IfThenElse {
-                cond: from_ast(cond),
-                body: from_ast(body),
-                else_ifs: from_ast(else_ifs),
-                else_body: from_ast(else_body),
-            },
-            Stmt::DoBlock { body } => CkStmt::DoBlock {
-                body: from_ast(body),
-            },
-            Stmt::FunCall { name, args } => CkStmt::FunCall {
-                name: MaybeUnresolved::Unresolved(name),
-                args: from_ast(args),
-            },
-            Stmt::While { cond, body } => CkStmt::While {
-                cond: from_ast(cond),
-                body: from_ast(body),
-            },
-            Stmt::For {
-                variable,
-                iterator,
-                body,
-            } => CkStmt::For {
-                variable,
-                iterator: from_ast(iterator),
-                body: from_ast(body),
-            },
-            Stmt::FunDef {
-                vis,
-                name,
-                name_loc,
-                args,
-                rettype,
-                body,
-            } => CkStmt::FunDef {
-                vis,
-                name: name.clone(),
-                name_loc,
-                args: from_ast(args),
-                rettype: from_ast(rettype),
-                body: from_ast(body),
-                sym: MaybeUnresolved::Unresolved(name),
-            },
-            Stmt::Return { val } => CkStmt::Return { val: from_ast(val) },
-            Stmt::Break { val } => CkStmt::Break { val: from_ast(val) },
+            Stmt::Expression(expr) => CkStmt::Expression(from_ast(expr)),
         };
 
         CkStatement { stmt, loc: ast.loc }
@@ -174,18 +119,10 @@ impl FromAst for CkStatement {
 /// [`Stmt`]: lun_parser::stmt::Stmt
 #[derive(Debug, Clone)]
 pub enum CkStmt {
-    /// see [`Assignement`]
-    ///
-    /// [`Assignement`]: lun_parser::stmt::Stmt::Assignement
-    Assignement {
-        variable: MaybeUnresolved,
-        value: CkExpression,
-    },
     /// see [`VariableDef`]
     ///
     /// [`VariableDef`]: lun_parser::stmt::Stmt::VariableDef
     VariableDef {
-        vis: Vis,
         name: String,
         name_loc: Span,
         typ: Option<CkExpression>,
@@ -193,81 +130,10 @@ pub enum CkStmt {
         /// the symbol representing this function
         sym: MaybeUnresolved,
     },
-    /// see [`IfThenElse`]
+    /// see [`Expression`]
     ///
-    /// [`IfThenElse`]: lun_parser::stmt::Stmt::IfThenElse
-    IfThenElse {
-        cond: CkExpression,
-        body: CkChunk,
-        else_ifs: Vec<CkElseIf>,
-        else_body: Option<CkChunk>,
-    },
-    /// see [`DoBlock`]
-    ///
-    /// [`DoBlock`]: lun_parser::stmt::Stmt::DoBlock
-    DoBlock { body: CkChunk },
-    /// see [`FunCall`]
-    ///
-    /// [`FunCall`]: lun_parser::stmt::Stmt::FunCall
-    FunCall {
-        name: MaybeUnresolved,
-        args: Vec<CkExpression>,
-    },
-    /// see [`While`]
-    ///
-    /// [`While`]: lun_parser::stmt::Stmt::While
-    While { cond: CkExpression, body: CkChunk },
-    /// see [`For`]
-    ///
-    /// [`For`]: lun_parser::stmt::Stmt::For
-    For {
-        variable: String,
-        iterator: CkExpression,
-        body: CkChunk,
-    },
-    /// see [`FunDef`]
-    ///
-    /// [`FunDef`]: lun_parser::stmt::Stmt::FunDef
-    FunDef {
-        vis: Vis,
-        name: String,
-        name_loc: Span,
-        args: Vec<CkArg>,
-        rettype: Option<CkExpression>,
-        body: CkChunk,
-        /// the symbol representing this function
-        sym: MaybeUnresolved,
-    },
-    /// see [`Return`]
-    ///
-    /// [`Return`]: lun_parser::stmt::Stmt::Return
-    Return { val: Option<CkExpression> },
-    /// see [`Break`]
-    ///
-    /// [`Break`]: lun_parser::stmt::Stmt::Break
-    Break { val: Option<CkExpression> },
-}
-
-/// see [`ElseIf`]
-///
-/// [`ElseIf`]: lun_parser::stmt::ElseIf
-#[derive(Debug, Clone)]
-pub struct CkElseIf {
-    pub cond: CkExpression,
-    pub body: CkChunk,
-    pub loc: Span,
-}
-
-impl FromAst for CkElseIf {
-    type Unchecked = ElseIf;
-
-    fn from_ast(ast: Self::Unchecked) -> Self {
-        CkElseIf {
-            cond: from_ast(ast.cond),
-            body: from_ast(ast.body),
-            loc: ast.loc,
-        }
-    }
+    /// [`Expression`]: lun_parser::stmt::Stmt::Expression
+    Expression(CkExpression),
 }
 
 /// see [`Arg`]
