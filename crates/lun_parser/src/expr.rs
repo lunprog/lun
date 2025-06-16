@@ -88,6 +88,32 @@ pub enum Expr {
         rettype: Option<Box<Expression>>,
         body: Block,
     },
+    /// if else
+    ///
+    /// "if" expression block [ "else" (if-expr | block-expr) ]
+    If(IfExpression),
+    /// if then else
+    ///
+    /// "if" expression "then" expression "else" expression
+    IfThenElse {
+        cond: Box<Expression>,
+        true_val: Box<Expression>,
+        false_val: Box<Expression>,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub struct IfExpression {
+    pub cond: Box<Expression>,
+    pub body: Box<Block>,
+    pub else_branch: Option<Box<Else>>,
+    pub loc: Span,
+}
+
+#[derive(Debug, Clone)]
+pub enum Else {
+    IfExpr(IfExpression),
+    Block(Block),
 }
 
 #[derive(Debug, Clone)]
@@ -103,9 +129,8 @@ pub fn parse_expr_precedence(
     parser: &mut Parser,
     precedence: Precedence,
 ) -> Result<Expression, Diagnostic> {
-    // TODO: parsing of range expressions, `expr..expr` and `expr..=expr`, and
-    // maybe `..expr` and maybe `expr..` but not sure because the integer type
-    // can go from -u64::MAX to i64::MAX
+    // TODO: parsing of range expressions, `expr..<expr` and `expr..=expr`, and
+    // maybe `..<expr`, `..=expr` and maybe `expr..`
     let mut lhs = match parser.peek_tt() {
         Some(IntLit(_)) => parse!(@fn parser => parse_intlit_expr),
         Some(Kw(Keyword::True | Keyword::False)) => parse!(@fn parser => parse_boollit_expr),
@@ -114,6 +139,7 @@ pub fn parse_expr_precedence(
         Some(Punct(Punctuation::LParen)) => parse!(@fn parser => parse_grouping_expr),
         Some(Ident(_)) => parse!(@fn parser => parse_ident_expr),
         Some(Kw(Keyword::Fun)) => parse!(@fn parser => parse_fundef_expr),
+        Some(Kw(Keyword::If)) => parse!(@fn parser => parse_if_else_expr, false),
         Some(tt) if UnaryOp::from_tt(tt.clone()).is_some() => {
             parse!(@fn parser => parse_unary_expr)
         }
@@ -549,4 +575,103 @@ pub fn parse_fundef_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
         },
         loc: Span::from_ends(lo, hi),
     })
+}
+
+/// parses the if-else expression
+pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expression, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::If), ()], Kw(Keyword::If));
+
+    let cond = parse!(box: parser => Expression);
+
+    if let Some(TokenType::Punct(Punctuation::LBrace)) = parser.peek_tt() {
+        // if expr
+        // "if" expression block [ "else" (if-expr | block-expr) ]
+        let body = parse!(box: parser => Block);
+
+        let mut hi = body.loc.clone();
+
+        let else_branch = if let Some(Kw(Keyword::Else)) = parser.peek_tt() {
+            parser.pop();
+
+            let else_branch = match parser.peek_tt() {
+                Some(Kw(Keyword::If)) => {
+                    let Expression {
+                        expr: Expr::If(if_expr),
+                        loc: _,
+                    } = parse!(@fn parser => parse_if_else_expr, true)
+                    else {
+                        unreachable!();
+                    };
+                    hi = if_expr.loc.clone();
+
+                    Else::IfExpr(if_expr)
+                }
+                Some(Punct(Punctuation::LBrace)) => {
+                    // block
+                    let block = parse!(parser => Block);
+
+                    hi = block.loc.clone();
+
+                    Else::Block(block)
+                }
+                Some(_) => {
+                    let t = parser.peek_tok().unwrap();
+
+                    return Err(ExpectedToken::new(
+                        [Punct(Punctuation::LBrace), Kw(Keyword::If)],
+                        t.tt.clone(),
+                        Some("if expression"),
+                        t.loc.clone(),
+                    )
+                    .into_diag());
+                }
+                None => return Err(parser.eof_diag()),
+            };
+
+            Some(Box::new(else_branch))
+        } else {
+            None
+        };
+
+        let loc = Span::from_ends(lo, hi);
+
+        Ok(Expression {
+            expr: Expr::If(IfExpression {
+                cond,
+                body,
+                else_branch,
+                loc: loc.clone(),
+            }),
+            loc,
+        })
+    } else if !only_block {
+        // if then else expr
+        // "if" expression then expression "else" expression
+
+        expect_token!(parser => [Kw(Keyword::Then), ()], Kw(Keyword::Then));
+        let true_val = parse!(box: parser => Expression);
+        expect_token!(parser => [Kw(Keyword::Else), ()], Kw(Keyword::Else));
+        let false_val = parse!(box: parser => Expression);
+
+        let hi = false_val.loc.clone();
+
+        Ok(Expression {
+            expr: Expr::IfThenElse {
+                cond,
+                true_val,
+                false_val,
+            },
+            loc: Span::from_ends(lo, hi),
+        })
+    } else {
+        let t = parser.peek_tok().unwrap();
+
+        Err(ExpectedToken::new(
+            [Punct(Punctuation::LBrace)],
+            t.tt.clone(),
+            Some("if expression"),
+            t.loc.clone(),
+        )
+        .into_diag())
+    }
 }
