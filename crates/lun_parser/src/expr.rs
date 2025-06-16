@@ -22,7 +22,10 @@ pub struct Expression {
 impl Expression {
     /// Is the expression `ExpressionWithBlock`?
     pub fn is_expr_with_block(&self) -> bool {
-        matches!(self.expr, Expr::If(_) | Expr::Block(_) | Expr::While { .. })
+        matches!(
+            self.expr,
+            Expr::If(_) | Expr::Block(_) | Expr::While { .. } | Expr::For { .. }
+        )
     }
 }
 
@@ -114,6 +117,15 @@ pub enum Expr {
     ///
     /// "while" expression block
     While { cond: Box<Expression>, body: Block },
+    /// for expression
+    ///
+    /// "for" ident "in" expression block
+    For {
+        /// the variable that holds the value of the iterator
+        variable: String,
+        iterator: Box<Expression>,
+        body: Block,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -155,6 +167,7 @@ pub fn parse_expr_precedence(
         Some(Kw(Keyword::Fun)) => parse!(@fn parser => parse_fundef_expr),
         Some(Kw(Keyword::If)) => parse!(@fn parser => parse_if_else_expr, false),
         Some(Kw(Keyword::While)) => parse!(@fn parser => parse_while_expr),
+        Some(Kw(Keyword::For)) => parse!(@fn parser => parse_for_expr),
         Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
         Some(tt) if UnaryOp::from_tt(tt.clone()).is_some() => {
             parse!(@fn parser => parse_unary_expr)
@@ -714,6 +727,30 @@ pub fn parse_while_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
 
     Ok(Expression {
         expr: Expr::While { cond, body },
+        loc: Span::from_ends(lo, hi),
+    })
+}
+
+/// parses for expression
+pub fn parse_for_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::For), ()], Kw(Keyword::For));
+
+    let (variable, _) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+
+    expect_token!(parser => [Kw(Keyword::In), ()], Kw(Keyword::In));
+
+    let iterator = parse!(box: parser => Expression);
+
+    let body = parse!(parser => Block);
+
+    let hi = body.loc.clone();
+
+    Ok(Expression {
+        expr: Expr::For {
+            variable,
+            iterator,
+            body,
+        },
         loc: Span::from_ends(lo, hi),
     })
 }
