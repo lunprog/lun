@@ -131,7 +131,6 @@ impl Display for TokenType {
 }
 
 // TODO: add keyword `nil` and implement the nil expression
-// TODO: add keyword `comptime` for future use
 //
 // /!\ If a keyword is added change the `lex_identifer` method of the Lexer
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -148,8 +147,6 @@ pub enum Keyword {
     Do,
     /// else
     Else,
-    /// end
-    End,
     /// false
     False,
     /// for
@@ -205,9 +202,6 @@ impl Keyword {
 
     /// `else` keyword.
     pub const ELSE: &str = "else";
-
-    /// `end` keyword.
-    pub const END: &str = "end";
 
     /// `false` keyword.
     pub const FALSE: &str = "false";
@@ -267,7 +261,6 @@ impl Display for Keyword {
             Keyword::Continue => f.write_str(Keyword::CONTINUE),
             Keyword::Do => f.write_str(Keyword::DO),
             Keyword::Else => f.write_str(Keyword::ELSE),
-            Keyword::End => f.write_str(Keyword::END),
             Keyword::False => f.write_str(Keyword::FALSE),
             Keyword::For => f.write_str(Keyword::FOR),
             Keyword::Fun => f.write_str(Keyword::FUN),

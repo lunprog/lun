@@ -226,7 +226,6 @@ impl Lexer {
             Keyword::CONTINUE => Kw(Keyword::Continue),
             Keyword::DO => Kw(Keyword::Do),
             Keyword::ELSE => Kw(Keyword::Else),
-            Keyword::END => Kw(Keyword::End),
             Keyword::FALSE => Kw(Keyword::False),
             Keyword::FOR => Kw(Keyword::For),
             Keyword::FUN => Kw(Keyword::Fun),
