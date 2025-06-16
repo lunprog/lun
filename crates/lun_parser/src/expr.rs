@@ -22,7 +22,7 @@ pub struct Expression {
 impl Expression {
     /// Is the expression `ExpressionWithBlock`?
     pub fn is_expr_with_block(&self) -> bool {
-        matches!(self.expr, Expr::If(_))
+        matches!(self.expr, Expr::If(_) | Expr::Block(_))
     }
 }
 
@@ -87,7 +87,7 @@ pub enum Expr {
         called: Box<Expression>,
         args: Vec<Expression>,
     },
-    /// function definition
+    /// function definition expression
     ///
     /// "fun" "(" ( ident ":" expr ),* ")" [ "->" expr ] block
     FunDefinition {
@@ -95,11 +95,11 @@ pub enum Expr {
         rettype: Option<Box<Expression>>,
         body: Block,
     },
-    /// if else
+    /// if else expression
     ///
     /// "if" expression block [ "else" (if-expr | block-expr) ]
     If(IfExpression),
-    /// if then else
+    /// if then else expression
     ///
     /// "if" expression "then" expression "else" expression
     IfThenElse {
@@ -107,6 +107,9 @@ pub enum Expr {
         true_val: Box<Expression>,
         false_val: Box<Expression>,
     },
+    /// block expression
+    // TODO: make the grammar for block expr
+    Block(Block),
 }
 
 #[derive(Debug, Clone)]
@@ -147,6 +150,7 @@ pub fn parse_expr_precedence(
         Some(Ident(_)) => parse!(@fn parser => parse_ident_expr),
         Some(Kw(Keyword::Fun)) => parse!(@fn parser => parse_fundef_expr),
         Some(Kw(Keyword::If)) => parse!(@fn parser => parse_if_else_expr, false),
+        Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
         Some(tt) if UnaryOp::from_tt(tt.clone()).is_some() => {
             parse!(@fn parser => parse_unary_expr)
         }
@@ -681,4 +685,15 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
         )
         .into_diag())
     }
+}
+
+/// parses block expression
+pub fn parse_block_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let block = parse!(parser => Block);
+    let loc = block.loc.clone();
+
+    Ok(Expression {
+        expr: Expr::Block(block),
+        loc,
+    })
 }
