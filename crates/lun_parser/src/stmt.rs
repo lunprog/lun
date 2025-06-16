@@ -48,7 +48,8 @@ impl AstNode for Block {
                         loc: _,
                     } = stmt
                     else {
-                        // NOTE: here we are fine because, we checked that stmt is an expr before.
+                        // NOTE: here we are fine because, we checked that stmt
+                        // is an expr before.
                         unsafe { unreachable_unchecked() }
                     };
 
@@ -56,10 +57,33 @@ impl AstNode for Block {
 
                     break;
                 }
-                // here, the next thing is a brace so, no need to keep parsing there is nothing more.
+                // here, the next thing is a brace so, no need to keep parsing
+                // there is nothing more.
                 (true, false) => break,
-                (false, _) => {
-                    // here, nothing fancy, the next thing isn't a }, so we push the statement and expect a semicolon
+                (false, true) => {
+                    // here we have a statement expression, we require a
+                    // semicolon if the expression isn't a ExpressionWithBlock
+                    let Statement {
+                        stmt: Stmt::Expression(ref expr),
+                        loc: _,
+                    } = stmt
+                    else {
+                        // NOTE: here we are fine because, we checked that stmt
+                        // is an expr before.
+                        unsafe { unreachable_unchecked() }
+                    };
+
+                    stmts.push(stmt.clone());
+                    if expr.is_expr_with_block() {
+                        expect_token!(parser => [Punct(Punctuation::SemiColon), ()] else { continue; });
+                    } else {
+                        expect_token!(parser => [Punct(Punctuation::SemiColon), ()], Punct(Punctuation::SemiColon));
+                    }
+                }
+                (false, false) => {
+                    // here, nothing fancy, we have a statement, the next
+                    // thing isn't a }, so we push the Statement and expect
+                    // a semicolon
                     stmts.push(stmt.clone());
                     expect_token!(parser => [Punct(Punctuation::SemiColon), ()], Punct(Punctuation::SemiColon));
                 }

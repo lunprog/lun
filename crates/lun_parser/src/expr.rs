@@ -19,6 +19,13 @@ pub struct Expression {
     pub loc: Span,
 }
 
+impl Expression {
+    /// Is the expression `ExpressionWithBlock`?
+    pub fn is_expr_with_block(&self) -> bool {
+        matches!(self.expr, Expr::If(_))
+    }
+}
+
 impl AstNode for Expression {
     #[inline]
     #[track_caller]
