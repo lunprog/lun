@@ -31,54 +31,39 @@ impl AstNode for Block {
 
             let stmt = parse!(parser => Statement);
 
-            match parser.peek_tt() {
-                Some(Punct(Punctuation::RBrace)) => break,
-                Some(Punct(Punctuation::SemiColon)) => {
-                    let next_brace = if let Some(Punct(Punctuation::RBrace)) = parser.peek_tt() {
-                        true
-                    } else {
-                        false
+            let next_brace = if let Some(Punct(Punctuation::RBrace)) = parser.peek_tt() {
+                true
+            } else {
+                false
+            };
+            let is_expr = stmt.is_expr();
+
+            match (next_brace, is_expr) {
+                (true, true) => {
+                    // here we found the last expression, because the
+                    // following token is } and the last "statement" was
+                    // an expression.
+                    let Statement {
+                        stmt: Stmt::Expression(expr),
+                        loc: _,
+                    } = stmt
+                    else {
+                        // NOTE: here we are fine because, we checked that stmt is an expr before.
+                        unsafe { unreachable_unchecked() }
                     };
-                    let is_expr = stmt.is_expr();
 
-                    match (next_brace, is_expr) {
-                        (true, true) => {
-                            // here we found the last expression, because the
-                            // following token is } and the last "statement" was
-                            // an expression.
-                            let Statement {
-                                stmt: Stmt::Expression(expr),
-                                loc: _,
-                            } = stmt
-                            else {
-                                // NOTE: here we are fine because, we checked that stmt is an expr before.
-                                unsafe { unreachable_unchecked() }
-                            };
+                    last_expr = Some(Box::new(expr));
 
-                            last_expr = Some(Box::new(expr));
-                            break;
-                        }
-                        // here, the next thing is a brace so, no need to keep parsing there is nothing more.
-                        (true, false) => break,
-                        (false, _) => {
-                            expect_token!(parser => [Punct(Punctuation::SemiColon), ()], Punct(Punctuation::SemiColon));
-                        }
-                    }
+                    break;
                 }
-                Some(_) => {
-                    let t = parser.peek_tok().unwrap();
-
-                    return Err(ExpectedToken::new(
-                        [Punct(Punctuation::SemiColon), Punct(Punctuation::RBrace)],
-                        t.tt.clone(),
-                        Some("block"),
-                        t.loc.clone(),
-                    )
-                    .into_diag());
+                // here, the next thing is a brace so, no need to keep parsing there is nothing more.
+                (true, false) => break,
+                (false, _) => {
+                    // here, nothing fancy, the next thing isn't a }, so we push the statement and expect a semicolon
+                    stmts.push(stmt.clone());
+                    expect_token!(parser => [Punct(Punctuation::SemiColon), ()], Punct(Punctuation::SemiColon));
                 }
-                None => return Err(parser.eof_diag()),
             }
-            stmts.push(stmt);
         }
 
         let (_, hi) =
