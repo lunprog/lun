@@ -1,12 +1,14 @@
 //! fibonacci - we compute the fibonacci sequence recursively
 
-fun fib(n: int) -> int
-    if n <= 1 then
-        return n
-    else
-        return fib(n - 1) + fib(n - 2)
-    end
-end
+main :: fun() {
+    var fib10 = fib(10);
+    var fib1million = fib(1_000_000);
+}
 
-fib10 := fib(10)
-var fib1million = fib(1_000_000)
+fib :: fun(n: int) -> int {
+    if n <= 1 {
+        n
+    } else {
+        fib(n - 1) + fib(n - 2)
+    }
+}
