@@ -320,6 +320,8 @@ pub enum Punctuation {
     Equal2,
     /// !=
     BangEqual,
+    /// !
+    Bang,
     /// <=
     LArrow,
     /// <
@@ -332,6 +334,8 @@ pub enum Punctuation {
     SemiColon,
     /// ->
     Arrow,
+    /// ^
+    Carret,
 }
 
 impl Display for Punctuation {
@@ -353,12 +357,14 @@ impl Display for Punctuation {
             Equal => f.write_str("="),
             Equal2 => f.write_str("=="),
             BangEqual => f.write_str("!="),
+            Bang => f.write_str("!"),
             LArrow => f.write_str("<="),
             LArrowEqual => f.write_str("<"),
             RArrow => f.write_str(">"),
             RArrowEqual => f.write_str(">="),
             SemiColon => f.write_str(";"),
             Arrow => f.write_str("->"),
+            Carret => f.write_str("^"),
         }
     }
 }

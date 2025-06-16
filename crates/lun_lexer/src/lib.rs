@@ -56,11 +56,11 @@ impl Lexer {
             }
         }
 
+        tt.finish();
+
         if self.sink.failed() {
             return StageResult::Part(tt, self.sink.clone());
         }
-
-        tt.finish();
 
         StageResult::Good(tt)
     }
@@ -87,6 +87,7 @@ impl Lexer {
         span(self.prev, self.cur)
     }
 
+    #[track_caller]
     pub fn expect(&mut self, expected: char) {
         let popped = self.pop().unwrap();
         if popped != expected {
@@ -139,6 +140,7 @@ impl Lexer {
             Some(':') => Punct(Colon),
             Some(',') => Punct(Comma),
             Some(';') => Punct(SemiColon),
+            Some('^') => Punct(Carret),
             Some('=') => {
                 self.pop();
                 match self.peek() {
@@ -151,8 +153,14 @@ impl Lexer {
             }
             Some('!') => {
                 self.pop();
-                self.expect('=');
-                return Ok(Punct(BangEqual));
+
+                return match self.peek() {
+                    Some('=') => {
+                        self.pop();
+                        Ok(Punct(BangEqual))
+                    }
+                    _ => Ok(Punct(Bang)),
+                };
             }
             Some('<') => {
                 self.pop();
