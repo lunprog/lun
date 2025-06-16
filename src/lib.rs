@@ -73,33 +73,14 @@ pub fn run() -> StageResult<()> {
 
     blob.write_mul(AFunct::F16, Reg::a0, Reg::t1, Reg::a2);
 
-    blob.write_call(0xDEAD_BEEF);
-
-    blob.write_ret();
-
-    blob.write_call(0xDEAD_BEEF);
-
-    blob.write_jze(Reg::sp, 0xDEAD, Reg::a0);
-    blob.write_jze(Reg::sp, 0xDEAD, Reg::zr);
-
-    blob.write_beq(Reg::a0, Reg::zr, 0xBEEF);
-
-    blob.write_ld_b(Reg::t1, 0x4, Reg::sp);
-
-    blob.write_st_b(Reg::t1, 0x4, Reg::sp);
-    blob.write_st_h(Reg::t1, 0x4, Reg::sp);
-    blob.write_st_w(Reg::t1, 0x4, Reg::sp);
-    blob.write_st_d(Reg::t1, 0x4, Reg::sp);
-
-    blob.write_li_b(Reg::t2, 0xFF, Reg::a1);
-    blob.write_li_h(Reg::t2, 0xFF00, Reg::a1);
-    blob.write_li_w(Reg::t2, 0xFF0000, Reg::a1);
-    blob.write_li_d(Reg::t2, 0xDEAD_BEEF, Reg::a1);
     blob.disassemble("test blob");
 
     let mut vm = Vm::new(Vm::BASE_STACK, blob);
     vm.debug_regs();
-    vm.run();
+    match vm.run() {
+        Ok(()) => {}
+        Err(exception) => eprintln!("Exception: {exception}"),
+    }
 
     // 6. code generation
     // let mut codegen = CodeGenerator::new(ckast, sink.clone(), LBType::Exec);

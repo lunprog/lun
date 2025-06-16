@@ -148,6 +148,7 @@ dependencies = [
  "half",
  "lun_bc",
  "lun_utils",
+ "thiserror",
 ]
 
 [[package]]
