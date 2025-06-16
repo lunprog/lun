@@ -177,22 +177,7 @@ pub fn parse_expr_precedence(
             let t = parser.peek_tok().unwrap().clone();
             // TODO: make the parser retry if he failed to parse lhs with a
             // loop, see parsing of statements also.
-            return Err(ExpectedToken::new(
-                [
-                    IntLit(0),
-                    Kw(Keyword::False),
-                    Kw(Keyword::True),
-                    StringLit(String::new()),
-                    Punct(Punctuation::LParen),
-                    Ident(String::new()),
-                    Kw(Keyword::Not),
-                    Punct(Punctuation::Minus),
-                ],
-                t.tt,
-                Some("expression"),
-                t.loc,
-            )
-            .into_diag());
+            return Err(ExpectedToken::new("expression", t.tt, None::<String>, t.loc).into_diag());
         }
         None => {
             return Err(parser.eof_diag());
