@@ -126,6 +126,18 @@ pub enum Expr {
         iterator: Box<Expression>,
         body: Block,
     },
+    /// return expression
+    ///
+    /// "return" expression?
+    Return { val: Option<Box<Expression>> },
+    /// break expression
+    ///
+    /// "break" expression?
+    Break { val: Option<Box<Expression>> },
+    /// continue expression
+    ///
+    /// "continue"
+    Continue,
 }
 
 #[derive(Debug, Clone)]
@@ -168,6 +180,9 @@ pub fn parse_expr_precedence(
         Some(Kw(Keyword::If)) => parse!(@fn parser => parse_if_else_expr, false),
         Some(Kw(Keyword::While)) => parse!(@fn parser => parse_while_expr),
         Some(Kw(Keyword::For)) => parse!(@fn parser => parse_for_expr),
+        Some(Kw(Keyword::Return)) => parse!(@fn parser => parse_return_expr),
+        Some(Kw(Keyword::Break)) => parse!(@fn parser => parse_break_expr),
+        Some(Kw(Keyword::Continue)) => parse!(@fn parser => parse_continue_expr),
         Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
         Some(tt) if UnaryOp::from_tt(tt.clone()).is_some() => {
             parse!(@fn parser => parse_unary_expr)
@@ -737,5 +752,55 @@ pub fn parse_for_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
             body,
         },
         loc: Span::from_ends(lo, hi),
+    })
+}
+
+/// parses return expression
+pub fn parse_return_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Return), ()], Kw(Keyword::Return));
+    let mut hi = lo.clone();
+
+    let val = if parser.is_stmt_end() {
+        None
+    } else {
+        let expr = parse!(box: parser => Expression);
+        hi = expr.loc.clone();
+
+        Some(expr)
+    };
+
+    Ok(Expression {
+        expr: Expr::Return { val },
+        loc: Span::from_ends(lo, hi),
+    })
+}
+
+/// parses break expression
+pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Break), ()], Kw(Keyword::Break));
+    let mut hi = lo.clone();
+
+    let val = if parser.is_stmt_end() {
+        None
+    } else {
+        let expr = parse!(box: parser => Expression);
+        hi = expr.loc.clone();
+
+        Some(expr)
+    };
+
+    Ok(Expression {
+        expr: Expr::Break { val },
+        loc: Span::from_ends(lo, hi),
+    })
+}
+
+/// parses continue expression
+pub fn parse_continue_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, loc) = expect_token!(parser => [Kw(Keyword::Continue), ()], Kw(Keyword::Continue));
+
+    Ok(Expression {
+        expr: Expr::Continue,
+        loc,
     })
 }
