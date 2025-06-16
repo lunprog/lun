@@ -16,7 +16,7 @@ use lun_utils::Span;
 
 pub mod ckast;
 pub mod diags;
-pub use lun_parser::stmt::Vis;
+pub use lun_parser::definition::Vis;
 
 /// Semantic checker, ensure all of the lun's semantic is correct, it also
 /// include type checking.

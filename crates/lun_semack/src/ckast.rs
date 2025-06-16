@@ -1,8 +1,9 @@
 //! Checked AST.
 
 use lun_parser::{
+    definition::Vis,
     expr::{Expr, Expression},
-    stmt::{Arg, ElseIf, Statement, Stmt, Vis},
+    stmt::{Arg, ElseIf, Statement, Stmt},
 };
 
 use super::*;

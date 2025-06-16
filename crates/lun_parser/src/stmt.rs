@@ -1,5 +1,7 @@
 //! Parsing of lun's statements and chunk.
 
+use crate::definition::Vis;
+
 use super::*;
 
 /// Every source file is a Chunk, a Chunk is a sequence of Statements
@@ -41,14 +43,6 @@ impl AstNode for Chunk {
             loc: Span::from_ends(lo, hi),
         })
     }
-}
-
-/// Visibility
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub enum Vis {
-    #[default]
-    Private,
-    Public,
 }
 
 /// A lun statement
