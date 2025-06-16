@@ -19,7 +19,6 @@
 use crate::{
     bc::{AFunct, BcBlob, Reg},
     diag::{DiagnosticSink, StageResult, tri},
-    ir::IrModule,
     lexer::Lexer,
     parser::Parser,
     semack::SemanticCk,
@@ -29,7 +28,6 @@ use crate::{
 pub use lun_bc as bc;
 pub use lun_codegen as codegen;
 pub use lun_diag as diag;
-pub use lun_ir as ir;
 pub use lun_lexer as lexer;
 pub use lun_parser as parser;
 pub use lun_semack as semack;
@@ -63,9 +61,6 @@ pub fn run() -> StageResult<()> {
 
     dbg!(&ckast);
 
-    // 5. convert ast to ir
-    let ir = IrModule::from_ck_chunk(ckast);
-    dbg!(ir);
     // TODO: make the codegenerator work on the ir.
 
     let mut blob = BcBlob::new();

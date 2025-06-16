@@ -1,9 +1,0 @@
-[package]
-name = "lun_ir"
-description = "Intermediate representation of lun."
-version.workspace = true
-license.workspace = true
-edition = "2024"
-
-[dependencies]
-lun_semack = { workspace = true }
