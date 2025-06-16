@@ -209,6 +209,9 @@ macro_rules! expect_token {
 
 #[macro_export]
 macro_rules! parse {
+    (box: $($tt:tt)*) => {
+        Box::new(parse!( $( $tt )* ))
+    };
     ($parser:expr => $node:ty) => {
         parse!(@fn $parser => <$node as $crate::AstNode>::parse)
     };

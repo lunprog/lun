@@ -207,7 +207,7 @@ pub fn parse_strlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 /// Parse a grouping expression
 pub fn parse_grouping_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let ((), lo) = expect_token!(parser => [Punct(Punctuation::LParen), ()], [Punctuation::LParen]);
-    let expr = Box::new(parse!(parser => Expression));
+    let expr = parse!(box: parser => Expression);
     let ((), hi) = expect_token!(parser => [Punct(Punctuation::RParen), ()], [Punctuation::RParen]);
 
     Ok(Expression {
@@ -465,7 +465,7 @@ pub fn parse_unary_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
         Kw(Keyword::Not), UnaryOp::Not;
     ], "minus operator or keyword not");
 
-    let expr = Box::new(parse!(@fn parser => parse_expr_precedence, Precedence::Unary));
+    let expr = parse!(box: @fn parser => parse_expr_precedence, Precedence::Unary);
 
     Ok(Expression {
         loc: Span::from_ends(lo, expr.loc.clone()),
@@ -533,7 +533,7 @@ pub fn parse_fundef_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
     let rettype = if let Some(Punct(Punctuation::Arrow)) = parser.peek_tt() {
         parser.pop();
-        Some(Box::new(parse!(parser => Expression)))
+        Some(parse!(box: parser => Expression))
     } else {
         None
     };
