@@ -199,7 +199,8 @@ impl FromAst for CkExpression {
             Expr::FunDefinition { .. }
             | Expr::If(..)
             | Expr::IfThenElse { .. }
-            | Expr::Block(_) => {
+            | Expr::Block(_)
+            | Expr::While { .. } => {
                 todo!("TODO(URGENT): implement me")
             }
         };
