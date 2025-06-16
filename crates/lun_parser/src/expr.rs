@@ -138,6 +138,10 @@ pub enum Expr {
     ///
     /// "continue"
     Continue,
+    /// nil expression
+    ///
+    /// "nil"
+    Nil,
 }
 
 #[derive(Debug, Clone)]
@@ -183,6 +187,7 @@ pub fn parse_expr_precedence(
         Some(Kw(Keyword::Return)) => parse!(@fn parser => parse_return_expr),
         Some(Kw(Keyword::Break)) => parse!(@fn parser => parse_break_expr),
         Some(Kw(Keyword::Continue)) => parse!(@fn parser => parse_continue_expr),
+        Some(Kw(Keyword::Nil)) => parse!(@fn parser => parse_nil_expr),
         Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
         Some(tt) if UnaryOp::from_tt(tt.clone()).is_some() => {
             parse!(@fn parser => parse_unary_expr)
@@ -801,6 +806,16 @@ pub fn parse_continue_expr(parser: &mut Parser) -> Result<Expression, Diagnostic
 
     Ok(Expression {
         expr: Expr::Continue,
+        loc,
+    })
+}
+
+/// parses nil expression
+pub fn parse_nil_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, loc) = expect_token!(parser => [Kw(Keyword::Nil), ()], Kw(Keyword::Nil));
+
+    Ok(Expression {
+        expr: Expr::Nil,
         loc,
     })
 }

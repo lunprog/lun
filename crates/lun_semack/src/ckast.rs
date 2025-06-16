@@ -204,7 +204,8 @@ impl FromAst for CkExpression {
             | Expr::For { .. }
             | Expr::Return { .. }
             | Expr::Break { .. }
-            | Expr::Continue => {
+            | Expr::Continue
+            | Expr::Nil => {
                 todo!("TODO(URGENT): implement me")
             }
         };

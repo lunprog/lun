@@ -130,9 +130,7 @@ impl Display for TokenType {
     }
 }
 
-// TODO: add keyword `nil` and implement the nil expression
-//
-// /!\ If a keyword is added change the `lex_identifer` method of the Lexer
+// WARN: /!\ If a keyword is added change the `lex_identifer` method of the Lexer
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Keyword {
     /// break
