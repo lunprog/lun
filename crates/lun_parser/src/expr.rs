@@ -226,7 +226,7 @@ pub fn parse_ident_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     })
 }
 
-/// The precedence table of the Gatti Programming Language
+/// The precedence table of Lun
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Precedence {
     // `None` is a special precedence value, it is used to exit out of the loop
@@ -239,6 +239,8 @@ pub enum Precedence {
     // If you change the highest precedence in this enumeration change the
     // HIGHEST_PRECEDENCE constant
     //
+    /// `=`
+    Assignement,
     /// `or`
     Or,
     /// `and`
@@ -255,7 +257,7 @@ pub enum Precedence {
     Unary,
     /// `expression ( expression,* )`
     Call,
-    /// `intlit true false charlit strlit parenthesis )`
+    /// `intlit "true" "false" charlit strlit group`
     Primary,
     // Like `__First__` it is a special variant of `Precedence` that should
     // never be used.
@@ -267,7 +269,8 @@ impl Precedence {
     /// Returns the [`Precedence`] following the one passed as arg.
     pub fn next(self) -> Precedence {
         match self {
-            Self::__First__ => Self::Or,
+            Self::__First__ => Self::Assignement,
+            Self::Assignement => Self::Or,
             Self::Or => Self::And,
             Self::And => Self::Equality,
             Self::Equality => Self::Comparison,
@@ -283,6 +286,7 @@ impl Precedence {
 
     pub fn associativity(&self) -> Associativity {
         match self {
+            Self::Assignement => Associativity::RightToLeft,
             Self::Or => Associativity::LeftToRight,
             Self::And => Associativity::LeftToRight,
             Self::Equality => Associativity::LeftToRight,
@@ -301,6 +305,7 @@ impl Precedence {
     fn from(value: TokenType) -> Option<Precedence> {
         use TokenType::Punct;
         match value {
+            Punct(Punctuation::Equal) => Some(Precedence::Assignement),
             Punct(Punctuation::Equal2 | Punctuation::BangEqual) => Some(Precedence::Equality),
             Punct(
                 Punctuation::LArrow
@@ -317,7 +322,7 @@ impl Precedence {
 }
 
 /// The higest precedence of [`Precedence`]
-pub const HIGHEST_PRECEDENCE: Precedence = Precedence::Or;
+pub const HIGHEST_PRECEDENCE: Precedence = Precedence::Assignement;
 
 #[derive(Debug, Clone)]
 pub enum BinOp {
@@ -341,6 +346,8 @@ pub enum BinOp {
     CompEq,
     /// not equal
     CompNe,
+    /// assignement
+    Assignement,
 }
 
 impl BinOp {
@@ -348,6 +355,7 @@ impl BinOp {
         use BinOp as BOp;
         use Punctuation as Punct;
         Some(match punct {
+            Punct::Equal => BOp::Assignement,
             Punct::Star => BOp::Mul,
             Punct::Slash => BOp::Div,
             Punct::Plus => BOp::Add,
