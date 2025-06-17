@@ -7,8 +7,8 @@ use super::*;
 
 #[derive(Debug, Clone)]
 pub struct ExpectedType {
-    pub expected: Vec<Type>,
-    pub found: Type,
+    pub expected: Vec<AtomicType>,
+    pub found: AtomicType,
     pub loc: Span,
 }
 

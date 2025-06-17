@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 
-use ckast::{CkBlock, CkExpr, CkExpression, MaybeUnresolved};
+use ckast::{CkExpr, CkExpression, CkProgram, FromAst, MaybeUnresolved};
 use diags::{NeverUsedSymbol, TypeAnnotationsNeeded};
 use lun_diag::{Diagnostic, DiagnosticSink, StageResult};
 use lun_parser::definition::Program;
@@ -15,26 +15,29 @@ pub use lun_parser::definition::Vis;
 /// include type checking.
 #[derive(Debug, Clone)]
 pub struct SemanticCk {
-    ast: Program,
+    /// program to check
+    program: Program,
+    /// diagnostic sink, used to emit diagnostics
     sink: DiagnosticSink,
+    /// symbol table of the program
     table: SymbolTable,
+    /// return stack for the last function
     retstack: ReturnStack,
 }
 
 impl SemanticCk {
     pub fn new(ast: Program, sink: DiagnosticSink) -> SemanticCk {
         SemanticCk {
-            ast,
+            program: ast,
             sink,
             table: SymbolTable::new(),
             retstack: ReturnStack::new(),
         }
     }
 
-    pub fn produce(&mut self) -> StageResult<CkBlock> {
-        todo!("remake me :)");
-        // // 1. create the checked ast from the unchecked ast.
-        // let mut ckast = CkChunk::from_ast(self.ast.clone());
+    pub fn produce(&mut self) -> StageResult<CkProgram> {
+        // 1. create the checked program from the unchecked program.
+        let mut ckprogram = CkProgram::from_ast(self.program.clone());
 
         // // 2. check the first chunk and it will recurse.
         // self.table.scope_enter();
@@ -46,13 +49,13 @@ impl SemanticCk {
 
         // self.table.scope_exit(&mut self.sink);
 
-        // if self.sink.failed() {
-        //     StageResult::Fail(self.sink.clone())
-        // } else if !self.sink.is_empty() {
-        //     StageResult::Part(ckast, self.sink.clone())
-        // } else {
-        //     StageResult::Good(ckast)
-        // }
+        if self.sink.failed() {
+            StageResult::Fail(self.sink.clone())
+        } else if !self.sink.is_empty() {
+            StageResult::Part(ckprogram, self.sink.clone())
+        } else {
+            StageResult::Good(ckprogram)
+        }
     }
 
     // pub fn check_chunk(&mut self, chunk: &mut CkChunk) -> Result<(), Diagnostic> {
@@ -570,7 +573,7 @@ pub struct Symbol {
     /// local, parameter or global
     pub kind: SymKind,
     /// actual type of the
-    pub typ: Type,
+    pub atomtyp: AtomicType,
     /// the name of the symbol
     pub name: String,
     /// which scope the symbol is referring to
@@ -584,10 +587,16 @@ pub struct Symbol {
 
 impl Symbol {
     /// Create a new symbol
-    pub fn new(kind: SymKind, typ: Type, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn new(
+        kind: SymKind,
+        atomtyp: AtomicType,
+        name: String,
+        which: usize,
+        loc: Span,
+    ) -> Symbol {
         Symbol {
             kind,
-            typ,
+            atomtyp,
             name,
             which,
             loc,
@@ -596,10 +605,10 @@ impl Symbol {
     }
 
     /// Create a new local symbol
-    pub fn var(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn var(atomtyp: AtomicType, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
             kind: SymKind::Var,
-            typ,
+            atomtyp,
             name,
             which,
             loc,
@@ -608,10 +617,10 @@ impl Symbol {
     }
 
     /// Create a new param symbol
-    pub fn arg(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn arg(atomtyp: AtomicType, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
             kind: SymKind::Arg,
-            typ,
+            atomtyp,
             name,
             which,
             loc,
@@ -620,10 +629,10 @@ impl Symbol {
     }
 
     /// Create a new global symbol
-    pub fn global(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn global(atomtyp: AtomicType, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
             kind: SymKind::Global,
-            typ,
+            atomtyp,
             name,
             which,
             loc,
@@ -636,8 +645,8 @@ impl Symbol {
         self
     }
 
-    pub fn typ(mut self, typ: Type) -> Symbol {
-        self.typ = typ;
+    pub fn atomtyp(mut self, atomtyp: AtomicType) -> Symbol {
+        self.atomtyp = atomtyp;
         self
     }
 
@@ -673,9 +682,9 @@ impl Display for SymKind {
     }
 }
 
-/// Symbol type, the actual type of a symbol
+/// An atomic type is the real underlying type of a Checked Expression,
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub enum Type {
+pub enum AtomicType {
     /// Unknown, at the end of type checking this type is an error.
     #[default]
     Unknown,
@@ -695,9 +704,9 @@ pub enum Type {
     /// a function type, can only be constructed from a function definition.
     Fun {
         /// types of the arguments
-        args: Vec<Type>,
+        args: Vec<AtomicType>,
         /// the return type
-        ret: Box<Type>,
+        ret: Box<AtomicType>,
     },
     /// Comptime Type, a type in the Type System.
     ///
@@ -707,30 +716,30 @@ pub enum Type {
     ComptimeType,
 }
 
-impl Type {
+impl AtomicType {
     // TODO: add more atomic types, u8, u16, u32, u64, u128, i8, i16,
     // i32, i64, i128, f16, f32, f64, f128
     pub const ATOMIC_TYPES: [&str; 4] = ["int", "float", "bool", "string"];
 
-    pub const ATOMIC_TYPES_PAIR: [(&str, Type); 4] = [
-        ("int", Type::Integer),
-        ("float", Type::Float),
-        ("bool", Type::Bool),
-        ("string", Type::String),
+    pub const PRIMARY_ATOMTYPE_PAIRS: [(&str, AtomicType); 4] = [
+        ("int", AtomicType::Integer),
+        ("float", AtomicType::Float),
+        ("bool", AtomicType::Bool),
+        ("string", AtomicType::String),
     ];
 
     /// returns true if the type is a function
     pub const fn is_func(&self) -> bool {
-        matches!(self, Type::Fun { .. })
+        matches!(self, AtomicType::Fun { .. })
     }
 
     /// Converts a type expression to a type.
-    pub fn from_expr(expr: CkExpression) -> Type {
+    pub fn from_expr(expr: CkExpression) -> AtomicType {
         let CkExpr::Ident(MaybeUnresolved::Resolved(Symbol { name, .. })) = expr.expr else {
             unreachable!("the type should just be a symbol")
         };
 
-        for (tyname, ty) in Type::ATOMIC_TYPES_PAIR {
+        for (tyname, ty) in AtomicType::PRIMARY_ATOMTYPE_PAIRS {
             if tyname == name {
                 return ty;
             }
@@ -744,7 +753,7 @@ impl Type {
 
     /// Interpret the type as a Fun and return the return type
     #[track_caller]
-    pub fn as_fun_ret(&self) -> Type {
+    pub fn as_fun_ret(&self) -> AtomicType {
         match self {
             Self::Fun { ret, .. } => (**ret).clone(),
             _ => panic!("{self:?} is not a function type"),
@@ -753,7 +762,7 @@ impl Type {
 
     /// Interpret the type as a Fun and return the arguments types
     #[track_caller]
-    pub fn as_fun_args(&self) -> Vec<Type> {
+    pub fn as_fun_args(&self) -> Vec<AtomicType> {
         match self {
             Self::Fun { args, .. } => args.clone(),
             _ => panic!("{self:?} is not a function type"),
@@ -761,18 +770,18 @@ impl Type {
     }
 }
 
-impl Display for Type {
+impl Display for AtomicType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Type::Unknown => f.write_str("unknown"),
-            Type::Integer => f.write_str("integer"),
-            Type::Float => f.write_str("float"),
-            Type::Bool => f.write_str("bool"),
-            Type::String => f.write_str("string"),
-            Type::Nil => f.write_str("nil"),
+            AtomicType::Unknown => f.write_str("unknown"),
+            AtomicType::Integer => f.write_str("integer"),
+            AtomicType::Float => f.write_str("float"),
+            AtomicType::Bool => f.write_str("bool"),
+            AtomicType::String => f.write_str("string"),
+            AtomicType::Nil => f.write_str("nil"),
             // TODO: implement a proper display for function type, like `func(int, float) -> bool`
-            Type::Fun { .. } => f.write_str("func"),
-            Type::ComptimeType => f.write_str("comptime type"),
+            AtomicType::Fun { .. } => f.write_str("func"),
+            AtomicType::ComptimeType => f.write_str("comptime type"),
         }
     }
 }
@@ -800,23 +809,28 @@ impl SymbolMap {
             map: HashMap::from([
                 (
                     "int".to_string(),
-                    Symbol::global(Type::ComptimeType, "int".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::ComptimeType, "int".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "float".to_string(),
-                    Symbol::global(Type::ComptimeType, "float".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::ComptimeType, "float".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "bool".to_string(),
-                    Symbol::global(Type::ComptimeType, "bool".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::ComptimeType, "bool".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "string".to_string(),
-                    Symbol::global(Type::ComptimeType, "string".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::ComptimeType,
+                        "string".to_string(),
+                        0,
+                        Span::ZERO,
+                    ),
                 ),
                 (
                     "_".to_string(),
-                    Symbol::global(Type::Unknown, "_".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Unknown, "_".to_string(), 0, Span::ZERO),
                 ),
             ]),
             global_count: 5,
@@ -868,7 +882,7 @@ impl SymbolTable {
 
         for sym in self.last_map().map.values() {
             // type annotation needed the type is unknown
-            if sym.typ == Type::Unknown {
+            if sym.atomtyp == AtomicType::Unknown {
                 sink.push(TypeAnnotationsNeeded {
                     loc: sym.loc.clone(),
                 })
@@ -973,7 +987,7 @@ impl Default for SymbolTable {
 /// stack because lun supports (or will support) nested functions.
 #[derive(Debug, Clone)]
 pub struct ReturnStack {
-    stack: Vec<Type>,
+    stack: Vec<AtomicType>,
 }
 
 impl ReturnStack {
@@ -982,19 +996,19 @@ impl ReturnStack {
     }
 
     /// Push a return type to the top of the stack
-    pub fn push(&mut self, ret: Type) {
+    pub fn push(&mut self, ret: AtomicType) {
         self.stack.push(ret);
     }
 
     /// Pop the last return type out of the stack, and returns it.
     /// Will panick if there is no more return types.
-    pub fn pop(&mut self) -> Type {
+    pub fn pop(&mut self) -> AtomicType {
         self.stack.pop().unwrap()
     }
 
     /// Returns a reference to the last return type, panics if there is no more return types.
     #[track_caller]
-    pub fn last(&self) -> Option<&Type> {
+    pub fn last(&self) -> Option<&AtomicType> {
         self.stack.last()
     }
 }
