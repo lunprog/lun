@@ -115,16 +115,18 @@ impl FromAst for CkDefinition {
 #[derive(Debug, Clone)]
 pub struct CkBlock {
     pub stmts: Vec<CkStatement>,
+    pub last_expr: Option<Box<CkExpression>>,
     pub loc: Span,
 }
 
 impl FromAst for CkBlock {
     type Unchecked = Block;
 
-    fn from_ast(chunk: Self::Unchecked) -> Self {
+    fn from_ast(ast: Self::Unchecked) -> Self {
         CkBlock {
-            stmts: from_ast(chunk.stmts),
-            loc: chunk.loc,
+            stmts: from_ast(ast.stmts),
+            last_expr: from_ast(ast.last_expr.map(|a| *a)),
+            loc: ast.loc,
         }
     }
 }

@@ -1,10 +1,17 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
+use std::iter::zip;
 
-use ckast::{CkExpr, CkExpression, CkProgram, FromAst, MaybeUnresolved};
-use diags::{NeverUsedSymbol, TypeAnnotationsNeeded};
-use lun_diag::{Diagnostic, DiagnosticSink, StageResult};
+use ckast::{
+    CkArg, CkBlock, CkExpr, CkExpression, CkProgram, CkStatement, CkStmt, FromAst, MaybeUnresolved,
+};
+use diags::{
+    ExpectedType, ExpectedTypeFoundExpr, NeverUsedSymbol, NotFoundInScope, TypeAnnotationsNeeded,
+    UnderscoreInExpression, UnderscoreReservedIdent,
+};
+use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic, feature_todo};
 use lun_parser::definition::Program;
+use lun_parser::expr::UnaryOp;
 use lun_utils::Span;
 
 pub mod ckast;
@@ -39,15 +46,14 @@ impl SemanticCk {
         // 1. create the checked program from the unchecked program.
         let mut ckprogram = CkProgram::from_ast(self.program.clone());
 
-        // // 2. check the first chunk and it will recurse.
-        // self.table.scope_enter();
-
-        // match self.check_chunk(&mut ckast) {
-        //     Ok(()) => {}
-        //     Err(diag) => self.sink.push(diag),
-        // }
-
-        // self.table.scope_exit(&mut self.sink);
+        // 2. check all the defs and everything following will be checked
+        match self.check_program(&mut ckprogram) {
+            Ok(()) => {}
+            Err(e) => {
+                self.sink.push(e);
+                return StageResult::Part(ckprogram, self.sink.clone());
+            }
+        }
 
         if self.sink.failed() {
             StageResult::Fail(self.sink.clone())
@@ -58,513 +64,325 @@ impl SemanticCk {
         }
     }
 
-    // pub fn check_chunk(&mut self, chunk: &mut CkChunk) -> Result<(), Diagnostic> {
-    //     // 1. register global defs
-    //     for stmt in &mut chunk.stmts {
-    //         match &mut stmt.stmt {
-    //             CkStmt::VariableDef { name, name_loc, .. } => {
-    //                 // when type checking the expression and type of this
-    //                 // variable definition change the symbol's typ.
-    //                 let mut ckname = name.clone();
-    //                 if name == "_" {
-    //                     self.sink.push(UnderscoreReservedIdent {
-    //                         loc: name_loc.clone(),
-    //                     });
+    pub fn check_program(&mut self, ckprogram: &mut CkProgram) -> Result<(), Diagnostic> {
+        // 1. pre bind definitions
 
-    //                     ckname = String::from("\0");
-    //                 }
+        self.table.scope_enter(); // program scope
 
-    //                 self.table.bind(
-    //                     ckname,
-    //                     Symbol::global(
-    //                         Type::Unknown,
-    //                         name.clone(),
-    //                         self.table.global_count(),
-    //                         name_loc.clone(),
-    //                     ),
-    //                 );
-    //             }
-    //             CkStmt::FunDef {
-    //                 vis: _,
-    //                 name,
-    //                 args,
-    //                 rettype,
-    //                 sym,
-    //                 ..
-    //             } => {
-    //                 // true type of the arguments
-    //                 let mut args_true = Vec::new();
-    //                 for CkArg { typ, .. } in args {
-    //                     self.check_expr(typ)?;
+        for def in &mut ckprogram.defs {
+            let CkExpr::FunDefinition {
+                args,
+                rettype,
+                body: _,
+            } = &mut def.value.expr
+            else {
+                self.sink.push(feature_todo!(
+                    "global variables",
+                    "global aren't yet supported, only functions in definitions",
+                    def.loc.clone()
+                ));
+                continue;
+            };
 
-    //                     if typ.typ != Type::ComptimeType {
-    //                         self.sink.push(ExpectedTypeFoundExpr {
-    //                             loc: typ.loc.clone(),
-    //                         });
-    //                     }
+            let mut args_atomtype = Vec::new();
+            for CkArg { typ, .. } in args {
+                self.check_expr(typ)?;
 
-    //                     args_true.push(Type::from_expr(typ.clone()));
-    //                 }
+                if typ.atomtyp != AtomicType::ComptimeType {
+                    self.sink.push(ExpectedTypeFoundExpr {
+                        loc: typ.loc.clone(),
+                    });
+                }
 
-    //                 let ret_true = if let Some(typ) = rettype {
-    //                     self.check_expr(typ)?;
-    //                     Box::new(Type::from_expr(typ.clone()))
-    //                 } else {
-    //                     Box::new(Type::Nil)
-    //                 };
+                args_atomtype.push(AtomicType::from_expr(typ.clone()));
+            }
 
-    //                 let mut ckname = name.clone();
-    //                 if name == "_" {
-    //                     // TODO: a better location, that points to the function's
-    //                     // name is prefered here.
-    //                     self.sink.push(UnderscoreReservedIdent {
-    //                         loc: stmt.loc.clone(),
-    //                     });
-    //                     ckname = String::from("\0");
-    //                 }
+            let ret_aty = if let Some(typ) = rettype {
+                self.check_expr(typ)?;
+                Box::new(AtomicType::from_expr((**typ).clone()))
+            } else {
+                Box::new(AtomicType::Nil)
+            };
 
-    //                 let symbol = Symbol::global(
-    //                     Type::Fun {
-    //                         args: args_true,
-    //                         ret: ret_true,
-    //                     },
-    //                     name.clone(),
-    //                     self.table.global_count(),
-    //                     // TODO: add a new loc that points to the signature
-    //                     stmt.loc.clone(),
-    //                 );
-    //                 *sym = MaybeUnresolved::Resolved(symbol.clone());
+            let mut ckname = def.name.clone();
+            if ckname == "_" {
+                self.sink.push(UnderscoreReservedIdent {
+                    loc: def.name_loc.clone(),
+                });
+                ckname = String::from("\0");
+            }
 
-    //                 self.table.bind(ckname, symbol);
-    //             }
-    //             _ => {}
-    //         }
-    //     }
+            let symbol = Symbol::global(
+                AtomicType::Fun {
+                    args: args_atomtype,
+                    ret: ret_aty,
+                },
+                ckname.clone(),
+                self.table.global_count(),
+                // TODO: add a new loc that points to the signature
+                def.loc.clone(),
+            );
+            def.sym = MaybeUnresolved::Resolved(symbol.clone());
 
-    //     // 2. type check, if you encounter another chunk recurse this function
-    //     for stmt in &mut chunk.stmts {
-    //         self.check_stmt(stmt)?;
-    //     }
+            self.table.bind(ckname, symbol);
+        }
 
-    //     Ok(())
-    // }
+        self.table.scope_exit(&mut self.sink); // program scope
 
-    // pub fn check_stmt(&mut self, stmt: &mut CkStatement) -> Result<(), Diagnostic> {
-    //     match &mut stmt.stmt {
-    //         CkStmt::Assignement { variable, value } => {
-    //             // if the variable has a type then we ensure that value is of the same type,
-    //             // otherwise we set the type of variable to the type of value.
-    //             self.check_expr(value)?;
+        // 2. now, check the rest of the program
 
-    //             let MaybeUnresolved::Unresolved(id) = variable else {
-    //                 panic!()
-    //             };
-    //             let Some(symbol) = self.table.lookup(&*id, true).cloned() else {
-    //                 return Err(NotFoundInScope {
-    //                     name: id.clone(),
-    //                     loc: stmt.loc.clone(),
-    //                 }
-    //                 .into_diag());
-    //             };
+        for def in &mut ckprogram.defs {
+            let CkExpr::FunDefinition {
+                args: _,
+                rettype: _,
+                body,
+            } = &mut def.value.expr
+            else {
+                self.sink.push(feature_todo!(
+                    "global variables",
+                    "global aren't yet supported, only functions in definitions",
+                    def.loc.clone()
+                ));
+                continue;
+            };
 
-    //             *variable = MaybeUnresolved::Resolved(symbol.clone());
+            self.table.scope_enter(); // function scope
 
-    //             if &symbol.name == "_" {
-    //                 // do nothing the assignement is to the _ identifier so we don't do anything
-    //             } else if symbol.typ == Type::Unknown && symbol.kind != SymKind::Arg {
-    //                 // we don't know the type of the local / global, so we change it
-    //                 self.table.edit(
-    //                     symbol.which,
-    //                     symbol.name.clone(),
-    //                     symbol.typ(value.clone().typ),
-    //                 );
-    //             } else {
-    //                 // we know the type of the variable and need to ensure the value is of the same type.
-    //                 if symbol.typ != value.typ {
-    //                     self.sink.push(ExpectedType {
-    //                         expected: vec![symbol.typ.clone()],
-    //                         found: value.typ.clone(),
-    //                         loc: value.loc.clone(),
-    //                     })
-    //                 }
-    //             }
-    //         }
-    //         CkStmt::VariableDef {
-    //             vis,
-    //             name,
-    //             name_loc,
-    //             typ,
-    //             value,
-    //             sym,
-    //         } => {
-    //             // check the type
-    //             if let Some(ty) = typ {
-    //                 self.check_expr(ty)?;
+            self.check_block(body)?;
 
-    //                 if ty.typ != Type::ComptimeType {
-    //                     self.sink.push(
-    //                         ExpectedTypeFoundExpr {
-    //                             loc: ty.loc.clone(),
-    //                         }
-    //                         .into_diag(),
-    //                     );
-    //                 }
-    //             }
-    //             if let Some(value) = value {
-    //                 // check the value
-    //                 self.check_expr(value)?;
+            self.table.scope_exit(&mut self.sink); // function scope
+        }
 
-    //                 if let Some(ty) = typ {
-    //                     let expected_ty = Type::from_expr(ty.clone());
-    //                     if value.typ != expected_ty {
-    //                         self.sink.push(ExpectedType {
-    //                             expected: vec![expected_ty],
-    //                             found: value.typ.clone(),
-    //                             loc: value.loc.clone(),
-    //                         })
-    //                     }
-    //                 }
-    //             } else {
-    //                 // TODO: implement variable initialization checking
-    //                 self.sink.push(
-    //                     Diagnostic::error()
-    //                         .with_message("post variable initialization is not yet support")
-    //                         .with_label(Label::primary((), stmt.loc.clone())),
-    //                 )
-    //             }
+        Ok(())
+    }
 
-    //             let realtyp = if let Some(value) = value {
-    //                 value.typ.clone()
-    //             } else if let Some(typ) = typ {
-    //                 Type::from_expr(typ.clone())
-    //             } else {
-    //                 Type::Unknown
-    //             };
+    pub fn check_block(&mut self, block: &mut CkBlock) -> Result<(), Diagnostic> {
+        // 1. check all the stmts
+        for stmt in &mut block.stmts {
+            self.check_stmt(stmt)?;
+        }
 
-    //             if *vis == Vis::Private {
-    //                 // define the symbol because we didn't do it before
-    //                 let mut ckname = name.clone();
-    //                 if name == "_" {
-    //                     self.sink.push(UnderscoreReservedIdent {
-    //                         loc: name_loc.clone(),
-    //                     });
-    //                     ckname = String::from("\0");
-    //                 }
+        // 2. check the last_expr if any
+        if let Some(expr) = &mut block.last_expr {
+            self.check_expr(expr)?;
+        }
 
-    //                 let symbol = Symbol::var(
-    //                     realtyp,
-    //                     name.clone(),
-    //                     self.table.var_count(),
-    //                     stmt.loc.clone(),
-    //                 );
-    //                 *sym = MaybeUnresolved::Resolved(symbol.clone());
-    //                 self.table.bind(ckname, symbol)
-    //             } else {
-    //                 // just edit the type of the global variable
-    //                 let Some(symbol) = self.table.lookup(name, false).cloned() else {
-    //                     unreachable!()
-    //                 };
+        Ok(())
+    }
 
-    //                 let symbol = symbol.typ(realtyp);
-    //                 *sym = MaybeUnresolved::Resolved(symbol.clone());
+    pub fn check_stmt(&mut self, stmt: &mut CkStatement) -> Result<(), Diagnostic> {
+        match &mut stmt.stmt {
+            CkStmt::VariableDef {
+                name,
+                name_loc,
+                typ,
+                value,
+                sym,
+            } => {
+                // check the type
+                if let Some(ty) = typ {
+                    self.check_expr(ty)?;
 
-    //                 self.table.edit(symbol.which, symbol.name.clone(), symbol);
-    //             }
-    //         }
-    //         CkStmt::IfThenElse {
-    //             cond,
-    //             body,
-    //             else_ifs,
-    //             else_body,
-    //         } => {
-    //             self.check_expr(cond)?;
+                    if ty.atomtyp != AtomicType::ComptimeType {
+                        self.sink.push(
+                            ExpectedTypeFoundExpr {
+                                loc: ty.loc.clone(),
+                            }
+                            .into_diag(),
+                        );
+                    }
+                }
 
-    //             if cond.typ != Type::Bool {
-    //                 self.sink.push(ExpectedType {
-    //                     expected: vec![Type::Bool],
-    //                     found: cond.typ.clone(),
-    //                     loc: cond.loc.clone(),
-    //                 })
-    //             }
+                if let Some(value) = value {
+                    // check the value
+                    self.check_expr(value)?;
 
-    //             self.table.scope_enter();
+                    if let Some(ty) = typ {
+                        let expected_aty = AtomicType::from_expr(ty.clone());
+                        if value.atomtyp != expected_aty {
+                            self.sink.push(ExpectedType {
+                                expected: vec![expected_aty],
+                                found: value.atomtyp.clone(),
+                                loc: value.loc.clone(),
+                            })
+                        }
+                    }
+                } else {
+                    // TODO: implement variable initialization checking
+                    self.sink.push(
+                        feature_todo!(
+                            "variable initialization",
+                            "for now every variable must be initialized because the check for uninitialized variable is not implemented",
+                            stmt.loc.clone()
+                        )
+                    )
+                }
 
-    //             self.check_chunk(body)?;
+                let atomtyp = if let Some(value) = value {
+                    value.atomtyp.clone()
+                } else if let Some(typ) = typ {
+                    AtomicType::from_expr(typ.clone())
+                } else {
+                    AtomicType::Unknown
+                };
 
-    //             self.table.scope_exit(&mut self.sink);
+                // define the symbol because we didn't do it before
+                let mut ckname = name.clone();
+                if name == "_" {
+                    self.sink.push(UnderscoreReservedIdent {
+                        loc: name_loc.clone(),
+                    });
+                    ckname = String::from("\0");
+                }
 
-    //             for CkElseIf { cond, body, .. } in else_ifs {
-    //                 self.check_expr(cond)?;
+                let symbol = Symbol::var(
+                    atomtyp,
+                    ckname.clone(),
+                    self.table.var_count(),
+                    stmt.loc.clone(),
+                );
 
-    //                 if cond.typ != Type::Bool {
-    //                     self.sink.push(ExpectedType {
-    //                         expected: vec![Type::Bool],
-    //                         found: cond.typ.clone(),
-    //                         loc: cond.loc.clone(),
-    //                     })
-    //                 }
+                *sym = MaybeUnresolved::Resolved(symbol.clone());
+                self.table.bind(ckname, symbol)
+            }
+            CkStmt::Expression(expr) => {
+                self.check_expr(expr)?;
+            }
+        }
+        Ok(())
+    }
 
-    //                 self.table.scope_enter();
+    pub fn check_expr(&mut self, expr: &mut CkExpression) -> Result<(), Diagnostic> {
+        match &mut expr.expr {
+            CkExpr::IntLit(_) => {
+                // TODO(URGENT): create a `comptime_int` that can coerce to
+                // any integer type both iNN and uNN, and one for floats also
+                // `comptime_float`
+                expr.atomtyp = AtomicType::I64;
+            }
+            CkExpr::BoolLit(_) => {
+                expr.atomtyp = AtomicType::Bool;
+            }
+            CkExpr::StringLit(_) => {
+                expr.atomtyp = AtomicType::Str;
+            }
+            CkExpr::Grouping(e) => {
+                self.check_expr(e)?;
+                expr.atomtyp = e.atomtyp.clone();
+            }
+            CkExpr::Ident(MaybeUnresolved::Unresolved(name)) => {
+                let Some(sym) = self.table.lookup(&*name, true) else {
+                    return Err(NotFoundInScope {
+                        name: name.clone(),
+                        loc: expr.loc.clone(),
+                    }
+                    .into_diag());
+                };
 
-    //                 self.check_chunk(body)?;
+                if sym.name == "_" {
+                    return Err(UnderscoreInExpression {
+                        loc: expr.loc.clone(),
+                    }
+                    .into_diag());
+                }
+                if sym.atomtyp == AtomicType::Unknown {
+                    self.sink.push(TypeAnnotationsNeeded {
+                        loc: sym.loc.clone(),
+                    })
+                }
+                expr.atomtyp = sym.atomtyp.clone();
+                expr.expr = CkExpr::Ident(MaybeUnresolved::Resolved(sym.clone()));
+            }
+            CkExpr::Ident(MaybeUnresolved::Resolved(_)) => {
+                unreachable!("i think it's a bug not sure tho")
+            }
+            CkExpr::Binary { lhs, op, rhs } => {
+                self.check_expr(lhs)?;
+                self.check_expr(rhs)?;
 
-    //                 self.table.scope_exit(&mut self.sink);
-    //             }
+                if lhs.atomtyp != rhs.atomtyp {
+                    self.sink.push(ExpectedType {
+                        expected: vec![lhs.atomtyp.clone()],
+                        found: rhs.atomtyp.clone(),
+                        loc: rhs.loc.clone(),
+                    });
+                }
 
-    //             if let Some(body) = else_body {
-    //                 self.table.scope_enter();
+                expr.atomtyp = if op.is_relational() | op.is_logical() {
+                    AtomicType::Bool
+                } else {
+                    lhs.atomtyp.clone()
+                };
+            }
+            CkExpr::Unary { op, expr: exp } => match op {
+                UnaryOp::Negation => {
+                    if !exp.atomtyp.is_integer() || !exp.atomtyp.is_float() {
+                        self.sink.push(ExpectedType {
+                            expected: vec![
+                                AtomicType::I64,
+                                AtomicType::I32,
+                                AtomicType::I16,
+                                AtomicType::I8,
+                                AtomicType::U64,
+                                AtomicType::U32,
+                                AtomicType::U16,
+                                AtomicType::U8,
+                                AtomicType::F16,
+                                AtomicType::F32,
+                                AtomicType::F64,
+                            ],
+                            found: exp.atomtyp.clone(),
+                            loc: exp.loc.clone(),
+                        })
+                    }
+                    expr.atomtyp = exp.atomtyp.clone();
+                }
+                UnaryOp::Not => {
+                    if exp.atomtyp != AtomicType::Bool {
+                        self.sink.push(ExpectedType {
+                            expected: vec![AtomicType::Bool],
+                            found: exp.atomtyp.clone(),
+                            loc: exp.loc.clone(),
+                        });
+                    }
+                    expr.atomtyp = AtomicType::Bool;
+                }
+            },
+            CkExpr::FunCall { called, args } => {
+                self.check_expr(called)?;
 
-    //                 self.check_chunk(body)?;
+                let AtomicType::Fun {
+                    args: args_aty,
+                    ret: ret_ty,
+                } = &called.atomtyp
+                else {
+                    return Err(ExpectedTypeFoundExpr {
+                        loc: called.loc.clone(),
+                    }
+                    .into_diag());
+                };
 
-    //                 self.table.scope_exit(&mut self.sink);
-    //             }
-    //         }
-    //         CkStmt::DoBlock { body } => {
-    //             self.table.scope_enter();
+                assert!(called.atomtyp.is_func());
 
-    //             self.check_chunk(body)?;
+                for (val, aty) in zip(args, args_aty) {
+                    self.check_expr(val)?;
 
-    //             self.table.scope_exit(&mut self.sink);
-    //         }
-    //         CkStmt::FunCall { name, args } => {
-    //             let MaybeUnresolved::Unresolved(id) = name else {
-    //                 panic!()
-    //             };
-    //             let Some(sym) = self.table.lookup(&*id, true).cloned() else {
-    //                 return Err(NotFoundInScope {
-    //                     name: id.clone(),
-    //                     loc: stmt.loc.clone(),
-    //                 }
-    //                 .into_diag());
-    //             };
+                    if &val.atomtyp != aty {
+                        self.sink.push(ExpectedType {
+                            expected: vec![aty.clone()],
+                            found: val.atomtyp.clone(),
+                            loc: val.loc.clone(),
+                        })
+                    }
+                }
 
-    //             *name = MaybeUnresolved::Resolved(sym.clone());
-
-    //             let Type::Fun {
-    //                 args: args_ty,
-    //                 ret: _,
-    //             } = &sym.typ
-    //             else {
-    //                 return Err(CallRequiresFuncType {
-    //                     is_expr: false,
-    //                     loc: stmt.loc.clone(),
-    //                 }
-    //                 .into_diag());
-    //             };
-
-    //             for (arg, ty) in zip(args, args_ty) {
-    //                 self.check_expr(arg)?;
-    //                 if &arg.typ != ty {
-    //                     self.sink.push(ExpectedType {
-    //                         expected: vec![arg.typ.clone()],
-    //                         found: ty.clone(),
-    //                         loc: arg.loc.clone(),
-    //                     })
-    //                 }
-    //             }
-
-    //             // TODO: emit a warning diag if the return type of the function
-    //             // is not `Nil` because the value isn't used.
-    //         }
-    //         CkStmt::While { .. } | CkStmt::For { .. } => {
-    //             // TODO: implement loops checking
-    //             return Err(
-    //                 Diagnostic::error()
-    //                     .with_message("`while` loops, generic `for` loops and numeric `for` loops aren't yet checked")
-    //                     .with_label(Label::primary((), stmt.loc.clone())
-    //                     )
-    //             );
-    //         }
-    //         CkStmt::FunDef {
-    //             vis: _,
-    //             name,
-    //             name_loc: _,
-    //             args,
-    //             rettype: _,
-    //             body,
-    //             sym: _,
-    //         } => {
-    //             let Some(Symbol {
-    //                 typ: Type::Fun { ret, .. },
-    //                 ..
-    //             }) = self.table.lookup(name, false)
-    //             else {
-    //                 unreachable!()
-    //             };
-    //             self.retstack.push(*ret.clone());
-
-    //             self.table.scope_enter();
-
-    //             for CkArg {
-    //                 name,
-    //                 name_loc,
-    //                 typ,
-    //                 loc: _,
-    //             } in args
-    //             {
-    //                 let ty = Type::from_expr(typ.clone());
-
-    //                 let mut ckname = name.clone();
-    //                 if name == "_" {
-    //                     self.sink.push(UnderscoreReservedIdent {
-    //                         loc: name_loc.clone(),
-    //                     });
-    //                     ckname = String::from("\0");
-    //                 }
-
-    //                 self.table.bind(
-    //                     ckname.clone(),
-    //                     Symbol::arg(ty, ckname.clone(), self.table.arg_count(), name_loc.clone()),
-    //                 )
-    //             }
-
-    //             self.check_chunk(body)?;
-
-    //             self.retstack.pop();
-
-    //             self.table.scope_exit(&mut self.sink);
-    //         }
-    //         CkStmt::Return { val } | CkStmt::Break { val } => {
-    //             // TODO: if the expected type is `Nil` and there is some val but
-    //             // not of type `Nil`, suggest in a Help to remove the code
-    //             if let Some(val) = val {
-    //                 self.check_expr(val)?;
-
-    //                 let Some(func_ret) = self.retstack.last() else {
-    //                     return Err(ReturnOutsideFunc {
-    //                         loc: stmt.loc.clone(),
-    //                     }
-    //                     .into_diag());
-    //                 };
-
-    //                 if &val.typ != func_ret {
-    //                     self.sink.push(ExpectedType {
-    //                         expected: vec![func_ret.clone()],
-    //                         found: val.typ.clone(),
-    //                         loc: val.loc.clone(),
-    //                     })
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     Ok(())
-    // }
-
-    // pub fn check_expr(&mut self, expr: &mut CkExpression) -> Result<(), Diagnostic> {
-    //     match &mut expr.expr {
-    //         CkExpr::IntLit(_) => {
-    //             expr.typ = Type::Integer;
-    //         }
-    //         CkExpr::BoolLit(_) => {
-    //             expr.typ = Type::Bool;
-    //         }
-    //         CkExpr::StringLit(_) => {
-    //             expr.typ = Type::String;
-    //         }
-    //         CkExpr::Grouping(e) => {
-    //             self.check_expr(e)?;
-    //             expr.typ = e.typ.clone();
-    //         }
-    //         CkExpr::Ident(MaybeUnresolved::Unresolved(name)) => {
-    //             let Some(sym) = self.table.lookup(&*name, true) else {
-    //                 return Err(NotFoundInScope {
-    //                     name: name.clone(),
-    //                     loc: expr.loc.clone(),
-    //                 }
-    //                 .into_diag());
-    //             };
-
-    //             if sym.name == "_" {
-    //                 return Err(UnderscoreInExpression {
-    //                     loc: expr.loc.clone(),
-    //                 }
-    //                 .into_diag());
-    //             }
-    //             if sym.typ == Type::Unknown {
-    //                 self.sink.push(TypeAnnotationsNeeded {
-    //                     loc: sym.loc.clone(),
-    //                 })
-    //             }
-    //             expr.typ = sym.typ.clone();
-    //             expr.expr = CkExpr::Ident(MaybeUnresolved::Resolved(sym.clone()));
-    //         }
-    //         CkExpr::Ident(MaybeUnresolved::Resolved(_)) => {
-    //             unreachable!("i think it's a bug not sure tho")
-    //         }
-    //         CkExpr::Binary { lhs, op, rhs } => {
-    //             self.check_expr(lhs)?;
-    //             self.check_expr(rhs)?;
-
-    //             if lhs.typ != rhs.typ {
-    //                 self.sink.push(ExpectedType {
-    //                     expected: vec![lhs.typ.clone()],
-    //                     found: rhs.typ.clone(),
-    //                     loc: rhs.loc.clone(),
-    //                 });
-    //             }
-
-    //             expr.typ = if op.is_relational() | op.is_logical() {
-    //                 Type::Bool
-    //             } else {
-    //                 lhs.typ.clone()
-    //             };
-    //         }
-    //         CkExpr::Unary { op, expr: exp } => match op {
-    //             UnaryOp::Negation => {
-    //                 if exp.typ != Type::Integer || exp.typ != Type::Float {
-    //                     self.sink.push(ExpectedType {
-    //                         expected: vec![Type::Integer, Type::Float],
-    //                         found: exp.typ.clone(),
-    //                         loc: exp.loc.clone(),
-    //                     })
-    //                 }
-    //                 expr.typ = exp.typ.clone();
-    //             }
-    //             UnaryOp::Not => {
-    //                 if exp.typ != Type::Bool {
-    //                     self.sink.push(ExpectedType {
-    //                         expected: vec![Type::Bool],
-    //                         found: exp.typ.clone(),
-    //                         loc: exp.loc.clone(),
-    //                     });
-    //                 }
-    //                 expr.typ = Type::Bool;
-    //             }
-    //         },
-    //         CkExpr::FunCall { called, args } => {
-    //             self.check_expr(called)?;
-
-    //             let Type::Fun {
-    //                 args: args_ty,
-    //                 ret: ret_ty,
-    //             } = &called.typ
-    //             else {
-    //                 return Err(ExpectedTypeFoundExpr {
-    //                     loc: called.loc.clone(),
-    //                 }
-    //                 .into_diag());
-    //             };
-
-    //             assert!(called.typ.is_func());
-
-    //             for (val, ty) in zip(args, args_ty) {
-    //                 self.check_expr(val)?;
-
-    //                 if &val.typ != ty {
-    //                     self.sink.push(ExpectedType {
-    //                         expected: vec![ty.clone()],
-    //                         found: val.typ.clone(),
-    //                         loc: val.loc.clone(),
-    //                     })
-    //                 }
-    //             }
-
-    //             expr.typ = *ret_ty.clone();
-    //         }
-    //     }
-    //     debug_assert_ne!(expr.typ, Type::Unknown);
-    //     Ok(())
-    // }
+                expr.atomtyp = *ret_ty.clone();
+            }
+            _ => todo!("IMPLEMENT NOW"),
+        }
+        debug_assert_ne!(expr.atomtyp, AtomicType::Unknown);
+        Ok(())
+    }
 }
 
 /// Symbol
@@ -717,7 +535,6 @@ pub enum AtomicType {
     /// equivalent of Rust's `bool`, always one byte long. Can only contain
     /// `true` -> 1 and `false` -> 0
     Bool,
-
     // TODO: implement strings
     /// a string, nothing for now, we can't use them
     Str,
@@ -802,6 +619,26 @@ impl AtomicType {
             Self::Fun { args, .. } => args.clone(),
             _ => panic!("{self:?} is not a function type"),
         }
+    }
+
+    /// Returns true if self is an integer type, so `iNN` or `uNN`
+    pub fn is_integer(&self) -> bool {
+        matches!(
+            self,
+            Self::I8
+                | Self::I16
+                | Self::I32
+                | Self::I64
+                | Self::U8
+                | Self::U16
+                | Self::U32
+                | Self::U64
+        )
+    }
+
+    /// Returns true if self is a float type, so `f16`, `f32` or `f64`
+    pub fn is_float(&self) -> bool {
+        matches!(self, Self::F16 | Self::F32 | Self::F64)
     }
 }
 
