@@ -3,7 +3,8 @@ use std::fmt::{Debug, Display};
 use std::iter::zip;
 
 use ckast::{
-    CkArg, CkBlock, CkExpr, CkExpression, CkProgram, CkStatement, CkStmt, FromAst, MaybeUnresolved,
+    CkArg, CkBlock, CkElse, CkExpr, CkExpression, CkIfExpression, CkProgram, CkStatement, CkStmt,
+    FromAst, MaybeUnresolved,
 };
 use diags::{
     ExpectedType, ExpectedTypeFoundExpr, NeverUsedSymbol, NotFoundInScope, TypeAnnotationsNeeded,
@@ -127,8 +128,6 @@ impl SemanticCk {
             self.table.bind(ckname, symbol);
         }
 
-        self.table.scope_exit(&mut self.sink); // program scope
-
         // 2. now, check the rest of the program
 
         for def in &mut ckprogram.defs {
@@ -150,8 +149,21 @@ impl SemanticCk {
 
             self.check_block(body)?;
 
+            let fun_atyp = def.sym.clone().unwrap().atomtyp;
+
+            if body.atomtyp != fun_atyp {
+                return Err(ExpectedType {
+                    expected: vec![fun_atyp],
+                    found: body.atomtyp.clone(),
+                    loc: body.last_expr.clone().unwrap().loc.clone(),
+                }
+                .into_diag());
+            }
+
             self.table.scope_exit(&mut self.sink); // function scope
         }
+
+        self.table.scope_exit(&mut self.sink); // program scope
 
         Ok(())
     }
@@ -168,6 +180,9 @@ impl SemanticCk {
         // 2. check the last_expr if any
         if let Some(expr) = &mut block.last_expr {
             self.check_expr(expr)?;
+            block.atomtyp = expr.atomtyp.clone();
+        } else {
+            block.atomtyp = AtomicType::Nil;
         }
 
         Ok(())
@@ -381,10 +396,69 @@ impl SemanticCk {
 
                 expr.atomtyp = *ret_ty.clone();
             }
+            CkExpr::FunDefinition { .. } => {
+                return Err(feature_todo! {
+                    feature: "function closure",
+                    label: "closures are not yet supported, you can only define functions",
+                    loc: expr.loc.clone()
+                }
+                .into_diag());
+            }
+            CkExpr::If(ifexpr) => {
+                self.check_ifexpr(ifexpr)?;
+                expr.atomtyp = ifexpr.atomtyp.clone();
+            }
+
             _ => todo!("IMPLEMENT NOW"),
         }
+
         debug_assert_ne!(expr.atomtyp, AtomicType::Unknown);
         Ok(())
+    }
+
+    pub fn check_ifexpr(&mut self, ifexpr: &mut CkIfExpression) -> Result<(), Diagnostic> {
+        // 1. condition
+        self.check_expr(&mut ifexpr.cond)?;
+
+        if ifexpr.cond.atomtyp != AtomicType::Bool {
+            self.sink.push(ExpectedType {
+                expected: vec![AtomicType::Bool],
+                found: ifexpr.cond.atomtyp.clone(),
+                loc: ifexpr.cond.loc.clone(),
+            });
+        }
+
+        // 2. body
+
+        self.table.scope_enter(); // body scope
+
+        self.check_block(&mut ifexpr.body)?;
+        ifexpr.atomtyp = ifexpr.body.atomtyp.clone();
+
+        self.table.scope_exit(&mut self.sink); // body scope
+
+        // 3. else
+
+        if let Some(r#else) = &mut ifexpr.else_branch {
+            self.check_else(r#else)?;
+
+            if r#else.atomic_type() != &ifexpr.atomtyp {
+                self.sink.push(ExpectedType {
+                    expected: vec![ifexpr.atomtyp.clone()],
+                    found: r#else.atomic_type().clone(),
+                    loc: ifexpr.cond.loc.clone(),
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn check_else(&mut self, r#else: &mut CkElse) -> Result<(), Diagnostic> {
+        match r#else {
+            CkElse::IfExpr(ifexpr) => self.check_ifexpr(ifexpr),
+            CkElse::Block(block) => self.check_block(block),
+        }
     }
 }
 

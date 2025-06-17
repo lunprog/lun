@@ -117,6 +117,7 @@ pub struct CkBlock {
     pub stmts: Vec<CkStatement>,
     pub last_expr: Option<Box<CkExpression>>,
     pub loc: Span,
+    pub atomtyp: AtomicType,
 }
 
 impl FromAst for CkBlock {
@@ -127,6 +128,7 @@ impl FromAst for CkBlock {
             stmts: from_ast(ast.stmts),
             last_expr: from_ast(ast.last_expr.map(|a| *a)),
             loc: ast.loc,
+            atomtyp: AtomicType::Unknown,
         }
     }
 }
@@ -405,6 +407,7 @@ pub struct CkIfExpression {
     pub body: Box<CkBlock>,
     pub else_branch: Option<Box<CkElse>>,
     pub loc: Span,
+    pub atomtyp: AtomicType,
 }
 
 impl FromAst for CkIfExpression {
@@ -416,6 +419,7 @@ impl FromAst for CkIfExpression {
             body: from_ast(*ast.body),
             else_branch: from_ast(ast.else_branch.map(|a| *a)),
             loc: ast.loc,
+            atomtyp: AtomicType::Unknown,
         }
     }
 }
@@ -424,6 +428,15 @@ impl FromAst for CkIfExpression {
 pub enum CkElse {
     IfExpr(CkIfExpression),
     Block(CkBlock),
+}
+
+impl CkElse {
+    pub fn atomic_type(&self) -> &AtomicType {
+        match self {
+            Self::IfExpr(ifexpr) => &ifexpr.atomtyp,
+            Self::Block(block) => &block.atomtyp,
+        }
+    }
 }
 
 impl FromAst for CkElse {
