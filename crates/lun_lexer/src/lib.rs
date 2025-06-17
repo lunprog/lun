@@ -4,7 +4,7 @@ use diags::{
     InvalidDigitInNumber, TooLargeIntegerLiteral, UnknownCharacterEscape, UnknownToken,
     UnterminatedStringLiteral,
 };
-use lun_diag::{Diagnostic, DiagnosticSink, StageResult};
+use lun_diag::{Diagnostic, DiagnosticSink, StageResult, feature_todo};
 
 use lun_utils::{
     Span, span,
@@ -336,18 +336,17 @@ impl Lexer {
             'u' | 'U' => {
                 // TODO: implement the lexing of unicode es
                 // in the for of \U+FFFF ig
-                self.sink.push(UnknownCharacterEscape {
-                    es,
-                    loc: span(self.cur - 1, self.cur),
-                    is_unicode: true,
-                });
+                self.sink.push(feature_todo!(
+                    "unicode escape sequence",
+                    "unicode escape isn't yet implemented.",
+                    span(self.cur - 1, self.cur)
+                ));
                 '\0'
             }
             _ => {
                 self.sink.push(UnknownCharacterEscape {
                     es,
                     loc: span(self.cur - 1, self.cur),
-                    is_unicode: false,
                 });
 
                 '\0'

@@ -7,7 +7,7 @@ use codespan_reporting::{
 };
 use std::fmt::Display;
 
-use lun_utils::pluralize;
+use lun_utils::{Span, pluralize};
 
 pub type Diagnostic<FileId = ()> = codespan_reporting::diagnostic::Diagnostic<FileId>;
 pub use codespan_reporting::diagnostic::Label;
@@ -261,6 +261,8 @@ pub enum ErrorCode {
     UnderscoreReservedIdentifier = 14,
     /// `_` in expression
     UnderscoreInExpression = 15,
+    /// feature not implemented
+    FeatureNotImplemented = 16,
 }
 
 impl Display for ErrorCode {
@@ -327,4 +329,47 @@ mod tests {
     fn error_code_formatting() {
         assert_eq!(String::from("E0001"), ErrorCode::UnknownToken.to_string())
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct FeatureNotImplemented {
+    /// name of the feature
+    pub feature_name: String,
+    /// text under primary label
+    pub label_text: String,
+    /// the location of the Ast slice not implemented
+    pub loc: Span,
+    /// file where the feature isn't implemented
+    pub compiler_file: String,
+    /// line where the feature isn't implemented
+    pub compiler_line: u32,
+}
+
+impl ToDiagnostic for FeatureNotImplemented {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::error()
+            .with_code(ErrorCode::FeatureNotImplemented)
+            .with_message(format!(
+                "the feature, {}, is not implemented",
+                self.feature_name
+            ))
+            .with_label(Label::primary((), self.loc).with_message(self.label_text))
+            .with_note(format!(
+                "this diagnostic has been emited in file {:?} at line {}",
+                self.compiler_file, self.compiler_line
+            ))
+    }
+}
+
+#[macro_export]
+macro_rules! feature_todo {
+    ($name:tt, $label:tt, $loc:expr) => {
+        $crate::FeatureNotImplemented {
+            feature_name: ($name).to_string(),
+            label_text: ($label).to_string(),
+            loc: $loc,
+            compiler_file: ::std::file!().to_string(),
+            compiler_line: ::std::line!(),
+        }
+    };
 }
