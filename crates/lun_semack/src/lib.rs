@@ -688,13 +688,34 @@ pub enum AtomicType {
     /// Unknown, at the end of type checking this type is an error.
     #[default]
     Unknown,
-    /// equivalent of Rust's `i64`
-    Integer,
-    /// equivalent of Rust's `f64`
-    Float,
+    /// 8 bit signed integer
+    I8,
+    /// 16 bit signed integer
+    I16,
+    /// 32 bit signed integer
+    I32,
+    /// 64 bit signed integer
+    ///
+    /// NOTE: the exprtype `int` is an alias of `i64` exprtype
+    I64,
+    /// 8 bit unsigned integer
+    U8,
+    /// 16 bit unsigned integer
+    U16,
+    /// 32 bit unsigned integer
+    U32,
+    /// 64 bit unsigned integer
+    ///
+    /// NOTE: the exprtype `uint` is an alias of `u64` exprtype
+    U64,
+    /// 32 bit floating point number, compliant with IEEE 754-2008
+    F32,
+    /// 64 bit floating point number, compliant with IEEE 754-2008
+    F64,
     /// equivalent of Rust's `bool`, always one byte long. Can only contain
     /// `true` -> 1 and `false` -> 0
     Bool,
+
     // TODO: implement strings
     /// a string, nothing for now, we can't use them
     String,
@@ -721,9 +742,19 @@ impl AtomicType {
     // i32, i64, i128, f16, f32, f64, f128
     pub const ATOMIC_TYPES: [&str; 4] = ["int", "float", "bool", "string"];
 
-    pub const PRIMARY_ATOMTYPE_PAIRS: [(&str, AtomicType); 4] = [
-        ("int", AtomicType::Integer),
-        ("float", AtomicType::Float),
+    pub const PRIMARY_ATOMTYPE_PAIRS: &[(&str, AtomicType)] = &[
+        ("int", AtomicType::I64),
+        ("i64", AtomicType::I64),
+        ("i32", AtomicType::I32),
+        ("i16", AtomicType::I16),
+        ("i8", AtomicType::I8),
+        ("uint", AtomicType::U64),
+        ("u64", AtomicType::U64),
+        ("u32", AtomicType::U32),
+        ("u16", AtomicType::U16),
+        ("u8", AtomicType::U8),
+        ("f32", AtomicType::F32),
+        ("f64", AtomicType::F64),
         ("bool", AtomicType::Bool),
         ("string", AtomicType::String),
     ];
@@ -740,8 +771,8 @@ impl AtomicType {
         };
 
         for (tyname, ty) in AtomicType::PRIMARY_ATOMTYPE_PAIRS {
-            if tyname == name {
-                return ty;
+            if *tyname == name {
+                return ty.clone();
             }
         }
 
@@ -774,8 +805,16 @@ impl Display for AtomicType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AtomicType::Unknown => f.write_str("unknown"),
-            AtomicType::Integer => f.write_str("integer"),
-            AtomicType::Float => f.write_str("float"),
+            AtomicType::I64 => f.write_str("i64"),
+            AtomicType::I32 => f.write_str("i32"),
+            AtomicType::I16 => f.write_str("i16"),
+            AtomicType::I8 => f.write_str("i8"),
+            AtomicType::U64 => f.write_str("u64"),
+            AtomicType::U32 => f.write_str("u32"),
+            AtomicType::U16 => f.write_str("u16"),
+            AtomicType::U8 => f.write_str("u8"),
+            AtomicType::F32 => f.write_str("f32"),
+            AtomicType::F64 => f.write_str("f64"),
             AtomicType::Bool => f.write_str("bool"),
             AtomicType::String => f.write_str("string"),
             AtomicType::Nil => f.write_str("nil"),
