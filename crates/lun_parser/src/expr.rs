@@ -601,7 +601,7 @@ pub fn parse_fundef_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
     let rettype = if let Some(Punct(Punctuation::Arrow)) = parser.peek_tt() {
         parser.pop();
-        Some(parse!(@fn parser => parse_type_expression))
+        Some(parse!(box: @fn parser => parse_type_expression))
     } else {
         None
     };
