@@ -127,6 +127,9 @@ impl<FileId> ToDiagnostic<FileId> for Diagnostic<FileId> {
 
 // TODO: write the docs for ErrorCode's
 /// List of all the Error Code in the lun compiling stages
+///
+/// NOTE: until `v1.0.0` the error code may change from minor devlopement
+///       versions, do not expect them to stay the same
 #[derive(Debug, Clone, Copy)]
 pub enum ErrorCode {
     /// Unknown start of token
@@ -238,8 +241,6 @@ pub enum ErrorCode {
     CallRequiresFuncType = 11,
     /// Type annotations needed
     TypeAnnotationsNeeded = 12,
-    /// Used a return statement outside of a function.
-    ReturnOutsideFunc = 13,
     /// `_` is a reserved identifier when you use it in a symbol's name
     ///
     /// You can't define types, functions, local and global variable with the
@@ -258,11 +259,11 @@ pub enum ErrorCode {
     /// _ = true
     /// _ = 45.6
     /// ```
-    UnderscoreReservedIdentifier = 14,
+    UnderscoreReservedIdentifier = 13,
     /// `_` in expression
-    UnderscoreInExpression = 15,
+    UnderscoreInExpression = 14,
     /// feature not implemented
-    FeatureNotImplemented = 16,
+    FeatureNotImplemented = 15,
 }
 
 impl Display for ErrorCode {

@@ -91,20 +91,6 @@ impl ToDiagnostic for TypeAnnotationsNeeded {
 }
 
 #[derive(Debug, Clone)]
-pub struct ReturnOutsideFunc {
-    pub loc: Span,
-}
-
-impl ToDiagnostic for ReturnOutsideFunc {
-    fn into_diag(self) -> Diagnostic<()> {
-        Diagnostic::error()
-            .with_code(ErrorCode::ReturnOutsideFunc)
-            .with_message("used a return statement outside of a function body")
-            .with_label(Label::primary((), self.loc))
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct NeverUsedSymbol {
     pub kind: SymKind,
     pub name: String,
