@@ -675,8 +675,8 @@ pub enum SymKind {
 impl Display for SymKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SymKind::Var => f.write_str("local"),
-            SymKind::Arg => f.write_str("parameter"),
+            SymKind::Var => f.write_str("variable"),
+            SymKind::Arg => f.write_str("argument"),
             SymKind::Global => f.write_str("global"),
         }
     }
@@ -710,6 +710,8 @@ pub enum AtomicType {
     U64,
     /// 32 bit floating point number, compliant with IEEE 754-2008
     F32,
+    /// 16 bit floating point number, compliant with IEEE 754-2008
+    F16,
     /// 64 bit floating point number, compliant with IEEE 754-2008
     F64,
     /// equivalent of Rust's `bool`, always one byte long. Can only contain
@@ -718,7 +720,7 @@ pub enum AtomicType {
 
     // TODO: implement strings
     /// a string, nothing for now, we can't use them
-    String,
+    Str,
     /// a nil value, just the `nil` literal or nothing, its the base return
     /// type of a function that returns nothing
     Nil,
@@ -753,10 +755,11 @@ impl AtomicType {
         ("u32", AtomicType::U32),
         ("u16", AtomicType::U16),
         ("u8", AtomicType::U8),
+        ("f16", AtomicType::F16),
         ("f32", AtomicType::F32),
         ("f64", AtomicType::F64),
         ("bool", AtomicType::Bool),
-        ("string", AtomicType::String),
+        ("str", AtomicType::Str),
     ];
 
     /// returns true if the type is a function
@@ -766,6 +769,7 @@ impl AtomicType {
 
     /// Converts a type expression to a type.
     pub fn from_expr(expr: CkExpression) -> AtomicType {
+        // TODO(URGENT): make this function return diagnostics instead of panicking
         let CkExpr::Ident(MaybeUnresolved::Resolved(Symbol { name, .. })) = expr.expr else {
             unreachable!("the type should just be a symbol")
         };
@@ -813,13 +817,14 @@ impl Display for AtomicType {
             AtomicType::U32 => f.write_str("u32"),
             AtomicType::U16 => f.write_str("u16"),
             AtomicType::U8 => f.write_str("u8"),
+            AtomicType::F16 => f.write_str("f16"),
             AtomicType::F32 => f.write_str("f32"),
             AtomicType::F64 => f.write_str("f64"),
             AtomicType::Bool => f.write_str("bool"),
-            AtomicType::String => f.write_str("string"),
+            AtomicType::Str => f.write_str("string"),
             AtomicType::Nil => f.write_str("nil"),
-            // TODO: implement a proper display for function type, like `func(int, float) -> bool`
-            AtomicType::Fun { .. } => f.write_str("func"),
+            // TODO: implement a proper display for function type, like `fun(int, f16) -> bool`
+            AtomicType::Fun { .. } => f.write_str("fun"),
             AtomicType::ComptimeType => f.write_str("comptime type"),
         }
     }
@@ -851,21 +856,60 @@ impl SymbolMap {
                     Symbol::global(AtomicType::ComptimeType, "int".to_string(), 0, Span::ZERO),
                 ),
                 (
-                    "float".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "float".to_string(), 0, Span::ZERO),
+                    "i64".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "i64".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "i32".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "i32".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "i16".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "i16".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "i8".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "i8".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "uint".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "uint".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "u64".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "u64".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "u32".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "u32".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "u16".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "u16".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "u8".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "u8".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "f16".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "f16".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "f32".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "f32".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "f64".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "f64".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "bool".to_string(),
                     Symbol::global(AtomicType::ComptimeType, "bool".to_string(), 0, Span::ZERO),
                 ),
                 (
-                    "string".to_string(),
-                    Symbol::global(
-                        AtomicType::ComptimeType,
-                        "string".to_string(),
-                        0,
-                        Span::ZERO,
-                    ),
+                    "str".to_string(),
+                    Symbol::global(AtomicType::ComptimeType, "str".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "_".to_string(),

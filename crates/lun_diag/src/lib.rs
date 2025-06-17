@@ -362,6 +362,13 @@ impl ToDiagnostic for FeatureNotImplemented {
     }
 }
 
+// TODO(URGENT): transform the macro to be called like that:
+//
+// feature_todo! {
+//     feature: "MY FEATURE",
+//     label: "MY LABEL",
+//     loc: span(0, 0),
+// }
 #[macro_export]
 macro_rules! feature_todo {
     ($name:tt, $label:tt, $loc:expr) => {
