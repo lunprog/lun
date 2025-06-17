@@ -159,7 +159,10 @@ impl SemanticCk {
     pub fn check_block(&mut self, block: &mut CkBlock) -> Result<(), Diagnostic> {
         // 1. check all the stmts
         for stmt in &mut block.stmts {
-            self.check_stmt(stmt)?;
+            match self.check_stmt(stmt) {
+                Ok(()) => {}
+                Err(d) => self.sink.push(d),
+            }
         }
 
         // 2. check the last_expr if any
