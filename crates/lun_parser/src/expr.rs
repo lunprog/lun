@@ -29,6 +29,14 @@ impl Expression {
     }
 }
 
+/// parses a type expression with a precedence of Or
+///
+/// a "type expression" is just an expression that resolves to the atomic type
+/// `comptime type`
+pub fn parse_type_expression(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    parse_expr_precedence(parser, Precedence::Or)
+}
+
 impl AstNode for Expression {
     #[inline]
     #[track_caller]
@@ -578,7 +586,7 @@ pub fn parse_fundef_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
 
-        let typ = parse!(parser => Expression);
+        let typ = parse!(@fn parser => parse_type_expression);
 
         args.push(Arg {
             name,
@@ -593,7 +601,7 @@ pub fn parse_fundef_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
     let rettype = if let Some(Punct(Punctuation::Arrow)) = parser.peek_tt() {
         parser.pop();
-        Some(parse!(box: parser => Expression))
+        Some(parse!(@fn parser => parse_type_expression))
     } else {
         None
     };

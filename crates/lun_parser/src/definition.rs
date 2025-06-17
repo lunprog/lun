@@ -1,5 +1,7 @@
 //! Parsing of lun's definitions.
 
+use crate::expr::parse_type_expression;
+
 use super::*;
 
 /// Visibility
@@ -34,7 +36,7 @@ impl AstNode for Program {
 
 /// Lun program.
 ///
-///    vis ident ":" type ":" expr
+///    vis? ident ":" expression? ":" expr
 #[derive(Debug, Clone)]
 pub struct Definition {
     pub vis: Vis,
@@ -63,7 +65,7 @@ impl AstNode for Definition {
         let typ = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
             None
         } else {
-            Some(parse!(parser => Expression))
+            Some(parse!(@fn parser => parse_type_expression))
         };
 
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);

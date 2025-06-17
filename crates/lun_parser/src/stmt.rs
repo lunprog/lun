@@ -2,6 +2,8 @@
 
 use std::hint::unreachable_unchecked;
 
+use crate::expr::parse_type_expression;
+
 use super::*;
 
 /// Block of Lun statements
@@ -197,7 +199,7 @@ pub fn parse_var_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
 
     let typ = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
         parser.pop();
-        Some(parse!(parser => Expression))
+        Some(parse!(@fn parser => parse_type_expression))
     } else {
         None
     };
