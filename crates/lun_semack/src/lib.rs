@@ -9,7 +9,7 @@ use diags::{
     ExpectedType, ExpectedTypeFoundExpr, NeverUsedSymbol, NotFoundInScope, TypeAnnotationsNeeded,
     UnderscoreInExpression, UnderscoreReservedIdent,
 };
-use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic, feature_todo};
+use lun_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic, feature_todo};
 use lun_parser::definition::Program;
 use lun_parser::expr::UnaryOp;
 use lun_utils::Span;
@@ -76,11 +76,11 @@ impl SemanticCk {
                 body: _,
             } = &mut def.value.expr
             else {
-                self.sink.push(feature_todo!(
-                    "global variables",
-                    "global aren't yet supported, only functions in definitions",
-                    def.loc.clone()
-                ));
+                self.sink.push(feature_todo! {
+                    feature: "global variables",
+                    label: "global aren't yet supported, only functions in definitions",
+                    loc: def.loc.clone()
+                });
                 continue;
             };
 
@@ -138,11 +138,11 @@ impl SemanticCk {
                 body,
             } = &mut def.value.expr
             else {
-                self.sink.push(feature_todo!(
-                    "global variables",
-                    "global aren't yet supported, only functions in definitions",
-                    def.loc.clone()
-                ));
+                self.sink.push(feature_todo! {
+                    feature: "global variables",
+                    label: "global aren't yet supported, only functions in definitions",
+                    loc: def.loc.clone()
+                });
                 continue;
             };
 
@@ -210,11 +210,11 @@ impl SemanticCk {
                 } else {
                     // TODO: implement variable initialization checking
                     self.sink.push(
-                        feature_todo!(
-                            "variable initialization",
-                            "for now every variable must be initialized because the check for uninitialized variable is not implemented",
-                            stmt.loc.clone()
-                        )
+                        feature_todo!{
+                            feature: "variable initialization",
+                            label: "for now every variable must be initialized because the check for uninitialized variable is not implemented",
+                            loc: stmt.loc.clone()
+                        }
                     )
                 }
 

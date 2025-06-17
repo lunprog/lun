@@ -336,11 +336,11 @@ impl Lexer {
             'u' | 'U' => {
                 // TODO: implement the lexing of unicode es
                 // in the for of \U+FFFF ig
-                self.sink.push(feature_todo!(
-                    "unicode escape sequence",
-                    "unicode escape isn't yet implemented.",
-                    span(self.cur - 1, self.cur)
-                ));
+                self.sink.push(feature_todo! {
+                    feature: "unicode escape sequence",
+                    label: "unicode escape isn't yet implemented.",
+                    loc: span(self.cur - 1, self.cur)
+                });
                 '\0'
             }
             _ => {
