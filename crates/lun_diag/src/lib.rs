@@ -140,13 +140,13 @@ pub enum ErrorCode {
     ///
     /// Erroneus example
     /// ```lun
-    /// local i = 12z34
+    /// var i = 12z34;
     /// ```
     ///
     /// To fix the error, remove the wrong digit like so
     ///
     /// ```lun
-    /// local i = 1234
+    /// var i = 1234;
     /// ```
     InvalidDigitNumber = 2,
     /// Too large integer literal, can't fit inside 64 bits.
@@ -158,12 +158,12 @@ pub enum ErrorCode {
     ///
     /// Erroneous example
     /// ```lun
-    /// local s = "
+    /// var s = ";
     /// ```
     ///
     /// To fix this error, add another " add the end of your string:
     /// ```lun
-    /// local s = ""
+    /// var s = "";
     /// ```
     UnterminatedStringLiteral = 4,
     /// Unknown character escape
@@ -187,32 +187,32 @@ pub enum ErrorCode {
     /// something else
     // TODO: this error code is kinda dumb fr
     ExpectedToken = 6,
-    /// Reached End of file to early
+    /// Reached End of file too early
     ReachedEOF = 7,
-    /// Expected type found another type
+    /// Mismatched types.
     ///
     /// Erroneous code example:
     /// ```lun
-    /// local a := 12
-    /// test(a)
+    /// var a = 12;
+    /// test(a);
     /// //   ^ E008: the function expected the type `bool` for the first
     /// //           argument but was provided with `int`
     ///
-    /// fun test(a: bool)
+    /// test :: fun(a: bool) {
     ///     // ...
-    /// end
+    /// }
     /// ```
-    ExpectedType = 8,
+    MismatchedTypes = 8,
     /// Expected a type found an expression
     ///
     /// You provided an expression where Lun was expecting a type.
     ///
     /// Erroneous code example:
     /// ```lun
-    /// fun test(a: 12)
-    ///     //      ^^ E009: here Lun was expecting a type like `bool`, `int`,
-    ///     //               `float` but you provided an expression `12`
-    /// end
+    /// test :: fun (a: 12) {
+    ///     //          ^^ E009: here Lun was expecting a type like `bool`, `int`,
+    ///     //                   `float` but you provided an expression `12`
+    /// }
     /// ```
     ExpectedTypeFoundExpr = 9,
     /// Cannot find symbol in this scope
@@ -223,9 +223,9 @@ pub enum ErrorCode {
     ///
     /// Erroneous code example:
     /// ```lun
-    /// local a := hello_world()
-    /// //         ^^^^^^^^^^^ E010: `hello_world` is not in scope, Lun doesn't
-    /// //                           know what you're trying to refer to.
+    /// var a = hello_world();
+    /// //      ^^^^^^^^^^^ E010: `hello_world` is not in scope, Lun doesn't
+    /// //                        know what you're trying to refer to.
     /// ```
     NotFoundInScope = 10,
     /// Call to a function require the type to be a function type
@@ -234,7 +234,7 @@ pub enum ErrorCode {
     ///
     /// Erroneous code example:
     /// ```lun
-    /// _ = 123("hello world")
+    /// _ = 123("hello world");
     /// //  ^^^ E011: `123` is of type `int` you can't call an int Lun was
     /// //            expecting a function, with a type like `func(..) -> ..`
     /// ```
@@ -248,16 +248,16 @@ pub enum ErrorCode {
     /// to be able to ignore values when you don't need them like that:
     ///
     /// ```lun
-    /// _ = my_function()
+    /// _ = my_function();
     ///
     /// // here `_` is assigned the result of my_function but actually the
     /// // function is just called and it's value is thrown away. You can assign
     /// // `_` multiple times with the type you want each time there is no type
     /// // checking when you assign `_` to something
     ///
-    /// _ = 123
-    /// _ = true
-    /// _ = 45.6
+    /// _ = 123;
+    /// _ = true;
+    /// _ = 45.6;
     /// ```
     UnderscoreReservedIdentifier = 13,
     /// `_` in expression

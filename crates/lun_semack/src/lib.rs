@@ -7,8 +7,8 @@ use ckast::{
     FromAst, MaybeUnresolved,
 };
 use diags::{
-    ExpectedType, ExpectedTypeFoundExpr, NeverUsedSymbol, NotFoundInScope, TypeAnnotationsNeeded,
-    UnderscoreInExpression, UnderscoreReservedIdent,
+    ExpectedTypeFoundExpr, MismatchedTypes, NeverUsedSymbol, NotFoundInScope,
+    TypeAnnotationsNeeded, UnderscoreInExpression, UnderscoreReservedIdent,
 };
 use lun_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic, feature_todo};
 use lun_parser::definition::Program;
@@ -130,7 +130,7 @@ impl SemanticCk {
         for def in &mut ckprogram.defs {
             let CkExpr::FunDefinition {
                 args: _,
-                rettype: _,
+                rettype,
                 body,
             } = &mut def.value.expr
             else {
@@ -149,9 +149,10 @@ impl SemanticCk {
             let fun_ret_atyp = def.sym.clone().unwrap().atomtyp.as_fun_ret();
 
             if body.atomtyp != fun_ret_atyp {
-                return Err(ExpectedType {
-                    expected: vec![fun_ret_atyp],
+                return Err(MismatchedTypes {
+                    expected: fun_ret_atyp,
                     found: body.atomtyp.clone(),
+                    due_to: rettype.as_ref().map(|e| e.loc.clone()),
                     loc: body.loc.clone(),
                 }
                 .into_diag());
@@ -215,9 +216,10 @@ impl SemanticCk {
                     if let Some(ty) = typ {
                         let expected_aty = AtomicType::from_expr(ty.clone());
                         if value.atomtyp != expected_aty {
-                            self.sink.push(ExpectedType {
-                                expected: vec![expected_aty],
+                            self.sink.push(MismatchedTypes {
+                                expected: expected_aty,
                                 found: value.atomtyp.clone(),
+                                due_to: typ.as_ref().map(|e| e.loc.clone()),
                                 loc: value.loc.clone(),
                             })
                         }
@@ -272,7 +274,9 @@ impl SemanticCk {
             CkExpr::IntLit(_) => {
                 // TODO(URGENT): create a `comptime_int` that can coerce to
                 // any integer type both iNN and uNN, and one for floats also
-                // `comptime_float`
+                // `comptime_float`, and `comptime_number` who is a superset of
+                // both comptime_int and comptime_float, but a literal can't
+                // have this type.
                 expr.atomtyp = AtomicType::I64;
             }
             CkExpr::BoolLit(_) => {
@@ -316,9 +320,10 @@ impl SemanticCk {
                 self.check_expr(rhs)?;
 
                 if lhs.atomtyp != rhs.atomtyp {
-                    self.sink.push(ExpectedType {
-                        expected: vec![lhs.atomtyp.clone()],
+                    self.sink.push(MismatchedTypes {
+                        expected: lhs.atomtyp.clone(),
                         found: rhs.atomtyp.clone(),
+                        due_to: None,
                         loc: rhs.loc.clone(),
                     });
                 }
@@ -332,21 +337,14 @@ impl SemanticCk {
             CkExpr::Unary { op, expr: exp } => match op {
                 UnaryOp::Negation => {
                     if !exp.atomtyp.is_integer() || !exp.atomtyp.is_float() {
-                        self.sink.push(ExpectedType {
-                            expected: vec![
-                                AtomicType::I64,
-                                AtomicType::I32,
-                                AtomicType::I16,
-                                AtomicType::I8,
-                                AtomicType::U64,
-                                AtomicType::U32,
-                                AtomicType::U16,
-                                AtomicType::U8,
-                                AtomicType::F16,
-                                AtomicType::F32,
-                                AtomicType::F64,
-                            ],
+                        self.sink.push(MismatchedTypes {
+                            // TODO(URGENT): FIXME, tell somehow that we
+                            // expected an integer or float here, tell
+                            // with `comptime_int`, `comptime_float`,
+                            // `comptime_number`
+                            expected: AtomicType::Unknown,
                             found: exp.atomtyp.clone(),
+                            due_to: None,
                             loc: exp.loc.clone(),
                         })
                     }
@@ -354,9 +352,10 @@ impl SemanticCk {
                 }
                 UnaryOp::Not => {
                     if exp.atomtyp != AtomicType::Bool {
-                        self.sink.push(ExpectedType {
-                            expected: vec![AtomicType::Bool],
+                        self.sink.push(MismatchedTypes {
+                            expected: AtomicType::Bool,
                             found: exp.atomtyp.clone(),
+                            due_to: None,
                             loc: exp.loc.clone(),
                         });
                     }
@@ -383,9 +382,10 @@ impl SemanticCk {
                     self.check_expr(val)?;
 
                     if &val.atomtyp != aty {
-                        self.sink.push(ExpectedType {
-                            expected: vec![aty.clone()],
+                        self.sink.push(MismatchedTypes {
+                            expected: aty.clone(),
                             found: val.atomtyp.clone(),
+                            due_to: None,
                             loc: val.loc.clone(),
                         })
                     }
@@ -418,9 +418,10 @@ impl SemanticCk {
         self.check_expr(&mut ifexpr.cond)?;
 
         if ifexpr.cond.atomtyp != AtomicType::Bool {
-            self.sink.push(ExpectedType {
-                expected: vec![AtomicType::Bool],
+            self.sink.push(MismatchedTypes {
+                expected: AtomicType::Bool,
                 found: ifexpr.cond.atomtyp.clone(),
+                due_to: None,
                 loc: ifexpr.cond.loc.clone(),
             });
         }
@@ -440,9 +441,10 @@ impl SemanticCk {
             self.check_else(r#else)?;
 
             if r#else.atomic_type() != &ifexpr.atomtyp {
-                self.sink.push(ExpectedType {
-                    expected: vec![ifexpr.atomtyp.clone()],
+                self.sink.push(MismatchedTypes {
+                    expected: ifexpr.atomtyp.clone(),
                     found: r#else.atomic_type().clone(),
+                    due_to: None,
                     loc: ifexpr.cond.loc.clone(),
                 });
             }
@@ -973,42 +975,5 @@ impl Debug for SymbolTable {
 impl Default for SymbolTable {
     fn default() -> Self {
         SymbolTable::new()
-    }
-}
-
-/// A stack of function's return type, it is used to ensure the return type of
-/// the `return` statement is the same as the function's return type. It is a
-/// stack because lun supports (or will support) nested functions.
-#[derive(Debug, Clone)]
-pub struct ReturnStack {
-    stack: Vec<AtomicType>,
-}
-
-impl ReturnStack {
-    pub const fn new() -> ReturnStack {
-        ReturnStack { stack: Vec::new() }
-    }
-
-    /// Push a return type to the top of the stack
-    pub fn push(&mut self, ret: AtomicType) {
-        self.stack.push(ret);
-    }
-
-    /// Pop the last return type out of the stack, and returns it.
-    /// Will panick if there is no more return types.
-    pub fn pop(&mut self) -> AtomicType {
-        self.stack.pop().unwrap()
-    }
-
-    /// Returns a reference to the last return type, panics if there is no more return types.
-    #[track_caller]
-    pub fn last(&self) -> Option<&AtomicType> {
-        self.stack.last()
-    }
-}
-
-impl Default for ReturnStack {
-    fn default() -> Self {
-        ReturnStack::new()
     }
 }

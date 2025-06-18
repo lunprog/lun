@@ -1,27 +1,40 @@
 //! Diagnostics that maybe emitted by the Semantic Checker.
 
 use lun_diag::{ErrorCode, Label, ToDiagnostic, WarnCode};
-use lun_utils::list_fmt;
 
 use super::*;
 
 #[derive(Debug, Clone)]
-pub struct ExpectedType {
-    pub expected: Vec<AtomicType>,
+pub struct MismatchedTypes {
+    pub expected: AtomicType,
     pub found: AtomicType,
+    /// location of something that was written and tells why we expect this
+    /// type, but MUST be an expr-type written, not just an expression.
+    ///
+    /// eg:
+    ///
+    /// ```lun
+    /// var a: u64 = true;
+    /// //     ^^^ in this case this would be the `due_to` of the mismatched
+    /// //         types diagnostic
+    /// ```
+    pub due_to: Option<Span>,
     pub loc: Span,
 }
 
-impl ToDiagnostic for ExpectedType {
+impl ToDiagnostic for MismatchedTypes {
     fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
-            .with_code(ErrorCode::ExpectedType)
-            .with_message(format!(
-                "expected type {} found type {}",
-                list_fmt(&self.expected),
-                self.found,
-            ))
-            .with_label(Label::primary((), self.loc))
+            .with_code(ErrorCode::MismatchedTypes)
+            .with_message("mismatched types")
+            .with_label(Label::primary((), self.loc).with_message(format!(
+                "expected `{}`, found `{}`",
+                self.expected, self.found
+            )))
+            .with_labels_iter(
+                self.due_to
+                    .map(|loc| Label::secondary((), loc).with_message("expected due to this")),
+            )
         // TODO: maybe change the message of this error to `mismatched types`
         // and put the `expected type {} found type {}` on the primary label
     }
