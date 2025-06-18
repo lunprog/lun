@@ -209,15 +209,20 @@ impl SemanticCk {
                     }
                 }
 
+                let type_as_atomic = if let Some(ty) = typ {
+                    Some(AtomicType::from_expr(ty.clone()))
+                } else {
+                    None
+                };
+
                 if let Some(value) = value {
                     // check the value
                     self.check_expr(value)?;
 
-                    if let Some(ty) = typ {
-                        let expected_aty = AtomicType::from_expr(ty.clone());
-                        if value.atomtyp != expected_aty {
+                    if let Some(ref typ_as_aty) = type_as_atomic {
+                        if &value.atomtyp != typ_as_aty {
                             self.sink.push(MismatchedTypes {
-                                expected: expected_aty,
+                                expected: typ_as_aty.clone(),
                                 found: value.atomtyp.clone(),
                                 due_to: typ.as_ref().map(|e| e.loc.clone()),
                                 loc: value.loc.clone(),
@@ -235,10 +240,10 @@ impl SemanticCk {
                     )
                 }
 
-                let atomtyp = if let Some(value) = value {
+                let atomtyp = if let Some(ref typ_as_aty) = type_as_atomic {
+                    typ_as_aty.clone()
+                } else if let Some(value) = value {
                     value.atomtyp.clone()
-                } else if let Some(typ) = typ {
-                    AtomicType::from_expr(typ.clone())
                 } else {
                     AtomicType::Unknown
                 };
