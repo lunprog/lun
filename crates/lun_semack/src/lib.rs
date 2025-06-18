@@ -29,8 +29,6 @@ pub struct SemanticCk {
     sink: DiagnosticSink,
     /// symbol table of the program
     table: SymbolTable,
-    /// return stack for the last function
-    retstack: ReturnStack,
 }
 
 impl SemanticCk {
@@ -39,7 +37,6 @@ impl SemanticCk {
             program: ast,
             sink,
             table: SymbolTable::new(),
-            retstack: ReturnStack::new(),
         }
     }
 
@@ -149,13 +146,13 @@ impl SemanticCk {
 
             self.check_block(body)?;
 
-            let fun_atyp = def.sym.clone().unwrap().atomtyp;
+            let fun_ret_atyp = def.sym.clone().unwrap().atomtyp.as_fun_ret();
 
-            if body.atomtyp != fun_atyp {
+            if body.atomtyp != fun_ret_atyp {
                 return Err(ExpectedType {
-                    expected: vec![fun_atyp],
+                    expected: vec![fun_ret_atyp],
                     found: body.atomtyp.clone(),
-                    loc: body.last_expr.clone().unwrap().loc.clone(),
+                    loc: body.loc.clone(),
                 }
                 .into_diag());
             }
