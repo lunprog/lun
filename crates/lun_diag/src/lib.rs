@@ -371,7 +371,7 @@ impl ToDiagnostic for FeatureNotImplemented {
 // }
 #[macro_export]
 macro_rules! feature_todo {
-    {feature: $name:tt, label: $label:tt, loc: $loc:expr} => {
+    {feature: $name:tt, label: $label:tt, loc: $loc:expr $( , )?} => {
         $crate::FeatureNotImplemented {
             feature_name: ($name).to_string(),
             label_text: ($label).to_string(),

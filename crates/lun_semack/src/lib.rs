@@ -449,7 +449,34 @@ impl SemanticCk {
                 self.check_block(block)?;
                 expr.atomtyp = block.atomtyp.clone();
             }
+            CkExpr::While { cond, body } => {
+                // 1. condition
+                self.check_expr(cond)?;
 
+                if cond.atomtyp != AtomicType::Bool {
+                    self.sink.push(MismatchedTypes {
+                        expected: AtomicType::Bool,
+                        found: cond.atomtyp.clone(),
+                        due_to: None,
+                        loc: cond.loc.clone(),
+                    });
+                }
+
+                // 2. body
+                self.check_block(body)?;
+                expr.atomtyp = body.atomtyp.clone();
+            }
+            CkExpr::For { .. } => {
+                // TODO: implement for loops
+
+                self.sink.push(feature_todo! {
+                    feature: "for loop",
+                    label: "iterators are not implemented so..",
+                    loc: expr.loc.clone(),
+                });
+
+                expr.atomtyp = AtomicType::Nil;
+            }
             _ => todo!("IMPLEMENT NOW"),
         }
 
