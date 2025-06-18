@@ -445,6 +445,11 @@ impl SemanticCk {
                     });
                 }
             }
+            CkExpr::Block(block) => {
+                self.check_block(block)?;
+                expr.atomtyp = block.atomtyp.clone();
+            }
+
             _ => todo!("IMPLEMENT NOW"),
         }
 
