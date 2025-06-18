@@ -503,7 +503,21 @@ impl SemanticCk {
                     }
                 }
             }
-            _ => todo!("IMPLEMENT NOW"),
+            CkExpr::Break { val } => {
+                // TODO: check that the val has the same type as its loop / block
+                expr.atomtyp = AtomicType::Nil; // TODO: same as return should be type `noreturn`
+
+                if let Some(val) = val {
+                    self.check_expr(val)?;
+                }
+            }
+            CkExpr::Continue => {
+                // TODO: same as the others should be type `noreturn`
+                expr.atomtyp = AtomicType::Nil;
+            }
+            CkExpr::Nil => {
+                expr.atomtyp = AtomicType::Nil;
+            }
         }
 
         debug_assert_ne!(expr.atomtyp, AtomicType::Unknown);
