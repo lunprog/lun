@@ -405,7 +405,41 @@ impl SemanticCk {
                 self.check_ifexpr(ifexpr)?;
                 expr.atomtyp = ifexpr.atomtyp.clone();
             }
+            CkExpr::IfThenElse {
+                cond,
+                true_val,
+                false_val,
+            } => {
+                // 1. condition
+                self.check_expr(cond)?;
 
+                if cond.atomtyp != AtomicType::Bool {
+                    self.sink.push(MismatchedTypes {
+                        expected: AtomicType::Bool,
+                        found: cond.atomtyp.clone(),
+                        due_to: None,
+                        loc: cond.loc.clone(),
+                    });
+                }
+
+                // 2. true value
+                self.check_expr(true_val)?;
+
+                // 3. set the atomtyp to the type of true_val
+                expr.atomtyp = true_val.atomtyp.clone();
+
+                // 4. false value
+                self.check_expr(false_val)?;
+
+                if false_val.atomtyp != expr.atomtyp {
+                    self.sink.push(MismatchedTypes {
+                        expected: expr.atomtyp.clone(),
+                        found: false_val.atomtyp.clone(),
+                        due_to: None,
+                        loc: false_val.loc.clone(),
+                    });
+                }
+            }
             _ => todo!("IMPLEMENT NOW"),
         }
 
