@@ -29,6 +29,10 @@ pub struct SemanticCk {
     sink: DiagnosticSink,
     /// symbol table of the program
     table: SymbolTable,
+    /// the return type of the current function
+    fun_retaty: AtomicType,
+    /// location of the return type (if defined) of the current function
+    fun_retaty_loc: Option<Span>,
 }
 
 impl SemanticCk {
@@ -37,6 +41,8 @@ impl SemanticCk {
             program: ast,
             sink,
             table: SymbolTable::new(),
+            fun_retaty: AtomicType::Unknown,
+            fun_retaty_loc: None,
         }
     }
 
@@ -142,11 +148,14 @@ impl SemanticCk {
                 continue;
             };
 
+            let fun_ret_atyp = def.sym.clone().unwrap().atomtyp.as_fun_ret();
+
+            self.fun_retaty = fun_ret_atyp.clone();
+            self.fun_retaty_loc = rettype.as_ref().map(|e| e.loc.clone());
+
             self.table.scope_enter(); // function scope
 
             self.check_block(body)?;
-
-            let fun_ret_atyp = def.sym.clone().unwrap().atomtyp.as_fun_ret();
 
             if body.atomtyp != fun_ret_atyp {
                 return Err(MismatchedTypes {
@@ -476,6 +485,23 @@ impl SemanticCk {
                 });
 
                 expr.atomtyp = AtomicType::Nil;
+            }
+            CkExpr::Return { val } => {
+                // TODO: create a type `noreturn` and assign it to the return expr.
+                expr.atomtyp = AtomicType::Nil;
+
+                if let Some(val) = val {
+                    self.check_expr(val)?;
+
+                    if val.atomtyp != self.fun_retaty {
+                        self.sink.push(MismatchedTypes {
+                            expected: self.fun_retaty.clone(),
+                            found: val.atomtyp.clone(),
+                            due_to: self.fun_retaty_loc.clone(),
+                            loc: val.loc.clone(),
+                        });
+                    }
+                }
             }
             _ => todo!("IMPLEMENT NOW"),
         }
