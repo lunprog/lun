@@ -357,6 +357,26 @@ impl SemanticCk {
 
                 expr.atomtyp = AtomicType::Nil;
             }
+            // other special case of Binary, make assignement evaluate to Nil
+            CkExpr::Binary {
+                lhs,
+                op: BinOp::Assignement,
+                rhs,
+            } => {
+                self.check_expr(lhs)?;
+                self.check_expr(rhs)?;
+
+                if lhs.atomtyp != rhs.atomtyp {
+                    self.sink.push(MismatchedTypes {
+                        expected: lhs.atomtyp.clone(),
+                        found: rhs.atomtyp.clone(),
+                        due_to: None,
+                        loc: rhs.loc.clone(),
+                    });
+                }
+
+                expr.atomtyp = AtomicType::Nil;
+            }
             CkExpr::Binary { lhs, op, rhs } => {
                 self.check_expr(lhs)?;
                 self.check_expr(rhs)?;
