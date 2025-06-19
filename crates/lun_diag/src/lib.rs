@@ -264,6 +264,8 @@ pub enum ErrorCode {
     UnderscoreInExpression = 14,
     /// feature not implemented
     FeatureNotImplemented = 15,
+    /// loop keyword (`break` or `continue`) outside a loop.
+    LoopKwOutsideLoop = 16,
 }
 
 impl Display for ErrorCode {

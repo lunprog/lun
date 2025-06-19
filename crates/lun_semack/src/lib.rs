@@ -6,7 +6,7 @@ use ckast::{
     CkArg, CkBlock, CkExpr, CkExpression, CkProgram, CkStatement, CkStmt, FromAst, MaybeUnresolved,
 };
 use diags::{
-    ExpectedTypeFoundExpr, MismatchedTypes, NeverUsedSymbol, NotFoundInScope,
+    ExpectedTypeFoundExpr, LoopKwOutsideLoop, MismatchedTypes, NeverUsedSymbol, NotFoundInScope,
     TypeAnnotationsNeeded, UnderscoreInExpression, UnderscoreReservedIdent,
 };
 use lun_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic, feature_todo};
@@ -32,6 +32,8 @@ pub struct SemanticCk {
     fun_retaty: AtomicType,
     /// location of the return type (if defined) of the current function
     fun_retaty_loc: Option<Span>,
+    /// loop stack used to check the type of loops and break values
+    loop_stack: LoopStack,
 }
 
 pub trait TypeExpectation {
@@ -139,6 +141,7 @@ impl SemanticCk {
             table: SymbolTable::new(),
             fun_retaty: AtomicType::Unknown,
             fun_retaty_loc: None,
+            loop_stack: LoopStack::new(),
         }
     }
 
@@ -267,6 +270,9 @@ impl SemanticCk {
                 });
                 continue;
             };
+
+            // reset the loop stack for this new function
+            self.loop_stack.reset();
 
             let fun_ret_atyp = def.sym.clone().unwrap().atomtyp.as_fun_ret();
 
@@ -588,16 +594,25 @@ impl SemanticCk {
                 self.check_block(block)?;
                 expr.atomtyp = block.atomtyp.clone();
             }
-            CkExpr::While { cond, body } => {
+            CkExpr::While { cond, body, index } => {
                 // 1. condition
                 self.check_expr(cond)?;
 
                 let cond_loc = cond.loc.clone();
                 self.type_check(AtomicType::Bool, &mut **cond, None, cond_loc);
 
-                // 2. body
+                // 2. allocate loop index
+                *index = Some(self.loop_stack.alloc_loop());
+
+                // 3. body
                 self.check_block(body)?;
-                expr.atomtyp = body.atomtyp.clone();
+
+                expr.atomtyp =
+                    if let Some(Loop { atomtyp, .. }) = self.loop_stack.get(index.unwrap()) {
+                        atomtyp.clone()
+                    } else {
+                        AtomicType::Unknown
+                    };
             }
             CkExpr::For { .. } => {
                 // TODO: implement for loops
@@ -626,16 +641,65 @@ impl SemanticCk {
                     );
                 }
             }
-            CkExpr::Break { val } => {
-                // TODO: check that the val has the same type as its loop / block
+            CkExpr::Break { val, index } => {
                 expr.atomtyp = AtomicType::Noreturn;
 
+                // 1. assign loop index
+                let Some(Loop {
+                    index: new_idx,
+                    atomtyp,
+                }) = self.loop_stack.last().cloned()
+                else {
+                    return Err(LoopKwOutsideLoop {
+                        kw: "break",
+                        loc: expr.loc.clone(),
+                    }
+                    .into_diag());
+                };
+
+                *index = Some(new_idx);
+                let idx = index.unwrap();
+
+                // 2. check the value
                 if let Some(val) = val {
                     self.check_expr(val)?;
+
+                    if atomtyp == AtomicType::Unknown {
+                        self.loop_stack.set_atomtyp(idx, val.atomtyp.clone());
+                    } else {
+                        let val_loc = val.loc.clone();
+
+                        self.type_check(atomtyp, &mut **val, None, val_loc);
+                    };
+                } else {
+                    if atomtyp == AtomicType::Unknown {
+                        self.loop_stack.set_atomtyp(idx, AtomicType::Nil);
+                    } else {
+                        self.sink.push(
+                            MismatchedTypes {
+                                expected: atomtyp.as_string(),
+                                found: AtomicType::Nil,
+                                due_to: None,
+                                loc: expr.loc.clone(),
+                            }
+                            .into_diag()
+                            .with_note("help: give the `break` a value of the expected type"),
+                        );
+                    }
                 }
             }
-            CkExpr::Continue => {
+            CkExpr::Continue { index } => {
                 expr.atomtyp = AtomicType::Noreturn;
+
+                // assign loop index
+                let Some(Loop { index: new_idx, .. }) = self.loop_stack.last().cloned() else {
+                    return Err(LoopKwOutsideLoop {
+                        kw: "continue",
+                        loc: expr.loc.clone(),
+                    }
+                    .into_diag());
+                };
+                *index = Some(new_idx);
             }
             CkExpr::Nil => {
                 expr.atomtyp = AtomicType::Nil;
@@ -1224,5 +1288,87 @@ impl Debug for SymbolTable {
 impl Default for SymbolTable {
     fn default() -> Self {
         SymbolTable::new()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Loop {
+    /// index of the loop
+    index: usize,
+    /// type of the loop
+    atomtyp: AtomicType,
+}
+
+#[derive(Debug, Clone)]
+pub struct LoopStack {
+    loops: Vec<Loop>,
+    index: usize,
+}
+
+impl LoopStack {
+    pub fn new() -> LoopStack {
+        LoopStack {
+            loops: Vec::new(),
+            index: 0,
+        }
+    }
+
+    pub fn alloc_loop(&mut self) -> usize {
+        let index = self.index;
+        self.index += 1;
+
+        self.loops.push(Loop {
+            index,
+            atomtyp: AtomicType::Unknown,
+        });
+
+        index
+    }
+
+    pub fn last(&self) -> Option<&Loop> {
+        self.loops.last()
+    }
+
+    pub fn reset(&mut self) {
+        self.index = 0;
+        self.loops.clear();
+    }
+
+    pub fn get(&self, index: usize) -> Option<&Loop> {
+        for r#loop in &self.loops {
+            if r#loop.index == index {
+                return Some(r#loop);
+            }
+        }
+
+        None
+    }
+
+    fn get_mut(&mut self, index: usize) -> Option<&mut Loop> {
+        for r#loop in &mut self.loops {
+            if r#loop.index == index {
+                return Some(r#loop);
+            }
+        }
+
+        None
+    }
+
+    pub fn set_atomtyp(&mut self, index: usize, atomtyp: AtomicType) {
+        let Some(lop) = self.get_mut(index) else {
+            panic!("loop at index {index} not found")
+        };
+        assert_ne!(
+            atomtyp,
+            AtomicType::Unknown,
+            "can't set type of loop to Unknown"
+        );
+        assert_eq!(
+            lop.atomtyp,
+            AtomicType::Unknown,
+            "can't set twice the atomic type of a loop"
+        );
+
+        lop.atomtyp = atomtyp;
     }
 }

@@ -149,3 +149,21 @@ impl ToDiagnostic for UnderscoreInExpression {
             .with_label(Label::primary((), self.loc))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct LoopKwOutsideLoop<'a> {
+    pub kw: &'a str,
+    pub loc: Span,
+}
+
+impl<'a> ToDiagnostic for LoopKwOutsideLoop<'a> {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::error()
+            .with_code(ErrorCode::LoopKwOutsideLoop)
+            .with_message(format!("`{}` outside of a loop", self.kw))
+            .with_label(
+                Label::primary((), self.loc)
+                    .with_message(format!("cannot `{}` outside of a loop", self.kw)),
+            )
+    }
+}

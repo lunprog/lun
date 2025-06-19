@@ -271,6 +271,7 @@ impl FromAst for CkExpression {
             Expr::While { cond, body } => CkExpr::While {
                 cond: from_ast(*cond),
                 body: from_ast(body),
+                index: None,
             },
             Expr::For {
                 variable,
@@ -286,8 +287,9 @@ impl FromAst for CkExpression {
             },
             Expr::Break { val } => CkExpr::Break {
                 val: from_ast(val.map(|a| *a)),
+                index: None,
             },
-            Expr::Continue => CkExpr::Continue,
+            Expr::Continue => CkExpr::Continue { index: None },
             Expr::Nil => CkExpr::Nil,
         };
 
@@ -396,6 +398,8 @@ pub enum CkExpr {
     While {
         cond: Box<CkExpression>,
         body: CkBlock,
+        /// index of the loop after checking
+        index: Option<usize>,
     },
     /// see [`For`]
     ///
@@ -413,11 +417,18 @@ pub enum CkExpr {
     /// see [`Break`]
     ///
     /// [`Break`]: lun_parser::expr::Expr::Break
-    Break { val: Option<Box<CkExpression>> },
+    Break {
+        val: Option<Box<CkExpression>>,
+        /// loop index
+        index: Option<usize>,
+    },
     /// see [`Continue`]
     ///
     /// [`Continue`]: lun_parser::expr::Expr::Continue
-    Continue,
+    Continue {
+        /// loop index
+        index: Option<usize>,
+    },
     /// see [`Nil`]
     ///
     /// [`Nil`]: lun_parser::expr::Expr::Nil
