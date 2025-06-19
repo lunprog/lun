@@ -6,7 +6,7 @@ use super::*;
 
 #[derive(Debug, Clone)]
 pub struct MismatchedTypes {
-    pub expected: AtomicType,
+    pub expected: String,
     pub found: AtomicType,
     /// location of something that was written and tells why we expect this
     /// type, but MUST be an expr-type written, not just an expression.

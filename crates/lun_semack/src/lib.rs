@@ -35,6 +35,133 @@ pub struct SemanticCk {
     fun_retaty_loc: Option<Span>,
 }
 
+pub trait TypeExpectation {
+    fn matches(&self, other: &AtomicType) -> bool;
+
+    fn as_string(&self) -> String;
+
+    fn can_coerce(&self, other: &AtomicType) -> Option<AtomicType> {
+        _ = other;
+
+        None
+    }
+
+    fn dbg(&self);
+}
+
+impl TypeExpectation for AtomicType {
+    fn matches(&self, other: &AtomicType) -> bool {
+        self == other
+    }
+
+    fn as_string(&self) -> String {
+        self.to_string()
+    }
+
+    #[inline(always)]
+    fn can_coerce(&self, other: &AtomicType) -> Option<AtomicType> {
+        let coercions = other.coercions()?;
+
+        if coercions.contains(self) {
+            Some(self.clone())
+        } else {
+            None
+        }
+    }
+
+    fn dbg(&self) {
+        println!("{:?}", self);
+    }
+}
+
+impl<S: ToString, F: Fn(&AtomicType) -> bool> TypeExpectation for (S, F) {
+    fn matches(&self, other: &AtomicType) -> bool {
+        self.1(other)
+    }
+
+    fn as_string(&self) -> String {
+        self.0.to_string()
+    }
+
+    fn dbg(&self) {
+        println!("({:?}, *expectation_check_function*)", self.0.to_string());
+    }
+}
+
+impl<T: TypeExpectation> TypeExpectation for &T {
+    fn matches(&self, other: &AtomicType) -> bool {
+        T::matches(&self, other)
+    }
+
+    fn as_string(&self) -> String {
+        T::as_string(&self)
+    }
+
+    fn can_coerce(&self, other: &AtomicType) -> Option<AtomicType> {
+        T::can_coerce(&self, other)
+    }
+
+    fn dbg(&self) {
+        T::dbg(&self);
+    }
+}
+
+pub trait ExprAtomicType {
+    fn atomic_type(&self) -> &AtomicType;
+
+    fn set_atomic_type(&mut self, new: AtomicType);
+}
+
+impl ExprAtomicType for CkElse {
+    fn atomic_type(&self) -> &AtomicType {
+        match self {
+            Self::IfExpr(ifexpr) => ifexpr.atomic_type(),
+            Self::Block(block) => block.atomic_type(),
+        }
+    }
+
+    fn set_atomic_type(&mut self, new: AtomicType) {
+        match self {
+            Self::IfExpr(ifexpr) => {
+                ifexpr.atomtyp = new;
+            }
+            Self::Block(block) => {
+                block.atomtyp = new;
+            }
+        }
+    }
+}
+
+impl ExprAtomicType for CkBlock {
+    fn atomic_type(&self) -> &AtomicType {
+        &self.atomtyp
+    }
+
+    fn set_atomic_type(&mut self, new: AtomicType) {
+        self.atomtyp = new;
+    }
+}
+
+impl ExprAtomicType for CkIfExpression {
+    fn atomic_type(&self) -> &AtomicType {
+        &self.atomtyp
+    }
+
+    fn set_atomic_type(&mut self, new: AtomicType) {
+        self.atomtyp = new;
+    }
+}
+
+impl ExprAtomicType for CkExpression {
+    fn atomic_type(&self) -> &AtomicType {
+        &self.atomtyp
+    }
+
+    fn set_atomic_type(&mut self, new: AtomicType) {
+        self.atomtyp = new;
+    }
+}
+
 impl SemanticCk {
     pub fn new(ast: Program, sink: DiagnosticSink) -> SemanticCk {
         SemanticCk {
@@ -65,6 +192,30 @@ impl SemanticCk {
             StageResult::Part(ckprogram, self.sink.clone())
         } else {
             StageResult::Good(ckprogram)
+        }
+    }
+
+    pub fn type_check(
+        &mut self,
+        expectation: impl TypeExpectation,
+        expr: &mut dyn ExprAtomicType,
+        due_to: impl Into<Option<Span>>,
+        loc: impl Into<Span>,
+    ) {
+        let aty = expr.atomic_type().clone();
+
+        if !expectation.matches(&aty) {
+            if let Some(new_aty) = expectation.can_coerce(&aty) {
+                expr.set_atomic_type(new_aty);
+                return;
+            }
+
+            self.sink.push(MismatchedTypes {
+                expected: expectation.as_string(),
+                found: aty.clone(),
+                due_to: due_to.into(),
+                loc: loc.into(),
+            });
         }
     }
 
@@ -157,14 +308,15 @@ impl SemanticCk {
 
             self.check_block(body)?;
 
+            // here we don't use self.type_check(..) because we don't want to
+            // coerce to any type
             if body.atomtyp != fun_ret_atyp {
-                return Err(MismatchedTypes {
-                    expected: fun_ret_atyp,
+                self.sink.push(MismatchedTypes {
+                    expected: fun_ret_atyp.to_string(),
                     found: body.atomtyp.clone(),
                     due_to: rettype.as_ref().map(|e| e.loc.clone()),
                     loc: body.loc.clone(),
-                }
-                .into_diag());
+                });
             }
 
             self.table.scope_exit(&mut self.sink); // function scope
@@ -229,14 +381,14 @@ impl SemanticCk {
                     self.check_expr(value)?;
 
                     if let Some(ref typ_as_aty) = type_as_atomic {
-                        if &value.atomtyp != typ_as_aty {
-                            self.sink.push(MismatchedTypes {
-                                expected: typ_as_aty.clone(),
-                                found: value.atomtyp.clone(),
-                                due_to: typ.as_ref().map(|e| e.loc.clone()),
-                                loc: value.loc.clone(),
-                            })
-                        }
+                        let value_loc = value.loc.clone();
+
+                        self.type_check(
+                            typ_as_aty,
+                            value,
+                            typ.as_ref().map(|e| e.loc.clone()),
+                            value_loc,
+                        );
                     }
                 } else {
                     // TODO: implement variable initialization checking
@@ -361,14 +513,8 @@ impl SemanticCk {
                 self.check_expr(lhs)?;
                 self.check_expr(rhs)?;
 
-                if lhs.atomtyp != rhs.atomtyp {
-                    self.sink.push(MismatchedTypes {
-                        expected: lhs.atomtyp.clone(),
-                        found: rhs.atomtyp.clone(),
-                        due_to: None,
-                        loc: rhs.loc.clone(),
-                    });
-                }
+                let rhs_loc = rhs.loc.clone();
+                self.type_check(&lhs.atomtyp, &mut **rhs, None, rhs_loc);
 
                 expr.atomtyp = AtomicType::Nil;
             }
@@ -376,14 +522,8 @@ impl SemanticCk {
                 self.check_expr(lhs)?;
                 self.check_expr(rhs)?;
 
-                if lhs.atomtyp != rhs.atomtyp {
-                    self.sink.push(MismatchedTypes {
-                        expected: lhs.atomtyp.clone(),
-                        found: rhs.atomtyp.clone(),
-                        due_to: None,
-                        loc: rhs.loc.clone(),
-                    });
-                }
+                let rhs_loc = rhs.loc.clone();
+                self.type_check(&lhs.atomtyp, &mut **rhs, None, rhs_loc);
 
                 expr.atomtyp = if op.is_relational() | op.is_logical() {
                     AtomicType::Bool
@@ -393,29 +533,22 @@ impl SemanticCk {
             }
             CkExpr::Unary { op, expr: exp } => match op {
                 UnaryOp::Negation => {
-                    if !exp.atomtyp.is_integer() || !exp.atomtyp.is_float() {
-                        self.sink.push(MismatchedTypes {
-                            // TODO(URGENT): FIXME, tell somehow that we
-                            // expected an integer or float here, tell
-                            // with `comptime_int`, `comptime_float`,
-                            // `comptime_number`
-                            expected: AtomicType::Unknown,
-                            found: exp.atomtyp.clone(),
-                            due_to: None,
-                            loc: exp.loc.clone(),
-                        })
-                    }
+                    let exp_loc = exp.loc.clone();
+
+                    self.type_check(
+                        ("comptime_int or comptime_float", |other: &AtomicType| {
+                            other.is_integer() || other.is_float()
+                        }),
+                        &mut **exp,
+                        None,
+                        exp_loc,
+                    );
                     expr.atomtyp = exp.atomtyp.clone();
                 }
                 UnaryOp::Not => {
-                    if exp.atomtyp != AtomicType::Bool {
-                        self.sink.push(MismatchedTypes {
-                            expected: AtomicType::Bool,
-                            found: exp.atomtyp.clone(),
-                            due_to: None,
-                            loc: exp.loc.clone(),
-                        });
-                    }
+                    let exp_loc = exp.loc.clone();
+
+                    self.type_check(AtomicType::Bool, &mut **exp, None, exp_loc);
                     expr.atomtyp = AtomicType::Bool;
                 }
             },
@@ -438,14 +571,8 @@ impl SemanticCk {
                 for (val, aty) in zip(args, args_aty) {
                     self.check_expr(val)?;
 
-                    if &val.atomtyp != aty {
-                        self.sink.push(MismatchedTypes {
-                            expected: aty.clone(),
-                            found: val.atomtyp.clone(),
-                            due_to: None,
-                            loc: val.loc.clone(),
-                        })
-                    }
+                    let val_loc = val.loc.clone();
+                    self.type_check(aty, val, None, val_loc);
                 }
 
                 expr.atomtyp = *ret_ty.clone();
@@ -470,14 +597,8 @@ impl SemanticCk {
                 // 1. condition
                 self.check_expr(cond)?;
 
-                if cond.atomtyp != AtomicType::Bool {
-                    self.sink.push(MismatchedTypes {
-                        expected: AtomicType::Bool,
-                        found: cond.atomtyp.clone(),
-                        due_to: None,
-                        loc: cond.loc.clone(),
-                    });
-                }
+                let cond_loc = cond.loc.clone();
+                self.type_check(AtomicType::Bool, &mut **cond, None, cond_loc);
 
                 // 2. true value
                 self.check_expr(true_val)?;
@@ -488,14 +609,9 @@ impl SemanticCk {
                 // 4. false value
                 self.check_expr(false_val)?;
 
-                if false_val.atomtyp != expr.atomtyp {
-                    self.sink.push(MismatchedTypes {
-                        expected: expr.atomtyp.clone(),
-                        found: false_val.atomtyp.clone(),
-                        due_to: None,
-                        loc: false_val.loc.clone(),
-                    });
-                }
+                let false_loc = false_val.loc.clone();
+
+                self.type_check(expr.atomtyp.clone(), &mut **false_val, None, false_loc);
             }
             CkExpr::Block(block) => {
                 self.check_block(block)?;
@@ -505,14 +621,8 @@ impl SemanticCk {
                 // 1. condition
                 self.check_expr(cond)?;
 
-                if cond.atomtyp != AtomicType::Bool {
-                    self.sink.push(MismatchedTypes {
-                        expected: AtomicType::Bool,
-                        found: cond.atomtyp.clone(),
-                        due_to: None,
-                        loc: cond.loc.clone(),
-                    });
-                }
+                let cond_loc = cond.loc.clone();
+                self.type_check(AtomicType::Bool, &mut **cond, None, cond_loc);
 
                 // 2. body
                 self.check_block(body)?;
@@ -535,14 +645,14 @@ impl SemanticCk {
                 if let Some(val) = val {
                     self.check_expr(val)?;
 
-                    if val.atomtyp != self.fun_retaty {
-                        self.sink.push(MismatchedTypes {
-                            expected: self.fun_retaty.clone(),
-                            found: val.atomtyp.clone(),
-                            due_to: self.fun_retaty_loc.clone(),
-                            loc: val.loc.clone(),
-                        });
-                    }
+                    let val_loc = val.loc.clone();
+
+                    self.type_check(
+                        self.fun_retaty.clone(),
+                        &mut **val,
+                        self.fun_retaty_loc.clone(),
+                        val_loc,
+                    );
                 }
             }
             CkExpr::Break { val } => {
@@ -569,14 +679,8 @@ impl SemanticCk {
         // 1. condition
         self.check_expr(&mut ifexpr.cond)?;
 
-        if ifexpr.cond.atomtyp != AtomicType::Bool {
-            self.sink.push(MismatchedTypes {
-                expected: AtomicType::Bool,
-                found: ifexpr.cond.atomtyp.clone(),
-                due_to: None,
-                loc: ifexpr.cond.loc.clone(),
-            });
-        }
+        let cond_loc = ifexpr.cond.loc.clone();
+        self.type_check(AtomicType::Bool, &mut *ifexpr.cond, None, cond_loc);
 
         // 2. body
 
@@ -592,14 +696,9 @@ impl SemanticCk {
         if let Some(r#else) = &mut ifexpr.else_branch {
             self.check_else(r#else)?;
 
-            if r#else.atomic_type() != &ifexpr.atomtyp {
-                self.sink.push(MismatchedTypes {
-                    expected: ifexpr.atomtyp.clone(),
-                    found: r#else.atomic_type().clone(),
-                    due_to: None,
-                    loc: ifexpr.cond.loc.clone(),
-                });
-            }
+            let else_loc = r#else.loc().clone();
+
+            self.type_check(ifexpr.atomtyp.clone(), &mut **r#else, None, else_loc);
         }
 
         Ok(())
@@ -887,6 +986,27 @@ impl AtomicType {
     /// Returns true if self is a float type, so `f16`, `f32` or `f64`
     pub fn is_float(&self) -> bool {
         matches!(self, Self::F16 | Self::F32 | Self::F64)
+    }
+
+    /// can this atomic type coerce to another atomic type? if yes it returns
+    /// all the atomic types it can coerce to
+    pub fn coercions(&self) -> Option<&[AtomicType]> {
+        match self {
+            AtomicType::ComptimeInt => Some(&[
+                AtomicType::Int,
+                AtomicType::I8,
+                AtomicType::I16,
+                AtomicType::I32,
+                AtomicType::I64,
+                AtomicType::UInt,
+                AtomicType::U8,
+                AtomicType::U16,
+                AtomicType::U32,
+                AtomicType::U64,
+            ]),
+            AtomicType::ComptimeFloat => Some(&[AtomicType::F16, AtomicType::F32, AtomicType::F64]),
+            _ => None,
+        }
     }
 }
 

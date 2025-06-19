@@ -437,6 +437,13 @@ impl CkElse {
             Self::Block(block) => &block.atomtyp,
         }
     }
+
+    pub fn loc(&self) -> &Span {
+        match self {
+            Self::IfExpr(ifexpr) => &ifexpr.loc,
+            Self::Block(block) => &block.loc,
+        }
+    }
 }
 
 impl FromAst for CkElse {
