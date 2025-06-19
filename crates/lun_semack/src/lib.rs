@@ -92,7 +92,7 @@ impl SemanticCk {
             for CkArg { typ, .. } in args {
                 self.check_expr(typ)?;
 
-                if typ.atomtyp != AtomicType::ComptimeType {
+                if typ.atomtyp != AtomicType::Type {
                     self.sink.push(ExpectedTypeFoundExpr {
                         loc: typ.loc.clone(),
                     });
@@ -208,7 +208,7 @@ impl SemanticCk {
                 if let Some(ty) = typ {
                     self.check_expr(ty)?;
 
-                    if ty.atomtyp != AtomicType::ComptimeType {
+                    if ty.atomtyp != AtomicType::Type {
                         self.sink.push(
                             ExpectedTypeFoundExpr {
                                 loc: ty.loc.clone(),
@@ -739,12 +739,12 @@ pub enum AtomicType {
         /// the return type
         ret: Box<AtomicType>,
     },
-    /// Comptime Type, a type in the Type System.
+    /// Type, in the Type System.
     ///
     /// Because lun have types that are expression, types get typed checked as
-    /// well. So the identifier `int` will be evaluated in EVERY expression to
-    /// be of type `comptime type`.
-    ComptimeType,
+    /// well. So (for example) the identifier `int` will be evaluated in EVERY
+    /// expression to be of type `type`.
+    Type,
 }
 
 impl AtomicType {
@@ -855,7 +855,7 @@ impl Display for AtomicType {
             AtomicType::Nil => f.write_str("nil"),
             // TODO: implement a proper display for function type, like `fun(int, f16) -> bool`
             AtomicType::Fun { .. } => f.write_str("fun"),
-            AtomicType::ComptimeType => f.write_str("comptime type"),
+            AtomicType::Type => f.write_str("type"),
         }
     }
 }
@@ -883,63 +883,63 @@ impl SymbolMap {
             map: HashMap::from([
                 (
                     "int".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "int".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "int".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "i64".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "i64".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "i64".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "i32".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "i32".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "i32".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "i16".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "i16".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "i16".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "i8".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "i8".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "i8".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "uint".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "uint".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "uint".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "u64".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "u64".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "u64".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "u32".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "u32".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "u32".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "u16".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "u16".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "u16".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "u8".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "u8".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "u8".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "f16".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "f16".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "f16".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "f32".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "f32".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "f32".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "f64".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "f64".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "f64".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "bool".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "bool".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "bool".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "str".to_string(),
-                    Symbol::global(AtomicType::ComptimeType, "str".to_string(), 0, Span::ZERO),
+                    Symbol::global(AtomicType::Type, "str".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "_".to_string(),
