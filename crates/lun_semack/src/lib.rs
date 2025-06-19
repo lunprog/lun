@@ -286,12 +286,7 @@ impl SemanticCk {
     pub fn check_expr(&mut self, expr: &mut CkExpression) -> Result<(), Diagnostic> {
         match &mut expr.expr {
             CkExpr::IntLit(_) => {
-                // TODO(URGENT): create a `comptime_int` that can coerce to
-                // any integer type both iNN and uNN, and one for floats also
-                // `comptime_float`, and `comptime_number` who is a superset of
-                // both comptime_int and comptime_float, but a literal can't
-                // have this type.
-                expr.atomtyp = AtomicType::I64;
+                expr.atomtyp = AtomicType::ComptimeInt;
             }
             CkExpr::BoolLit(_) => {
                 expr.atomtyp = AtomicType::Bool;
@@ -797,13 +792,15 @@ pub enum AtomicType {
     /// It indicates that the control flow will halts after evaluating the
     /// expression.
     Noreturn,
+    /// `comptime_int` is the type of every integer literal it can coerce to any
+    /// integer type, `int`, `uint`, `iNN` or `uNN`
+    ComptimeInt,
+    /// `comptime_float` is the type of every float literal it can coerce to any
+    /// float type, `f16`, `f32`, `f64`
+    ComptimeFloat,
 }
 
 impl AtomicType {
-    // TODO: add more atomic types, u8, u16, u32, u64, u128, i8, i16,
-    // i32, i64, i128, f16, f32, f64, f128
-    pub const ATOMIC_TYPES: [&str; 4] = ["int", "float", "bool", "string"];
-
     pub const PRIMARY_ATOMTYPE_PAIRS: &[(&str, AtomicType)] = &[
         ("int", AtomicType::Int),
         ("i64", AtomicType::I64),
@@ -821,11 +818,18 @@ impl AtomicType {
         ("bool", AtomicType::Bool),
         ("str", AtomicType::Str),
         ("noreturn", AtomicType::Noreturn),
+        ("comptime_int", AtomicType::ComptimeInt),
+        ("comptime_float", AtomicType::ComptimeFloat),
     ];
 
     /// returns true if the type is a function
     pub const fn is_func(&self) -> bool {
         matches!(self, AtomicType::Fun { .. })
+    }
+
+    /// returns true if the type is either comptime_type or comptime_float
+    pub const fn is_comptime_number(&self) -> bool {
+        matches!(self, AtomicType::ComptimeInt | AtomicType::ComptimeFloat)
     }
 
     /// Converts a type expression to a type.
@@ -910,6 +914,8 @@ impl Display for AtomicType {
             AtomicType::Fun { .. } => f.write_str("fun"),
             AtomicType::Type => f.write_str("type"),
             AtomicType::Noreturn => f.write_str("noreturn"),
+            AtomicType::ComptimeInt => f.write_str("comptime_int"),
+            AtomicType::ComptimeFloat => f.write_str("comptime_float"),
         }
     }
 }
@@ -998,6 +1004,19 @@ impl SymbolMap {
                 (
                     "noreturn".to_string(),
                     Symbol::global(AtomicType::Type, "noreturn".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "comptime_int".to_string(),
+                    Symbol::global(AtomicType::Type, "comptime_int".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "comptime_float".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "comptime_float".to_string(),
+                        0,
+                        Span::ZERO,
+                    ),
                 ),
                 (
                     "_".to_string(),
