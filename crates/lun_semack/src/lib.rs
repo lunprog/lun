@@ -12,7 +12,7 @@ use diags::{
 };
 use lun_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic, feature_todo};
 use lun_parser::definition::Program;
-use lun_parser::expr::UnaryOp;
+use lun_parser::expr::{BinOp, UnaryOp};
 use lun_utils::Span;
 
 pub mod ckast;
@@ -328,6 +328,34 @@ impl SemanticCk {
             }
             CkExpr::Ident(MaybeUnresolved::Resolved(_)) => {
                 unreachable!("i think it's a bug not sure tho")
+            }
+            // special case of assignement to _
+            //
+            // it is used to allow
+            // _ = expr;
+            //
+            // where expr is evaluated, and its return value is ignored, _
+            // coerce to any type.
+            CkExpr::Binary {
+                lhs,
+                op: BinOp::Assignement,
+                rhs,
+            } if matches!(
+                &lhs.expr,
+                CkExpr::Ident(MaybeUnresolved::Unresolved(id)) if id.as_str() == "_"
+            ) =>
+            {
+                // manualy checking lhs
+                let Some(sym) = self.table.lookup("_", true) else {
+                    unreachable!();
+                };
+
+                assert_eq!(sym.atomtyp, AtomicType::Unknown);
+                lhs.expr = CkExpr::Ident(MaybeUnresolved::Resolved(sym.clone()));
+
+                self.check_expr(rhs)?;
+
+                expr.atomtyp = AtomicType::Nil;
             }
             CkExpr::Binary { lhs, op, rhs } => {
                 self.check_expr(lhs)?;
