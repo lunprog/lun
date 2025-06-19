@@ -257,15 +257,15 @@ impl FromAst for CkExpression {
                 rettype: from_ast(rettype.map(|a| *a)),
                 body: from_ast(body),
             },
-            Expr::If(ifexpr) => CkExpr::If(from_ast(ifexpr)),
+            Expr::If(ifexpr) => ckexpr_from_if_expr(ifexpr),
             Expr::IfThenElse {
                 cond,
                 true_val,
                 false_val,
-            } => CkExpr::IfThenElse {
+            } => CkExpr::If {
                 cond: from_ast(*cond),
-                true_val: from_ast(*true_val),
-                false_val: from_ast(*false_val),
+                then_branch: from_ast(*true_val),
+                else_branch: Some(from_ast(*false_val)),
             },
             Expr::Block(block) => CkExpr::Block(from_ast(block)),
             Expr::While { cond, body } => CkExpr::While {
@@ -296,6 +296,32 @@ impl FromAst for CkExpression {
             atomtyp: AtomicType::Unknown,
             loc: ast.loc,
         }
+    }
+}
+
+pub fn ckexpr_from_if_expr(ifexpr: IfExpression) -> CkExpr {
+    CkExpr::If {
+        cond: from_ast(*ifexpr.cond),
+        then_branch: Box::new(CkExpression {
+            loc: ifexpr.loc.clone(),
+            expr: CkExpr::Block(from_ast(*ifexpr.body)),
+            atomtyp: AtomicType::Unknown,
+        }),
+        else_branch: {
+            match ifexpr.else_branch.map(|e| *e) {
+                Some(Else::IfExpr(ifexpr)) => Some(Box::new(CkExpression {
+                    loc: ifexpr.loc.clone(),
+                    expr: ckexpr_from_if_expr(ifexpr),
+                    atomtyp: AtomicType::Unknown,
+                })),
+                Some(Else::Block(block)) => Some(Box::new(CkExpression {
+                    loc: block.loc.clone(),
+                    expr: CkExpr::Block(from_ast(block)),
+                    atomtyp: AtomicType::Unknown,
+                })),
+                None => None,
+            }
+        },
     }
 }
 
@@ -351,17 +377,14 @@ pub enum CkExpr {
         rettype: Option<Box<CkExpression>>,
         body: CkBlock,
     },
-    /// see [`If`]
+    /// see [`If`] and [`IfThenElse`]
     ///
     /// [`If`]: lun_parser::expr::Expr::If
-    If(CkIfExpression),
-    /// see [`IfThenElse`]
-    ///
     /// [`IfThenElse`]: lun_parser::expr::Expr::IfThenElse
-    IfThenElse {
+    If {
         cond: Box<CkExpression>,
-        true_val: Box<CkExpression>,
-        false_val: Box<CkExpression>,
+        then_branch: Box<CkExpression>,
+        else_branch: Option<Box<CkExpression>>,
     },
     /// see [`Block`]
     ///
@@ -399,62 +422,6 @@ pub enum CkExpr {
     ///
     /// [`Nil`]: lun_parser::expr::Expr::Nil
     Nil,
-}
-
-#[derive(Debug, Clone)]
-pub struct CkIfExpression {
-    pub cond: Box<CkExpression>,
-    pub body: Box<CkBlock>,
-    pub else_branch: Option<Box<CkElse>>,
-    pub loc: Span,
-    pub atomtyp: AtomicType,
-}
-
-impl FromAst for CkIfExpression {
-    type Unchecked = IfExpression;
-
-    fn from_ast(ast: Self::Unchecked) -> Self {
-        CkIfExpression {
-            cond: from_ast(*ast.cond),
-            body: from_ast(*ast.body),
-            else_branch: from_ast(ast.else_branch.map(|a| *a)),
-            loc: ast.loc,
-            atomtyp: AtomicType::Unknown,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum CkElse {
-    IfExpr(CkIfExpression),
-    Block(CkBlock),
-}
-
-impl CkElse {
-    pub fn atomic_type(&self) -> &AtomicType {
-        match self {
-            Self::IfExpr(ifexpr) => &ifexpr.atomtyp,
-            Self::Block(block) => &block.atomtyp,
-        }
-    }
-
-    pub fn loc(&self) -> &Span {
-        match self {
-            Self::IfExpr(ifexpr) => &ifexpr.loc,
-            Self::Block(block) => &block.loc,
-        }
-    }
-}
-
-impl FromAst for CkElse {
-    type Unchecked = Else;
-
-    fn from_ast(ast: Self::Unchecked) -> Self {
-        match ast {
-            Else::IfExpr(ifexpr) => CkElse::IfExpr(from_ast(ifexpr)),
-            Else::Block(block) => CkElse::Block(from_ast(block)),
-        }
-    }
 }
 
 /// a symbol that may be resolved or not yet

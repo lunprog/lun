@@ -3,8 +3,7 @@ use std::fmt::{Debug, Display};
 use std::iter::zip;
 
 use ckast::{
-    CkArg, CkBlock, CkElse, CkExpr, CkExpression, CkIfExpression, CkProgram, CkStatement, CkStmt,
-    FromAst, MaybeUnresolved,
+    CkArg, CkBlock, CkExpr, CkExpression, CkProgram, CkStatement, CkStmt, FromAst, MaybeUnresolved,
 };
 use diags::{
     ExpectedTypeFoundExpr, MismatchedTypes, NeverUsedSymbol, NotFoundInScope,
@@ -112,37 +111,7 @@ pub trait ExprAtomicType {
     fn set_atomic_type(&mut self, new: AtomicType);
 }
 
-impl ExprAtomicType for CkElse {
-    fn atomic_type(&self) -> &AtomicType {
-        match self {
-            Self::IfExpr(ifexpr) => ifexpr.atomic_type(),
-            Self::Block(block) => block.atomic_type(),
-        }
-    }
-
-    fn set_atomic_type(&mut self, new: AtomicType) {
-        match self {
-            Self::IfExpr(ifexpr) => {
-                ifexpr.atomtyp = new;
-            }
-            Self::Block(block) => {
-                block.atomtyp = new;
-            }
-        }
-    }
-}
-
 impl ExprAtomicType for CkBlock {
-    fn atomic_type(&self) -> &AtomicType {
-        &self.atomtyp
-    }
-
-    fn set_atomic_type(&mut self, new: AtomicType) {
-        self.atomtyp = new;
-    }
-}
-
-impl ExprAtomicType for CkIfExpression {
     fn atomic_type(&self) -> &AtomicType {
         &self.atomtyp
     }
@@ -409,7 +378,6 @@ impl SemanticCk {
                     AtomicType::Unknown
                 };
 
-                // define the symbol because we didn't do it before
                 let mut ckname = name.clone();
                 if name == "_" {
                     self.sink.push(UnderscoreReservedIdent {
@@ -585,14 +553,10 @@ impl SemanticCk {
                 }
                 .into_diag());
             }
-            CkExpr::If(ifexpr) => {
-                self.check_ifexpr(ifexpr)?;
-                expr.atomtyp = ifexpr.atomtyp.clone();
-            }
-            CkExpr::IfThenElse {
+            CkExpr::If {
                 cond,
-                true_val,
-                false_val,
+                then_branch,
+                else_branch,
             } => {
                 // 1. condition
                 self.check_expr(cond)?;
@@ -600,18 +564,25 @@ impl SemanticCk {
                 let cond_loc = cond.loc.clone();
                 self.type_check(AtomicType::Bool, &mut **cond, None, cond_loc);
 
-                // 2. true value
-                self.check_expr(true_val)?;
+                // 2. then branch
+                self.check_expr(then_branch)?;
 
-                // 3. set the atomtyp to the type of true_val
-                expr.atomtyp = true_val.atomtyp.clone();
+                // 3. set the atomtyp to the type of then_branch
+                expr.atomtyp = then_branch.atomtyp.clone();
 
-                // 4. false value
-                self.check_expr(false_val)?;
+                // 4. else branch
+                if let Some(else_branch) = else_branch {
+                    self.check_expr(else_branch)?;
 
-                let false_loc = false_val.loc.clone();
+                    let else_branch_loc = else_branch.loc.clone();
 
-                self.type_check(expr.atomtyp.clone(), &mut **false_val, None, false_loc);
+                    self.type_check(
+                        expr.atomtyp.clone(),
+                        &mut **else_branch,
+                        None,
+                        else_branch_loc,
+                    );
+                }
             }
             CkExpr::Block(block) => {
                 self.check_block(block)?;
@@ -673,42 +644,6 @@ impl SemanticCk {
 
         debug_assert_ne!(expr.atomtyp, AtomicType::Unknown);
         Ok(())
-    }
-
-    pub fn check_ifexpr(&mut self, ifexpr: &mut CkIfExpression) -> Result<(), Diagnostic> {
-        // 1. condition
-        self.check_expr(&mut ifexpr.cond)?;
-
-        let cond_loc = ifexpr.cond.loc.clone();
-        self.type_check(AtomicType::Bool, &mut *ifexpr.cond, None, cond_loc);
-
-        // 2. body
-
-        self.table.scope_enter(); // body scope
-
-        self.check_block(&mut ifexpr.body)?;
-        ifexpr.atomtyp = ifexpr.body.atomtyp.clone();
-
-        self.table.scope_exit(&mut self.sink); // body scope
-
-        // 3. else
-
-        if let Some(r#else) = &mut ifexpr.else_branch {
-            self.check_else(r#else)?;
-
-            let else_loc = r#else.loc().clone();
-
-            self.type_check(ifexpr.atomtyp.clone(), &mut **r#else, None, else_loc);
-        }
-
-        Ok(())
-    }
-
-    pub fn check_else(&mut self, r#else: &mut CkElse) -> Result<(), Diagnostic> {
-        match r#else {
-            CkElse::IfExpr(ifexpr) => self.check_ifexpr(ifexpr),
-            CkElse::Block(block) => self.check_block(block),
-        }
     }
 }
 
