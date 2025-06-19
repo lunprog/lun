@@ -487,8 +487,7 @@ impl SemanticCk {
                 expr.atomtyp = AtomicType::Nil;
             }
             CkExpr::Return { val } => {
-                // TODO: create a type `noreturn` and assign it to the return expr.
-                expr.atomtyp = AtomicType::Nil;
+                expr.atomtyp = AtomicType::Noreturn;
 
                 if let Some(val) = val {
                     self.check_expr(val)?;
@@ -505,15 +504,14 @@ impl SemanticCk {
             }
             CkExpr::Break { val } => {
                 // TODO: check that the val has the same type as its loop / block
-                expr.atomtyp = AtomicType::Nil; // TODO: same as return should be type `noreturn`
+                expr.atomtyp = AtomicType::Noreturn;
 
                 if let Some(val) = val {
                     self.check_expr(val)?;
                 }
             }
             CkExpr::Continue => {
-                // TODO: same as the others should be type `noreturn`
-                expr.atomtyp = AtomicType::Nil;
+                expr.atomtyp = AtomicType::Noreturn;
             }
             CkExpr::Nil => {
                 expr.atomtyp = AtomicType::Nil;
@@ -745,6 +743,12 @@ pub enum AtomicType {
     /// well. So (for example) the identifier `int` will be evaluated in EVERY
     /// expression to be of type `type`.
     Type,
+    /// Noreturn, the type that return, break and continue expressions evaluate
+    /// to.
+    ///
+    /// It indicates that the control flow will halts after evaluating the
+    /// expression.
+    Noreturn,
 }
 
 impl AtomicType {
@@ -768,6 +772,7 @@ impl AtomicType {
         ("f64", AtomicType::F64),
         ("bool", AtomicType::Bool),
         ("str", AtomicType::Str),
+        ("noreturn", AtomicType::Noreturn),
     ];
 
     /// returns true if the type is a function
@@ -856,6 +861,7 @@ impl Display for AtomicType {
             // TODO: implement a proper display for function type, like `fun(int, f16) -> bool`
             AtomicType::Fun { .. } => f.write_str("fun"),
             AtomicType::Type => f.write_str("type"),
+            AtomicType::Noreturn => f.write_str("noreturn"),
         }
     }
 }
@@ -940,6 +946,10 @@ impl SymbolMap {
                 (
                     "str".to_string(),
                     Symbol::global(AtomicType::Type, "str".to_string(), 0, Span::ZERO),
+                ),
+                (
+                    "noreturn".to_string(),
+                    Symbol::global(AtomicType::Type, "noreturn".to_string(), 0, Span::ZERO),
                 ),
                 (
                     "_".to_string(),
