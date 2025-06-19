@@ -703,6 +703,8 @@ pub enum AtomicType {
     ///
     /// NOTE: the exprtype `int` is an alias of `i64` exprtype
     I64,
+    /// Alias of `i64`
+    Int,
     /// 8 bit unsigned integer
     U8,
     /// 16 bit unsigned integer
@@ -713,6 +715,8 @@ pub enum AtomicType {
     ///
     /// NOTE: the exprtype `uint` is an alias of `u64` exprtype
     U64,
+    /// Alias of `u64`
+    UInt,
     /// 32 bit floating point number, compliant with IEEE 754-2008
     F32,
     /// 16 bit floating point number, compliant with IEEE 754-2008
@@ -749,12 +753,12 @@ impl AtomicType {
     pub const ATOMIC_TYPES: [&str; 4] = ["int", "float", "bool", "string"];
 
     pub const PRIMARY_ATOMTYPE_PAIRS: &[(&str, AtomicType)] = &[
-        ("int", AtomicType::I64),
+        ("int", AtomicType::Int),
         ("i64", AtomicType::I64),
         ("i32", AtomicType::I32),
         ("i16", AtomicType::I16),
         ("i8", AtomicType::I8),
-        ("uint", AtomicType::U64),
+        ("uint", AtomicType::UInt),
         ("u64", AtomicType::U64),
         ("u32", AtomicType::U32),
         ("u16", AtomicType::U16),
@@ -837,10 +841,12 @@ impl Display for AtomicType {
             AtomicType::I32 => f.write_str("i32"),
             AtomicType::I16 => f.write_str("i16"),
             AtomicType::I8 => f.write_str("i8"),
+            AtomicType::Int => f.write_str("int"),
             AtomicType::U64 => f.write_str("u64"),
             AtomicType::U32 => f.write_str("u32"),
             AtomicType::U16 => f.write_str("u16"),
             AtomicType::U8 => f.write_str("u8"),
+            AtomicType::UInt => f.write_str("uint"),
             AtomicType::F16 => f.write_str("f16"),
             AtomicType::F32 => f.write_str("f32"),
             AtomicType::F64 => f.write_str("f64"),
