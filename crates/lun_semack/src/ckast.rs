@@ -1,5 +1,7 @@
 //! Checked AST.
 
+use std::fmt;
+
 use lun_parser::{
     definition::Definition,
     expr::{Arg, Else, Expr, Expression, IfExpression},
@@ -305,6 +307,12 @@ impl FromAst for CkExpression {
     }
 }
 
+impl Display for CkExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(&self.expr, f)
+    }
+}
+
 pub fn ckexpr_from_if_expr(ifexpr: IfExpression) -> CkExpr {
     CkExpr::If {
         cond: from_ast(*ifexpr.cond),
@@ -328,6 +336,41 @@ pub fn ckexpr_from_if_expr(ifexpr: IfExpression) -> CkExpr {
                 None => None,
             }
         },
+    }
+}
+
+impl Display for CkExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CkExpr::IntLit(i) => write!(f, "{i}")?,
+            CkExpr::BoolLit(bool) => write!(f, "{bool}")?,
+            CkExpr::StringLit(str) => write!(f, "{str:?}")?,
+            CkExpr::Grouping(expr) => write!(f, "({expr})")?,
+            CkExpr::Ident(sym) => match sym {
+                MaybeUnresolved::Unresolved(name)
+                | MaybeUnresolved::Resolved(Symbol { name, .. }) => write!(f, "{name}")?,
+            },
+            CkExpr::Binary { lhs, op, rhs } => write!(f, "{lhs} {op} {rhs}")?,
+            CkExpr::Unary { op, val } => write!(f, "{op}{val}")?,
+            CkExpr::FunCall { called, args } => {
+                write!(f, "{called}(")?;
+                if !args.is_empty() {
+                    for arg in &args[..args.len() - 1] {
+                        write!(f, "{arg}, ")?;
+                    }
+                    write!(f, "{})", args.last().unwrap())?;
+                }
+            }
+            CkExpr::PointerType { mutable, typ } => {
+                write!(f, "*")?;
+                if *mutable {
+                    write!(f, "mut ")?;
+                }
+                write!(f, "{typ}")?;
+            }
+            exp => write!(f, "<{exp:?}>")?,
+        };
+        Ok(())
     }
 }
 

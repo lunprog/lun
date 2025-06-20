@@ -1,5 +1,7 @@
 //! Parsing of lun's expressions.
 
+use std::fmt::Display;
+
 use crate::stmt::Block;
 
 use super::*;
@@ -423,6 +425,26 @@ pub enum BinOp {
     Assignement,
 }
 
+impl Display for BinOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            Self::Add => "+",
+            Self::Sub => "-",
+            Self::Mul => "*",
+            Self::Div => "/",
+            Self::CompLT => "<",
+            Self::CompLE => "<=",
+            Self::CompGT => ">",
+            Self::CompGE => ">=",
+            Self::CompEq => "==",
+            Self::CompNe => "!=",
+            Self::Assignement => "=",
+        };
+
+        f.write_str(str)
+    }
+}
+
 impl BinOp {
     pub fn from_punct(punct: Punctuation) -> Option<BinOp> {
         use BinOp as BOp;
@@ -521,6 +543,18 @@ pub enum UnaryOp {
     Not,
     /// `&expression`
     AddressOf,
+}
+
+impl Display for UnaryOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            Self::Negation => "-",
+            Self::Not => "!",
+            Self::AddressOf => "&",
+        };
+
+        f.write_str(str)
+    }
 }
 
 impl UnaryOp {

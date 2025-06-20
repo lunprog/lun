@@ -226,7 +226,7 @@ impl SemanticCk {
                     args_atomtype.push(atomtyp);
                 } else {
                     self.sink.push(UnknownType {
-                        typ: String::from("..."),
+                        typ: typ.to_string(),
                         loc: typ.loc.clone(),
                     });
 
@@ -242,7 +242,7 @@ impl SemanticCk {
                     Box::new(atomtyp)
                 } else {
                     self.sink.push(UnknownType {
-                        typ: String::from("..."),
+                        typ: typ.to_string(),
                         loc: typ.loc.clone(),
                     });
 
@@ -372,7 +372,7 @@ impl SemanticCk {
                 let type_as_atomic = if let Some(ty) = typ {
                     let Some(atomtyp) = AtomicType::from_expr(ty.clone()) else {
                         return Err(UnknownType {
-                            typ: String::from("..."),
+                            typ: ty.to_string(),
                             loc: ty.loc.clone(),
                         }
                         .into_diag());
@@ -750,8 +750,8 @@ impl SemanticCk {
                 self.check_expr(typ)?;
 
                 if typ.atomtyp != AtomicType::Type {
-                    self.sink.push(ExpectedTypeFoundExpr {
-                        help: true,
+                    self.sink.push(UnknownType {
+                        typ: typ.to_string(),
                         loc: typ.loc.clone(),
                     })
                 }
