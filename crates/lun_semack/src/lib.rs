@@ -529,6 +529,9 @@ impl SemanticCk {
                         self.type_check(AtomicType::Bool, &mut **val, None, exp_loc);
                         expr.atomtyp = AtomicType::Bool;
                     }
+                    UnaryOp::AddressOf => {
+                        expr.atomtyp = AtomicType::Unknown; // TODO: change this type to pointer type
+                    }
                 }
             }
             CkExpr::FunCall { called, args } => {

@@ -141,6 +141,7 @@ impl Lexer {
             Some(',') => Punct(Comma),
             Some(';') => Punct(SemiColon),
             Some('^') => Punct(Carret),
+            Some('&') => Punct(Ampsand),
             Some('=') => {
                 self.pop();
                 match self.peek() {

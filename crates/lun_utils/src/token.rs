@@ -327,6 +327,8 @@ pub enum Punctuation {
     Arrow,
     /// ^
     Carret,
+    /// &
+    Ampsand,
 }
 
 impl Display for Punctuation {
@@ -356,6 +358,7 @@ impl Display for Punctuation {
             SemiColon => f.write_str(";"),
             Arrow => f.write_str("->"),
             Carret => f.write_str("^"),
+            Ampsand => f.write_str("&"),
         }
     }
 }

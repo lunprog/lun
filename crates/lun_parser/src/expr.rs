@@ -514,6 +514,8 @@ pub enum UnaryOp {
     Negation,
     /// `not expression`
     Not,
+    /// `&expression`
+    AddressOf,
 }
 
 impl UnaryOp {
@@ -521,6 +523,7 @@ impl UnaryOp {
         match tt {
             Punct(Punctuation::Minus) => Some(UnaryOp::Negation),
             Kw(Keyword::Not) => Some(UnaryOp::Not),
+            Punct(Punctuation::Ampsand) => Some(UnaryOp::AddressOf),
             _ => None,
         }
     }
@@ -531,6 +534,7 @@ pub fn parse_unary_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (op, lo) = expect_token!(parser => [
         Punct(Punctuation::Minus), UnaryOp::Negation;
         Kw(Keyword::Not), UnaryOp::Not;
+        Punct(Punctuation::Ampsand), UnaryOp::AddressOf;
     ], "minus operator or keyword not");
 
     let expr = parse!(box: @fn parser => parse_expr_precedence, Precedence::Unary);
