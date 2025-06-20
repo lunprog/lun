@@ -239,7 +239,7 @@ impl SemanticCk {
                 ckname = String::from("\0");
             }
 
-            let symbol = Symbol::global(
+            let symbol = Symbol::function(
                 AtomicType::Fun {
                     args: args_atomtype,
                     ret: ret_aty,
@@ -248,6 +248,7 @@ impl SemanticCk {
                 self.table.global_count(),
                 // TODO: add a new loc that points to the signature
                 def.loc.clone(),
+                def.vis.clone(),
             );
             def.sym = MaybeUnresolved::Resolved(symbol.clone());
 
@@ -719,6 +720,9 @@ pub struct Symbol {
     /// actual type of the
     pub atomtyp: AtomicType,
     /// the name of the symbol
+    ///
+    /// For function (see kind):
+    /// - the name is the unmangled symbol name of the function in the output assembly
     pub name: String,
     /// which scope the symbol is referring to
     pub which: usize,
@@ -727,6 +731,9 @@ pub struct Symbol {
     pub loc: Span,
     /// count of how many times this symbol is used
     pub uses: usize,
+    /// Visilibity of a symbol, for variables and argument it's always private,
+    /// for global and function it can be public or private
+    pub vis: Vis,
 }
 
 impl Symbol {
@@ -737,6 +744,7 @@ impl Symbol {
         name: String,
         which: usize,
         loc: Span,
+        vis: Vis,
     ) -> Symbol {
         Symbol {
             kind,
@@ -745,6 +753,7 @@ impl Symbol {
             which,
             loc,
             uses: 0,
+            vis,
         }
     }
 
@@ -757,6 +766,7 @@ impl Symbol {
             which,
             loc,
             uses: 0,
+            vis: Vis::Private,
         }
     }
 
@@ -769,11 +779,12 @@ impl Symbol {
             which,
             loc,
             uses: 0,
+            vis: Vis::Private,
         }
     }
 
     /// Create a new global symbol
-    pub fn global(atomtyp: AtomicType, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn global(atomtyp: AtomicType, name: String, which: usize, loc: Span, vis: Vis) -> Symbol {
         Symbol {
             kind: SymKind::Global,
             atomtyp,
@@ -781,6 +792,26 @@ impl Symbol {
             which,
             loc,
             uses: 0,
+            vis,
+        }
+    }
+
+    /// Create a new function symbol
+    pub fn function(
+        atomtyp: AtomicType,
+        name: String,
+        which: usize,
+        loc: Span,
+        vis: Vis,
+    ) -> Symbol {
+        Symbol {
+            kind: SymKind::Function,
+            atomtyp,
+            name,
+            which,
+            loc,
+            uses: 0,
+            vis,
         }
     }
 
@@ -814,6 +845,8 @@ pub enum SymKind {
     Arg,
     /// Global
     Global,
+    /// Function
+    Function,
 }
 
 impl Display for SymKind {
@@ -822,6 +855,7 @@ impl Display for SymKind {
             SymKind::Var => f.write_str("variable"),
             SymKind::Arg => f.write_str("argument"),
             SymKind::Global => f.write_str("global"),
+            SymKind::Function => f.write_str("function"),
         }
     }
 }
@@ -1042,6 +1076,7 @@ impl Display for AtomicType {
 #[derive(Debug, Clone)]
 pub struct SymbolMap {
     map: HashMap<String, Symbol>,
+    function_count: usize,
     global_count: usize,
     var_count: usize,
     arg_count: usize,
@@ -1051,6 +1086,7 @@ impl SymbolMap {
     pub fn new() -> SymbolMap {
         SymbolMap {
             map: HashMap::new(),
+            function_count: 0,
             global_count: 0,
             var_count: 0,
             arg_count: 0,
@@ -1062,71 +1098,173 @@ impl SymbolMap {
             map: HashMap::from([
                 (
                     "int".to_string(),
-                    Symbol::global(AtomicType::Type, "int".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "int".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "i64".to_string(),
-                    Symbol::global(AtomicType::Type, "i64".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "i64".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "i32".to_string(),
-                    Symbol::global(AtomicType::Type, "i32".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "i32".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "i16".to_string(),
-                    Symbol::global(AtomicType::Type, "i16".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "i16".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "i8".to_string(),
-                    Symbol::global(AtomicType::Type, "i8".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "i8".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "uint".to_string(),
-                    Symbol::global(AtomicType::Type, "uint".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "uint".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "u64".to_string(),
-                    Symbol::global(AtomicType::Type, "u64".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "u64".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "u32".to_string(),
-                    Symbol::global(AtomicType::Type, "u32".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "u32".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "u16".to_string(),
-                    Symbol::global(AtomicType::Type, "u16".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "u16".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "u8".to_string(),
-                    Symbol::global(AtomicType::Type, "u8".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "u8".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "f16".to_string(),
-                    Symbol::global(AtomicType::Type, "f16".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "f16".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "f32".to_string(),
-                    Symbol::global(AtomicType::Type, "f32".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "f32".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "f64".to_string(),
-                    Symbol::global(AtomicType::Type, "f64".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "f64".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "bool".to_string(),
-                    Symbol::global(AtomicType::Type, "bool".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "bool".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "str".to_string(),
-                    Symbol::global(AtomicType::Type, "str".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "str".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "noreturn".to_string(),
-                    Symbol::global(AtomicType::Type, "noreturn".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "noreturn".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "comptime_int".to_string(),
-                    Symbol::global(AtomicType::Type, "comptime_int".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "comptime_int".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "comptime_float".to_string(),
@@ -1135,14 +1273,22 @@ impl SymbolMap {
                         "comptime_float".to_string(),
                         0,
                         Span::ZERO,
+                        Vis::Public,
                     ),
                 ),
                 (
                     "_".to_string(),
-                    Symbol::global(AtomicType::Unknown, "_".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Unknown,
+                        "_".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
             ]),
-            global_count: 5,
+            function_count: 0,
+            global_count: 0,
             var_count: 0,
             arg_count: 0,
         }
@@ -1198,7 +1344,7 @@ impl SymbolTable {
             }
 
             // unused symbol check
-            if sym.kind != SymKind::Global && sym.uses == 0 {
+            if sym.vis != Vis::Public && sym.uses == 0 {
                 // the symbol isn't global and isn't used so we push a warning
                 sink.push(NeverUsedSymbol {
                     kind: sym.kind.clone(),
@@ -1223,6 +1369,9 @@ impl SymbolTable {
             }
             SymKind::Global => {
                 self.last_map_mut().global_count += 1;
+            }
+            SymKind::Function => {
+                self.last_map_mut().function_count += 1;
             }
         }
         self.last_map_mut().map.insert(name, sym);
