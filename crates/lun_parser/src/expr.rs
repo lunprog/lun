@@ -399,13 +399,16 @@ impl Precedence {
             Punct(Punctuation::Equal) => Some(Precedence::Assignement),
             Kw(Keyword::Or) => Some(Precedence::LogicalOr),
             Kw(Keyword::And) => Some(Precedence::LogicalAnd),
-            Punct(Punctuation::Equal2 | Punctuation::BangEqual) => Some(Precedence::Equality),
             Punct(
                 Punctuation::LArrow
                 | Punctuation::RArrow
                 | Punctuation::LArrowEqual
                 | Punctuation::RArrowEqual,
             ) => Some(Precedence::Comparison),
+            Punct(Punctuation::Equal2 | Punctuation::BangEqual) => Some(Precedence::Equality),
+            Punct(Punctuation::Pipe) => Some(Precedence::BitwiseOr),
+            Punct(Punctuation::Carret) => Some(Precedence::BitwiseXor),
+            Punct(Punctuation::Ampsand) => Some(Precedence::BitwiseAnd),
             Punct(Punctuation::Plus | Punctuation::Minus) => Some(Precedence::Term),
             Punct(Punctuation::Star | Punctuation::Slash | Punctuation::Percent) => {
                 Some(Precedence::Factor)
@@ -449,6 +452,12 @@ pub enum BinOp {
     LogicalAnd,
     /// or
     LogicalOr,
+    /// &
+    BitwiseAnd,
+    /// ^
+    BitwiseXor,
+    /// |
+    BitwiseOr,
 }
 
 impl Display for BinOp {
@@ -468,6 +477,9 @@ impl Display for BinOp {
             Self::Assignement => "=",
             Self::LogicalAnd => "and",
             Self::LogicalOr => "or",
+            Self::BitwiseAnd => "&",
+            Self::BitwiseXor => "^",
+            Self::BitwiseOr => "|",
         };
 
         f.write_str(str)
@@ -478,6 +490,7 @@ impl BinOp {
     pub fn from_punct(punct: Punctuation) -> Option<BinOp> {
         use BinOp as BOp;
         use Punctuation as Punct;
+
         Some(match punct {
             Punct::Equal => BOp::Assignement,
             Punct::Star => BOp::Mul,
@@ -491,6 +504,9 @@ impl BinOp {
             Punct::RArrowEqual => BOp::CompGE,
             Punct::Equal2 => BOp::CompEq,
             Punct::BangEqual => BOp::CompNe,
+            Punct::Ampsand => BOp::BitwiseAnd,
+            Punct::Carret => BOp::BitwiseXor,
+            Punct::Pipe => BOp::BitwiseOr,
             _ => return None,
         })
     }
@@ -520,7 +536,7 @@ impl BinOp {
     pub fn is_logical(&self) -> bool {
         // TODO: implement logical operators like `"not" expr`, `expr "and"
         // expr`, `expr "or" expr`, `expr "xor" expr`
-        false
+        matches!(self, Self::LogicalAnd | Self::LogicalOr)
     }
 }
 

@@ -142,6 +142,7 @@ impl Lexer {
             Some(';') => Punct(SemiColon),
             Some('^') => Punct(Carret),
             Some('&') => Punct(Ampsand),
+            Some('|') => Punct(Pipe),
             Some('%') => Punct(Percent),
             Some('=') => {
                 self.pop();
