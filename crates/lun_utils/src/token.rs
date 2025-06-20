@@ -157,6 +157,8 @@ pub enum Keyword {
     Impl,
     /// in
     In,
+    /// mut
+    Mut,
     /// nil
     Nil,
     /// not
@@ -219,6 +221,9 @@ impl Keyword {
     /// `in` keyword.
     pub const IN: &str = "in";
 
+    /// `mut` keyword
+    pub const MUT: &str = "mut";
+
     /// `nil` keyword.
     pub const NIL: &str = "nil";
 
@@ -265,6 +270,7 @@ impl Display for Keyword {
             Keyword::If => f.write_str(Keyword::IF),
             Keyword::Impl => f.write_str(Keyword::IMPL),
             Keyword::In => f.write_str(Keyword::IN),
+            Keyword::Mut => f.write_str(Keyword::MUT),
             Keyword::Nil => f.write_str(Keyword::NIL),
             Keyword::Not => f.write_str(Keyword::NOT),
             Keyword::Pub => f.write_str(Keyword::PUB),

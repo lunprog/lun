@@ -233,6 +233,7 @@ impl Lexer {
             Keyword::IF => Kw(Keyword::If),
             Keyword::IMPL => Kw(Keyword::Impl),
             Keyword::IN => Kw(Keyword::In),
+            Keyword::MUT => Kw(Keyword::Mut),
             Keyword::NIL => Kw(Keyword::Nil),
             Keyword::NOT => Kw(Keyword::Not),
             Keyword::PUB => Kw(Keyword::Pub),
