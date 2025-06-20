@@ -876,8 +876,8 @@ pub enum AtomicType {
     ///
     /// NOTE: the exprtype `int` is an alias of `i64` exprtype
     I64,
-    /// Alias of `i64`
-    Int,
+    /// Pointer-sized signed integer type
+    Isize,
     /// 8 bit unsigned integer
     U8,
     /// 16 bit unsigned integer
@@ -888,8 +888,8 @@ pub enum AtomicType {
     ///
     /// NOTE: the exprtype `uint` is an alias of `u64` exprtype
     U64,
-    /// Alias of `u64`
-    UInt,
+    /// Pointer-sized unsigned integer type
+    Usize,
     /// 32 bit floating point number, compliant with IEEE 754-2008
     F32,
     /// 16 bit floating point number, compliant with IEEE 754-2008
@@ -934,12 +934,12 @@ pub enum AtomicType {
 
 impl AtomicType {
     pub const PRIMARY_ATOMTYPE_PAIRS: &[(&str, AtomicType)] = &[
-        ("int", AtomicType::Int),
+        ("isize", AtomicType::Isize),
         ("i64", AtomicType::I64),
         ("i32", AtomicType::I32),
         ("i16", AtomicType::I16),
         ("i8", AtomicType::I8),
-        ("uint", AtomicType::UInt),
+        ("usize", AtomicType::Usize),
         ("u64", AtomicType::U64),
         ("u32", AtomicType::U32),
         ("u16", AtomicType::U16),
@@ -1026,12 +1026,12 @@ impl AtomicType {
     pub fn coercions(&self) -> Option<&[AtomicType]> {
         match self {
             AtomicType::ComptimeInt => Some(&[
-                AtomicType::Int,
+                AtomicType::Isize,
                 AtomicType::I8,
                 AtomicType::I16,
                 AtomicType::I32,
                 AtomicType::I64,
-                AtomicType::UInt,
+                AtomicType::Usize,
                 AtomicType::U8,
                 AtomicType::U16,
                 AtomicType::U32,
@@ -1051,12 +1051,12 @@ impl Display for AtomicType {
             AtomicType::I32 => f.write_str("i32"),
             AtomicType::I16 => f.write_str("i16"),
             AtomicType::I8 => f.write_str("i8"),
-            AtomicType::Int => f.write_str("int"),
+            AtomicType::Isize => f.write_str("isize"),
             AtomicType::U64 => f.write_str("u64"),
             AtomicType::U32 => f.write_str("u32"),
             AtomicType::U16 => f.write_str("u16"),
             AtomicType::U8 => f.write_str("u8"),
-            AtomicType::UInt => f.write_str("uint"),
+            AtomicType::Usize => f.write_str("usize"),
             AtomicType::F16 => f.write_str("f16"),
             AtomicType::F32 => f.write_str("f32"),
             AtomicType::F64 => f.write_str("f64"),
@@ -1097,10 +1097,10 @@ impl SymbolMap {
         SymbolMap {
             map: HashMap::from([
                 (
-                    "int".to_string(),
+                    "isize".to_string(),
                     Symbol::global(
                         AtomicType::Type,
-                        "int".to_string(),
+                        "isize".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
@@ -1147,10 +1147,10 @@ impl SymbolMap {
                     ),
                 ),
                 (
-                    "uint".to_string(),
+                    "usize".to_string(),
                     Symbol::global(
                         AtomicType::Type,
-                        "uint".to_string(),
+                        "usize".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
