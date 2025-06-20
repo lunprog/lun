@@ -651,9 +651,9 @@ impl SemanticCk {
 
                 expr.atomtyp =
                     if let Some(Loop { atomtyp, .. }) = self.loop_stack.get(index.unwrap()) {
-                        atomtyp.clone()
+                        atomtyp.clone().replace(AtomicType::Nil)
                     } else {
-                        AtomicType::Unknown
+                        AtomicType::Nil
                     };
             }
             CkExpr::For { .. } => {
@@ -1101,6 +1101,14 @@ impl AtomicType {
             AtomicType::ComptimeFloat => Some(&[AtomicType::F16, AtomicType::F32, AtomicType::F64]),
             _ => None,
         }
+    }
+
+    /// replace this type with `other` if `self` is unknown
+    pub fn replace(mut self, other: AtomicType) -> AtomicType {
+        if self == AtomicType::Unknown {
+            self = other;
+        }
+        self
     }
 }
 
