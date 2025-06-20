@@ -282,7 +282,7 @@ impl SemanticCk {
 
         for def in &mut ckprogram.defs {
             let CkExpr::FunDefinition {
-                args: _,
+                args,
                 rettype,
                 body,
             } = &mut def.value.expr
@@ -300,10 +300,41 @@ impl SemanticCk {
 
             let fun_ret_atyp = def.sym.clone().unwrap().atomtyp.as_fun_ret();
 
+            // store return type to check `return` expr after.
             self.fun_retaty = fun_ret_atyp.clone();
             self.fun_retaty_loc = rettype.as_ref().map(|e| e.loc.clone());
 
             self.table.scope_enter(); // function scope
+
+            // put the arguments in the symbol table
+            for CkArg {
+                name,
+                name_loc,
+                typ,
+                loc: _,
+            } in args
+            {
+                let Some(ty) = AtomicType::from_expr(typ.clone()) else {
+                    return Err(UnknownType {
+                        typ: typ.to_string(),
+                        loc: typ.loc.clone(),
+                    }
+                    .into_diag());
+                };
+
+                let mut ckname = name.clone();
+                if name == "_" {
+                    self.sink.push(UnderscoreReservedIdent {
+                        loc: name_loc.clone(),
+                    });
+                    ckname = String::from("\0");
+                }
+
+                self.table.bind(
+                    ckname.clone(),
+                    Symbol::arg(ty, ckname.clone(), self.table.arg_count(), name_loc.clone()),
+                )
+            }
 
             self.check_block(body)?;
 
