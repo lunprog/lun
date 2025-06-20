@@ -150,6 +150,10 @@ pub enum Expr {
     ///
     /// "nil"
     Nil,
+    /// pointer type expression
+    ///
+    /// "*" "mut"? expression
+    PointerType { mutable: bool, typ: Box<Expression> },
 }
 
 #[derive(Debug, Clone)]
@@ -197,6 +201,7 @@ pub fn parse_expr_precedence(
         Some(Kw(Keyword::Continue)) => parse!(@fn parser => parse_continue_expr),
         Some(Kw(Keyword::Nil)) => parse!(@fn parser => parse_nil_expr),
         Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
+        Some(Punct(Punctuation::Star)) => parse!(@fn parser => parse_pointer_type_expr),
         Some(tt) if UnaryOp::from_tt(tt.clone()).is_some() => {
             parse!(@fn parser => parse_unary_expr)
         }
@@ -829,5 +834,25 @@ pub fn parse_nil_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     Ok(Expression {
         expr: Expr::Nil,
         loc,
+    })
+}
+
+/// parses pointer type expression
+pub fn parse_pointer_type_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Punct(Punctuation::Star), ()], Punctuation::Star);
+
+    let mutable = if let Some(Kw(Keyword::Mut)) = parser.peek_tt() {
+        parser.pop();
+        true
+    } else {
+        false
+    };
+
+    let typ = parse!(box: @fn parser => parse_type_expression);
+    let hi = typ.loc.clone();
+
+    Ok(Expression {
+        expr: Expr::PointerType { mutable, typ },
+        loc: Span::from_ends(lo, hi),
     })
 }

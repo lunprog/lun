@@ -291,6 +291,10 @@ impl FromAst for CkExpression {
             },
             Expr::Continue => CkExpr::Continue { index: None },
             Expr::Nil => CkExpr::Nil,
+            Expr::PointerType { mutable, typ } => CkExpr::PointerType {
+                mutable,
+                typ: from_ast(*typ),
+            },
         };
 
         CkExpression {
@@ -430,6 +434,10 @@ pub enum CkExpr {
     ///
     /// [`Nil`]: lun_parser::expr::Expr::Nil
     Nil,
+    PointerType {
+        mutable: bool,
+        typ: Box<CkExpression>,
+    },
 }
 
 /// a symbol that may be resolved or not yet

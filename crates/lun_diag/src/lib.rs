@@ -266,6 +266,8 @@ pub enum ErrorCode {
     FeatureNotImplemented = 15,
     /// loop keyword (`break` or `continue`) outside a loop.
     LoopKwOutsideLoop = 16,
+    /// unknown type
+    UnknownType = 17,
 }
 
 impl Display for ErrorCode {

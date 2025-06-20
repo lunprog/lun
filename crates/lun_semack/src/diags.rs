@@ -42,6 +42,8 @@ impl ToDiagnostic for MismatchedTypes {
 
 #[derive(Debug, Clone)]
 pub struct ExpectedTypeFoundExpr {
+    /// adds the note `this type wasn't found, you could've made a spelling mistake`
+    pub help: bool,
     pub loc: Span,
 }
 
@@ -51,6 +53,14 @@ impl ToDiagnostic for ExpectedTypeFoundExpr {
             .with_code(ErrorCode::ExpectedTypeFoundExpr)
             .with_message("expected type found an expression")
             .with_label(Label::primary((), self.loc))
+            .with_notes(if self.help {
+                vec![
+                    "help: this type wasn't found, you could've made a spelling mistake"
+                        .to_string(),
+                ]
+            } else {
+                vec![]
+            })
     }
 }
 
@@ -165,5 +175,20 @@ impl<'a> ToDiagnostic for LoopKwOutsideLoop<'a> {
                 Label::primary((), self.loc)
                     .with_message(format!("cannot `{}` outside of a loop", self.kw)),
             )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnknownType {
+    pub typ: String,
+    pub loc: Span,
+}
+
+impl ToDiagnostic for UnknownType {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::error()
+            .with_code(ErrorCode::UnknownType)
+            .with_message(format!("unknown type `{}`", self.typ))
+            .with_label(Label::primary((), self.loc))
     }
 }

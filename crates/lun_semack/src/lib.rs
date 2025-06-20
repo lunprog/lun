@@ -7,7 +7,7 @@ use ckast::{
 };
 use diags::{
     ExpectedTypeFoundExpr, LoopKwOutsideLoop, MismatchedTypes, NeverUsedSymbol, NotFoundInScope,
-    TypeAnnotationsNeeded, UnderscoreInExpression, UnderscoreReservedIdent,
+    TypeAnnotationsNeeded, UnderscoreInExpression, UnderscoreReservedIdent, UnknownType,
 };
 use lun_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic, feature_todo};
 use lun_parser::definition::Program;
@@ -217,16 +217,38 @@ impl SemanticCk {
 
                 if typ.atomtyp != AtomicType::Type {
                     self.sink.push(ExpectedTypeFoundExpr {
+                        help: false,
                         loc: typ.loc.clone(),
                     });
                 }
 
-                args_atomtype.push(AtomicType::from_expr(typ.clone()));
+                if let Some(atomtyp) = AtomicType::from_expr(typ.clone()) {
+                    args_atomtype.push(atomtyp);
+                } else {
+                    self.sink.push(UnknownType {
+                        typ: String::from("..."),
+                        loc: typ.loc.clone(),
+                    });
+
+                    // poisoned value
+                    args_atomtype.push(AtomicType::Nil);
+                };
             }
 
             let ret_aty = if let Some(typ) = rettype {
                 self.check_expr(typ)?;
-                Box::new(AtomicType::from_expr((**typ).clone()))
+
+                if let Some(atomtyp) = AtomicType::from_expr((**typ).clone()) {
+                    Box::new(atomtyp)
+                } else {
+                    self.sink.push(UnknownType {
+                        typ: String::from("..."),
+                        loc: typ.loc.clone(),
+                    });
+
+                    // poisoned value
+                    Box::new(AtomicType::Nil)
+                }
             } else {
                 Box::new(AtomicType::Nil)
             };
@@ -339,6 +361,7 @@ impl SemanticCk {
                     if ty.atomtyp != AtomicType::Type {
                         self.sink.push(
                             ExpectedTypeFoundExpr {
+                                help: false,
                                 loc: ty.loc.clone(),
                             }
                             .into_diag(),
@@ -347,7 +370,14 @@ impl SemanticCk {
                 }
 
                 let type_as_atomic = if let Some(ty) = typ {
-                    Some(AtomicType::from_expr(ty.clone()))
+                    let Some(atomtyp) = AtomicType::from_expr(ty.clone()) else {
+                        return Err(UnknownType {
+                            typ: String::from("..."),
+                            loc: ty.loc.clone(),
+                        }
+                        .into_diag());
+                    };
+                    Some(atomtyp)
                 } else {
                     None
                 };
@@ -530,7 +560,10 @@ impl SemanticCk {
                         expr.atomtyp = AtomicType::Bool;
                     }
                     UnaryOp::AddressOf => {
-                        expr.atomtyp = AtomicType::Unknown; // TODO: change this type to pointer type
+                        expr.atomtyp = AtomicType::Pointer {
+                            mutable: false,
+                            pointed: Box::new(val.atomtyp.clone()),
+                        };
                     }
                 }
             }
@@ -543,6 +576,7 @@ impl SemanticCk {
                 } = &called.atomtyp
                 else {
                     return Err(ExpectedTypeFoundExpr {
+                        help: false,
                         loc: called.loc.clone(),
                     }
                     .into_diag());
@@ -711,6 +745,18 @@ impl SemanticCk {
             }
             CkExpr::Nil => {
                 expr.atomtyp = AtomicType::Nil;
+            }
+            CkExpr::PointerType { typ, .. } => {
+                self.check_expr(typ)?;
+
+                if typ.atomtyp != AtomicType::Type {
+                    self.sink.push(ExpectedTypeFoundExpr {
+                        help: true,
+                        loc: typ.loc.clone(),
+                    })
+                }
+
+                expr.atomtyp = AtomicType::Type;
             }
         }
 
@@ -937,6 +983,10 @@ pub enum AtomicType {
     /// `comptime_float` is the type of every float literal it can coerce to any
     /// float type, `f16`, `f32`, `f64`
     ComptimeFloat,
+    Pointer {
+        mutable: bool,
+        pointed: Box<AtomicType>,
+    },
 }
 
 impl AtomicType {
@@ -972,22 +1022,26 @@ impl AtomicType {
     }
 
     /// Converts a type expression to a type.
-    pub fn from_expr(expr: CkExpression) -> AtomicType {
-        // TODO(URGENT): make this function return diagnostics instead of panicking
-        let CkExpr::Ident(MaybeUnresolved::Resolved(Symbol { name, .. })) = expr.expr else {
-            unreachable!("the type should just be a symbol")
-        };
+    pub fn from_expr(expr: CkExpression) -> Option<AtomicType> {
+        match expr.expr {
+            CkExpr::Ident(MaybeUnresolved::Resolved(Symbol { name, .. })) => {
+                for (tyname, ty) in AtomicType::PRIMARY_ATOMTYPE_PAIRS {
+                    if *tyname == name {
+                        return Some(ty.clone());
+                    }
+                }
 
-        for (tyname, ty) in AtomicType::PRIMARY_ATOMTYPE_PAIRS {
-            if *tyname == name {
-                return ty.clone();
+                None
             }
+            CkExpr::PointerType { mutable, typ } => {
+                // pointer type
+                Some(AtomicType::Pointer {
+                    mutable,
+                    pointed: Box::new(AtomicType::from_expr(*typ)?),
+                })
+            }
+            _ => None,
         }
-
-        unreachable!(
-            "the type was in the SymbolTable but couldn't be converted to a\
-            real type"
-        )
     }
 
     /// Interpret the type as a Fun and return the return type
@@ -1068,7 +1122,7 @@ impl Display for AtomicType {
             AtomicType::F32 => f.write_str("f32"),
             AtomicType::F64 => f.write_str("f64"),
             AtomicType::Bool => f.write_str("bool"),
-            AtomicType::Str => f.write_str("string"),
+            AtomicType::Str => f.write_str("str"),
             AtomicType::Nil => f.write_str("nil"),
             // TODO: implement a proper display for function type, like `fun(int, f16) -> bool`
             AtomicType::Fun { .. } => f.write_str("fun"),
@@ -1076,6 +1130,14 @@ impl Display for AtomicType {
             AtomicType::Noreturn => f.write_str("noreturn"),
             AtomicType::ComptimeInt => f.write_str("comptime_int"),
             AtomicType::ComptimeFloat => f.write_str("comptime_float"),
+            AtomicType::Pointer { mutable, pointed } => {
+                f.write_str("*")?;
+                if *mutable {
+                    f.write_str("mut ")?;
+                }
+                Display::fmt(pointed, f)?;
+                Ok(())
+            }
         }
     }
 }
