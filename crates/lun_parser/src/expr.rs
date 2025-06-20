@@ -400,15 +400,13 @@ impl Precedence {
             Kw(Keyword::Or) => Some(Precedence::LogicalOr),
             Kw(Keyword::And) => Some(Precedence::LogicalAnd),
             Punct(
-                Punctuation::LArrow
-                | Punctuation::RArrow
-                | Punctuation::LArrowEqual
-                | Punctuation::RArrowEqual,
+                Punctuation::Lt | Punctuation::Gt | Punctuation::LtEqual | Punctuation::GtEqual,
             ) => Some(Precedence::Comparison),
             Punct(Punctuation::Equal2 | Punctuation::BangEqual) => Some(Precedence::Equality),
             Punct(Punctuation::Pipe) => Some(Precedence::BitwiseOr),
             Punct(Punctuation::Carret) => Some(Precedence::BitwiseXor),
             Punct(Punctuation::Ampsand) => Some(Precedence::BitwiseAnd),
+            Punct(Punctuation::Lt2 | Punctuation::Gt2) => Some(Precedence::Shift),
             Punct(Punctuation::Plus | Punctuation::Minus) => Some(Precedence::Term),
             Punct(Punctuation::Star | Punctuation::Slash | Punctuation::Percent) => {
                 Some(Precedence::Factor)
@@ -458,6 +456,10 @@ pub enum BinOp {
     BitwiseXor,
     /// |
     BitwiseOr,
+    /// shift right, >>
+    Shr,
+    /// shift left, <<
+    Shl,
 }
 
 impl Display for BinOp {
@@ -480,6 +482,8 @@ impl Display for BinOp {
             Self::BitwiseAnd => "&",
             Self::BitwiseXor => "^",
             Self::BitwiseOr => "|",
+            Self::Shr => ">>",
+            Self::Shl => "<<",
         };
 
         f.write_str(str)
@@ -498,15 +502,17 @@ impl BinOp {
             Punct::Percent => BOp::Rem,
             Punct::Plus => BOp::Add,
             Punct::Minus => BOp::Sub,
-            Punct::LArrow => BOp::CompLT,
-            Punct::RArrow => BOp::CompGT,
-            Punct::LArrowEqual => BOp::CompLE,
-            Punct::RArrowEqual => BOp::CompGE,
+            Punct::Lt => BOp::CompLT,
+            Punct::Gt => BOp::CompGT,
+            Punct::LtEqual => BOp::CompLE,
+            Punct::GtEqual => BOp::CompGE,
             Punct::Equal2 => BOp::CompEq,
             Punct::BangEqual => BOp::CompNe,
             Punct::Ampsand => BOp::BitwiseAnd,
             Punct::Carret => BOp::BitwiseXor,
             Punct::Pipe => BOp::BitwiseOr,
+            Punct::Lt2 => BOp::Shl,
+            Punct::Gt2 => BOp::Shr,
             _ => return None,
         })
     }

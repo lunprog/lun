@@ -170,9 +170,13 @@ impl Lexer {
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Ok(Punct(LArrowEqual));
+                        return Ok(Punct(LtEqual));
                     }
-                    _ => return Ok(Punct(LArrow)),
+                    Some('<') => {
+                        self.pop();
+                        return Ok(Punct(Lt2));
+                    }
+                    _ => return Ok(Punct(Lt)),
                 }
             }
             Some('>') => {
@@ -180,9 +184,13 @@ impl Lexer {
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Ok(Punct(RArrowEqual));
+                        return Ok(Punct(GtEqual));
                     }
-                    _ => return Ok(Punct(RArrow)),
+                    Some('>') => {
+                        self.pop();
+                        return Ok(Punct(Gt2));
+                    }
+                    _ => return Ok(Punct(Gt)),
                 }
             }
             Some('/') => {
