@@ -36,7 +36,7 @@ impl Expression {
 /// a "type expression" is just an expression that resolves to the atomic type
 /// `comptime type`
 pub fn parse_type_expression(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    parse_expr_precedence(parser, Precedence::Or)
+    parse_expr_precedence(parser, Precedence::LogicalOr)
 }
 
 impl AstNode for Expression {
@@ -314,19 +314,27 @@ pub enum Precedence {
     // If you change the highest precedence in this enumeration change the
     // HIGHEST_PRECEDENCE constant
     //
-    /// `=`
+    /// `a = b`
     Assignement,
-    /// `or`
-    Or,
-    /// `and`
-    And,
-    /// `==  !=`
-    Equality,
-    /// `<  >  <=  >= `
+    /// `a or b`
+    LogicalOr,
+    /// `a and b`
+    LogicalAnd,
+    /// `a < b ; a > b ; a <= b ; a >= b`
     Comparison,
-    /// `+ -`
+    /// `a == b ; a != b`
+    Equality,
+    /// `a | b`
+    BitwiseOr,
+    /// `a ^ b`
+    BitwiseXor,
+    /// `a & b`
+    BitwiseAnd,
+    /// `a >> b ; a << b`
+    Shift,
+    /// `a + b ; a - b`
     Term,
-    /// `* /`
+    /// `a * b ; a / b ; a % b`
     Factor,
     /// `op expression`
     Unary,
@@ -345,11 +353,15 @@ impl Precedence {
     pub fn next(self) -> Precedence {
         match self {
             Self::__First__ => Self::Assignement,
-            Self::Assignement => Self::Or,
-            Self::Or => Self::And,
-            Self::And => Self::Equality,
-            Self::Equality => Self::Comparison,
-            Self::Comparison => Self::Term,
+            Self::Assignement => Self::LogicalOr,
+            Self::LogicalOr => Self::LogicalAnd,
+            Self::LogicalAnd => Self::Comparison,
+            Self::Comparison => Self::Equality,
+            Self::Equality => Self::BitwiseOr,
+            Self::BitwiseOr => Self::BitwiseXor,
+            Self::BitwiseXor => Self::BitwiseAnd,
+            Self::BitwiseAnd => Self::Shift,
+            Self::Shift => Self::Term,
             Self::Term => Self::Factor,
             Self::Factor => Self::Unary,
             Self::Unary => Self::Call,
@@ -362,10 +374,14 @@ impl Precedence {
     pub fn associativity(&self) -> Associativity {
         match self {
             Self::Assignement => Associativity::RightToLeft,
-            Self::Or => Associativity::LeftToRight,
-            Self::And => Associativity::LeftToRight,
-            Self::Equality => Associativity::LeftToRight,
+            Self::LogicalOr => Associativity::LeftToRight,
+            Self::LogicalAnd => Associativity::LeftToRight,
             Self::Comparison => Associativity::LeftToRight,
+            Self::Equality => Associativity::LeftToRight,
+            Self::BitwiseOr => Associativity::LeftToRight,
+            Self::BitwiseXor => Associativity::LeftToRight,
+            Self::BitwiseAnd => Associativity::LeftToRight,
+            Self::Shift => Associativity::LeftToRight,
             Self::Term => Associativity::LeftToRight,
             Self::Factor => Associativity::LeftToRight,
             Self::Unary => Associativity::RightToLeft,
@@ -381,6 +397,8 @@ impl Precedence {
         use TokenType::Punct;
         match value {
             Punct(Punctuation::Equal) => Some(Precedence::Assignement),
+            Kw(Keyword::Or) => Some(Precedence::LogicalOr),
+            Kw(Keyword::And) => Some(Precedence::LogicalAnd),
             Punct(Punctuation::Equal2 | Punctuation::BangEqual) => Some(Precedence::Equality),
             Punct(
                 Punctuation::LArrow
@@ -389,7 +407,9 @@ impl Precedence {
                 | Punctuation::RArrowEqual,
             ) => Some(Precedence::Comparison),
             Punct(Punctuation::Plus | Punctuation::Minus) => Some(Precedence::Term),
-            Punct(Punctuation::Star | Punctuation::Slash) => Some(Precedence::Factor),
+            Punct(Punctuation::Star | Punctuation::Slash | Punctuation::Percent) => {
+                Some(Precedence::Factor)
+            }
             Punct(Punctuation::LParen) => Some(Precedence::Call),
             _ => None,
         }
@@ -409,6 +429,8 @@ pub enum BinOp {
     Mul,
     /// division
     Div,
+    /// remainder
+    Rem,
     /// less than
     CompLT,
     /// less than or equal
@@ -423,6 +445,10 @@ pub enum BinOp {
     CompNe,
     /// assignement
     Assignement,
+    /// and
+    LogicalAnd,
+    /// or
+    LogicalOr,
 }
 
 impl Display for BinOp {
@@ -432,6 +458,7 @@ impl Display for BinOp {
             Self::Sub => "-",
             Self::Mul => "*",
             Self::Div => "/",
+            Self::Rem => "%",
             Self::CompLT => "<",
             Self::CompLE => "<=",
             Self::CompGT => ">",
@@ -439,6 +466,8 @@ impl Display for BinOp {
             Self::CompEq => "==",
             Self::CompNe => "!=",
             Self::Assignement => "=",
+            Self::LogicalAnd => "and",
+            Self::LogicalOr => "or",
         };
 
         f.write_str(str)
@@ -453,6 +482,7 @@ impl BinOp {
             Punct::Equal => BOp::Assignement,
             Punct::Star => BOp::Mul,
             Punct::Slash => BOp::Div,
+            Punct::Percent => BOp::Rem,
             Punct::Plus => BOp::Add,
             Punct::Minus => BOp::Sub,
             Punct::LArrow => BOp::CompLT,
@@ -468,6 +498,8 @@ impl BinOp {
     pub fn from_tt(tt: TokenType) -> Option<BinOp> {
         match tt {
             Punct(p) => Self::from_punct(p),
+            Kw(Keyword::And) => Some(BinOp::LogicalAnd),
+            Kw(Keyword::Or) => Some(BinOp::LogicalOr),
             _ => None,
         }
     }

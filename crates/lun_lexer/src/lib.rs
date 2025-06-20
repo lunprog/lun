@@ -142,6 +142,7 @@ impl Lexer {
             Some(';') => Punct(SemiColon),
             Some('^') => Punct(Carret),
             Some('&') => Punct(Ampsand),
+            Some('%') => Punct(Percent),
             Some('=') => {
                 self.pop();
                 match self.peek() {
@@ -221,6 +222,7 @@ impl Lexer {
         use TokenType::Kw;
 
         match word.as_str() {
+            Keyword::AND => Kw(Keyword::And),
             Keyword::BREAK => Kw(Keyword::Break),
             Keyword::CLASS => Kw(Keyword::Class),
             Keyword::COMPTIME => Kw(Keyword::Comptime),
@@ -236,6 +238,7 @@ impl Lexer {
             Keyword::MUT => Kw(Keyword::Mut),
             Keyword::NIL => Kw(Keyword::Nil),
             Keyword::NOT => Kw(Keyword::Not),
+            Keyword::OR => Kw(Keyword::Or),
             Keyword::PUB => Kw(Keyword::Pub),
             Keyword::RETURN => Kw(Keyword::Return),
             Keyword::SELF => Kw(Keyword::Zelf),

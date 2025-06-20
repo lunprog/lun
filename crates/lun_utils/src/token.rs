@@ -133,6 +133,8 @@ impl Display for TokenType {
 // WARN: /!\ If a keyword is added change the `lex_identifer` method of the Lexer
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Keyword {
+    /// and
+    And,
     /// break
     Break,
     /// class
@@ -163,6 +165,8 @@ pub enum Keyword {
     Nil,
     /// not
     Not,
+    /// Or
+    Or,
     /// pub
     Pub,
     /// return
@@ -185,6 +189,9 @@ pub enum Keyword {
 }
 
 impl Keyword {
+    /// `and` keyword.
+    pub const AND: &str = "and";
+
     /// `break` keyword.
     pub const BREAK: &str = "break";
 
@@ -230,6 +237,9 @@ impl Keyword {
     /// `not` keyword.
     pub const NOT: &str = "not";
 
+    /// `or` keyword.
+    pub const OR: &str = "or";
+
     /// `pub` keyword.
     pub const PUB: &str = "pub";
 
@@ -258,6 +268,7 @@ impl Keyword {
 impl Display for Keyword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Keyword::And => f.write_str(Keyword::AND),
             Keyword::Break => f.write_str(Keyword::BREAK),
             Keyword::Class => f.write_str(Keyword::CLASS),
             Keyword::Comptime => f.write_str(Keyword::COMPTIME),
@@ -273,6 +284,7 @@ impl Display for Keyword {
             Keyword::Mut => f.write_str(Keyword::MUT),
             Keyword::Nil => f.write_str(Keyword::NIL),
             Keyword::Not => f.write_str(Keyword::NOT),
+            Keyword::Or => f.write_str(Keyword::OR),
             Keyword::Pub => f.write_str(Keyword::PUB),
             Keyword::Return => f.write_str(Keyword::RETURN),
             Keyword::Zelf => f.write_str(Keyword::SELF),
@@ -335,6 +347,8 @@ pub enum Punctuation {
     Carret,
     /// &
     Ampsand,
+    /// %
+    Percent,
 }
 
 impl Display for Punctuation {
@@ -365,6 +379,7 @@ impl Display for Punctuation {
             Arrow => f.write_str("->"),
             Carret => f.write_str("^"),
             Ampsand => f.write_str("&"),
+            Percent => f.write_str("%"),
         }
     }
 }
