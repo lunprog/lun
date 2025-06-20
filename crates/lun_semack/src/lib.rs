@@ -506,27 +506,31 @@ impl SemanticCk {
                     lhs.atomtyp.clone()
                 };
             }
-            CkExpr::Unary { op, expr: exp } => match op {
-                UnaryOp::Negation => {
-                    let exp_loc = exp.loc.clone();
+            CkExpr::Unary { op, val } => {
+                self.check_expr(val)?;
 
-                    self.type_check(
-                        ("comptime_int or comptime_float", |other: &AtomicType| {
-                            other.is_integer() || other.is_float()
-                        }),
-                        &mut **exp,
-                        None,
-                        exp_loc,
-                    );
-                    expr.atomtyp = exp.atomtyp.clone();
-                }
-                UnaryOp::Not => {
-                    let exp_loc = exp.loc.clone();
+                match op {
+                    UnaryOp::Negation => {
+                        let exp_loc = val.loc.clone();
 
-                    self.type_check(AtomicType::Bool, &mut **exp, None, exp_loc);
-                    expr.atomtyp = AtomicType::Bool;
+                        self.type_check(
+                            ("comptime_int or comptime_float", |other: &AtomicType| {
+                                other.is_integer() || other.is_float()
+                            }),
+                            &mut **val,
+                            None,
+                            exp_loc,
+                        );
+                        expr.atomtyp = val.atomtyp.clone();
+                    }
+                    UnaryOp::Not => {
+                        let exp_loc = val.loc.clone();
+
+                        self.type_check(AtomicType::Bool, &mut **val, None, exp_loc);
+                        expr.atomtyp = AtomicType::Bool;
+                    }
                 }
-            },
+            }
             CkExpr::FunCall { called, args } => {
                 self.check_expr(called)?;
 

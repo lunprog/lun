@@ -242,7 +242,7 @@ impl FromAst for CkExpression {
             },
             Expr::Unary { op, expr } => CkExpr::Unary {
                 op,
-                expr: from_ast(*expr),
+                val: from_ast(*expr),
             },
             Expr::FunCall { called, args } => CkExpr::FunCall {
                 called: from_ast(*called),
@@ -360,10 +360,7 @@ pub enum CkExpr {
     /// see [`Unary`]
     ///
     /// [`Unary`]: lun_parser::expr::Expr::Unary
-    Unary {
-        op: UnaryOp,
-        expr: Box<CkExpression>,
-    },
+    Unary { op: UnaryOp, val: Box<CkExpression> },
     /// see [`FunCall`]
     ///
     /// [`FunCall`]: lun_parser::expr::Expr::FunCall
