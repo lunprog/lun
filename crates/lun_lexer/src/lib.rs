@@ -205,6 +205,16 @@ impl Lexer {
                     _ => return Ok(Punct(Slash)),
                 }
             }
+            Some('.') => {
+                self.pop();
+                match self.peek() {
+                    Some('*') => {
+                        self.pop();
+                        return Ok(Punct(DotStar));
+                    }
+                    _ => return Ok(Punct(Dot)),
+                }
+            }
             Some('"') => return self.lex_string(),
             Some('a'..='z' | 'A'..='Z' | '_') => return Ok(self.lex_identifier()),
             Some('0'..='9') => return self.lex_number(),

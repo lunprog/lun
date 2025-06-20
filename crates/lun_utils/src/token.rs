@@ -361,6 +361,10 @@ pub enum Punctuation {
     Pipe,
     /// %
     Percent,
+    /// .
+    Dot,
+    /// .*
+    DotStar,
 }
 
 impl Display for Punctuation {
@@ -395,6 +399,8 @@ impl Display for Punctuation {
             Ampsand => f.write_str("&"),
             Pipe => f.write_str("|"),
             Percent => f.write_str("%"),
+            Dot => f.write_str("."),
+            DotStar => f.write_str(".*"),
         }
     }
 }

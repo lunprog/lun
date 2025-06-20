@@ -616,6 +616,27 @@ impl SemanticCk {
                             pointed: Box::new(val.atomtyp.clone()),
                         };
                     }
+                    UnaryOp::Dereference => {
+                        let pointee = if let AtomicType::Pointer {
+                            mutable: _,
+                            ref pointed,
+                        } = val.atomtyp
+                        {
+                            // we fine bro :)
+                            (**pointed).clone()
+                        } else {
+                            return Err(MismatchedTypes {
+                                expected: String::from("pointer"),
+                                found: val.atomtyp.clone(),
+                                due_to: None,
+                                loc: val.loc.clone(),
+                            }
+                            .into_diag()
+                            .with_note(format!("type `{}` cannot dereferenced", val.atomtyp)));
+                        };
+
+                        expr.atomtyp = pointee;
+                    }
                 }
             }
             CkExpr::FunCall { called, args } => {

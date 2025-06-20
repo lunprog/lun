@@ -30,6 +30,7 @@ impl AstNode for Block {
                 }
                 _ => {}
             }
+            // TODO: add the semicolon to the loc of the statement / expr
 
             let stmt = parse!(parser => Statement);
 
@@ -167,6 +168,9 @@ pub enum Stmt {
         typ: Option<Expression>,
         value: Option<Expression>,
     },
+    /// statement expression
+    ///
+    /// expression
     Expression(Expression),
 }
 

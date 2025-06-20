@@ -204,8 +204,8 @@ pub fn parse_expr_precedence(
         Some(Kw(Keyword::Nil)) => parse!(@fn parser => parse_nil_expr),
         Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
         Some(Punct(Punctuation::Star)) => parse!(@fn parser => parse_pointer_type_expr),
-        Some(tt) if UnaryOp::from_tt(tt.clone()).is_some() => {
-            parse!(@fn parser => parse_unary_expr)
+        Some(tt) if UnaryOp::left_from_token(tt.clone()).is_some() => {
+            parse!(@fn parser => parse_unary_left_expr)
         }
         Some(_) => {
             // unwrap is safe because we already know the next has a token type
@@ -225,7 +225,7 @@ pub fn parse_expr_precedence(
         };
 
         let Some(pr) = Precedence::from(tt) else {
-            // the next token isn't a binary operator
+            // the next token isn't part of a post expression
             break;
         };
 
@@ -233,8 +233,6 @@ pub fn parse_expr_precedence(
             break;
         }
 
-        // we match a token here, because, in the future there will be
-        // binary operators that are Keyword, like Logical And.
         lhs = match parser.peek_tt() {
             Some(Punct(Punctuation::LParen)) => {
                 parse!(@fn parser => parse_funcall_expr, Box::new(lhs))
@@ -242,8 +240,11 @@ pub fn parse_expr_precedence(
             Some(maybe_bin_op) if BinOp::from_tt(maybe_bin_op.clone()).is_some() => {
                 parse!(@fn parser => parse_binary_expr, lhs)
             }
+            Some(maybe_right_op) if UnaryOp::right_from_token(maybe_right_op.clone()).is_some() => {
+                parse!(@fn parser => parse_unary_right_expr, lhs)
+            }
             _ => break,
-        }
+        };
     }
 
     Ok(lhs)
@@ -338,8 +339,14 @@ pub enum Precedence {
     Factor,
     /// `op expression`
     Unary,
-    /// `expression ( expression,* )`
-    Call,
+    /// both call and unary right precende:
+    ///
+    /// `expression "(" expression,* ")"`
+    ///
+    /// or
+    ///
+    /// `expression op`
+    CallAndUnaryRight,
     /// `intlit "true" "false" charlit strlit group`
     Primary,
     // Like `__First__` it is a special variant of `Precedence` that should
@@ -364,8 +371,8 @@ impl Precedence {
             Self::Shift => Self::Term,
             Self::Term => Self::Factor,
             Self::Factor => Self::Unary,
-            Self::Unary => Self::Call,
-            Self::Call => Self::Primary,
+            Self::Unary => Self::CallAndUnaryRight,
+            Self::CallAndUnaryRight => Self::Primary,
             Self::Primary => Self::__Last__,
             Self::__Last__ => unreachable!(),
         }
@@ -385,7 +392,7 @@ impl Precedence {
             Self::Term => Associativity::LeftToRight,
             Self::Factor => Associativity::LeftToRight,
             Self::Unary => Associativity::RightToLeft,
-            Self::Call => Associativity::LeftToRight,
+            Self::CallAndUnaryRight => Associativity::LeftToRight,
             Self::Primary => Associativity::LeftToRight,
             Self::__Last__ | Self::__First__ => unreachable!(),
         }
@@ -411,7 +418,9 @@ impl Precedence {
             Punct(Punctuation::Star | Punctuation::Slash | Punctuation::Percent) => {
                 Some(Precedence::Factor)
             }
-            Punct(Punctuation::LParen) => Some(Precedence::Call),
+            Punct(Punctuation::LParen | Punctuation::DotStar) => {
+                Some(Precedence::CallAndUnaryRight)
+            }
             _ => None,
         }
     }
@@ -590,13 +599,16 @@ pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> Result<Express
 /// Unary Operators
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum UnaryOp {
-    // LEFT UNARY OPERATOR
-    /// `"-" expression`
+    // left unary operator
+    /// `- expression`
     Negation,
-    /// `not expression`
+    /// `! expression`
     Not,
-    /// `&expression`
+    /// `& expression`
     AddressOf,
+    // right unary operator
+    /// `expression.*`
+    Dereference,
 }
 
 impl Display for UnaryOp {
@@ -605,6 +617,7 @@ impl Display for UnaryOp {
             Self::Negation => "-",
             Self::Not => "!",
             Self::AddressOf => "&",
+            Self::Dereference => ".*",
         };
 
         f.write_str(str)
@@ -612,7 +625,11 @@ impl Display for UnaryOp {
 }
 
 impl UnaryOp {
-    pub fn from_tt(tt: TokenType) -> Option<UnaryOp> {
+    /// get the unary operation for left side unary operation
+    ///
+    /// eg:
+    /// `-a` `!a` `&a`
+    pub fn left_from_token(tt: TokenType) -> Option<UnaryOp> {
         match tt {
             Punct(Punctuation::Minus) => Some(UnaryOp::Negation),
             Punct(Punctuation::Bang) => Some(UnaryOp::Not),
@@ -620,15 +637,35 @@ impl UnaryOp {
             _ => None,
         }
     }
+
+    /// get the unary operation for right side unary operation
+    ///
+    /// eg:
+    /// `a.*`
+    pub fn right_from_token(tt: TokenType) -> Option<UnaryOp> {
+        match tt {
+            Punct(Punctuation::DotStar) => Some(UnaryOp::Dereference),
+            _ => None,
+        }
+    }
 }
 
 /// Parse unary expression, `op expression`
-pub fn parse_unary_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (op, lo) = expect_token!(parser => [
-        Punct(Punctuation::Minus), UnaryOp::Negation;
-        Punct(Punctuation::Bang), UnaryOp::Not;
-        Punct(Punctuation::Ampsand), UnaryOp::AddressOf;
-    ], "minus operator or keyword not");
+pub fn parse_unary_left_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (op, lo) = if let Some(Token { tt, loc }) = parser.peek_tok() {
+        if let Some(op) = UnaryOp::left_from_token(tt.clone()) {
+            let loc = loc.clone();
+            parser.pop();
+            (op, loc)
+        } else {
+            let t = parser.peek_tok().unwrap().clone();
+            return Err(
+                ExpectedToken::new("unary operator", t.tt, Some("expression"), t.loc).into_diag(),
+            );
+        }
+    } else {
+        return Err(parser.eof_diag());
+    };
 
     let expr = parse!(box: @fn parser => parse_expr_precedence, Precedence::Unary);
 
@@ -941,6 +978,36 @@ pub fn parse_pointer_type_expr(parser: &mut Parser) -> Result<Expression, Diagno
 
     Ok(Expression {
         expr: Expr::PointerType { mutable, typ },
+        loc: Span::from_ends(lo, hi),
+    })
+}
+
+pub fn parse_unary_right_expr(
+    parser: &mut Parser,
+    lhs: Expression,
+) -> Result<Expression, Diagnostic> {
+    let lo = lhs.loc.clone();
+
+    let (op, hi) = if let Some(Token { tt, loc }) = parser.peek_tok() {
+        if let Some(op) = UnaryOp::right_from_token(tt.clone()) {
+            let loc = loc.clone();
+            parser.pop();
+            (op, loc)
+        } else {
+            let t = parser.peek_tok().unwrap().clone();
+            return Err(
+                ExpectedToken::new("unary operator", t.tt, Some("expression"), t.loc).into_diag(),
+            );
+        }
+    } else {
+        return Err(parser.eof_diag());
+    };
+
+    Ok(Expression {
+        expr: Expr::Unary {
+            op,
+            expr: Box::new(lhs),
+        },
         loc: Span::from_ends(lo, hi),
     })
 }
