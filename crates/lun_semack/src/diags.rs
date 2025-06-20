@@ -192,3 +192,23 @@ impl ToDiagnostic for UnknownType {
             .with_label(Label::primary((), self.loc))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct MutationOfImmutable {
+    pub var_name: String,
+    pub var_loc: Span,
+    pub loc: Span,
+}
+
+impl ToDiagnostic for MutationOfImmutable {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::error()
+            .with_code(ErrorCode::MutationOfImmutable)
+            .with_message("cannot mutate, immutable variable")
+            .with_label(Label::primary((), self.loc).with_message(format!(
+                "assignement to immmutable variable `{}`",
+                self.var_name
+            )))
+            .with_label(Label::secondary((), self.var_loc).with_message("variable defined here"))
+    }
+}

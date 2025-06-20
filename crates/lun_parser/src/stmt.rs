@@ -159,14 +159,11 @@ pub enum Stmt {
     //
     /// variable definition
     ///
-    /// [ "pub" ] "var" ident [ ":" expr ] [ "=" expr ]
-    ///
-    /// OR
-    ///
-    /// ident ":" [ expr ] "=" expr
+    /// "let" "mut"? ident [ ":" expr ] [ "=" expr ]
     VariableDef {
         name: String,
         name_loc: Span,
+        mutable: bool,
         typ: Option<Expression>,
         value: Option<Expression>,
     },
@@ -176,7 +173,7 @@ pub enum Stmt {
 impl AstNode for Statement {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         match parser.peek_tt() {
-            Some(Kw(Keyword::Var)) => parse_var_stmt(parser),
+            Some(Kw(Keyword::Let)) => parse_variable_def_stmt(parser),
             Some(_) => {
                 let expr = parse!(parser => Expression);
 
@@ -190,9 +187,16 @@ impl AstNode for Statement {
     }
 }
 
-/// "var" ident [ ":" expr ] [ "=" expr ]
-pub fn parse_var_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
-    let (_, lo) = expect_token!(parser => [Kw(Keyword::Var), ()], Kw(Keyword::Var));
+/// "let" "mut"? ident [ ":" expr ] [ "=" expr ]
+pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Let), ()], Kw(Keyword::Let));
+
+    let mutable = if let Some(Kw(Keyword::Mut)) = parser.peek_tt() {
+        parser.pop();
+        true
+    } else {
+        false
+    };
 
     let (name, name_loc) =
         expect_token!(parser => [Ident(name), name.clone()], Ident(String::new()));
@@ -221,6 +225,7 @@ pub fn parse_var_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
         stmt: Stmt::VariableDef {
             name,
             name_loc,
+            mutable,
             typ,
             value,
         },

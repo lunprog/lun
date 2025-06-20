@@ -6,8 +6,9 @@ use ckast::{
     CkArg, CkBlock, CkExpr, CkExpression, CkProgram, CkStatement, CkStmt, FromAst, MaybeUnresolved,
 };
 use diags::{
-    ExpectedTypeFoundExpr, LoopKwOutsideLoop, MismatchedTypes, NeverUsedSymbol, NotFoundInScope,
-    TypeAnnotationsNeeded, UnderscoreInExpression, UnderscoreReservedIdent, UnknownType,
+    ExpectedTypeFoundExpr, LoopKwOutsideLoop, MismatchedTypes, MutationOfImmutable,
+    NeverUsedSymbol, NotFoundInScope, TypeAnnotationsNeeded, UnderscoreInExpression,
+    UnderscoreReservedIdent, UnknownType,
 };
 use lun_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic, feature_todo};
 use lun_parser::definition::Program;
@@ -350,6 +351,7 @@ impl SemanticCk {
             CkStmt::VariableDef {
                 name,
                 name_loc,
+                mutable,
                 typ,
                 value,
                 sym,
@@ -428,6 +430,7 @@ impl SemanticCk {
                     ckname.clone(),
                     self.table.var_count(),
                     stmt.loc.clone(),
+                    *mutable,
                 );
 
                 *sym = MaybeUnresolved::Resolved(symbol.clone());
@@ -522,6 +525,23 @@ impl SemanticCk {
                 self.type_check(&lhs.atomtyp, &mut **rhs, None, rhs_loc);
 
                 expr.atomtyp = AtomicType::Nil;
+
+                // check that if lhs is a variable, the variable is mutable
+                // TODO: check if pointer is mutable also
+
+                if let CkExpr::Ident(MaybeUnresolved::Resolved(Symbol {
+                    kind: SymKind::Var { mutable: false },
+                    name,
+                    loc,
+                    ..
+                })) = &lhs.expr
+                {
+                    self.sink.push(MutationOfImmutable {
+                        var_name: name.clone(),
+                        var_loc: loc.clone(),
+                        loc: expr.loc.clone(),
+                    });
+                }
             }
             CkExpr::Binary { lhs, op, rhs } => {
                 self.check_expr(lhs)?;
@@ -811,9 +831,15 @@ impl Symbol {
     }
 
     /// Create a new local symbol
-    pub fn var(atomtyp: AtomicType, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn var(
+        atomtyp: AtomicType,
+        name: String,
+        which: usize,
+        loc: Span,
+        mutable: bool,
+    ) -> Symbol {
         Symbol {
-            kind: SymKind::Var,
+            kind: SymKind::Var { mutable },
             atomtyp,
             name,
             which,
@@ -893,7 +919,7 @@ impl Symbol {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SymKind {
     /// Variable
-    Var,
+    Var { mutable: bool },
     /// Argument
     Arg,
     /// Global
@@ -905,7 +931,7 @@ pub enum SymKind {
 impl Display for SymKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SymKind::Var => f.write_str("variable"),
+            SymKind::Var { .. } => f.write_str("variable"),
             SymKind::Arg => f.write_str("argument"),
             SymKind::Global => f.write_str("global"),
             SymKind::Function => f.write_str("function"),
@@ -1438,7 +1464,7 @@ impl SymbolTable {
     pub fn bind(&mut self, name: String, sym: Symbol) {
         assert_ne!(name.as_str(), "_", "`_` is a reserved identifier");
         match sym.kind {
-            SymKind::Var => {
+            SymKind::Var { .. } => {
                 self.last_map_mut().var_count += 1;
             }
             SymKind::Arg => {

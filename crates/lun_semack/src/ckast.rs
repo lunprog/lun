@@ -152,11 +152,13 @@ impl FromAst for CkStatement {
             Stmt::VariableDef {
                 name,
                 name_loc,
+                mutable,
                 typ,
                 value,
             } => CkStmt::VariableDef {
                 name: name.clone(),
                 name_loc,
+                mutable,
                 typ: from_ast(typ),
                 value: from_ast(value),
                 sym: MaybeUnresolved::Unresolved(name),
@@ -179,6 +181,7 @@ pub enum CkStmt {
     VariableDef {
         name: String,
         name_loc: Span,
+        mutable: bool,
         typ: Option<CkExpression>,
         value: Option<CkExpression>,
         /// the symbol representing this function

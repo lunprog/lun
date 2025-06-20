@@ -268,6 +268,8 @@ pub enum ErrorCode {
     LoopKwOutsideLoop = 16,
     /// unknown type
     UnknownType = 17,
+    /// mutation of immutable
+    MutationOfImmutable = 18,
 }
 
 impl Display for ErrorCode {
