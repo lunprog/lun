@@ -593,7 +593,7 @@ impl UnaryOp {
     pub fn from_tt(tt: TokenType) -> Option<UnaryOp> {
         match tt {
             Punct(Punctuation::Minus) => Some(UnaryOp::Negation),
-            Kw(Keyword::Not) => Some(UnaryOp::Not),
+            Punct(Punctuation::Bang) => Some(UnaryOp::Not),
             Punct(Punctuation::Ampsand) => Some(UnaryOp::AddressOf),
             _ => None,
         }
@@ -604,7 +604,7 @@ impl UnaryOp {
 pub fn parse_unary_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (op, lo) = expect_token!(parser => [
         Punct(Punctuation::Minus), UnaryOp::Negation;
-        Kw(Keyword::Not), UnaryOp::Not;
+        Punct(Punctuation::Bang), UnaryOp::Not;
         Punct(Punctuation::Ampsand), UnaryOp::AddressOf;
     ], "minus operator or keyword not");
 
