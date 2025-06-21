@@ -300,6 +300,10 @@ impl FromAst for CkExpression {
                 mutable,
                 typ: from_ast(*typ),
             },
+            Expr::Deref { mutable, val } => CkExpr::Deref {
+                mutable,
+                val: from_ast(*val),
+            },
         };
 
         CkExpression {
@@ -486,6 +490,13 @@ pub enum CkExpr {
     PointerType {
         mutable: bool,
         typ: Box<CkExpression>,
+    },
+    /// see [`Deref`]
+    ///
+    /// [`Deref`]: lun_parser::expr::Expr::Deref
+    Deref {
+        mutable: bool,
+        val: Box<CkExpression>,
     },
 }
 

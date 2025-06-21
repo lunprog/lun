@@ -156,6 +156,10 @@ pub enum Expr {
     ///
     /// "*" "mut"? expression
     PointerType { mutable: bool, typ: Box<Expression> },
+    /// Dereference
+    ///
+    /// "&" "mut"? expression
+    Deref { mutable: bool, val: Box<Expression> },
 }
 
 #[derive(Debug, Clone)]
@@ -193,6 +197,7 @@ pub fn parse_expr_precedence(
         // Some(Char(_)) => parse!(@fn parser => parse_charlit_expr),
         Some(StringLit(_)) => parse!(@fn parser => parse_strlit_expr),
         Some(Punct(Punctuation::LParen)) => parse!(@fn parser => parse_grouping_expr),
+        Some(Punct(Punctuation::Ampsand)) => parse!(@fn parser => parse_deref_expr),
         Some(Ident(_)) => parse!(@fn parser => parse_ident_expr),
         Some(Kw(Keyword::Fun)) => parse!(@fn parser => parse_fundef_expr),
         Some(Kw(Keyword::If)) => parse!(@fn parser => parse_if_else_expr, false),
@@ -603,8 +608,6 @@ pub enum UnaryOp {
     Negation,
     /// `! expression`
     Not,
-    /// `& expression`
-    AddressOf,
     // right unary operator
     /// `expression.*`
     Dereference,
@@ -615,7 +618,6 @@ impl Display for UnaryOp {
         let str = match self {
             Self::Negation => "-",
             Self::Not => "!",
-            Self::AddressOf => "&",
             Self::Dereference => ".*",
         };
 
@@ -632,7 +634,6 @@ impl UnaryOp {
         match tt {
             Punct(Punctuation::Minus) => Some(UnaryOp::Negation),
             Punct(Punctuation::Bang) => Some(UnaryOp::Not),
-            Punct(Punctuation::Ampsand) => Some(UnaryOp::AddressOf),
             _ => None,
         }
     }
@@ -1007,6 +1008,26 @@ pub fn parse_unary_right_expr(
             op,
             expr: Box::new(lhs),
         },
+        loc: Span::from_ends(lo, hi),
+    })
+}
+
+pub fn parse_deref_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Punct(Punctuation::Ampsand), ()], Punctuation::Ampsand);
+
+    let mutable = if let Some(Kw(Keyword::Mut)) = parser.peek_tt() {
+        parser.pop();
+        true
+    } else {
+        false
+    };
+
+    let val = parse!(box: parser => Expression);
+
+    let hi = val.loc.clone();
+
+    Ok(Expression {
+        expr: Expr::Deref { mutable, val },
         loc: Span::from_ends(lo, hi),
     })
 }

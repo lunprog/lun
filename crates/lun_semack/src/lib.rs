@@ -610,12 +610,6 @@ impl SemanticCk {
                         self.type_check(AtomicType::Bool, &mut **val, None, exp_loc);
                         expr.atomtyp = AtomicType::Bool;
                     }
-                    UnaryOp::AddressOf => {
-                        expr.atomtyp = AtomicType::Pointer {
-                            mutable: false,
-                            pointed: Box::new(val.atomtyp.clone()),
-                        };
-                    }
                     UnaryOp::Dereference => {
                         let pointee = if let AtomicType::Pointer {
                             mutable: _,
@@ -830,6 +824,17 @@ impl SemanticCk {
                 }
 
                 expr.atomtyp = AtomicType::Type;
+            }
+            CkExpr::Deref { mutable, val } => {
+                // TODO: if we expected a pointer to be mutable / immutable
+                // and the value was a deref, add an help message like "try to
+                // remove / add the `mut` keyword"
+                self.check_expr(val)?;
+
+                expr.atomtyp = AtomicType::Pointer {
+                    mutable: *mutable,
+                    pointed: Box::new(val.atomtyp.clone()),
+                };
             }
         }
 
