@@ -137,14 +137,10 @@ pub enum Keyword {
     And,
     /// break
     Break,
-    /// class
-    Class,
     /// comptime
     Comptime,
     /// continue
     Continue,
-    /// do
-    Do,
     /// else
     Else,
     /// false
@@ -165,8 +161,6 @@ pub enum Keyword {
     Mut,
     /// nil
     Nil,
-    /// not
-    Not,
     /// Or
     Or,
     /// pub
@@ -184,8 +178,6 @@ pub enum Keyword {
     Trait,
     /// true
     True,
-    /// var
-    Var,
     /// while
     While,
 }
@@ -197,17 +189,11 @@ impl Keyword {
     /// `break` keyword.
     pub const BREAK: &str = "break";
 
-    /// `class` keyword.
-    pub const CLASS: &str = "class";
-
     /// `comptime` keyword.
     pub const COMPTIME: &str = "comptime";
 
     /// `continue` keyword.
     pub const CONTINUE: &str = "continue";
-
-    /// `do` keyword.
-    pub const DO: &str = "do";
 
     /// `else` keyword.
     pub const ELSE: &str = "else";
@@ -239,9 +225,6 @@ impl Keyword {
     /// `nil` keyword.
     pub const NIL: &str = "nil";
 
-    /// `not` keyword.
-    pub const NOT: &str = "not";
-
     /// `or` keyword.
     pub const OR: &str = "or";
 
@@ -263,9 +246,6 @@ impl Keyword {
     /// `true` keyword.
     pub const TRUE: &str = "true";
 
-    /// `var` keyword.
-    pub const VAR: &str = "var";
-
     /// `while` keyword.
     pub const WHILE: &str = "while";
 }
@@ -275,10 +255,8 @@ impl Display for Keyword {
         match self {
             Keyword::And => f.write_str(Keyword::AND),
             Keyword::Break => f.write_str(Keyword::BREAK),
-            Keyword::Class => f.write_str(Keyword::CLASS),
             Keyword::Comptime => f.write_str(Keyword::COMPTIME),
             Keyword::Continue => f.write_str(Keyword::CONTINUE),
-            Keyword::Do => f.write_str(Keyword::DO),
             Keyword::Else => f.write_str(Keyword::ELSE),
             Keyword::False => f.write_str(Keyword::FALSE),
             Keyword::For => f.write_str(Keyword::FOR),
@@ -289,7 +267,6 @@ impl Display for Keyword {
             Keyword::Let => f.write_str(Keyword::LET),
             Keyword::Mut => f.write_str(Keyword::MUT),
             Keyword::Nil => f.write_str(Keyword::NIL),
-            Keyword::Not => f.write_str(Keyword::NOT),
             Keyword::Or => f.write_str(Keyword::OR),
             Keyword::Pub => f.write_str(Keyword::PUB),
             Keyword::Return => f.write_str(Keyword::RETURN),
@@ -297,7 +274,6 @@ impl Display for Keyword {
             Keyword::Then => f.write_str(Keyword::THEN),
             Keyword::Trait => f.write_str(Keyword::TRAIT),
             Keyword::True => f.write_str(Keyword::TRUE),
-            Keyword::Var => f.write_str(Keyword::VAR),
             Keyword::While => f.write_str(Keyword::WHILE),
         }
     }

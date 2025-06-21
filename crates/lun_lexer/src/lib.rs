@@ -243,10 +243,8 @@ impl Lexer {
         match word.as_str() {
             Keyword::AND => Kw(Keyword::And),
             Keyword::BREAK => Kw(Keyword::Break),
-            Keyword::CLASS => Kw(Keyword::Class),
             Keyword::COMPTIME => Kw(Keyword::Comptime),
             Keyword::CONTINUE => Kw(Keyword::Continue),
-            Keyword::DO => Kw(Keyword::Do),
             Keyword::ELSE => Kw(Keyword::Else),
             Keyword::FALSE => Kw(Keyword::False),
             Keyword::FOR => Kw(Keyword::For),
@@ -257,7 +255,6 @@ impl Lexer {
             Keyword::LET => Kw(Keyword::Let),
             Keyword::MUT => Kw(Keyword::Mut),
             Keyword::NIL => Kw(Keyword::Nil),
-            Keyword::NOT => Kw(Keyword::Not),
             Keyword::OR => Kw(Keyword::Or),
             Keyword::PUB => Kw(Keyword::Pub),
             Keyword::RETURN => Kw(Keyword::Return),
@@ -265,7 +262,6 @@ impl Lexer {
             Keyword::THEN => Kw(Keyword::Then),
             Keyword::TRAIT => Kw(Keyword::Trait),
             Keyword::TRUE => Kw(Keyword::True),
-            Keyword::VAR => Kw(Keyword::Var),
             Keyword::WHILE => Kw(Keyword::While),
             _ => TokenType::Ident(word),
         }
