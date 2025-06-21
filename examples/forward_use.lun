@@ -1,7 +1,7 @@
 //! forward use - here `res` is using a function `add` defined after it's use
 
 main :: fun() {
-    var res = add(1, 2);
+    let res = add(1, 2);
     _ = res;
 }
 
