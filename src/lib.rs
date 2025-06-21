@@ -17,12 +17,10 @@
 //! ```
 
 use crate::{
-    bc::{AFunct, BcBlob, Reg},
     diag::{DiagnosticSink, StageResult, tri},
     lexer::Lexer,
     parser::Parser,
     semack::SemanticCk,
-    vm::Vm,
 };
 
 pub use lun_bc as bc;
@@ -38,7 +36,8 @@ pub use lun_vm as vm;
 // should be reported.
 pub fn run() -> StageResult<()> {
     // 0. retrieve the source code
-    let source_code = include_str!("../examples/forward_use.lun");
+    // let source_code = include_str!("../examples/forward_use.lun");
+    let source_code = include_str!("../test.lun");
 
     // 1. create the sink
     let mut sink = DiagnosticSink::new("examples.lun".to_owned(), source_code.to_owned());
@@ -51,50 +50,33 @@ pub fn run() -> StageResult<()> {
     // 3. parse the token tree to an ast
     let mut parser = Parser::new(tt, sink.clone());
 
-    let ast = tri!(parser.produce(), sink);
+    let program = tri!(parser.produce(), sink);
 
     // 4. semantic and type checking of the ast
 
-    let mut semacker = SemanticCk::new(ast, sink.clone());
+    let mut semacker = SemanticCk::new(program, sink.clone());
 
-    let ckast = tri!(semacker.produce(), sink);
+    let ckprogram = tri!(semacker.produce(), sink);
+    dbg!(ckprogram);
 
-    dbg!(&ckast);
+    // // 5. convert ast to ir
+    // let ir = IrModule::from_ck_chunk(ckast);
+    // dbg!(ir);
+    // // TODO: make the codegenerator work on the ir.
 
-    // TODO: make the codegenerator work on the ir.
+    // let mut blob = BcBlob::new();
+    // blob.write_add(AFunct::X, Reg::t1, Reg::a0, Reg::a1);
 
-    let mut blob = BcBlob::new();
-    blob.write_add(AFunct::X, Reg::t1, Reg::a0, Reg::a1);
+    // blob.write_mul(AFunct::F16, Reg::a0, Reg::t1, Reg::a2);
 
-    blob.write_mul(AFunct::F16, Reg::a0, Reg::t1, Reg::a2);
+    // blob.disassemble("test blob");
 
-    blob.write_call(0xDEAD_BEEF);
-
-    blob.write_ret();
-
-    blob.write_call(0xDEAD_BEEF);
-
-    blob.write_jze(Reg::sp, 0xDEAD, Reg::a0);
-    blob.write_jze(Reg::sp, 0xDEAD, Reg::zr);
-
-    blob.write_beq(Reg::a0, Reg::zr, 0xBEEF);
-
-    blob.write_ld_b(Reg::t1, 0x4, Reg::sp);
-
-    blob.write_st_b(Reg::t1, 0x4, Reg::sp);
-    blob.write_st_h(Reg::t1, 0x4, Reg::sp);
-    blob.write_st_w(Reg::t1, 0x4, Reg::sp);
-    blob.write_st_d(Reg::t1, 0x4, Reg::sp);
-
-    blob.write_li_b(Reg::t2, 0xFF, Reg::a1);
-    blob.write_li_h(Reg::t2, 0xFF00, Reg::a1);
-    blob.write_li_w(Reg::t2, 0xFF0000, Reg::a1);
-    blob.write_li_d(Reg::t2, 0xDEAD_BEEF, Reg::a1);
-    blob.disassemble("test blob");
-
-    let mut vm = Vm::new(Vm::BASE_STACK, blob);
-    vm.debug_regs();
-    vm.run();
+    // let mut vm = Vm::new(Vm::BASE_STACK, blob);
+    // vm.debug_regs();
+    // match vm.run() {
+    //     Ok(()) => {}
+    //     Err(exception) => eprintln!("Exception: {exception}"),
+    // }
 
     // 6. code generation
     // let mut codegen = CodeGenerator::new(ckast, sink.clone(), LBType::Exec);

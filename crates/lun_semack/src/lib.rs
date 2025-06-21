@@ -232,7 +232,7 @@ impl SemanticCk {
                     });
 
                     // poisoned value
-                    args_atomtype.push(AtomicType::Nil);
+                    args_atomtype.push(AtomicType::Void);
                 };
             }
 
@@ -248,10 +248,10 @@ impl SemanticCk {
                     });
 
                     // poisoned value
-                    Box::new(AtomicType::Nil)
+                    Box::new(AtomicType::Void)
                 }
             } else {
-                Box::new(AtomicType::Nil)
+                Box::new(AtomicType::Void)
             };
 
             let mut ckname = def.name.clone();
@@ -371,7 +371,7 @@ impl SemanticCk {
             self.check_expr(expr)?;
             block.atomtyp = expr.atomtyp.clone();
         } else {
-            block.atomtyp = AtomicType::Nil;
+            block.atomtyp = AtomicType::Void;
         }
 
         Ok(())
@@ -541,9 +541,9 @@ impl SemanticCk {
 
                 self.check_expr(rhs)?;
 
-                expr.atomtyp = AtomicType::Nil;
+                expr.atomtyp = AtomicType::Void;
             }
-            // other special case of Binary, make assignement evaluate to Nil
+            // other special case of Binary, make assignement evaluate to Void
             CkExpr::Binary {
                 lhs,
                 op: BinOp::Assignement,
@@ -555,7 +555,7 @@ impl SemanticCk {
                 let rhs_loc = rhs.loc.clone();
                 self.type_check(&lhs.atomtyp, &mut **rhs, None, rhs_loc);
 
-                expr.atomtyp = AtomicType::Nil;
+                expr.atomtyp = AtomicType::Void;
 
                 // check that if lhs is a variable, the variable is mutable
                 // TODO: check if pointer is mutable also
@@ -723,9 +723,9 @@ impl SemanticCk {
 
                 expr.atomtyp =
                     if let Some(Loop { atomtyp, .. }) = self.loop_stack.get(index.unwrap()) {
-                        atomtyp.clone().replace(AtomicType::Nil)
+                        atomtyp.clone().replace(AtomicType::Void)
                     } else {
-                        AtomicType::Nil
+                        AtomicType::Void
                     };
             }
             CkExpr::For { .. } => {
@@ -737,7 +737,7 @@ impl SemanticCk {
                     loc: expr.loc.clone(),
                 });
 
-                expr.atomtyp = AtomicType::Nil;
+                expr.atomtyp = AtomicType::Void;
             }
             CkExpr::Return { val } => {
                 expr.atomtyp = AtomicType::Noreturn;
@@ -787,12 +787,12 @@ impl SemanticCk {
                     };
                 } else {
                     if atomtyp == AtomicType::Unknown {
-                        self.loop_stack.set_atomtyp(idx, AtomicType::Nil);
+                        self.loop_stack.set_atomtyp(idx, AtomicType::Void);
                     } else {
                         self.sink.push(
                             MismatchedTypes {
                                 expected: atomtyp.as_string(),
-                                found: AtomicType::Nil,
+                                found: AtomicType::Void,
                                 due_to: None,
                                 loc: expr.loc.clone(),
                             }
@@ -816,7 +816,8 @@ impl SemanticCk {
                 *index = Some(new_idx);
             }
             CkExpr::Null => {
-                expr.atomtyp = AtomicType::Nil;
+                // TODO: make it coerce to pointer also
+                expr.atomtyp = AtomicType::Void;
             }
             CkExpr::PointerType { typ, .. } => {
                 self.check_expr(typ)?;
@@ -1033,9 +1034,8 @@ pub enum AtomicType {
     // TODO: implement strings
     /// a string, nothing for now, we can't use them
     Str,
-    /// a nil value, just the `nil` literal or nothing, its the base return
-    /// type of a function that returns nothing
-    Nil,
+    /// void. nothing, default return type of a function without a return type.
+    Void,
     /// a function type, can only be constructed from a function definition.
     Fun {
         /// types of the arguments
@@ -1061,6 +1061,7 @@ pub enum AtomicType {
     /// `comptime_float` is the type of every float literal it can coerce to any
     /// float type, `f16`, `f32`, `f64`
     ComptimeFloat,
+    /// pointer.
     Pointer {
         mutable: bool,
         pointed: Box<AtomicType>,
@@ -1085,6 +1086,7 @@ impl AtomicType {
         ("bool", AtomicType::Bool),
         ("str", AtomicType::Str),
         ("noreturn", AtomicType::Noreturn),
+        ("void", AtomicType::Void),
         ("comptime_int", AtomicType::ComptimeInt),
         ("comptime_float", AtomicType::ComptimeFloat),
     ];
@@ -1209,7 +1211,7 @@ impl Display for AtomicType {
             AtomicType::F64 => f.write_str("f64"),
             AtomicType::Bool => f.write_str("bool"),
             AtomicType::Str => f.write_str("str"),
-            AtomicType::Nil => f.write_str("nil"),
+            AtomicType::Void => f.write_str("void"),
             // TODO: implement a proper display for function type, like `fun(int, f16) -> bool`
             AtomicType::Fun { .. } => f.write_str("fun"),
             AtomicType::Type => f.write_str("type"),
@@ -1406,6 +1408,16 @@ impl SymbolMap {
                     Symbol::global(
                         AtomicType::Type,
                         "noreturn".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "void".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "void".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,

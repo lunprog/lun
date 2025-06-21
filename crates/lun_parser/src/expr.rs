@@ -346,7 +346,7 @@ pub enum Precedence {
     /// or
     ///
     /// `expression op`
-    CallAndUnaryRight,
+    Call,
     /// `intlit "true" "false" charlit strlit group`
     Primary,
     // Like `__First__` it is a special variant of `Precedence` that should
@@ -371,8 +371,8 @@ impl Precedence {
             Self::Shift => Self::Term,
             Self::Term => Self::Factor,
             Self::Factor => Self::Unary,
-            Self::Unary => Self::CallAndUnaryRight,
-            Self::CallAndUnaryRight => Self::Primary,
+            Self::Unary => Self::Call,
+            Self::Call => Self::Primary,
             Self::Primary => Self::__Last__,
             Self::__Last__ => unreachable!(),
         }
@@ -392,7 +392,7 @@ impl Precedence {
             Self::Term => Associativity::LeftToRight,
             Self::Factor => Associativity::LeftToRight,
             Self::Unary => Associativity::RightToLeft,
-            Self::CallAndUnaryRight => Associativity::LeftToRight,
+            Self::Call => Associativity::LeftToRight,
             Self::Primary => Associativity::LeftToRight,
             Self::__Last__ | Self::__First__ => unreachable!(),
         }
@@ -418,9 +418,8 @@ impl Precedence {
             Punct(Punctuation::Star | Punctuation::Slash | Punctuation::Percent) => {
                 Some(Precedence::Factor)
             }
-            Punct(Punctuation::LParen | Punctuation::DotStar) => {
-                Some(Precedence::CallAndUnaryRight)
-            }
+            Punct(Punctuation::LParen) => Some(Precedence::Call),
+            Punct(Punctuation::DotStar) => Some(Precedence::Primary),
             _ => None,
         }
     }
