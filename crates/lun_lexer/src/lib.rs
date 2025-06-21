@@ -4,7 +4,7 @@ use diags::{
     InvalidDigitInNumber, TooLargeIntegerLiteral, UnknownCharacterEscape, UnknownToken,
     UnterminatedStringLiteral,
 };
-use lun_diag::{Diagnostic, DiagnosticSink, StageResult};
+use lun_diag::{Diagnostic, DiagnosticSink, StageResult, feature_todo};
 
 use lun_utils::{
     Span, span,
@@ -56,11 +56,11 @@ impl Lexer {
             }
         }
 
+        tt.finish();
+
         if self.sink.failed() {
             return StageResult::Part(tt, self.sink.clone());
         }
-
-        tt.finish();
 
         StageResult::Good(tt)
     }
@@ -87,6 +87,7 @@ impl Lexer {
         span(self.prev, self.cur)
     }
 
+    #[track_caller]
     pub fn expect(&mut self, expected: char) {
         let popped = self.pop().unwrap();
         if popped != expected {
@@ -139,6 +140,10 @@ impl Lexer {
             Some(':') => Punct(Colon),
             Some(',') => Punct(Comma),
             Some(';') => Punct(SemiColon),
+            Some('^') => Punct(Carret),
+            Some('&') => Punct(Ampsand),
+            Some('|') => Punct(Pipe),
+            Some('%') => Punct(Percent),
             Some('=') => {
                 self.pop();
                 match self.peek() {
@@ -151,17 +156,27 @@ impl Lexer {
             }
             Some('!') => {
                 self.pop();
-                self.expect('=');
-                return Ok(Punct(BangEqual));
+
+                return match self.peek() {
+                    Some('=') => {
+                        self.pop();
+                        Ok(Punct(BangEqual))
+                    }
+                    _ => Ok(Punct(Bang)),
+                };
             }
             Some('<') => {
                 self.pop();
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Ok(Punct(LArrowEqual));
+                        return Ok(Punct(LtEqual));
                     }
-                    _ => return Ok(Punct(LArrow)),
+                    Some('<') => {
+                        self.pop();
+                        return Ok(Punct(Lt2));
+                    }
+                    _ => return Ok(Punct(Lt)),
                 }
             }
             Some('>') => {
@@ -169,9 +184,13 @@ impl Lexer {
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Ok(Punct(RArrowEqual));
+                        return Ok(Punct(GtEqual));
                     }
-                    _ => return Ok(Punct(RArrow)),
+                    Some('>') => {
+                        self.pop();
+                        return Ok(Punct(Gt2));
+                    }
+                    _ => return Ok(Punct(Gt)),
                 }
             }
             Some('/') => {
@@ -184,6 +203,16 @@ impl Lexer {
                         return Ok(TokenType::__NotAToken__);
                     }
                     _ => return Ok(Punct(Slash)),
+                }
+            }
+            Some('.') => {
+                self.pop();
+                match self.peek() {
+                    Some('*') => {
+                        self.pop();
+                        return Ok(Punct(DotStar));
+                    }
+                    _ => return Ok(Punct(Dot)),
                 }
             }
             Some('"') => return self.lex_string(),
@@ -212,28 +241,27 @@ impl Lexer {
         use TokenType::Kw;
 
         match word.as_str() {
+            Keyword::AND => Kw(Keyword::And),
             Keyword::BREAK => Kw(Keyword::Break),
-            Keyword::CLASS => Kw(Keyword::Class),
             Keyword::COMPTIME => Kw(Keyword::Comptime),
             Keyword::CONTINUE => Kw(Keyword::Continue),
-            Keyword::DO => Kw(Keyword::Do),
             Keyword::ELSE => Kw(Keyword::Else),
-            Keyword::END => Kw(Keyword::End),
             Keyword::FALSE => Kw(Keyword::False),
             Keyword::FOR => Kw(Keyword::For),
             Keyword::FUN => Kw(Keyword::Fun),
             Keyword::IF => Kw(Keyword::If),
             Keyword::IMPL => Kw(Keyword::Impl),
             Keyword::IN => Kw(Keyword::In),
-            Keyword::NIL => Kw(Keyword::Nil),
-            Keyword::NOT => Kw(Keyword::Not),
+            Keyword::LET => Kw(Keyword::Let),
+            Keyword::MUT => Kw(Keyword::Mut),
+            Keyword::NULL => Kw(Keyword::Null),
+            Keyword::OR => Kw(Keyword::Or),
             Keyword::PUB => Kw(Keyword::Pub),
             Keyword::RETURN => Kw(Keyword::Return),
             Keyword::SELF => Kw(Keyword::Zelf),
             Keyword::THEN => Kw(Keyword::Then),
             Keyword::TRAIT => Kw(Keyword::Trait),
             Keyword::TRUE => Kw(Keyword::True),
-            Keyword::VAR => Kw(Keyword::Var),
             Keyword::WHILE => Kw(Keyword::While),
             _ => TokenType::Ident(word),
         }
@@ -329,10 +357,10 @@ impl Lexer {
             'u' | 'U' => {
                 // TODO: implement the lexing of unicode es
                 // in the for of \U+FFFF ig
-                self.sink.push(UnknownCharacterEscape {
-                    es,
-                    loc: span(self.cur - 1, self.cur),
-                    is_unicode: true,
+                self.sink.push(feature_todo! {
+                    feature: "unicode escape sequence",
+                    label: "unicode escape isn't yet implemented.",
+                    loc: span(self.cur - 1, self.cur)
                 });
                 '\0'
             }
@@ -340,7 +368,6 @@ impl Lexer {
                 self.sink.push(UnknownCharacterEscape {
                     es,
                     loc: span(self.cur - 1, self.cur),
-                    is_unicode: false,
                 });
 
                 '\0'

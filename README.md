@@ -2,6 +2,8 @@
 
 Lun is a simple, staticaly typed programming language heavily inspired by Lua.
 
+Make a treesitter parser and check out treereduce.
+
 - To create the tree sitter take inspiration from:
   https://github.com/tjdevries/tree-sitter-lua
 - Name resolution -> https://www3.nd.edu/~dthain/compilerbook/chapter7.pdf

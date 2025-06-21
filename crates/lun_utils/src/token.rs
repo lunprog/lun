@@ -130,26 +130,19 @@ impl Display for TokenType {
     }
 }
 
-// TODO: add keyword `nil` and implement the nil expression
-// TODO: add keyword `comptime` for future use
-//
-// /!\ If a keyword is added change the `lex_identifer` method of the Lexer
+// WARN: /!\ If a keyword is added change the `lex_identifer` method of the Lexer
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Keyword {
+    /// and
+    And,
     /// break
     Break,
-    /// class
-    Class,
     /// comptime
     Comptime,
     /// continue
     Continue,
-    /// do
-    Do,
     /// else
     Else,
-    /// end
-    End,
     /// false
     False,
     /// for
@@ -162,10 +155,14 @@ pub enum Keyword {
     Impl,
     /// in
     In,
-    /// nil
-    Nil,
-    /// not
-    Not,
+    /// let
+    Let,
+    /// mut
+    Mut,
+    /// null
+    Null,
+    /// Or
+    Or,
     /// pub
     Pub,
     /// return
@@ -181,18 +178,16 @@ pub enum Keyword {
     Trait,
     /// true
     True,
-    /// var
-    Var,
     /// while
     While,
 }
 
 impl Keyword {
+    /// `and` keyword.
+    pub const AND: &str = "and";
+
     /// `break` keyword.
     pub const BREAK: &str = "break";
-
-    /// `class` keyword.
-    pub const CLASS: &str = "class";
 
     /// `comptime` keyword.
     pub const COMPTIME: &str = "comptime";
@@ -200,14 +195,8 @@ impl Keyword {
     /// `continue` keyword.
     pub const CONTINUE: &str = "continue";
 
-    /// `do` keyword.
-    pub const DO: &str = "do";
-
     /// `else` keyword.
     pub const ELSE: &str = "else";
-
-    /// `end` keyword.
-    pub const END: &str = "end";
 
     /// `false` keyword.
     pub const FALSE: &str = "false";
@@ -227,11 +216,17 @@ impl Keyword {
     /// `in` keyword.
     pub const IN: &str = "in";
 
-    /// `nil` keyword.
-    pub const NIL: &str = "nil";
+    /// `let` keyword.
+    pub const LET: &str = "let";
 
-    /// `not` keyword.
-    pub const NOT: &str = "not";
+    /// `mut` keyword
+    pub const MUT: &str = "mut";
+
+    /// `null` keyword.
+    pub const NULL: &str = "null";
+
+    /// `or` keyword.
+    pub const OR: &str = "or";
 
     /// `pub` keyword.
     pub const PUB: &str = "pub";
@@ -251,9 +246,6 @@ impl Keyword {
     /// `true` keyword.
     pub const TRUE: &str = "true";
 
-    /// `var` keyword.
-    pub const VAR: &str = "var";
-
     /// `while` keyword.
     pub const WHILE: &str = "while";
 }
@@ -261,28 +253,27 @@ impl Keyword {
 impl Display for Keyword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Keyword::And => f.write_str(Keyword::AND),
             Keyword::Break => f.write_str(Keyword::BREAK),
-            Keyword::Class => f.write_str(Keyword::CLASS),
             Keyword::Comptime => f.write_str(Keyword::COMPTIME),
             Keyword::Continue => f.write_str(Keyword::CONTINUE),
-            Keyword::Do => f.write_str(Keyword::DO),
             Keyword::Else => f.write_str(Keyword::ELSE),
-            Keyword::End => f.write_str(Keyword::END),
             Keyword::False => f.write_str(Keyword::FALSE),
             Keyword::For => f.write_str(Keyword::FOR),
             Keyword::Fun => f.write_str(Keyword::FUN),
             Keyword::If => f.write_str(Keyword::IF),
             Keyword::Impl => f.write_str(Keyword::IMPL),
             Keyword::In => f.write_str(Keyword::IN),
-            Keyword::Nil => f.write_str(Keyword::NIL),
-            Keyword::Not => f.write_str(Keyword::NOT),
+            Keyword::Let => f.write_str(Keyword::LET),
+            Keyword::Mut => f.write_str(Keyword::MUT),
+            Keyword::Null => f.write_str(Keyword::NULL),
+            Keyword::Or => f.write_str(Keyword::OR),
             Keyword::Pub => f.write_str(Keyword::PUB),
             Keyword::Return => f.write_str(Keyword::RETURN),
             Keyword::Zelf => f.write_str(Keyword::SELF),
             Keyword::Then => f.write_str(Keyword::THEN),
             Keyword::Trait => f.write_str(Keyword::TRAIT),
             Keyword::True => f.write_str(Keyword::TRUE),
-            Keyword::Var => f.write_str(Keyword::VAR),
             Keyword::While => f.write_str(Keyword::WHILE),
         }
     }
@@ -320,18 +311,36 @@ pub enum Punctuation {
     Equal2,
     /// !=
     BangEqual,
+    /// !
+    Bang,
     /// <=
-    LArrow,
+    LtEqual,
     /// <
-    LArrowEqual,
+    Lt,
+    /// <<
+    Lt2,
     /// >
-    RArrow,
+    Gt,
+    /// >>
+    Gt2,
     /// >=
-    RArrowEqual,
+    GtEqual,
     /// ;
     SemiColon,
     /// ->
     Arrow,
+    /// ^
+    Carret,
+    /// &
+    Ampsand,
+    /// |
+    Pipe,
+    /// %
+    Percent,
+    /// .
+    Dot,
+    /// .*
+    DotStar,
 }
 
 impl Display for Punctuation {
@@ -353,12 +362,21 @@ impl Display for Punctuation {
             Equal => f.write_str("="),
             Equal2 => f.write_str("=="),
             BangEqual => f.write_str("!="),
-            LArrow => f.write_str("<="),
-            LArrowEqual => f.write_str("<"),
-            RArrow => f.write_str(">"),
-            RArrowEqual => f.write_str(">="),
+            Bang => f.write_str("!"),
+            LtEqual => f.write_str("<="),
+            Lt => f.write_str("<"),
+            Lt2 => f.write_str("<<"),
+            Gt => f.write_str(">"),
+            Gt2 => f.write_str(">>"),
+            GtEqual => f.write_str(">="),
             SemiColon => f.write_str(";"),
             Arrow => f.write_str("->"),
+            Carret => f.write_str("^"),
+            Ampsand => f.write_str("&"),
+            Pipe => f.write_str("|"),
+            Percent => f.write_str("%"),
+            Dot => f.write_str("."),
+            DotStar => f.write_str(".*"),
         }
     }
 }

@@ -3,155 +3,375 @@ use std::fmt::{Debug, Display};
 use std::iter::zip;
 
 use ckast::{
-    CkArg, CkChunk, CkElseIf, CkExpr, CkExpression, CkStatement, CkStmt, FromAst, MaybeUnresolved,
+    CkArg, CkBlock, CkExpr, CkExpression, CkProgram, CkStatement, CkStmt, FromAst, MaybeUnresolved,
 };
 use diags::{
-    CallRequiresFuncType, ExpectedType, ExpectedTypeFoundExpr, NeverUsedSymbol, NotFoundInScope,
-    ReturnOutsideFunc, TypeAnnotationsNeeded, UnderscoreInExpression, UnderscoreReservedIdent,
+    ExpectedTypeFoundExpr, LoopKwOutsideLoop, MismatchedTypes, MutationOfImmutable,
+    NeverUsedSymbol, NotFoundInScope, TypeAnnotationsNeeded, UnderscoreInExpression,
+    UnderscoreReservedIdent, UnknownType,
 };
-use lun_diag::{Diagnostic, DiagnosticSink, Label, StageResult, ToDiagnostic};
-use lun_parser::expr::UnaryOp;
-use lun_parser::stmt::Chunk;
+use lun_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic, feature_todo};
+use lun_parser::definition::Program;
+use lun_parser::expr::{BinOp, UnaryOp};
 use lun_utils::Span;
 
 pub mod ckast;
 pub mod diags;
-pub use lun_parser::stmt::Vis;
+pub use lun_parser::definition::Vis;
 
 /// Semantic checker, ensure all of the lun's semantic is correct, it also
 /// include type checking.
 #[derive(Debug, Clone)]
 pub struct SemanticCk {
-    ast: Chunk,
+    /// program to check
+    program: Program,
+    /// diagnostic sink, used to emit diagnostics
     sink: DiagnosticSink,
+    /// symbol table of the program
     table: SymbolTable,
-    retstack: ReturnStack,
+    /// the return type of the current function
+    fun_retaty: AtomicType,
+    /// location of the return type (if defined) of the current function
+    fun_retaty_loc: Option<Span>,
+    /// loop stack used to check the type of loops and break values
+    loop_stack: LoopStack,
 }
 
-impl SemanticCk {
-    pub fn new(ast: Chunk, sink: DiagnosticSink) -> SemanticCk {
-        SemanticCk {
-            ast,
-            sink,
-            table: SymbolTable::new(),
-            retstack: ReturnStack::new(),
+pub trait TypeExpectation {
+    fn matches(&self, other: &AtomicType) -> bool;
+
+    fn as_string(&self) -> String;
+
+    fn can_coerce(&self, other: &AtomicType) -> Option<AtomicType> {
+        _ = other;
+
+        None
+    }
+
+    fn dbg(&self);
+}
+
+impl TypeExpectation for AtomicType {
+    fn matches(&self, other: &AtomicType) -> bool {
+        self == other
+    }
+
+    fn as_string(&self) -> String {
+        self.to_string()
+    }
+
+    #[inline(always)]
+    fn can_coerce(&self, other: &AtomicType) -> Option<AtomicType> {
+        let coercions = other.coercions()?;
+
+        if coercions.contains(self) {
+            Some(self.clone())
+        } else {
+            None
         }
     }
 
-    pub fn produce(&mut self) -> StageResult<CkChunk> {
-        // 1. create the checked ast from the unchecked ast.
-        let mut ckast = CkChunk::from_ast(self.ast.clone());
+    fn dbg(&self) {
+        println!("{:?}", self);
+    }
+}
 
-        // 2. check the first chunk and it will recurse.
-        self.table.scope_enter();
+impl<S: ToString, F: Fn(&AtomicType) -> bool> TypeExpectation for (S, F) {
+    fn matches(&self, other: &AtomicType) -> bool {
+        self.1(other)
+    }
 
-        match self.check_chunk(&mut ckast) {
-            Ok(()) => {}
-            Err(diag) => self.sink.push(diag),
+    fn as_string(&self) -> String {
+        self.0.to_string()
+    }
+
+    fn dbg(&self) {
+        println!("({:?}, *expectation_check_function*)", self.0.to_string());
+    }
+}
+
+impl<T: TypeExpectation> TypeExpectation for &T {
+    fn matches(&self, other: &AtomicType) -> bool {
+        T::matches(&self, other)
+    }
+
+    fn as_string(&self) -> String {
+        T::as_string(&self)
+    }
+
+    fn can_coerce(&self, other: &AtomicType) -> Option<AtomicType> {
+        T::can_coerce(&self, other)
+    }
+
+    fn dbg(&self) {
+        T::dbg(&self);
+    }
+}
+
+pub trait ExprAtomicType {
+    fn atomic_type(&self) -> &AtomicType;
+
+    fn set_atomic_type(&mut self, new: AtomicType);
+}
+
+impl ExprAtomicType for CkBlock {
+    fn atomic_type(&self) -> &AtomicType {
+        &self.atomtyp
+    }
+
+    fn set_atomic_type(&mut self, new: AtomicType) {
+        self.atomtyp = new;
+    }
+}
+
+impl ExprAtomicType for CkExpression {
+    fn atomic_type(&self) -> &AtomicType {
+        &self.atomtyp
+    }
+
+    fn set_atomic_type(&mut self, new: AtomicType) {
+        self.atomtyp = new;
+    }
+}
+
+impl SemanticCk {
+    pub fn new(ast: Program, sink: DiagnosticSink) -> SemanticCk {
+        SemanticCk {
+            program: ast,
+            sink,
+            table: SymbolTable::new(),
+            fun_retaty: AtomicType::Unknown,
+            fun_retaty_loc: None,
+            loop_stack: LoopStack::new(),
         }
+    }
 
-        self.table.scope_exit(&mut self.sink);
+    pub fn produce(&mut self) -> StageResult<CkProgram> {
+        // 1. create the checked program from the unchecked program.
+        let mut ckprogram = CkProgram::from_ast(self.program.clone());
+
+        // 2. check all the defs and everything following will be checked
+        match self.check_program(&mut ckprogram) {
+            Ok(()) => {}
+            Err(e) => {
+                self.sink.push(e);
+                return StageResult::Part(ckprogram, self.sink.clone());
+            }
+        }
 
         if self.sink.failed() {
             StageResult::Fail(self.sink.clone())
         } else if !self.sink.is_empty() {
-            StageResult::Part(ckast, self.sink.clone())
+            StageResult::Part(ckprogram, self.sink.clone())
         } else {
-            StageResult::Good(ckast)
+            StageResult::Good(ckprogram)
         }
     }
 
-    pub fn check_chunk(&mut self, chunk: &mut CkChunk) -> Result<(), Diagnostic> {
-        // 1. register global defs
-        for stmt in &mut chunk.stmts {
-            match &mut stmt.stmt {
-                CkStmt::VariableDef {
-                    vis,
-                    name,
-                    name_loc,
-                    ..
-                } if *vis == Vis::Public => {
-                    // when type checking the expression and type of this
-                    // variable definition change the symbol's typ.
-                    let mut ckname = name.clone();
-                    if name == "_" {
-                        self.sink.push(UnderscoreReservedIdent {
-                            loc: name_loc.clone(),
-                        });
+    pub fn type_check(
+        &mut self,
+        expectation: impl TypeExpectation,
+        expr: &mut dyn ExprAtomicType,
+        due_to: impl Into<Option<Span>>,
+        loc: impl Into<Span>,
+    ) {
+        let aty = expr.atomic_type().clone();
 
-                        ckname = String::from("\0");
-                    }
+        if !expectation.matches(&aty) {
+            if let Some(new_aty) = expectation.can_coerce(&aty) {
+                expr.set_atomic_type(new_aty);
+                return;
+            }
 
-                    self.table.bind(
-                        ckname,
-                        Symbol::global(
-                            Type::Unknown,
-                            name.clone(),
-                            self.table.global_count(),
-                            name_loc.clone(),
-                        ),
-                    );
+            self.sink.push(MismatchedTypes {
+                expected: expectation.as_string(),
+                found: aty.clone(),
+                due_to: due_to.into(),
+                loc: loc.into(),
+            });
+        }
+    }
+
+    pub fn check_program(&mut self, ckprogram: &mut CkProgram) -> Result<(), Diagnostic> {
+        // 1. pre bind definitions
+
+        self.table.scope_enter(); // program scope
+
+        for def in &mut ckprogram.defs {
+            let CkExpr::FunDefinition {
+                args,
+                rettype,
+                body: _,
+            } = &mut def.value.expr
+            else {
+                self.sink.push(feature_todo! {
+                    feature: "global variables",
+                    label: "global aren't yet supported, only functions in definitions",
+                    loc: def.loc.clone()
+                });
+                continue;
+            };
+
+            let mut args_atomtype = Vec::new();
+            for CkArg { typ, .. } in args {
+                self.check_expr(typ)?;
+
+                if typ.atomtyp != AtomicType::Type {
+                    self.sink.push(ExpectedTypeFoundExpr {
+                        help: false,
+                        loc: typ.loc.clone(),
+                    });
                 }
-                CkStmt::FunDef {
-                    vis: _,
-                    name,
-                    args,
-                    rettype,
-                    sym,
-                    ..
-                } => {
-                    // true type of the arguments
-                    let mut args_true = Vec::new();
-                    for CkArg { typ, .. } in args {
-                        self.check_expr(typ)?;
 
-                        if typ.typ != Type::ComptimeType {
-                            self.sink.push(ExpectedTypeFoundExpr {
-                                loc: typ.loc.clone(),
-                            });
-                        }
+                if let Some(atomtyp) = AtomicType::from_expr(typ.clone()) {
+                    args_atomtype.push(atomtyp);
+                } else {
+                    self.sink.push(UnknownType {
+                        typ: typ.to_string(),
+                        loc: typ.loc.clone(),
+                    });
 
-                        args_true.push(Type::from_expr(typ.clone()));
-                    }
+                    // poisoned value
+                    args_atomtype.push(AtomicType::Void);
+                };
+            }
 
-                    let ret_true = if let Some(typ) = rettype {
-                        self.check_expr(typ)?;
-                        Box::new(Type::from_expr(typ.clone()))
-                    } else {
-                        Box::new(Type::Nil)
-                    };
+            let ret_aty = if let Some(typ) = rettype {
+                self.check_expr(typ)?;
 
-                    let mut ckname = name.clone();
-                    if name == "_" {
-                        // TODO: a better location, that points to the function's
-                        // name is prefered here.
-                        self.sink.push(UnderscoreReservedIdent {
-                            loc: stmt.loc.clone(),
-                        });
-                        ckname = String::from("\0");
-                    }
+                if let Some(atomtyp) = AtomicType::from_expr((**typ).clone()) {
+                    Box::new(atomtyp)
+                } else {
+                    self.sink.push(UnknownType {
+                        typ: typ.to_string(),
+                        loc: typ.loc.clone(),
+                    });
 
-                    let symbol = Symbol::global(
-                        Type::Fun {
-                            args: args_true,
-                            ret: ret_true,
-                        },
-                        name.clone(),
-                        self.table.global_count(),
-                        // TODO: add a new loc that points to the signature
-                        stmt.loc.clone(),
-                    );
-                    *sym = MaybeUnresolved::Resolved(symbol.clone());
-
-                    self.table.bind(ckname, symbol);
+                    // poisoned value
+                    Box::new(AtomicType::Void)
                 }
-                _ => {}
+            } else {
+                Box::new(AtomicType::Void)
+            };
+
+            let mut ckname = def.name.clone();
+            if ckname == "_" {
+                self.sink.push(UnderscoreReservedIdent {
+                    loc: def.name_loc.clone(),
+                });
+                ckname = String::from("\0");
+            }
+
+            let symbol = Symbol::function(
+                AtomicType::Fun {
+                    args: args_atomtype,
+                    ret: ret_aty,
+                },
+                ckname.clone(),
+                self.table.global_count(),
+                // TODO: add a new loc that points to the signature
+                def.loc.clone(),
+                def.vis.clone(),
+            );
+            def.sym = MaybeUnresolved::Resolved(symbol.clone());
+
+            self.table.bind(ckname, symbol);
+        }
+
+        // 2. now, check the rest of the program
+
+        for def in &mut ckprogram.defs {
+            let CkExpr::FunDefinition {
+                args,
+                rettype,
+                body,
+            } = &mut def.value.expr
+            else {
+                self.sink.push(feature_todo! {
+                    feature: "global variables",
+                    label: "global aren't yet supported, only functions in definitions",
+                    loc: def.loc.clone()
+                });
+                continue;
+            };
+
+            // reset the loop stack for this new function
+            self.loop_stack.reset();
+
+            let fun_ret_atyp = def.sym.clone().unwrap().atomtyp.as_fun_ret();
+
+            // store return type to check `return` expr after.
+            self.fun_retaty = fun_ret_atyp.clone();
+            self.fun_retaty_loc = rettype.as_ref().map(|e| e.loc.clone());
+
+            self.table.scope_enter(); // function scope
+
+            // put the arguments in the symbol table
+            for CkArg {
+                name,
+                name_loc,
+                typ,
+                loc: _,
+            } in args
+            {
+                let Some(ty) = AtomicType::from_expr(typ.clone()) else {
+                    return Err(UnknownType {
+                        typ: typ.to_string(),
+                        loc: typ.loc.clone(),
+                    }
+                    .into_diag());
+                };
+
+                let mut ckname = name.clone();
+                if name == "_" {
+                    self.sink.push(UnderscoreReservedIdent {
+                        loc: name_loc.clone(),
+                    });
+                    ckname = String::from("\0");
+                }
+
+                self.table.bind(
+                    ckname.clone(),
+                    Symbol::arg(ty, ckname.clone(), self.table.arg_count(), name_loc.clone()),
+                )
+            }
+
+            self.check_block(body)?;
+
+            // here we don't use self.type_check(..) because we don't want to
+            // coerce to any type
+            if body.atomtyp != fun_ret_atyp {
+                self.sink.push(MismatchedTypes {
+                    expected: fun_ret_atyp.to_string(),
+                    found: body.atomtyp.clone(),
+                    due_to: rettype.as_ref().map(|e| e.loc.clone()),
+                    loc: body.loc.clone(),
+                });
+            }
+
+            self.table.scope_exit(&mut self.sink); // function scope
+        }
+
+        self.table.scope_exit(&mut self.sink); // program scope
+
+        Ok(())
+    }
+
+    pub fn check_block(&mut self, block: &mut CkBlock) -> Result<(), Diagnostic> {
+        // 1. check all the stmts
+        for stmt in &mut block.stmts {
+            match self.check_stmt(stmt) {
+                Ok(()) => {}
+                Err(d) => self.sink.push(d),
             }
         }
 
-        // 2. type check, if you encounter another chunk recurse this function
-        for stmt in &mut chunk.stmts {
-            self.check_stmt(stmt)?;
+        // 2. check the last_expr if any
+        if let Some(expr) = &mut block.last_expr {
+            self.check_expr(expr)?;
+            block.atomtyp = expr.atomtyp.clone();
+        } else {
+            block.atomtyp = AtomicType::Void;
         }
 
         Ok(())
@@ -159,48 +379,10 @@ impl SemanticCk {
 
     pub fn check_stmt(&mut self, stmt: &mut CkStatement) -> Result<(), Diagnostic> {
         match &mut stmt.stmt {
-            CkStmt::Assignement { variable, value } => {
-                // if the variable has a type then we ensure that value is of the same type,
-                // otherwise we set the type of variable to the type of value.
-                self.check_expr(value)?;
-
-                let MaybeUnresolved::Unresolved(id) = variable else {
-                    panic!()
-                };
-                let Some(symbol) = self.table.lookup(&*id, true).cloned() else {
-                    return Err(NotFoundInScope {
-                        name: id.clone(),
-                        loc: stmt.loc.clone(),
-                    }
-                    .into_diag());
-                };
-
-                *variable = MaybeUnresolved::Resolved(symbol.clone());
-
-                if &symbol.name == "_" {
-                    // do nothing the assignement is to the _ identifier so we don't do anything
-                } else if symbol.typ == Type::Unknown && symbol.kind != SymKind::Arg {
-                    // we don't know the type of the local / global, so we change it
-                    self.table.edit(
-                        symbol.which,
-                        symbol.name.clone(),
-                        symbol.typ(value.clone().typ),
-                    );
-                } else {
-                    // we know the type of the variable and need to ensure the value is of the same type.
-                    if symbol.typ != value.typ {
-                        self.sink.push(ExpectedType {
-                            expected: vec![symbol.typ.clone()],
-                            found: value.typ.clone(),
-                            loc: value.loc.clone(),
-                        })
-                    }
-                }
-            }
             CkStmt::VariableDef {
-                vis,
                 name,
                 name_loc,
+                mutable,
                 typ,
                 value,
                 sym,
@@ -209,250 +391,84 @@ impl SemanticCk {
                 if let Some(ty) = typ {
                     self.check_expr(ty)?;
 
-                    if ty.typ != Type::ComptimeType {
+                    if ty.atomtyp != AtomicType::Type {
                         self.sink.push(
                             ExpectedTypeFoundExpr {
+                                help: false,
                                 loc: ty.loc.clone(),
                             }
                             .into_diag(),
                         );
                     }
                 }
+
+                let type_as_atomic = if let Some(ty) = typ {
+                    let Some(atomtyp) = AtomicType::from_expr(ty.clone()) else {
+                        return Err(UnknownType {
+                            typ: ty.to_string(),
+                            loc: ty.loc.clone(),
+                        }
+                        .into_diag());
+                    };
+                    Some(atomtyp)
+                } else {
+                    None
+                };
+
                 if let Some(value) = value {
                     // check the value
                     self.check_expr(value)?;
 
-                    if let Some(ty) = typ {
-                        let expected_ty = Type::from_expr(ty.clone());
-                        if value.typ != expected_ty {
-                            self.sink.push(ExpectedType {
-                                expected: vec![expected_ty],
-                                found: value.typ.clone(),
-                                loc: value.loc.clone(),
-                            })
-                        }
+                    if let Some(ref typ_as_aty) = type_as_atomic {
+                        let value_loc = value.loc.clone();
+
+                        self.type_check(
+                            typ_as_aty,
+                            value,
+                            typ.as_ref().map(|e| e.loc.clone()),
+                            value_loc,
+                        );
                     }
                 } else {
                     // TODO: implement variable initialization checking
                     self.sink.push(
-                        Diagnostic::error()
-                            .with_message("post variable initialization is not yet support")
-                            .with_label(Label::primary((), stmt.loc.clone())),
-                    )
-                }
-
-                let realtyp = if let Some(value) = value {
-                    value.typ.clone()
-                } else if let Some(typ) = typ {
-                    Type::from_expr(typ.clone())
-                } else {
-                    Type::Unknown
-                };
-
-                if *vis == Vis::Private {
-                    // define the symbol because we didn't do it before
-                    let mut ckname = name.clone();
-                    if name == "_" {
-                        self.sink.push(UnderscoreReservedIdent {
-                            loc: name_loc.clone(),
-                        });
-                        ckname = String::from("\0");
-                    }
-
-                    let symbol = Symbol::var(
-                        realtyp,
-                        name.clone(),
-                        self.table.var_count(),
-                        stmt.loc.clone(),
-                    );
-                    *sym = MaybeUnresolved::Resolved(symbol.clone());
-                    self.table.bind(ckname, symbol)
-                } else {
-                    // just edit the type of the global variable
-                    let Some(symbol) = self.table.lookup(name, false).cloned() else {
-                        unreachable!()
-                    };
-
-                    let symbol = symbol.typ(realtyp);
-                    *sym = MaybeUnresolved::Resolved(symbol.clone());
-
-                    self.table.edit(symbol.which, symbol.name.clone(), symbol);
-                }
-            }
-            CkStmt::IfThenElse {
-                cond,
-                body,
-                else_ifs,
-                else_body,
-            } => {
-                self.check_expr(cond)?;
-
-                if cond.typ != Type::Bool {
-                    self.sink.push(ExpectedType {
-                        expected: vec![Type::Bool],
-                        found: cond.typ.clone(),
-                        loc: cond.loc.clone(),
-                    })
-                }
-
-                self.table.scope_enter();
-
-                self.check_chunk(body)?;
-
-                self.table.scope_exit(&mut self.sink);
-
-                for CkElseIf { cond, body, .. } in else_ifs {
-                    self.check_expr(cond)?;
-
-                    if cond.typ != Type::Bool {
-                        self.sink.push(ExpectedType {
-                            expected: vec![Type::Bool],
-                            found: cond.typ.clone(),
-                            loc: cond.loc.clone(),
-                        })
-                    }
-
-                    self.table.scope_enter();
-
-                    self.check_chunk(body)?;
-
-                    self.table.scope_exit(&mut self.sink);
-                }
-
-                if let Some(body) = else_body {
-                    self.table.scope_enter();
-
-                    self.check_chunk(body)?;
-
-                    self.table.scope_exit(&mut self.sink);
-                }
-            }
-            CkStmt::DoBlock { body } => {
-                self.table.scope_enter();
-
-                self.check_chunk(body)?;
-
-                self.table.scope_exit(&mut self.sink);
-            }
-            CkStmt::FunCall { name, args } => {
-                let MaybeUnresolved::Unresolved(id) = name else {
-                    panic!()
-                };
-                let Some(sym) = self.table.lookup(&*id, true).cloned() else {
-                    return Err(NotFoundInScope {
-                        name: id.clone(),
-                        loc: stmt.loc.clone(),
-                    }
-                    .into_diag());
-                };
-
-                *name = MaybeUnresolved::Resolved(sym.clone());
-
-                let Type::Fun {
-                    args: args_ty,
-                    ret: _,
-                } = &sym.typ
-                else {
-                    return Err(CallRequiresFuncType {
-                        is_expr: false,
-                        loc: stmt.loc.clone(),
-                    }
-                    .into_diag());
-                };
-
-                for (arg, ty) in zip(args, args_ty) {
-                    self.check_expr(arg)?;
-                    if &arg.typ != ty {
-                        self.sink.push(ExpectedType {
-                            expected: vec![arg.typ.clone()],
-                            found: ty.clone(),
-                            loc: arg.loc.clone(),
-                        })
-                    }
-                }
-
-                // TODO: emit a warning diag if the return type of the function
-                // is not `Nil` because the value isn't used.
-            }
-            CkStmt::While { .. } | CkStmt::For { .. } => {
-                // TODO: implement loops checking
-                return Err(
-                    Diagnostic::error()
-                        .with_message("`while` loops, generic `for` loops and numeric `for` loops aren't yet checked")
-                        .with_label(Label::primary((), stmt.loc.clone())
-                        )
-                );
-            }
-            CkStmt::FunDef {
-                vis: _,
-                name,
-                name_loc: _,
-                args,
-                rettype: _,
-                body,
-                sym: _,
-            } => {
-                let Some(Symbol {
-                    typ: Type::Fun { ret, .. },
-                    ..
-                }) = self.table.lookup(name, false)
-                else {
-                    unreachable!()
-                };
-                self.retstack.push(*ret.clone());
-
-                self.table.scope_enter();
-
-                for CkArg {
-                    name,
-                    name_loc,
-                    typ,
-                    loc: _,
-                } in args
-                {
-                    let ty = Type::from_expr(typ.clone());
-
-                    let mut ckname = name.clone();
-                    if name == "_" {
-                        self.sink.push(UnderscoreReservedIdent {
-                            loc: name_loc.clone(),
-                        });
-                        ckname = String::from("\0");
-                    }
-
-                    self.table.bind(
-                        ckname.clone(),
-                        Symbol::arg(ty, ckname.clone(), self.table.arg_count(), name_loc.clone()),
-                    )
-                }
-
-                self.check_chunk(body)?;
-
-                self.retstack.pop();
-
-                self.table.scope_exit(&mut self.sink);
-            }
-            CkStmt::Return { val } | CkStmt::Break { val } => {
-                // TODO: if the expected type is `Nil` and there is some val but
-                // not of type `Nil`, suggest in a Help to remove the code
-                if let Some(val) = val {
-                    self.check_expr(val)?;
-
-                    let Some(func_ret) = self.retstack.last() else {
-                        return Err(ReturnOutsideFunc {
-                            loc: stmt.loc.clone(),
+                        feature_todo!{
+                            feature: "variable initialization",
+                            label: "for now every variable must be initialized because the check for uninitialized variable is not implemented",
+                            loc: stmt.loc.clone()
                         }
-                        .into_diag());
-                    };
-
-                    if &val.typ != func_ret {
-                        self.sink.push(ExpectedType {
-                            expected: vec![func_ret.clone()],
-                            found: val.typ.clone(),
-                            loc: val.loc.clone(),
-                        })
-                    }
+                    )
                 }
+
+                let atomtyp = if let Some(ref typ_as_aty) = type_as_atomic {
+                    typ_as_aty.clone()
+                } else if let Some(value) = value {
+                    value.atomtyp.clone()
+                } else {
+                    AtomicType::Unknown
+                };
+
+                let mut ckname = name.clone();
+                if name == "_" {
+                    self.sink.push(UnderscoreReservedIdent {
+                        loc: name_loc.clone(),
+                    });
+                    ckname = String::from("\0");
+                }
+
+                let symbol = Symbol::var(
+                    atomtyp,
+                    ckname.clone(),
+                    self.table.var_count(),
+                    stmt.loc.clone(),
+                    *mutable,
+                );
+
+                *sym = MaybeUnresolved::Resolved(symbol.clone());
+                self.table.bind(ckname, symbol)
+            }
+            CkStmt::Expression(expr) => {
+                self.check_expr(expr)?;
             }
         }
         Ok(())
@@ -461,17 +477,17 @@ impl SemanticCk {
     pub fn check_expr(&mut self, expr: &mut CkExpression) -> Result<(), Diagnostic> {
         match &mut expr.expr {
             CkExpr::IntLit(_) => {
-                expr.typ = Type::Integer;
+                expr.atomtyp = AtomicType::ComptimeInt;
             }
             CkExpr::BoolLit(_) => {
-                expr.typ = Type::Bool;
+                expr.atomtyp = AtomicType::Bool;
             }
             CkExpr::StringLit(_) => {
-                expr.typ = Type::String;
+                expr.atomtyp = AtomicType::Str;
             }
             CkExpr::Grouping(e) => {
                 self.check_expr(e)?;
-                expr.typ = e.typ.clone();
+                expr.atomtyp = e.atomtyp.clone();
             }
             CkExpr::Ident(MaybeUnresolved::Unresolved(name)) => {
                 let Some(sym) = self.table.lookup(&*name, true) else {
@@ -488,89 +504,341 @@ impl SemanticCk {
                     }
                     .into_diag());
                 }
-                if sym.typ == Type::Unknown {
+                if sym.atomtyp == AtomicType::Unknown {
                     self.sink.push(TypeAnnotationsNeeded {
                         loc: sym.loc.clone(),
                     })
                 }
-                expr.typ = sym.typ.clone();
+                expr.atomtyp = sym.atomtyp.clone();
                 expr.expr = CkExpr::Ident(MaybeUnresolved::Resolved(sym.clone()));
             }
             CkExpr::Ident(MaybeUnresolved::Resolved(_)) => {
                 unreachable!("i think it's a bug not sure tho")
             }
+            // special case of assignement to _
+            //
+            // it is used to allow
+            // _ = expr;
+            //
+            // where expr is evaluated, and its return value is ignored, _
+            // coerce to any type.
+            CkExpr::Binary {
+                lhs,
+                op: BinOp::Assignement,
+                rhs,
+            } if matches!(
+                &lhs.expr,
+                CkExpr::Ident(MaybeUnresolved::Unresolved(id)) if id.as_str() == "_"
+            ) =>
+            {
+                // manualy checking lhs
+                let Some(sym) = self.table.lookup("_", true) else {
+                    unreachable!();
+                };
+
+                assert_eq!(sym.atomtyp, AtomicType::Unknown);
+                lhs.expr = CkExpr::Ident(MaybeUnresolved::Resolved(sym.clone()));
+
+                self.check_expr(rhs)?;
+
+                expr.atomtyp = AtomicType::Void;
+            }
+            // other special case of Binary, make assignement evaluate to Void
+            CkExpr::Binary {
+                lhs,
+                op: BinOp::Assignement,
+                rhs,
+            } => {
+                self.check_expr(lhs)?;
+                self.check_expr(rhs)?;
+
+                let rhs_loc = rhs.loc.clone();
+                self.type_check(&lhs.atomtyp, &mut **rhs, None, rhs_loc);
+
+                expr.atomtyp = AtomicType::Void;
+
+                // check that if lhs is a variable, the variable is mutable
+                // TODO: check if pointer is mutable also
+
+                if let CkExpr::Ident(MaybeUnresolved::Resolved(Symbol {
+                    kind: SymKind::Var { mutable: false },
+                    name,
+                    loc,
+                    ..
+                })) = &lhs.expr
+                {
+                    self.sink.push(MutationOfImmutable {
+                        var_name: name.clone(),
+                        var_loc: loc.clone(),
+                        loc: expr.loc.clone(),
+                    });
+                }
+            }
             CkExpr::Binary { lhs, op, rhs } => {
                 self.check_expr(lhs)?;
                 self.check_expr(rhs)?;
 
-                if lhs.typ != rhs.typ {
-                    self.sink.push(ExpectedType {
-                        expected: vec![lhs.typ.clone()],
-                        found: rhs.typ.clone(),
-                        loc: rhs.loc.clone(),
-                    });
-                }
+                let rhs_loc = rhs.loc.clone();
+                self.type_check(&lhs.atomtyp, &mut **rhs, None, rhs_loc);
 
-                expr.typ = if op.is_relational() | op.is_logical() {
-                    Type::Bool
+                expr.atomtyp = if op.is_relational() | op.is_logical() {
+                    AtomicType::Bool
                 } else {
-                    lhs.typ.clone()
+                    lhs.atomtyp.clone()
                 };
             }
-            CkExpr::Unary { op, expr: exp } => match op {
-                UnaryOp::Negation => {
-                    if exp.typ != Type::Integer || exp.typ != Type::Float {
-                        self.sink.push(ExpectedType {
-                            expected: vec![Type::Integer, Type::Float],
-                            found: exp.typ.clone(),
-                            loc: exp.loc.clone(),
-                        })
+            CkExpr::Unary { op, val } => {
+                self.check_expr(val)?;
+
+                match op {
+                    UnaryOp::Negation => {
+                        let exp_loc = val.loc.clone();
+
+                        self.type_check(
+                            ("comptime_int or comptime_float", |other: &AtomicType| {
+                                other.is_integer() || other.is_float()
+                            }),
+                            &mut **val,
+                            None,
+                            exp_loc,
+                        );
+                        expr.atomtyp = val.atomtyp.clone();
                     }
-                    expr.typ = exp.typ.clone();
-                }
-                UnaryOp::Not => {
-                    if exp.typ != Type::Bool {
-                        self.sink.push(ExpectedType {
-                            expected: vec![Type::Bool],
-                            found: exp.typ.clone(),
-                            loc: exp.loc.clone(),
-                        });
+                    UnaryOp::Not => {
+                        let exp_loc = val.loc.clone();
+
+                        self.type_check(AtomicType::Bool, &mut **val, None, exp_loc);
+                        expr.atomtyp = AtomicType::Bool;
                     }
-                    expr.typ = Type::Bool;
+                    UnaryOp::Dereference => {
+                        let pointee = if let AtomicType::Pointer {
+                            mutable: _,
+                            ref pointed,
+                        } = val.atomtyp
+                        {
+                            // we fine bro :)
+                            (**pointed).clone()
+                        } else {
+                            return Err(MismatchedTypes {
+                                expected: String::from("pointer"),
+                                found: val.atomtyp.clone(),
+                                due_to: None,
+                                loc: val.loc.clone(),
+                            }
+                            .into_diag()
+                            .with_note(format!("type `{}` cannot dereferenced", val.atomtyp)));
+                        };
+
+                        expr.atomtyp = pointee;
+                    }
                 }
-            },
+            }
             CkExpr::FunCall { called, args } => {
                 self.check_expr(called)?;
 
-                let Type::Fun {
-                    args: args_ty,
+                let AtomicType::Fun {
+                    args: args_aty,
                     ret: ret_ty,
-                } = &called.typ
+                } = &called.atomtyp
                 else {
                     return Err(ExpectedTypeFoundExpr {
+                        help: false,
                         loc: called.loc.clone(),
                     }
                     .into_diag());
                 };
 
-                assert!(called.typ.is_func());
+                assert!(called.atomtyp.is_func());
 
-                for (val, ty) in zip(args, args_ty) {
+                for (val, aty) in zip(args, args_aty) {
                     self.check_expr(val)?;
 
-                    if &val.typ != ty {
-                        self.sink.push(ExpectedType {
-                            expected: vec![ty.clone()],
-                            found: val.typ.clone(),
-                            loc: val.loc.clone(),
-                        })
-                    }
+                    let val_loc = val.loc.clone();
+                    self.type_check(aty, val, None, val_loc);
                 }
 
-                expr.typ = *ret_ty.clone();
+                expr.atomtyp = *ret_ty.clone();
+            }
+            CkExpr::FunDefinition { .. } => {
+                return Err(feature_todo! {
+                    feature: "function closure",
+                    label: "closures are not yet supported, you can only define functions",
+                    loc: expr.loc.clone()
+                }
+                .into_diag());
+            }
+            CkExpr::If {
+                cond,
+                then_branch,
+                else_branch,
+            } => {
+                // 1. condition
+                self.check_expr(cond)?;
+
+                let cond_loc = cond.loc.clone();
+                self.type_check(AtomicType::Bool, &mut **cond, None, cond_loc);
+
+                // 2. then branch
+                self.check_expr(then_branch)?;
+
+                // 3. set the atomtyp to the type of then_branch
+                expr.atomtyp = then_branch.atomtyp.clone();
+
+                // 4. else branch
+                if let Some(else_branch) = else_branch {
+                    self.check_expr(else_branch)?;
+
+                    let else_branch_loc = else_branch.loc.clone();
+
+                    self.type_check(
+                        expr.atomtyp.clone(),
+                        &mut **else_branch,
+                        None,
+                        else_branch_loc,
+                    );
+                }
+            }
+            CkExpr::Block(block) => {
+                self.check_block(block)?;
+                expr.atomtyp = block.atomtyp.clone();
+            }
+            CkExpr::While { cond, body, index } => {
+                // 1. condition
+                self.check_expr(cond)?;
+
+                let cond_loc = cond.loc.clone();
+                self.type_check(AtomicType::Bool, &mut **cond, None, cond_loc);
+
+                // 2. allocate loop index
+                *index = Some(self.loop_stack.alloc_loop());
+
+                // 3. body
+                self.check_block(body)?;
+
+                expr.atomtyp =
+                    if let Some(Loop { atomtyp, .. }) = self.loop_stack.get(index.unwrap()) {
+                        atomtyp.clone().replace(AtomicType::Void)
+                    } else {
+                        AtomicType::Void
+                    };
+            }
+            CkExpr::For { .. } => {
+                // TODO: implement for loops
+
+                self.sink.push(feature_todo! {
+                    feature: "for loop",
+                    label: "iterators are not implemented so..",
+                    loc: expr.loc.clone(),
+                });
+
+                expr.atomtyp = AtomicType::Void;
+            }
+            CkExpr::Return { val } => {
+                expr.atomtyp = AtomicType::Noreturn;
+
+                if let Some(val) = val {
+                    self.check_expr(val)?;
+
+                    let val_loc = val.loc.clone();
+
+                    self.type_check(
+                        self.fun_retaty.clone(),
+                        &mut **val,
+                        self.fun_retaty_loc.clone(),
+                        val_loc,
+                    );
+                }
+            }
+            CkExpr::Break { val, index } => {
+                expr.atomtyp = AtomicType::Noreturn;
+
+                // 1. assign loop index
+                let Some(Loop {
+                    index: new_idx,
+                    atomtyp,
+                }) = self.loop_stack.last().cloned()
+                else {
+                    return Err(LoopKwOutsideLoop {
+                        kw: "break",
+                        loc: expr.loc.clone(),
+                    }
+                    .into_diag());
+                };
+
+                *index = Some(new_idx);
+                let idx = index.unwrap();
+
+                // 2. check the value
+                if let Some(val) = val {
+                    self.check_expr(val)?;
+
+                    if atomtyp == AtomicType::Unknown {
+                        self.loop_stack.set_atomtyp(idx, val.atomtyp.clone());
+                    } else {
+                        let val_loc = val.loc.clone();
+
+                        self.type_check(atomtyp, &mut **val, None, val_loc);
+                    };
+                } else {
+                    if atomtyp == AtomicType::Unknown {
+                        self.loop_stack.set_atomtyp(idx, AtomicType::Void);
+                    } else {
+                        self.sink.push(
+                            MismatchedTypes {
+                                expected: atomtyp.as_string(),
+                                found: AtomicType::Void,
+                                due_to: None,
+                                loc: expr.loc.clone(),
+                            }
+                            .into_diag()
+                            .with_note("help: give the `break` a value of the expected type"),
+                        );
+                    }
+                }
+            }
+            CkExpr::Continue { index } => {
+                expr.atomtyp = AtomicType::Noreturn;
+
+                // assign loop index
+                let Some(Loop { index: new_idx, .. }) = self.loop_stack.last().cloned() else {
+                    return Err(LoopKwOutsideLoop {
+                        kw: "continue",
+                        loc: expr.loc.clone(),
+                    }
+                    .into_diag());
+                };
+                *index = Some(new_idx);
+            }
+            CkExpr::Null => {
+                // TODO: make it coerce to pointer also
+                expr.atomtyp = AtomicType::Void;
+            }
+            CkExpr::PointerType { typ, .. } => {
+                self.check_expr(typ)?;
+
+                if typ.atomtyp != AtomicType::Type {
+                    self.sink.push(UnknownType {
+                        typ: typ.to_string(),
+                        loc: typ.loc.clone(),
+                    })
+                }
+
+                expr.atomtyp = AtomicType::Type;
+            }
+            CkExpr::Deref { mutable, val } => {
+                // TODO: if we expected a pointer to be mutable / immutable
+                // and the value was a deref, add an help message like "try to
+                // remove / add the `mut` keyword"
+                self.check_expr(val)?;
+
+                expr.atomtyp = AtomicType::Pointer {
+                    mutable: *mutable,
+                    pointed: Box::new(val.atomtyp.clone()),
+                };
             }
         }
-        debug_assert_ne!(expr.typ, Type::Unknown);
+
+        debug_assert_ne!(expr.atomtyp, AtomicType::Unknown);
         Ok(())
     }
 }
@@ -581,8 +849,11 @@ pub struct Symbol {
     /// local, parameter or global
     pub kind: SymKind,
     /// actual type of the
-    pub typ: Type,
+    pub atomtyp: AtomicType,
     /// the name of the symbol
+    ///
+    /// For function (see kind):
+    /// - the name is the unmangled symbol name of the function in the output assembly
     pub name: String,
     /// which scope the symbol is referring to
     pub which: usize,
@@ -591,54 +862,93 @@ pub struct Symbol {
     pub loc: Span,
     /// count of how many times this symbol is used
     pub uses: usize,
+    /// Visilibity of a symbol, for variables and argument it's always private,
+    /// for global and function it can be public or private
+    pub vis: Vis,
 }
 
 impl Symbol {
     /// Create a new symbol
-    pub fn new(kind: SymKind, typ: Type, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn new(
+        kind: SymKind,
+        atomtyp: AtomicType,
+        name: String,
+        which: usize,
+        loc: Span,
+        vis: Vis,
+    ) -> Symbol {
         Symbol {
             kind,
-            typ,
+            atomtyp,
             name,
             which,
             loc,
             uses: 0,
+            vis,
         }
     }
 
     /// Create a new local symbol
-    pub fn var(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn var(
+        atomtyp: AtomicType,
+        name: String,
+        which: usize,
+        loc: Span,
+        mutable: bool,
+    ) -> Symbol {
         Symbol {
-            kind: SymKind::Var,
-            typ,
+            kind: SymKind::Var { mutable },
+            atomtyp,
             name,
             which,
             loc,
             uses: 0,
+            vis: Vis::Private,
         }
     }
 
     /// Create a new param symbol
-    pub fn arg(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn arg(atomtyp: AtomicType, name: String, which: usize, loc: Span) -> Symbol {
         Symbol {
             kind: SymKind::Arg,
-            typ,
+            atomtyp,
             name,
             which,
             loc,
             uses: 0,
+            vis: Vis::Private,
         }
     }
 
     /// Create a new global symbol
-    pub fn global(typ: Type, name: String, which: usize, loc: Span) -> Symbol {
+    pub fn global(atomtyp: AtomicType, name: String, which: usize, loc: Span, vis: Vis) -> Symbol {
         Symbol {
             kind: SymKind::Global,
-            typ,
+            atomtyp,
             name,
             which,
             loc,
             uses: 0,
+            vis,
+        }
+    }
+
+    /// Create a new function symbol
+    pub fn function(
+        atomtyp: AtomicType,
+        name: String,
+        which: usize,
+        loc: Span,
+        vis: Vis,
+    ) -> Symbol {
+        Symbol {
+            kind: SymKind::Function,
+            atomtyp,
+            name,
+            which,
+            loc,
+            uses: 0,
+            vis,
         }
     }
 
@@ -647,8 +957,8 @@ impl Symbol {
         self
     }
 
-    pub fn typ(mut self, typ: Type) -> Symbol {
-        self.typ = typ;
+    pub fn atomtyp(mut self, atomtyp: AtomicType) -> Symbol {
+        self.atomtyp = atomtyp;
         self
     }
 
@@ -667,95 +977,161 @@ impl Symbol {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SymKind {
     /// Variable
-    Var,
+    Var { mutable: bool },
     /// Argument
     Arg,
     /// Global
     Global,
+    /// Function
+    Function,
 }
 
 impl Display for SymKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SymKind::Var => f.write_str("local"),
-            SymKind::Arg => f.write_str("parameter"),
+            SymKind::Var { .. } => f.write_str("variable"),
+            SymKind::Arg => f.write_str("argument"),
             SymKind::Global => f.write_str("global"),
+            SymKind::Function => f.write_str("function"),
         }
     }
 }
 
-/// Symbol type, the actual type of a symbol
+/// An atomic type is the real underlying type of a Checked Expression,
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub enum Type {
+pub enum AtomicType {
     /// Unknown, at the end of type checking this type is an error.
     #[default]
     Unknown,
-    /// equivalent of Rust's `i64`
-    Integer,
-    /// equivalent of Rust's `f64`
-    Float,
+    /// 8 bit signed integer
+    I8,
+    /// 16 bit signed integer
+    I16,
+    /// 32 bit signed integer
+    I32,
+    /// 64 bit signed integer
+    ///
+    /// NOTE: the exprtype `int` is an alias of `i64` exprtype
+    I64,
+    /// Pointer-sized signed integer type
+    Isize,
+    /// 8 bit unsigned integer
+    U8,
+    /// 16 bit unsigned integer
+    U16,
+    /// 32 bit unsigned integer
+    U32,
+    /// 64 bit unsigned integer
+    ///
+    /// NOTE: the exprtype `uint` is an alias of `u64` exprtype
+    U64,
+    /// Pointer-sized unsigned integer type
+    Usize,
+    /// 32 bit floating point number, compliant with IEEE 754-2008
+    F32,
+    /// 16 bit floating point number, compliant with IEEE 754-2008
+    F16,
+    /// 64 bit floating point number, compliant with IEEE 754-2008
+    F64,
     /// equivalent of Rust's `bool`, always one byte long. Can only contain
     /// `true` -> 1 and `false` -> 0
     Bool,
     // TODO: implement strings
     /// a string, nothing for now, we can't use them
-    String,
-    /// a nil value, just the `nil` literal or nothing, its the base return
-    /// type of a function that returns nothing
-    Nil,
+    Str,
+    /// void. nothing, default return type of a function without a return type.
+    Void,
     /// a function type, can only be constructed from a function definition.
     Fun {
         /// types of the arguments
-        args: Vec<Type>,
+        args: Vec<AtomicType>,
         /// the return type
-        ret: Box<Type>,
+        ret: Box<AtomicType>,
     },
-    /// Comptime Type, a type in the Type System.
+    /// Type, in the Type System.
     ///
     /// Because lun have types that are expression, types get typed checked as
-    /// well. So the identifier `int` will be evaluated in EVERY expression to
-    /// be of type `comptime type`.
-    ComptimeType,
+    /// well. So (for example) the identifier `int` will be evaluated in EVERY
+    /// expression to be of type `type`.
+    Type,
+    /// Noreturn, the type that return, break and continue expressions evaluate
+    /// to.
+    ///
+    /// It indicates that the control flow will halts after evaluating the
+    /// expression.
+    Noreturn,
+    /// `comptime_int` is the type of every integer literal it can coerce to any
+    /// integer type, `int`, `uint`, `iNN` or `uNN`
+    ComptimeInt,
+    /// `comptime_float` is the type of every float literal it can coerce to any
+    /// float type, `f16`, `f32`, `f64`
+    ComptimeFloat,
+    /// pointer.
+    Pointer {
+        mutable: bool,
+        pointed: Box<AtomicType>,
+    },
 }
 
-impl Type {
-    // TODO: add more atomic types, u8, u16, u32, u64, u128, i8, i16,
-    // i32, i64, i128, f16, f32, f64, f128
-    pub const ATOMIC_TYPES: [&str; 4] = ["int", "float", "bool", "string"];
-
-    pub const ATOMIC_TYPES_PAIR: [(&str, Type); 4] = [
-        ("int", Type::Integer),
-        ("float", Type::Float),
-        ("bool", Type::Bool),
-        ("string", Type::String),
+impl AtomicType {
+    pub const PRIMARY_ATOMTYPE_PAIRS: &[(&str, AtomicType)] = &[
+        ("isize", AtomicType::Isize),
+        ("i64", AtomicType::I64),
+        ("i32", AtomicType::I32),
+        ("i16", AtomicType::I16),
+        ("i8", AtomicType::I8),
+        ("usize", AtomicType::Usize),
+        ("u64", AtomicType::U64),
+        ("u32", AtomicType::U32),
+        ("u16", AtomicType::U16),
+        ("u8", AtomicType::U8),
+        ("f16", AtomicType::F16),
+        ("f32", AtomicType::F32),
+        ("f64", AtomicType::F64),
+        ("bool", AtomicType::Bool),
+        ("str", AtomicType::Str),
+        ("noreturn", AtomicType::Noreturn),
+        ("void", AtomicType::Void),
+        ("comptime_int", AtomicType::ComptimeInt),
+        ("comptime_float", AtomicType::ComptimeFloat),
     ];
 
     /// returns true if the type is a function
     pub const fn is_func(&self) -> bool {
-        matches!(self, Type::Fun { .. })
+        matches!(self, AtomicType::Fun { .. })
+    }
+
+    /// returns true if the type is either comptime_type or comptime_float
+    pub const fn is_comptime_number(&self) -> bool {
+        matches!(self, AtomicType::ComptimeInt | AtomicType::ComptimeFloat)
     }
 
     /// Converts a type expression to a type.
-    pub fn from_expr(expr: CkExpression) -> Type {
-        let CkExpr::Ident(MaybeUnresolved::Resolved(Symbol { name, .. })) = expr.expr else {
-            unreachable!("the type should just be a symbol")
-        };
+    pub fn from_expr(expr: CkExpression) -> Option<AtomicType> {
+        match expr.expr {
+            CkExpr::Ident(MaybeUnresolved::Resolved(Symbol { name, .. })) => {
+                for (tyname, ty) in AtomicType::PRIMARY_ATOMTYPE_PAIRS {
+                    if *tyname == name {
+                        return Some(ty.clone());
+                    }
+                }
 
-        for (tyname, ty) in Type::ATOMIC_TYPES_PAIR {
-            if tyname == name {
-                return ty;
+                None
             }
+            CkExpr::PointerType { mutable, typ } => {
+                // pointer type
+                Some(AtomicType::Pointer {
+                    mutable,
+                    pointed: Box::new(AtomicType::from_expr(*typ)?),
+                })
+            }
+            _ => None,
         }
-
-        unreachable!(
-            "the type was in the SymbolTable but couldn't be converted to a\
-            real type"
-        )
     }
 
     /// Interpret the type as a Fun and return the return type
     #[track_caller]
-    pub fn as_fun_ret(&self) -> Type {
+    pub fn as_fun_ret(&self) -> AtomicType {
         match self {
             Self::Fun { ret, .. } => (**ret).clone(),
             _ => panic!("{self:?} is not a function type"),
@@ -764,26 +1140,97 @@ impl Type {
 
     /// Interpret the type as a Fun and return the arguments types
     #[track_caller]
-    pub fn as_fun_args(&self) -> Vec<Type> {
+    pub fn as_fun_args(&self) -> Vec<AtomicType> {
         match self {
             Self::Fun { args, .. } => args.clone(),
             _ => panic!("{self:?} is not a function type"),
         }
     }
+
+    /// Returns true if self is an integer type, so `iNN` or `uNN`
+    pub fn is_integer(&self) -> bool {
+        matches!(
+            self,
+            Self::I8
+                | Self::I16
+                | Self::I32
+                | Self::I64
+                | Self::U8
+                | Self::U16
+                | Self::U32
+                | Self::U64
+        )
+    }
+
+    /// Returns true if self is a float type, so `f16`, `f32` or `f64`
+    pub fn is_float(&self) -> bool {
+        matches!(self, Self::F16 | Self::F32 | Self::F64)
+    }
+
+    /// can this atomic type coerce to another atomic type? if yes it returns
+    /// all the atomic types it can coerce to
+    pub fn coercions(&self) -> Option<&[AtomicType]> {
+        match self {
+            AtomicType::ComptimeInt => Some(&[
+                AtomicType::Isize,
+                AtomicType::I8,
+                AtomicType::I16,
+                AtomicType::I32,
+                AtomicType::I64,
+                AtomicType::Usize,
+                AtomicType::U8,
+                AtomicType::U16,
+                AtomicType::U32,
+                AtomicType::U64,
+            ]),
+            AtomicType::ComptimeFloat => Some(&[AtomicType::F16, AtomicType::F32, AtomicType::F64]),
+            _ => None,
+        }
+    }
+
+    /// replace this type with `other` if `self` is unknown
+    pub fn replace(mut self, other: AtomicType) -> AtomicType {
+        if self == AtomicType::Unknown {
+            self = other;
+        }
+        self
+    }
 }
 
-impl Display for Type {
+impl Display for AtomicType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Type::Unknown => f.write_str("unknown"),
-            Type::Integer => f.write_str("integer"),
-            Type::Float => f.write_str("float"),
-            Type::Bool => f.write_str("bool"),
-            Type::String => f.write_str("string"),
-            Type::Nil => f.write_str("nil"),
-            // TODO: implement a proper display for function type, like `func(int, float) -> bool`
-            Type::Fun { .. } => f.write_str("func"),
-            Type::ComptimeType => f.write_str("comptime type"),
+            AtomicType::Unknown => f.write_str("unknown"),
+            AtomicType::I64 => f.write_str("i64"),
+            AtomicType::I32 => f.write_str("i32"),
+            AtomicType::I16 => f.write_str("i16"),
+            AtomicType::I8 => f.write_str("i8"),
+            AtomicType::Isize => f.write_str("isize"),
+            AtomicType::U64 => f.write_str("u64"),
+            AtomicType::U32 => f.write_str("u32"),
+            AtomicType::U16 => f.write_str("u16"),
+            AtomicType::U8 => f.write_str("u8"),
+            AtomicType::Usize => f.write_str("usize"),
+            AtomicType::F16 => f.write_str("f16"),
+            AtomicType::F32 => f.write_str("f32"),
+            AtomicType::F64 => f.write_str("f64"),
+            AtomicType::Bool => f.write_str("bool"),
+            AtomicType::Str => f.write_str("str"),
+            AtomicType::Void => f.write_str("void"),
+            // TODO: implement a proper display for function type, like `fun(int, f16) -> bool`
+            AtomicType::Fun { .. } => f.write_str("fun"),
+            AtomicType::Type => f.write_str("type"),
+            AtomicType::Noreturn => f.write_str("noreturn"),
+            AtomicType::ComptimeInt => f.write_str("comptime_int"),
+            AtomicType::ComptimeFloat => f.write_str("comptime_float"),
+            AtomicType::Pointer { mutable, pointed } => {
+                f.write_str("*")?;
+                if *mutable {
+                    f.write_str("mut ")?;
+                }
+                Display::fmt(pointed, f)?;
+                Ok(())
+            }
         }
     }
 }
@@ -791,6 +1238,7 @@ impl Display for Type {
 #[derive(Debug, Clone)]
 pub struct SymbolMap {
     map: HashMap<String, Symbol>,
+    function_count: usize,
     global_count: usize,
     var_count: usize,
     arg_count: usize,
@@ -800,6 +1248,7 @@ impl SymbolMap {
     pub fn new() -> SymbolMap {
         SymbolMap {
             map: HashMap::new(),
+            function_count: 0,
             global_count: 0,
             var_count: 0,
             arg_count: 0,
@@ -810,27 +1259,208 @@ impl SymbolMap {
         SymbolMap {
             map: HashMap::from([
                 (
-                    "int".to_string(),
-                    Symbol::global(Type::ComptimeType, "int".to_string(), 0, Span::ZERO),
+                    "isize".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "isize".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
-                    "float".to_string(),
-                    Symbol::global(Type::ComptimeType, "float".to_string(), 0, Span::ZERO),
+                    "i64".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "i64".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "i32".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "i32".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "i16".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "i16".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "i8".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "i8".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "usize".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "usize".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "u64".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "u64".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "u32".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "u32".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "u16".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "u16".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "u8".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "u8".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "f16".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "f16".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "f32".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "f32".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "f64".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "f64".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "bool".to_string(),
-                    Symbol::global(Type::ComptimeType, "bool".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "bool".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
-                    "string".to_string(),
-                    Symbol::global(Type::ComptimeType, "string".to_string(), 0, Span::ZERO),
+                    "str".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "str".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "noreturn".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "noreturn".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "void".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "void".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "comptime_int".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "comptime_int".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
+                ),
+                (
+                    "comptime_float".to_string(),
+                    Symbol::global(
+                        AtomicType::Type,
+                        "comptime_float".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
                 (
                     "_".to_string(),
-                    Symbol::global(Type::Unknown, "_".to_string(), 0, Span::ZERO),
+                    Symbol::global(
+                        AtomicType::Unknown,
+                        "_".to_string(),
+                        0,
+                        Span::ZERO,
+                        Vis::Public,
+                    ),
                 ),
             ]),
-            global_count: 5,
+            function_count: 0,
+            global_count: 0,
             var_count: 0,
             arg_count: 0,
         }
@@ -879,14 +1509,14 @@ impl SymbolTable {
 
         for sym in self.last_map().map.values() {
             // type annotation needed the type is unknown
-            if sym.typ == Type::Unknown {
+            if sym.atomtyp == AtomicType::Unknown {
                 sink.push(TypeAnnotationsNeeded {
                     loc: sym.loc.clone(),
                 })
             }
 
             // unused symbol check
-            if sym.kind != SymKind::Global && sym.uses == 0 {
+            if sym.vis != Vis::Public && sym.uses == 0 {
                 // the symbol isn't global and isn't used so we push a warning
                 sink.push(NeverUsedSymbol {
                     kind: sym.kind.clone(),
@@ -903,7 +1533,7 @@ impl SymbolTable {
     pub fn bind(&mut self, name: String, sym: Symbol) {
         assert_ne!(name.as_str(), "_", "`_` is a reserved identifier");
         match sym.kind {
-            SymKind::Var => {
+            SymKind::Var { .. } => {
                 self.last_map_mut().var_count += 1;
             }
             SymKind::Arg => {
@@ -911,6 +1541,9 @@ impl SymbolTable {
             }
             SymKind::Global => {
                 self.last_map_mut().global_count += 1;
+            }
+            SymKind::Function => {
+                self.last_map_mut().function_count += 1;
             }
         }
         self.last_map_mut().map.insert(name, sym);
@@ -979,39 +1612,84 @@ impl Default for SymbolTable {
     }
 }
 
-/// A stack of function's return type, it is used to ensure the return type of
-/// the `return` statement is the same as the function's return type. It is a
-/// stack because lun supports (or will support) nested functions.
 #[derive(Debug, Clone)]
-pub struct ReturnStack {
-    stack: Vec<Type>,
+pub struct Loop {
+    /// index of the loop
+    index: usize,
+    /// type of the loop
+    atomtyp: AtomicType,
 }
 
-impl ReturnStack {
-    pub const fn new() -> ReturnStack {
-        ReturnStack { stack: Vec::new() }
-    }
-
-    /// Push a return type to the top of the stack
-    pub fn push(&mut self, ret: Type) {
-        self.stack.push(ret);
-    }
-
-    /// Pop the last return type out of the stack, and returns it.
-    /// Will panick if there is no more return types.
-    pub fn pop(&mut self) -> Type {
-        self.stack.pop().unwrap()
-    }
-
-    /// Returns a reference to the last return type, panics if there is no more return types.
-    #[track_caller]
-    pub fn last(&self) -> Option<&Type> {
-        self.stack.last()
-    }
+#[derive(Debug, Clone)]
+pub struct LoopStack {
+    loops: Vec<Loop>,
+    index: usize,
 }
 
-impl Default for ReturnStack {
-    fn default() -> Self {
-        ReturnStack::new()
+impl LoopStack {
+    pub fn new() -> LoopStack {
+        LoopStack {
+            loops: Vec::new(),
+            index: 0,
+        }
+    }
+
+    pub fn alloc_loop(&mut self) -> usize {
+        let index = self.index;
+        self.index += 1;
+
+        self.loops.push(Loop {
+            index,
+            atomtyp: AtomicType::Unknown,
+        });
+
+        index
+    }
+
+    pub fn last(&self) -> Option<&Loop> {
+        self.loops.last()
+    }
+
+    pub fn reset(&mut self) {
+        self.index = 0;
+        self.loops.clear();
+    }
+
+    pub fn get(&self, index: usize) -> Option<&Loop> {
+        for r#loop in &self.loops {
+            if r#loop.index == index {
+                return Some(r#loop);
+            }
+        }
+
+        None
+    }
+
+    fn get_mut(&mut self, index: usize) -> Option<&mut Loop> {
+        for r#loop in &mut self.loops {
+            if r#loop.index == index {
+                return Some(r#loop);
+            }
+        }
+
+        None
+    }
+
+    pub fn set_atomtyp(&mut self, index: usize, atomtyp: AtomicType) {
+        let Some(lop) = self.get_mut(index) else {
+            panic!("loop at index {index} not found")
+        };
+        assert_ne!(
+            atomtyp,
+            AtomicType::Unknown,
+            "can't set type of loop to Unknown"
+        );
+        assert_eq!(
+            lop.atomtyp,
+            AtomicType::Unknown,
+            "can't set twice the atomic type of a loop"
+        );
+
+        lop.atomtyp = atomtyp;
     }
 }

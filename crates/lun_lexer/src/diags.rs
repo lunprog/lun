@@ -72,7 +72,6 @@ impl ToDiagnostic for UnterminatedStringLiteral {
 #[derive(Debug, Clone)]
 pub struct UnknownCharacterEscape {
     pub es: char,
-    pub is_unicode: bool,
     pub loc: Span,
 }
 
@@ -82,10 +81,5 @@ impl ToDiagnostic for UnknownCharacterEscape {
             .with_code(ErrorCode::UnknownCharacterEscape)
             .with_message(format!("unknown character escape: {}", self.es))
             .with_label(Label::primary((), self.loc))
-            .with_notes(if self.is_unicode {
-                vec!["unicode escape isn't yet implemented.".to_string()]
-            } else {
-                vec![]
-            })
     }
 }

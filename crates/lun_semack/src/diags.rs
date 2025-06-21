@@ -1,27 +1,40 @@
 //! Diagnostics that maybe emitted by the Semantic Checker.
 
 use lun_diag::{ErrorCode, Label, ToDiagnostic, WarnCode};
-use lun_utils::list_fmt;
 
 use super::*;
 
 #[derive(Debug, Clone)]
-pub struct ExpectedType {
-    pub expected: Vec<Type>,
-    pub found: Type,
+pub struct MismatchedTypes {
+    pub expected: String,
+    pub found: AtomicType,
+    /// location of something that was written and tells why we expect this
+    /// type, but MUST be an expr-type written, not just an expression.
+    ///
+    /// eg:
+    ///
+    /// ```lun
+    /// var a: u64 = true;
+    /// //     ^^^ in this case this would be the `due_to` of the mismatched
+    /// //         types diagnostic
+    /// ```
+    pub due_to: Option<Span>,
     pub loc: Span,
 }
 
-impl ToDiagnostic for ExpectedType {
+impl ToDiagnostic for MismatchedTypes {
     fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
-            .with_code(ErrorCode::ExpectedType)
-            .with_message(format!(
-                "expected type {} found type {}",
-                list_fmt(&self.expected),
-                self.found,
-            ))
-            .with_label(Label::primary((), self.loc))
+            .with_code(ErrorCode::MismatchedTypes)
+            .with_message("mismatched types")
+            .with_label(Label::primary((), self.loc).with_message(format!(
+                "expected `{}`, found `{}`",
+                self.expected, self.found
+            )))
+            .with_labels_iter(
+                self.due_to
+                    .map(|loc| Label::secondary((), loc).with_message("expected due to this")),
+            )
         // TODO: maybe change the message of this error to `mismatched types`
         // and put the `expected type {} found type {}` on the primary label
     }
@@ -29,6 +42,8 @@ impl ToDiagnostic for ExpectedType {
 
 #[derive(Debug, Clone)]
 pub struct ExpectedTypeFoundExpr {
+    /// adds the note `this type wasn't found, you could've made a spelling mistake`
+    pub help: bool,
     pub loc: Span,
 }
 
@@ -38,6 +53,14 @@ impl ToDiagnostic for ExpectedTypeFoundExpr {
             .with_code(ErrorCode::ExpectedTypeFoundExpr)
             .with_message("expected type found an expression")
             .with_label(Label::primary((), self.loc))
+            .with_notes(if self.help {
+                vec![
+                    "help: this type wasn't found, you could've made a spelling mistake"
+                        .to_string(),
+                ]
+            } else {
+                vec![]
+            })
     }
 }
 
@@ -91,20 +114,6 @@ impl ToDiagnostic for TypeAnnotationsNeeded {
 }
 
 #[derive(Debug, Clone)]
-pub struct ReturnOutsideFunc {
-    pub loc: Span,
-}
-
-impl ToDiagnostic for ReturnOutsideFunc {
-    fn into_diag(self) -> Diagnostic<()> {
-        Diagnostic::error()
-            .with_code(ErrorCode::ReturnOutsideFunc)
-            .with_message("used a return statement outside of a function body")
-            .with_label(Label::primary((), self.loc))
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct NeverUsedSymbol {
     pub kind: SymKind,
     pub name: String,
@@ -148,5 +157,58 @@ impl ToDiagnostic for UnderscoreInExpression {
                 "`_` can only be used in left hand side of assignement not in expressions",
             )
             .with_label(Label::primary((), self.loc))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct LoopKwOutsideLoop<'a> {
+    pub kw: &'a str,
+    pub loc: Span,
+}
+
+impl<'a> ToDiagnostic for LoopKwOutsideLoop<'a> {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::error()
+            .with_code(ErrorCode::LoopKwOutsideLoop)
+            .with_message(format!("`{}` outside of a loop", self.kw))
+            .with_label(
+                Label::primary((), self.loc)
+                    .with_message(format!("cannot `{}` outside of a loop", self.kw)),
+            )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnknownType {
+    pub typ: String,
+    pub loc: Span,
+}
+
+impl ToDiagnostic for UnknownType {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::error()
+            .with_code(ErrorCode::UnknownType)
+            .with_message(format!("unknown type `{}`", self.typ))
+            .with_label(Label::primary((), self.loc))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct MutationOfImmutable {
+    pub var_name: String,
+    pub var_loc: Span,
+    pub loc: Span,
+}
+
+impl ToDiagnostic for MutationOfImmutable {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::error()
+            .with_code(ErrorCode::MutationOfImmutable)
+            .with_message("cannot mutate, immutable variable")
+            .with_label(Label::primary((), self.loc).with_message(format!(
+                "assignement to immmutable variable `{}`",
+                self.var_name
+            )))
+            .with_label(Label::secondary((), self.var_loc).with_message("variable defined here"))
     }
 }

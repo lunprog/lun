@@ -2,10 +2,10 @@
 
 use std::fmt::Debug;
 
+use definition::Program;
 use diags::*;
 use expr::Expression;
 use lun_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic};
-use stmt::Chunk;
 
 use lun_utils::{
     Span,
@@ -15,6 +15,7 @@ use lun_utils::{
     },
 };
 
+pub mod definition;
 pub mod diags;
 pub mod expr;
 pub mod stmt;
@@ -74,12 +75,12 @@ impl Parser {
     pub fn is_stmt_end(&self) -> bool {
         matches!(
             self.peek_tt(),
-            Some(Kw(Keyword::End | Keyword::Else) | Punct(Punctuation::SemiColon))
+            Some(Kw(Keyword::Else) | Punct(Punctuation::SemiColon))
         )
     }
 
-    pub fn produce(&mut self) -> StageResult<Chunk> {
-        let ast = match Chunk::parse(self) {
+    pub fn produce(&mut self) -> StageResult<Program> {
+        let ast = match Program::parse(self) {
             Ok(ast) => ast,
             Err(diag) => {
                 self.sink.push(diag);
@@ -208,6 +209,9 @@ macro_rules! expect_token {
 
 #[macro_export]
 macro_rules! parse {
+    (box: $($tt:tt)*) => {
+        Box::new(parse!( $( $tt )* ))
+    };
     ($parser:expr => $node:ty) => {
         parse!(@fn $parser => <$node as $crate::AstNode>::parse)
     };

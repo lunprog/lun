@@ -7,7 +7,7 @@ use codespan_reporting::{
 };
 use std::fmt::Display;
 
-use lun_utils::pluralize;
+use lun_utils::{Span, pluralize};
 
 pub type Diagnostic<FileId = ()> = codespan_reporting::diagnostic::Diagnostic<FileId>;
 pub use codespan_reporting::diagnostic::Label;
@@ -127,6 +127,9 @@ impl<FileId> ToDiagnostic<FileId> for Diagnostic<FileId> {
 
 // TODO: write the docs for ErrorCode's
 /// List of all the Error Code in the lun compiling stages
+///
+/// NOTE: until `v1.0.0` the error code may change from minor devlopement
+///       versions, do not expect them to stay the same
 #[derive(Debug, Clone, Copy)]
 pub enum ErrorCode {
     /// Unknown start of token
@@ -137,13 +140,13 @@ pub enum ErrorCode {
     ///
     /// Erroneus example
     /// ```lun
-    /// local i = 12z34
+    /// var i = 12z34;
     /// ```
     ///
     /// To fix the error, remove the wrong digit like so
     ///
     /// ```lun
-    /// local i = 1234
+    /// var i = 1234;
     /// ```
     InvalidDigitNumber = 2,
     /// Too large integer literal, can't fit inside 64 bits.
@@ -155,12 +158,12 @@ pub enum ErrorCode {
     ///
     /// Erroneous example
     /// ```lun
-    /// local s = "
+    /// var s = ";
     /// ```
     ///
     /// To fix this error, add another " add the end of your string:
     /// ```lun
-    /// local s = ""
+    /// var s = "";
     /// ```
     UnterminatedStringLiteral = 4,
     /// Unknown character escape
@@ -184,32 +187,32 @@ pub enum ErrorCode {
     /// something else
     // TODO: this error code is kinda dumb fr
     ExpectedToken = 6,
-    /// Reached End of file to early
+    /// Reached End of file too early
     ReachedEOF = 7,
-    /// Expected type found another type
+    /// Mismatched types.
     ///
     /// Erroneous code example:
     /// ```lun
-    /// local a := 12
-    /// test(a)
+    /// var a = 12;
+    /// test(a);
     /// //   ^ E008: the function expected the type `bool` for the first
     /// //           argument but was provided with `int`
     ///
-    /// fun test(a: bool)
+    /// test :: fun(a: bool) {
     ///     // ...
-    /// end
+    /// }
     /// ```
-    ExpectedType = 8,
+    MismatchedTypes = 8,
     /// Expected a type found an expression
     ///
     /// You provided an expression where Lun was expecting a type.
     ///
     /// Erroneous code example:
     /// ```lun
-    /// fun test(a: 12)
-    ///     //      ^^ E009: here Lun was expecting a type like `bool`, `int`,
-    ///     //               `float` but you provided an expression `12`
-    /// end
+    /// test :: fun (a: 12) {
+    ///     //          ^^ E009: here Lun was expecting a type like `bool`, `int`,
+    ///     //                   `float` but you provided an expression `12`
+    /// }
     /// ```
     ExpectedTypeFoundExpr = 9,
     /// Cannot find symbol in this scope
@@ -220,9 +223,9 @@ pub enum ErrorCode {
     ///
     /// Erroneous code example:
     /// ```lun
-    /// local a := hello_world()
-    /// //         ^^^^^^^^^^^ E010: `hello_world` is not in scope, Lun doesn't
-    /// //                           know what you're trying to refer to.
+    /// var a = hello_world();
+    /// //      ^^^^^^^^^^^ E010: `hello_world` is not in scope, Lun doesn't
+    /// //                        know what you're trying to refer to.
     /// ```
     NotFoundInScope = 10,
     /// Call to a function require the type to be a function type
@@ -231,15 +234,13 @@ pub enum ErrorCode {
     ///
     /// Erroneous code example:
     /// ```lun
-    /// _ = 123("hello world")
+    /// _ = 123("hello world");
     /// //  ^^^ E011: `123` is of type `int` you can't call an int Lun was
     /// //            expecting a function, with a type like `func(..) -> ..`
     /// ```
     CallRequiresFuncType = 11,
     /// Type annotations needed
     TypeAnnotationsNeeded = 12,
-    /// Used a return statement outside of a function.
-    ReturnOutsideFunc = 13,
     /// `_` is a reserved identifier when you use it in a symbol's name
     ///
     /// You can't define types, functions, local and global variable with the
@@ -247,20 +248,28 @@ pub enum ErrorCode {
     /// to be able to ignore values when you don't need them like that:
     ///
     /// ```lun
-    /// _ = my_function()
+    /// _ = my_function();
     ///
     /// // here `_` is assigned the result of my_function but actually the
     /// // function is just called and it's value is thrown away. You can assign
     /// // `_` multiple times with the type you want each time there is no type
     /// // checking when you assign `_` to something
     ///
-    /// _ = 123
-    /// _ = true
-    /// _ = 45.6
+    /// _ = 123;
+    /// _ = true;
+    /// _ = 45.6;
     /// ```
-    UnderscoreReservedIdentifier = 14,
+    UnderscoreReservedIdentifier = 13,
     /// `_` in expression
-    UnderscoreInExpression = 15,
+    UnderscoreInExpression = 14,
+    /// feature not implemented
+    FeatureNotImplemented = 15,
+    /// loop keyword (`break` or `continue`) outside a loop.
+    LoopKwOutsideLoop = 16,
+    /// unknown type
+    UnknownType = 17,
+    /// mutation of immutable
+    MutationOfImmutable = 18,
 }
 
 impl Display for ErrorCode {
@@ -327,4 +336,54 @@ mod tests {
     fn error_code_formatting() {
         assert_eq!(String::from("E0001"), ErrorCode::UnknownToken.to_string())
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct FeatureNotImplemented {
+    /// name of the feature
+    pub feature_name: String,
+    /// text under primary label
+    pub label_text: String,
+    /// the location of the Ast slice not implemented
+    pub loc: Span,
+    /// file where the feature isn't implemented
+    pub compiler_file: String,
+    /// line where the feature isn't implemented
+    pub compiler_line: u32,
+}
+
+impl ToDiagnostic for FeatureNotImplemented {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::error()
+            .with_code(ErrorCode::FeatureNotImplemented)
+            .with_message(format!(
+                "the feature {}, is not yet implemented",
+                self.feature_name
+            ))
+            .with_label(Label::primary((), self.loc).with_message(self.label_text))
+            .with_note(format!(
+                "this diagnostic has been emited in file {:?} at line {}",
+                self.compiler_file, self.compiler_line
+            ))
+    }
+}
+
+// TODO(URGENT): transform the macro to be called like that:
+//
+// feature_todo! {
+//     feature: "MY FEATURE",
+//     label: "MY LABEL",
+//     loc: span(0, 0),
+// }
+#[macro_export]
+macro_rules! feature_todo {
+    {feature: $name:tt, label: $label:tt, loc: $loc:expr $( , )?} => {
+        $crate::FeatureNotImplemented {
+            feature_name: ($name).to_string(),
+            label_text: ($label).to_string(),
+            loc: $loc,
+            compiler_file: ::std::file!().to_string(),
+            compiler_line: ::std::line!(),
+        }
+    };
 }

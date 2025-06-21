@@ -1,8 +1,11 @@
 //! Checked AST.
 
+use std::fmt;
+
 use lun_parser::{
-    expr::{Expr, Expression},
-    stmt::{Arg, ElseIf, Statement, Stmt, Vis},
+    definition::Definition,
+    expr::{Arg, Else, Expr, Expression, IfExpression},
+    stmt::{Block, Statement, Stmt},
 };
 
 use super::*;
@@ -59,29 +62,80 @@ pub fn from_ast<T: FromAst>(ast: T::Unchecked) -> T {
     T::from_ast(ast)
 }
 
-/// Checked chunk
-/// see [`Chunk`].
+/// Checked Lun Program see [`Program`]
 ///
-/// [`Chunk`]: lun_parser::stmt::Chunk
+/// [`Program`]: lun_parser::definition::Program
 #[derive(Debug, Clone)]
-pub struct CkChunk {
-    pub stmts: Vec<CkStatement>,
-    pub loc: Span,
+pub struct CkProgram {
+    pub defs: Vec<CkDefinition>,
 }
 
-impl FromAst for CkChunk {
-    type Unchecked = Chunk;
+impl FromAst for CkProgram {
+    type Unchecked = Program;
 
-    fn from_ast(chunk: Self::Unchecked) -> Self {
-        CkChunk {
-            stmts: from_ast(chunk.stmts),
-            loc: chunk.loc,
+    fn from_ast(ast: Self::Unchecked) -> Self {
+        CkProgram {
+            defs: from_ast(ast.defs),
         }
     }
 }
 
-/// Checked statement
-/// see [`Statement`].
+/// Checked Lun Definition see [`Definition`]
+///
+/// [`Definition`]: lun_parser::definition::Definition
+#[derive(Debug, Clone)]
+pub struct CkDefinition {
+    pub vis: Vis,
+    pub name: String,
+    pub name_loc: Span,
+    pub typ: Option<CkExpression>,
+    pub value: CkExpression,
+    pub loc: Span,
+    /// the symbol representing this definition
+    pub sym: MaybeUnresolved,
+}
+
+impl FromAst for CkDefinition {
+    type Unchecked = Definition;
+
+    fn from_ast(ast: Self::Unchecked) -> Self {
+        CkDefinition {
+            vis: ast.vis,
+            name: ast.name.clone(),
+            name_loc: ast.name_loc,
+            typ: from_ast(ast.typ),
+            value: from_ast(ast.value),
+            loc: ast.loc,
+            sym: MaybeUnresolved::Unresolved(ast.name),
+        }
+    }
+}
+
+/// Checked block see [`Block`].
+///
+/// [`Block`]: lun_parser::stmt::Block
+#[derive(Debug, Clone)]
+pub struct CkBlock {
+    pub stmts: Vec<CkStatement>,
+    pub last_expr: Option<Box<CkExpression>>,
+    pub loc: Span,
+    pub atomtyp: AtomicType,
+}
+
+impl FromAst for CkBlock {
+    type Unchecked = Block;
+
+    fn from_ast(ast: Self::Unchecked) -> Self {
+        CkBlock {
+            stmts: from_ast(ast.stmts),
+            last_expr: from_ast(ast.last_expr.map(|a| *a)),
+            loc: ast.loc,
+            atomtyp: AtomicType::Unknown,
+        }
+    }
+}
+
+/// Checked statement see [`Statement`].
 ///
 /// [`Statement`]: lun_parser::stmt::Statement
 #[derive(Debug, Clone)]
@@ -95,73 +149,21 @@ impl FromAst for CkStatement {
 
     fn from_ast(ast: Self::Unchecked) -> Self {
         let stmt = match ast.stmt {
-            Stmt::Assignement { variable, value } => CkStmt::Assignement {
-                variable: MaybeUnresolved::Unresolved(variable),
-                value: from_ast(value),
-            },
             Stmt::VariableDef {
-                vis,
                 name,
                 name_loc,
+                mutable,
                 typ,
                 value,
             } => CkStmt::VariableDef {
-                vis,
                 name: name.clone(),
                 name_loc,
+                mutable,
                 typ: from_ast(typ),
                 value: from_ast(value),
                 sym: MaybeUnresolved::Unresolved(name),
             },
-            Stmt::IfThenElse {
-                cond,
-                body,
-                else_ifs,
-                else_body,
-            } => CkStmt::IfThenElse {
-                cond: from_ast(cond),
-                body: from_ast(body),
-                else_ifs: from_ast(else_ifs),
-                else_body: from_ast(else_body),
-            },
-            Stmt::DoBlock { body } => CkStmt::DoBlock {
-                body: from_ast(body),
-            },
-            Stmt::FunCall { name, args } => CkStmt::FunCall {
-                name: MaybeUnresolved::Unresolved(name),
-                args: from_ast(args),
-            },
-            Stmt::While { cond, body } => CkStmt::While {
-                cond: from_ast(cond),
-                body: from_ast(body),
-            },
-            Stmt::For {
-                variable,
-                iterator,
-                body,
-            } => CkStmt::For {
-                variable,
-                iterator: from_ast(iterator),
-                body: from_ast(body),
-            },
-            Stmt::FunDef {
-                vis,
-                name,
-                name_loc,
-                args,
-                rettype,
-                body,
-            } => CkStmt::FunDef {
-                vis,
-                name: name.clone(),
-                name_loc,
-                args: from_ast(args),
-                rettype: from_ast(rettype),
-                body: from_ast(body),
-                sym: MaybeUnresolved::Unresolved(name),
-            },
-            Stmt::Return { val } => CkStmt::Return { val: from_ast(val) },
-            Stmt::Break { val } => CkStmt::Break { val: from_ast(val) },
+            Stmt::Expression(expr) => CkStmt::Expression(from_ast(expr)),
         };
 
         CkStatement { stmt, loc: ast.loc }
@@ -173,105 +175,27 @@ impl FromAst for CkStatement {
 /// [`Stmt`]: lun_parser::stmt::Stmt
 #[derive(Debug, Clone)]
 pub enum CkStmt {
-    /// see [`Assignement`]
-    ///
-    /// [`Assignement`]: lun_parser::stmt::Stmt::Assignement
-    Assignement {
-        variable: MaybeUnresolved,
-        value: CkExpression,
-    },
     /// see [`VariableDef`]
     ///
     /// [`VariableDef`]: lun_parser::stmt::Stmt::VariableDef
     VariableDef {
-        vis: Vis,
         name: String,
         name_loc: Span,
+        mutable: bool,
         typ: Option<CkExpression>,
         value: Option<CkExpression>,
         /// the symbol representing this function
         sym: MaybeUnresolved,
     },
-    /// see [`IfThenElse`]
+    /// see [`Expression`]
     ///
-    /// [`IfThenElse`]: lun_parser::stmt::Stmt::IfThenElse
-    IfThenElse {
-        cond: CkExpression,
-        body: CkChunk,
-        else_ifs: Vec<CkElseIf>,
-        else_body: Option<CkChunk>,
-    },
-    /// see [`DoBlock`]
-    ///
-    /// [`DoBlock`]: lun_parser::stmt::Stmt::DoBlock
-    DoBlock { body: CkChunk },
-    /// see [`FunCall`]
-    ///
-    /// [`FunCall`]: lun_parser::stmt::Stmt::FunCall
-    FunCall {
-        name: MaybeUnresolved,
-        args: Vec<CkExpression>,
-    },
-    /// see [`While`]
-    ///
-    /// [`While`]: lun_parser::stmt::Stmt::While
-    While { cond: CkExpression, body: CkChunk },
-    /// see [`For`]
-    ///
-    /// [`For`]: lun_parser::stmt::Stmt::For
-    For {
-        variable: String,
-        iterator: CkExpression,
-        body: CkChunk,
-    },
-    /// see [`FunDef`]
-    ///
-    /// [`FunDef`]: lun_parser::stmt::Stmt::FunDef
-    FunDef {
-        vis: Vis,
-        name: String,
-        name_loc: Span,
-        args: Vec<CkArg>,
-        rettype: Option<CkExpression>,
-        body: CkChunk,
-        /// the symbol representing this function
-        sym: MaybeUnresolved,
-    },
-    /// see [`Return`]
-    ///
-    /// [`Return`]: lun_parser::stmt::Stmt::Return
-    Return { val: Option<CkExpression> },
-    /// see [`Break`]
-    ///
-    /// [`Break`]: lun_parser::stmt::Stmt::Break
-    Break { val: Option<CkExpression> },
-}
-
-/// see [`ElseIf`]
-///
-/// [`ElseIf`]: lun_parser::stmt::ElseIf
-#[derive(Debug, Clone)]
-pub struct CkElseIf {
-    pub cond: CkExpression,
-    pub body: CkChunk,
-    pub loc: Span,
-}
-
-impl FromAst for CkElseIf {
-    type Unchecked = ElseIf;
-
-    fn from_ast(ast: Self::Unchecked) -> Self {
-        CkElseIf {
-            cond: from_ast(ast.cond),
-            body: from_ast(ast.body),
-            loc: ast.loc,
-        }
-    }
+    /// [`Expression`]: lun_parser::stmt::Stmt::Expression
+    Expression(CkExpression),
 }
 
 /// see [`Arg`]
 ///
-/// [`Arg`]: lun_parser::stmt::Arg
+/// [`Arg`]: lun_parser::expr::Arg
 #[derive(Debug, Clone)]
 pub struct CkArg {
     pub name: String,
@@ -301,7 +225,7 @@ pub struct CkExpression {
     /// the checked expression
     pub expr: CkExpr,
     /// the actual type of the expression
-    pub typ: Type,
+    pub atomtyp: AtomicType,
     /// the location of the expression
     pub loc: Span,
 }
@@ -323,19 +247,137 @@ impl FromAst for CkExpression {
             },
             Expr::Unary { op, expr } => CkExpr::Unary {
                 op,
-                expr: from_ast(*expr),
+                val: from_ast(*expr),
             },
             Expr::FunCall { called, args } => CkExpr::FunCall {
                 called: from_ast(*called),
                 args: from_ast(args),
             },
+            Expr::FunDefinition {
+                args,
+                rettype,
+                body,
+            } => CkExpr::FunDefinition {
+                args: from_ast(args),
+                rettype: from_ast(rettype.map(|a| *a)),
+                body: from_ast(body),
+            },
+            Expr::If(ifexpr) => ckexpr_from_if_expr(ifexpr),
+            Expr::IfThenElse {
+                cond,
+                true_val,
+                false_val,
+            } => CkExpr::If {
+                cond: from_ast(*cond),
+                then_branch: from_ast(*true_val),
+                else_branch: Some(from_ast(*false_val)),
+            },
+            Expr::Block(block) => CkExpr::Block(from_ast(block)),
+            Expr::While { cond, body } => CkExpr::While {
+                cond: from_ast(*cond),
+                body: from_ast(body),
+                index: None,
+            },
+            Expr::For {
+                variable,
+                iterator,
+                body,
+            } => CkExpr::For {
+                variable,
+                iterator: from_ast(*iterator),
+                body: from_ast(body),
+            },
+            Expr::Return { val } => CkExpr::Return {
+                val: from_ast(val.map(|a| *a)),
+            },
+            Expr::Break { val } => CkExpr::Break {
+                val: from_ast(val.map(|a| *a)),
+                index: None,
+            },
+            Expr::Continue => CkExpr::Continue { index: None },
+            Expr::Null => CkExpr::Null,
+            Expr::PointerType { mutable, typ } => CkExpr::PointerType {
+                mutable,
+                typ: from_ast(*typ),
+            },
+            Expr::Deref { mutable, val } => CkExpr::Deref {
+                mutable,
+                val: from_ast(*val),
+            },
         };
 
         CkExpression {
             expr,
-            typ: Type::Unknown,
+            atomtyp: AtomicType::Unknown,
             loc: ast.loc,
         }
+    }
+}
+
+impl Display for CkExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(&self.expr, f)
+    }
+}
+
+pub fn ckexpr_from_if_expr(ifexpr: IfExpression) -> CkExpr {
+    CkExpr::If {
+        cond: from_ast(*ifexpr.cond),
+        then_branch: Box::new(CkExpression {
+            loc: ifexpr.loc.clone(),
+            expr: CkExpr::Block(from_ast(*ifexpr.body)),
+            atomtyp: AtomicType::Unknown,
+        }),
+        else_branch: {
+            match ifexpr.else_branch.map(|e| *e) {
+                Some(Else::IfExpr(ifexpr)) => Some(Box::new(CkExpression {
+                    loc: ifexpr.loc.clone(),
+                    expr: ckexpr_from_if_expr(ifexpr),
+                    atomtyp: AtomicType::Unknown,
+                })),
+                Some(Else::Block(block)) => Some(Box::new(CkExpression {
+                    loc: block.loc.clone(),
+                    expr: CkExpr::Block(from_ast(block)),
+                    atomtyp: AtomicType::Unknown,
+                })),
+                None => None,
+            }
+        },
+    }
+}
+
+impl Display for CkExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CkExpr::IntLit(i) => write!(f, "{i}")?,
+            CkExpr::BoolLit(bool) => write!(f, "{bool}")?,
+            CkExpr::StringLit(str) => write!(f, "{str:?}")?,
+            CkExpr::Grouping(expr) => write!(f, "({expr})")?,
+            CkExpr::Ident(sym) => match sym {
+                MaybeUnresolved::Unresolved(name)
+                | MaybeUnresolved::Resolved(Symbol { name, .. }) => write!(f, "{name}")?,
+            },
+            CkExpr::Binary { lhs, op, rhs } => write!(f, "{lhs} {op} {rhs}")?,
+            CkExpr::Unary { op, val } => write!(f, "{op}{val}")?,
+            CkExpr::FunCall { called, args } => {
+                write!(f, "{called}(")?;
+                if !args.is_empty() {
+                    for arg in &args[..args.len() - 1] {
+                        write!(f, "{arg}, ")?;
+                    }
+                    write!(f, "{})", args.last().unwrap())?;
+                }
+            }
+            CkExpr::PointerType { mutable, typ } => {
+                write!(f, "*")?;
+                if *mutable {
+                    write!(f, "mut ")?;
+                }
+                write!(f, "{typ}")?;
+            }
+            exp => write!(f, "<{exp:?}>")?,
+        };
+        Ok(())
     }
 }
 
@@ -372,16 +414,89 @@ pub enum CkExpr {
     /// see [`Unary`]
     ///
     /// [`Unary`]: lun_parser::expr::Expr::Unary
-    Unary {
-        op: UnaryOp,
-        expr: Box<CkExpression>,
-    },
+    Unary { op: UnaryOp, val: Box<CkExpression> },
     /// see [`FunCall`]
     ///
     /// [`FunCall`]: lun_parser::expr::Expr::FunCall
     FunCall {
         called: Box<CkExpression>,
         args: Vec<CkExpression>,
+    },
+    /// see [`FunDefinition`]
+    ///
+    /// [`FunDefinition`]: lun_parser::expr::Expr::FunDefinition
+    FunDefinition {
+        args: Vec<CkArg>,
+        rettype: Option<Box<CkExpression>>,
+        body: CkBlock,
+    },
+    /// see [`If`] and [`IfThenElse`]
+    ///
+    /// [`If`]: lun_parser::expr::Expr::If
+    /// [`IfThenElse`]: lun_parser::expr::Expr::IfThenElse
+    If {
+        cond: Box<CkExpression>,
+        then_branch: Box<CkExpression>,
+        else_branch: Option<Box<CkExpression>>,
+    },
+    /// see [`Block`]
+    ///
+    /// [`Block`]: lun_parser::expr::Expr::Block
+    Block(CkBlock),
+    /// see [`While`]
+    ///
+    /// [`While`]: lun_parser::expr::Expr::While
+    While {
+        cond: Box<CkExpression>,
+        body: CkBlock,
+        /// index of the loop after checking
+        index: Option<usize>,
+    },
+    /// see [`For`]
+    ///
+    /// [`For`]: lun_parser::expr::Expr::For
+    For {
+        /// the variable that holds the value of the iterator
+        variable: String,
+        iterator: Box<CkExpression>,
+        body: CkBlock,
+    },
+    /// see [`Return`]
+    ///
+    /// [`Return`]: lun_parser::expr::Expr::Return
+    Return { val: Option<Box<CkExpression>> },
+    /// see [`Break`]
+    ///
+    /// [`Break`]: lun_parser::expr::Expr::Break
+    Break {
+        val: Option<Box<CkExpression>>,
+        /// loop index
+        index: Option<usize>,
+    },
+    /// see [`Continue`]
+    ///
+    /// [`Continue`]: lun_parser::expr::Expr::Continue
+    Continue {
+        /// loop index
+        index: Option<usize>,
+    },
+    /// see [`Null`]
+    ///
+    /// [`Null`]: lun_parser::expr::Expr::Null
+    Null,
+    /// see [`PointerType`]
+    ///
+    /// [`PointerType`]: lun_parser::expr::Expr::PointerType
+    PointerType {
+        mutable: bool,
+        typ: Box<CkExpression>,
+    },
+    /// see [`Deref`]
+    ///
+    /// [`Deref`]: lun_parser::expr::Expr::Deref
+    Deref {
+        mutable: bool,
+        val: Box<CkExpression>,
     },
 }
 
