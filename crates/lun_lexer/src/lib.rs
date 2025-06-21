@@ -254,7 +254,7 @@ impl Lexer {
             Keyword::IN => Kw(Keyword::In),
             Keyword::LET => Kw(Keyword::Let),
             Keyword::MUT => Kw(Keyword::Mut),
-            Keyword::NIL => Kw(Keyword::Nil),
+            Keyword::NULL => Kw(Keyword::Null),
             Keyword::OR => Kw(Keyword::Or),
             Keyword::PUB => Kw(Keyword::Pub),
             Keyword::RETURN => Kw(Keyword::Return),

@@ -148,10 +148,10 @@ pub enum Expr {
     ///
     /// "continue"
     Continue,
-    /// nil expression
+    /// null expression
     ///
-    /// "nil"
-    Nil,
+    /// "null"
+    Null,
     /// pointer type expression
     ///
     /// "*" "mut"? expression
@@ -201,7 +201,7 @@ pub fn parse_expr_precedence(
         Some(Kw(Keyword::Return)) => parse!(@fn parser => parse_return_expr),
         Some(Kw(Keyword::Break)) => parse!(@fn parser => parse_break_expr),
         Some(Kw(Keyword::Continue)) => parse!(@fn parser => parse_continue_expr),
-        Some(Kw(Keyword::Nil)) => parse!(@fn parser => parse_nil_expr),
+        Some(Kw(Keyword::Null)) => parse!(@fn parser => parse_null_expr),
         Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
         Some(Punct(Punctuation::Star)) => parse!(@fn parser => parse_pointer_type_expr),
         Some(tt) if UnaryOp::left_from_token(tt.clone()).is_some() => {
@@ -952,12 +952,12 @@ pub fn parse_continue_expr(parser: &mut Parser) -> Result<Expression, Diagnostic
     })
 }
 
-/// parses nil expression
-pub fn parse_nil_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (_, loc) = expect_token!(parser => [Kw(Keyword::Nil), ()], Kw(Keyword::Nil));
+/// parses null expression
+pub fn parse_null_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, loc) = expect_token!(parser => [Kw(Keyword::Null), ()], Kw(Keyword::Null));
 
     Ok(Expression {
-        expr: Expr::Nil,
+        expr: Expr::Null,
         loc,
     })
 }

@@ -815,7 +815,7 @@ impl SemanticCk {
                 };
                 *index = Some(new_idx);
             }
-            CkExpr::Nil => {
+            CkExpr::Null => {
                 expr.atomtyp = AtomicType::Nil;
             }
             CkExpr::PointerType { typ, .. } => {

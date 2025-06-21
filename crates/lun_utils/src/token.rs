@@ -159,8 +159,8 @@ pub enum Keyword {
     Let,
     /// mut
     Mut,
-    /// nil
-    Nil,
+    /// null
+    Null,
     /// Or
     Or,
     /// pub
@@ -222,8 +222,8 @@ impl Keyword {
     /// `mut` keyword
     pub const MUT: &str = "mut";
 
-    /// `nil` keyword.
-    pub const NIL: &str = "nil";
+    /// `null` keyword.
+    pub const NULL: &str = "null";
 
     /// `or` keyword.
     pub const OR: &str = "or";
@@ -266,7 +266,7 @@ impl Display for Keyword {
             Keyword::In => f.write_str(Keyword::IN),
             Keyword::Let => f.write_str(Keyword::LET),
             Keyword::Mut => f.write_str(Keyword::MUT),
-            Keyword::Nil => f.write_str(Keyword::NIL),
+            Keyword::Null => f.write_str(Keyword::NULL),
             Keyword::Or => f.write_str(Keyword::OR),
             Keyword::Pub => f.write_str(Keyword::PUB),
             Keyword::Return => f.write_str(Keyword::RETURN),
