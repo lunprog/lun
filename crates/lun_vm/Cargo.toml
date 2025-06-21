@@ -12,3 +12,4 @@ lun_bc = { workspace = true }
 # other dependencies
 bytemuck = { workspace = true }
 half = { workspace = true, features = ["bytemuck"] }
+thiserror = { workspace = true }

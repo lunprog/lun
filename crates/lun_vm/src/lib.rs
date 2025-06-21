@@ -8,6 +8,7 @@ use std::{
 use bytemuck::Contiguous;
 use half::f16;
 use lun_bc::{AFunct, BcBlob, Opcode, Reg};
+use thiserror::Error;
 
 /// A double word.
 pub type DWord = u64;
@@ -35,7 +36,7 @@ pub struct Vm {
 macro_rules! inst_impl {
     (arithmetic; $self:ident, $wrap_fn:ident, $op:tt) => {{
         // fetch & decode
-        let (funct, rd, rs1, rs2) = $self.decode_arithmetic_inst();
+        let (funct, rd, rs1, rs2) = $self.decode_arithmetic_inst()?;
         $self.pc += 3;
 
         // execute
@@ -65,7 +66,7 @@ macro_rules! inst_impl {
     }};
     (comparison; $self:ident, $op:tt) => {{
         // fetch & decode
-        let (funct, rd, rs1, rs2) = $self.decode_arithmetic_inst();
+        let (funct, rd, rs1, rs2) = $self.decode_arithmetic_inst()?;
         $self.pc += 3;
 
         // execute
@@ -92,28 +93,27 @@ macro_rules! inst_impl {
     }};
     (bitwise; $self:ident, $op:tt) => {{
         // fetch & decode
-        let (funct, rd, rs1, rs2) = $self.decode_arithmetic_inst();
+        let (funct, rd, rs1, rs2) = $self.decode_arithmetic_inst()?;
         $self.pc += 3;
 
         // execute
         if let AFunct::X = funct {
             $self.x[rd] = ($self.x[rs1] $op $self.x[rs2]) as DWord;
         } else {
-            // TODO: throw exception
-            panic!("cannot perform bitwise operation on floating point number");
+            return Err(Exception::BitwiseOperationOnFloat);
         }
     }};
     (load; $self:ident, $size:ident) => {{
         // fetch & decode
-        let (rd, rs, offset) = $self.dissassemble_reg_imm16_reg();
+        let (rd, rs, offset) = $self.dissassemble_reg_imm16_reg()?;
         $self.pc += 4;
 
         // execute
-        $self.x[rd] = $self.read($self.x[rs].wrapping_add_signed(offset as i64), Size::$size);
+        $self.x[rd] = $self.read($self.x[rs].wrapping_add_signed(offset as i64), Size::$size)?;
     }};
     (store; $self:ident, $size:ident) => {{
         // fetch & decode
-        let (rs1, rs2, offset) = $self.dissassemble_reg_imm16_reg();
+        let (rs1, rs2, offset) = $self.dissassemble_reg_imm16_reg()?;
         $self.pc += 4;
 
         // execute
@@ -121,7 +121,7 @@ macro_rules! inst_impl {
             $self.x[rs1].wrapping_add_signed(offset as i64),
             Size::$size,
             $self.x[rs2],
-        );
+        )?;
     }};
 }
 
@@ -169,15 +169,27 @@ impl Vm {
         println!("{:#?}", self.x);
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Result<(), Exception> {
         while !self.done {
-            self.step();
-            break;
+            self.step()?;
         }
+        Ok(())
     }
 
-    pub fn step(&mut self) {
-        let opcode = Opcode::from_integer(self.read(self.pc, Size::Byte) as u8);
+    pub fn step(&mut self) -> Result<(), Exception> {
+        // check if we have the execute protection
+        if !(Vm::PROGRAM_START..self.program_end).contains(&self.pc) {
+            // TODO: this code only check if the opcode has the execute
+            // protection we should check if the all instruction has the
+            // execute protection, so:
+            // - we need to store the length of the following inst in some
+            //   method of Opcode
+            // - check if the range of the instruction is protected with eXec.
+            return Err(Exception::ExecProtection { addr: self.pc });
+        }
+
+        let op = self.read(self.pc, Size::Byte)? as u8;
+        let opcode = Opcode::from_integer(op);
 
         match opcode {
             Some(Opcode::Add) => inst_impl!(arithmetic; self, wrapping_add, +),
@@ -194,7 +206,7 @@ impl Vm {
             Some(Opcode::Xor) => inst_impl!(bitwise; self, ^),
             Some(Opcode::Call) => {
                 // fetch & decode
-                let imm32 = self.read(self.pc + 1, Size::Word);
+                let imm32 = self.read(self.pc + 1, Size::Word)?;
                 self.pc += 5;
 
                 // execute
@@ -202,7 +214,7 @@ impl Vm {
                 // decrement stack pointer
                 self.x[Reg::sp] -= Vm::XLEN / 8;
                 // save return address, next instruction address, on the stack
-                self.write(self.x[Reg::sp], Size::Double, self.pc + 5);
+                self.write(self.x[Reg::sp], Size::Double, self.pc + 5)?;
                 // jump to the immediate target
                 self.pc = imm32;
             }
@@ -211,12 +223,12 @@ impl Vm {
                 self.pc += 1;
 
                 // execute
-                self.pc = self.read(self.x[Reg::sp], Size::Double);
+                self.pc = self.read(self.x[Reg::sp], Size::Double)?;
                 self.x[Reg::sp] += Vm::XLEN / 8;
             }
             Some(Opcode::Jze) => {
                 // fetch & decode
-                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg();
+                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg()?;
                 self.pc += 4;
 
                 // execute
@@ -227,7 +239,7 @@ impl Vm {
             }
             Some(Opcode::Beq) => {
                 // fetch & decode
-                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg();
+                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg()?;
                 self.pc += 4;
 
                 // execute
@@ -237,7 +249,7 @@ impl Vm {
             }
             Some(Opcode::Bne) => {
                 // fetch & decode
-                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg();
+                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg()?;
                 self.pc += 4;
 
                 // execute
@@ -247,7 +259,7 @@ impl Vm {
             }
             Some(Opcode::Blt) => {
                 // fetch & decode
-                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg();
+                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg()?;
                 self.pc += 4;
 
                 // execute
@@ -257,7 +269,7 @@ impl Vm {
             }
             Some(Opcode::Bge) => {
                 // fetch & decode
-                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg();
+                let (rs1, rs2, offset) = self.dissassemble_reg_imm16_reg()?;
                 self.pc += 4;
 
                 // execute
@@ -275,8 +287,8 @@ impl Vm {
             Some(Opcode::StD) => inst_impl!(store; self, Double),
             Some(Opcode::LiB) => {
                 // fetch & decode
-                let rd = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
-                let imm = self.read(self.pc + 2, Size::Byte) as u8;
+                let rd = self.read(self.pc + 1, Size::Byte)? as u8 & 0b1111;
+                let imm = self.read(self.pc + 2, Size::Byte)? as u8;
                 self.pc += 3;
 
                 // execute
@@ -284,8 +296,8 @@ impl Vm {
             }
             Some(Opcode::LiH) => {
                 // fetch & decode
-                let rd = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
-                let imm = self.read(self.pc + 2, Size::Half) as u16;
+                let rd = self.read(self.pc + 1, Size::Byte)? as u8 & 0b1111;
+                let imm = self.read(self.pc + 2, Size::Half)? as u16;
                 self.pc += 4;
 
                 // execute
@@ -293,8 +305,8 @@ impl Vm {
             }
             Some(Opcode::LiW) => {
                 // fetch & decode
-                let rd = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
-                let imm = self.read(self.pc + 2, Size::Word) as u32;
+                let rd = self.read(self.pc + 1, Size::Byte)? as u8 & 0b1111;
+                let imm = self.read(self.pc + 2, Size::Word)? as u32;
                 self.pc += 6;
 
                 // execute
@@ -302,8 +314,8 @@ impl Vm {
             }
             Some(Opcode::LiD) => {
                 // fetch & decode
-                let rd = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
-                let imm = self.read(self.pc + 2, Size::Double) as u64;
+                let rd = self.read(self.pc + 1, Size::Byte)? as u8 & 0b1111;
+                let imm = self.read(self.pc + 2, Size::Double)? as u64;
                 self.pc += 10;
 
                 // execute
@@ -311,7 +323,7 @@ impl Vm {
             }
             Some(Opcode::Mov) => {
                 // fetch & decode
-                let rd_rs = self.read(self.pc + 1, Size::Byte) as u8;
+                let rd_rs = self.read(self.pc + 1, Size::Byte)? as u8;
                 let rd = rd_rs >> 4;
                 let rs = rd_rs & 0b1111;
                 self.pc += 2;
@@ -321,53 +333,55 @@ impl Vm {
             }
             Some(Opcode::Push) => {
                 // fetch & decode
-                let rs = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
+                let rs = self.read(self.pc + 1, Size::Byte)? as u8 & 0b1111;
                 self.pc += 2;
 
                 // execute
                 self.x[Reg::sp] -= Vm::XLEN / 8;
-                self.write(self.x[Reg::sp], Size::Double, self.x[rs]);
+                self.write(self.x[Reg::sp], Size::Double, self.x[rs])?;
             }
             Some(Opcode::Pop) => {
                 // fetch & decode
-                let rd = self.read(self.pc + 1, Size::Byte) as u8 & 0b1111;
+                let rd = self.read(self.pc + 1, Size::Byte)? as u8 & 0b1111;
                 self.pc += 2;
 
                 // execute
-                self.x[rd] = self.read(self.x[Reg::sp], Size::Double);
+                self.x[rd] = self.read(self.x[Reg::sp], Size::Double)?;
                 self.x[Reg::sp] += Vm::XLEN / 8;
             }
-            None => panic!("invalid instruction exception"), // TODO: make excetpions.
+            None => return Err(Exception::InvalidInstruction { opcode: op }),
         }
+
+        Ok(())
     }
 
     /// decodes (expect for the opcode) inst with layout:
     /// opcode | funct | rd | rs1 | rs2 = 24b
     ///
     /// returns: (funct, rd, rs1, rs2)
-    fn decode_arithmetic_inst(&self) -> (AFunct, u8, u8, u8) {
-        let funct_rd = self.read(self.pc + 1, Size::Byte) as u8;
-        let rs1_rs2 = self.read(self.pc + 2, Size::Byte) as u8;
+    fn decode_arithmetic_inst(&self) -> Result<(AFunct, u8, u8, u8), Exception> {
+        let funct_rd = self.read(self.pc + 1, Size::Byte)? as u8;
+        let rs1_rs2 = self.read(self.pc + 2, Size::Byte)? as u8;
 
         let funct = AFunct::from_integer(funct_rd >> 4).unwrap();
         let rd = funct_rd & 0b1111;
         let rs1 = rs1_rs2 >> 4;
         let rs2 = rs1_rs2 & 0b1111;
 
-        (funct, rd, rs1, rs2)
+        Ok((funct, rd, rs1, rs2))
     }
 
     /// decodes (expect for the opcode) inst with layout:
     /// opcode | reg1 | reg2 | imm16 = 32b
     ///
     /// returns: (reg1, reg2, imm16)
-    fn dissassemble_reg_imm16_reg(&self) -> (u8, u8, u16) {
-        let reg1_reg2 = self.read(self.pc + 1, Size::Byte) as u8;
-        let imm16 = self.read(self.pc + 2, Size::Half) as u16;
+    fn dissassemble_reg_imm16_reg(&self) -> Result<(u8, u8, u16), Exception> {
+        let reg1_reg2 = self.read(self.pc + 1, Size::Byte)? as u8;
+        let imm16 = self.read(self.pc + 2, Size::Half)? as u16;
         let reg1 = reg1_reg2 >> 4;
         let reg2 = reg1_reg2 & 0b1111;
 
-        (reg1, reg2, imm16)
+        Ok((reg1, reg2, imm16))
     }
 
     #[inline(always)]
@@ -386,12 +400,11 @@ impl Vm {
     }
 
     #[track_caller]
-    pub fn read(&self, addr: DWord, size: Size) -> DWord {
+    pub fn read(&self, addr: DWord, size: Size) -> Result<DWord, Exception> {
         let usize = size as usize;
 
         let val = if (0..=255).contains(&addr) {
-            // TODO: throw interrupts
-            panic!("cannot read special region.")
+            return Err(Exception::ReadProtection { addr });
         } else if (Self::PROGRAM_START..=self.program_end).contains(&addr) {
             let daddr = addr as usize - Vm::PROGRAM_START as usize;
             &self.program.code[daddr..(daddr + usize)]
@@ -399,36 +412,31 @@ impl Vm {
             let daddr = addr as usize - self.stack_top() as usize;
             &self.stack[daddr..(daddr + usize)]
         } else {
-            // TODO: throw interrupts
-            panic!("unknown address")
+            return Err(Exception::ReadProtection { addr });
         };
 
         match size {
-            Size::Byte => u8::from_le_bytes(val.try_into().unwrap()) as DWord,
-            Size::Half => u16::from_le_bytes(val.try_into().unwrap()) as DWord,
-            Size::Word => u32::from_le_bytes(val.try_into().unwrap()) as DWord,
-            Size::Double => u64::from_le_bytes(val.try_into().unwrap()) as DWord,
+            Size::Byte => Ok(u8::from_le_bytes(val.try_into().unwrap()) as DWord),
+            Size::Half => Ok(u16::from_le_bytes(val.try_into().unwrap()) as DWord),
+            Size::Word => Ok(u32::from_le_bytes(val.try_into().unwrap()) as DWord),
+            Size::Double => Ok(u64::from_le_bytes(val.try_into().unwrap()) as DWord),
         }
     }
 
     #[track_caller]
-    pub fn write(&mut self, addr: DWord, size: Size, value: DWord) {
+    pub fn write(&mut self, addr: DWord, size: Size, value: DWord) -> Result<(), Exception> {
         let usize = size as usize;
 
         // Get mutable slice to write into
         let dest = if (0..=255).contains(&addr) {
-            // TODO: throw interrupt
-            panic!("cannot write to special region.");
+            return Err(Exception::WriteProtection { addr });
         } else if (Self::PROGRAM_START..=self.program_end).contains(&addr) {
-            // Program region is read-only
-            // TODO: throw interrupt
-            panic!("cannot write to program region.");
+            return Err(Exception::WriteProtection { addr });
         } else if (self.stack_top()..self.stack_bottom).contains(&addr) {
             let daddr = addr as usize - self.stack_top() as usize;
             &mut self.stack[daddr..(daddr + usize)]
         } else {
-            // TODO: throw interrupt
-            panic!("unknown address");
+            return Err(Exception::WriteProtection { addr });
         };
 
         match size {
@@ -453,6 +461,7 @@ impl Vm {
                 dest.copy_from_slice(&bytes);
             }
         }
+        Ok(())
     }
 }
 
@@ -529,4 +538,18 @@ pub enum Size {
     Half = 2,
     Word = 4,
     Double = 8,
+}
+
+#[derive(Debug, Clone, Error)]
+pub enum Exception {
+    #[error("tried to perform a bitwise operation on a float.")]
+    BitwiseOperationOnFloat,
+    #[error("invalid instruction with opcode {opcode:X}")]
+    InvalidInstruction { opcode: u8 },
+    #[error("cannot read in this region, Read protection missing at 0x{addr:08x}")]
+    ReadProtection { addr: DWord },
+    #[error("cannot write in this region, Write protection missing at 0x{addr:08x}")]
+    WriteProtection { addr: DWord },
+    #[error("cannot execute in this region, eXecute protection missing at 0x{addr:08x}")]
+    ExecProtection { addr: DWord },
 }

@@ -59,56 +59,6 @@ pub fn run() -> StageResult<()> {
     let ckprogram = tri!(semacker.produce(), sink);
     dbg!(ckprogram);
 
-    // // 5. convert ast to ir
-    // let ir = IrModule::from_ck_chunk(ckast);
-    // dbg!(ir);
-    // // TODO: make the codegenerator work on the ir.
-
-    // let mut blob = BcBlob::new();
-    // blob.write_add(AFunct::X, Reg::t1, Reg::a0, Reg::a1);
-
-    // blob.write_mul(AFunct::F16, Reg::a0, Reg::t1, Reg::a2);
-
-    // blob.disassemble("test blob");
-
-    // let mut vm = Vm::new(Vm::BASE_STACK, blob);
-    // vm.debug_regs();
-    // match vm.run() {
-    //     Ok(()) => {}
-    //     Err(exception) => eprintln!("Exception: {exception}"),
-    // }
-
-    // 6. code generation
-    // let mut codegen = CodeGenerator::new(ckast, sink.clone(), LBType::Exec);
-    // let lb = tri!(codegen.produce(), sink);
-
-    // let mut file = File::create("test.lb").unwrap();
-    // lb.serialize(&mut file).unwrap();
-
-    // lb.dump();
-
-    // THE VM PARTS
-
-    // let mut blob = BcBlob::new();
-
-    // let a = blob.dpool.write_integer(10) as u32;
-    // blob.write_const(a);
-    // let b = blob.dpool.write_integer(4) as u32;
-    // dbg!(&blob.dpool);
-    // blob.write_const(b);
-
-    // blob.write_sub();
-
-    // blob.write_return();
-
-    // blob.disassemble("test blob");
-
-    // let mut vm = VM::new(blob);
-
-    // let res = vm.run();
-
-    // println!("RES = {}", res);
-
     if sink.is_empty() {
         StageResult::Good(())
     } else {
