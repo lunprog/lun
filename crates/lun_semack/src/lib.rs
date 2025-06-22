@@ -641,8 +641,10 @@ impl SemanticCk {
                     ret: ret_ty,
                 } = &called.atomtyp
                 else {
-                    return Err(ExpectedTypeFoundExpr {
-                        help: false,
+                    return Err(MismatchedTypes {
+                        expected: "function".to_string(),
+                        found: called.atomtyp.clone(),
+                        due_to: None,
                         loc: called.loc.clone(),
                     }
                     .into_diag());
