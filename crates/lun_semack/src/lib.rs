@@ -60,17 +60,6 @@ impl TypeExpectation for AtomicType {
         self.to_string()
     }
 
-    #[inline(always)]
-    fn can_coerce(&self, other: &AtomicType) -> Option<AtomicType> {
-        let coercions = other.coercions()?;
-
-        if coercions.contains(self) {
-            Some(self.clone())
-        } else {
-            None
-        }
-    }
-
     fn dbg(&self) {
         println!("{:?}", self);
     }
@@ -214,7 +203,7 @@ impl SemanticCk {
 
             let mut args_atomtype = Vec::new();
             for CkArg { typ, .. } in args {
-                self.check_expr(typ)?;
+                self.check_expr(typ, Some(AtomicType::Type))?;
 
                 if typ.atomtyp != AtomicType::Type {
                     self.sink.push(ExpectedTypeFoundExpr {
@@ -237,7 +226,7 @@ impl SemanticCk {
             }
 
             let ret_aty = if let Some(typ) = rettype {
-                self.check_expr(typ)?;
+                self.check_expr(typ, Some(AtomicType::Type))?;
 
                 if let Some(atomtyp) = AtomicType::from_expr((**typ).clone()) {
                     Box::new(atomtyp)
@@ -368,7 +357,7 @@ impl SemanticCk {
 
         // 2. check the last_expr if any
         if let Some(expr) = &mut block.last_expr {
-            self.check_expr(expr)?;
+            self.check_expr(expr, None)?;
             block.atomtyp = expr.atomtyp.clone();
         } else {
             block.atomtyp = AtomicType::Void;
@@ -389,7 +378,7 @@ impl SemanticCk {
             } => {
                 // check the type
                 if let Some(ty) = typ {
-                    self.check_expr(ty)?;
+                    self.check_expr(ty, Some(AtomicType::Type))?;
 
                     if ty.atomtyp != AtomicType::Type {
                         self.sink.push(
@@ -417,7 +406,7 @@ impl SemanticCk {
 
                 if let Some(value) = value {
                     // check the value
-                    self.check_expr(value)?;
+                    self.check_expr(value, type_as_atomic.clone())?;
 
                     if let Some(ref typ_as_aty) = type_as_atomic {
                         let value_loc = value.loc.clone();
@@ -468,16 +457,35 @@ impl SemanticCk {
                 self.table.bind(ckname, symbol)
             }
             CkStmt::Expression(expr) => {
-                self.check_expr(expr)?;
+                self.check_expr(expr, None)?;
             }
         }
         Ok(())
     }
 
-    pub fn check_expr(&mut self, expr: &mut CkExpression) -> Result<(), Diagnostic> {
+    /// check an expression and mutate it in place if needed, you can optionally
+    /// provide the type expected for this expression.
+    ///
+    /// eg: a variable with a type attached to it expect its value to be of some
+    /// type, a function call expects it to be of some type, etc, etc
+    ///
+    /// IMPORTANT: note that the "expected" type is just a suggestion, if the
+    /// type of the expr is UnkConstrained it will try to coerce to the expected
+    /// type but if the type is not a constrain it will do nothing, it's just a
+    /// suggestion
+    pub fn check_expr(
+        &mut self,
+        expr: &mut CkExpression,
+        mut wish: Option<AtomicType>,
+    ) -> Result<(), Diagnostic> {
+        // remove the wish if it's to be unknown
+        if let Some(AtomicType::Unknown) = wish {
+            wish = None;
+        }
+
         match &mut expr.expr {
             CkExpr::IntLit(_) => {
-                expr.atomtyp = AtomicType::ComptimeInt;
+                expr.atomtyp = AtomicType::UnkConstrained(Constraint::Integer);
             }
             CkExpr::BoolLit(_) => {
                 expr.atomtyp = AtomicType::Bool;
@@ -486,7 +494,7 @@ impl SemanticCk {
                 expr.atomtyp = AtomicType::Str;
             }
             CkExpr::Grouping(e) => {
-                self.check_expr(e)?;
+                self.check_expr(e, wish.clone())?;
                 expr.atomtyp = e.atomtyp.clone();
             }
             CkExpr::Ident(MaybeUnresolved::Unresolved(name)) => {
@@ -539,7 +547,7 @@ impl SemanticCk {
                 assert_eq!(sym.atomtyp, AtomicType::Unknown);
                 lhs.expr = CkExpr::Ident(MaybeUnresolved::Resolved(sym.clone()));
 
-                self.check_expr(rhs)?;
+                self.check_expr(rhs, None)?;
 
                 expr.atomtyp = AtomicType::Void;
             }
@@ -549,8 +557,8 @@ impl SemanticCk {
                 op: BinOp::Assignement,
                 rhs,
             } => {
-                self.check_expr(lhs)?;
-                self.check_expr(rhs)?;
+                self.check_expr(lhs, wish.clone())?;
+                self.check_expr(rhs, Some(lhs.atomtyp.clone()))?;
 
                 let rhs_loc = rhs.loc.clone();
                 self.type_check(&lhs.atomtyp, &mut **rhs, None, rhs_loc);
@@ -575,8 +583,8 @@ impl SemanticCk {
                 }
             }
             CkExpr::Binary { lhs, op, rhs } => {
-                self.check_expr(lhs)?;
-                self.check_expr(rhs)?;
+                self.check_expr(lhs, wish.clone())?;
+                self.check_expr(rhs, wish.clone())?;
 
                 let rhs_loc = rhs.loc.clone();
                 self.type_check(&lhs.atomtyp, &mut **rhs, None, rhs_loc);
@@ -588,10 +596,10 @@ impl SemanticCk {
                 };
             }
             CkExpr::Unary { op, val } => {
-                self.check_expr(val)?;
-
                 match op {
                     UnaryOp::Negation => {
+                        self.check_expr(val, wish.clone())?;
+
                         let exp_loc = val.loc.clone();
 
                         self.type_check(
@@ -605,12 +613,24 @@ impl SemanticCk {
                         expr.atomtyp = val.atomtyp.clone();
                     }
                     UnaryOp::Not => {
+                        self.check_expr(val, wish.clone())?;
                         let exp_loc = val.loc.clone();
 
                         self.type_check(AtomicType::Bool, &mut **val, None, exp_loc);
                         expr.atomtyp = AtomicType::Bool;
                     }
                     UnaryOp::Dereference => {
+                        let real_wish = if let Some(AtomicType::Pointer {
+                            mutable: _,
+                            pointed,
+                        }) = &wish
+                        {
+                            Some((**pointed).clone())
+                        } else {
+                            None
+                        };
+                        self.check_expr(val, real_wish)?;
+
                         let pointee = if let AtomicType::Pointer {
                             mutable: _,
                             ref pointed,
@@ -634,7 +654,9 @@ impl SemanticCk {
                 }
             }
             CkExpr::FunCall { called, args } => {
-                self.check_expr(called)?;
+                // TODO: constrain the `called` value to a function pointer,
+                // replace wish Option<AtomicType> to Option<AtyWish>
+                self.check_expr(called, None)?;
 
                 let AtomicType::Fun {
                     args: args_aty,
@@ -652,11 +674,11 @@ impl SemanticCk {
 
                 assert!(called.atomtyp.is_func());
 
-                for (val, aty) in zip(args, args_aty) {
-                    self.check_expr(val)?;
+                for (arg, aty) in zip(args, args_aty) {
+                    self.check_expr(arg, Some(aty.clone()))?;
 
-                    let val_loc = val.loc.clone();
-                    self.type_check(aty, val, None, val_loc);
+                    let val_loc = arg.loc.clone();
+                    self.type_check(aty, arg, None, val_loc);
                 }
 
                 expr.atomtyp = *ret_ty.clone();
@@ -675,20 +697,20 @@ impl SemanticCk {
                 else_branch,
             } => {
                 // 1. condition
-                self.check_expr(cond)?;
+                self.check_expr(cond, Some(AtomicType::Bool))?;
 
                 let cond_loc = cond.loc.clone();
                 self.type_check(AtomicType::Bool, &mut **cond, None, cond_loc);
 
                 // 2. then branch
-                self.check_expr(then_branch)?;
+                self.check_expr(then_branch, None)?;
 
                 // 3. set the atomtyp to the type of then_branch
                 expr.atomtyp = then_branch.atomtyp.clone();
 
                 // 4. else branch
                 if let Some(else_branch) = else_branch {
-                    self.check_expr(else_branch)?;
+                    self.check_expr(else_branch, Some(then_branch.atomtyp.clone()))?;
 
                     let else_branch_loc = else_branch.loc.clone();
 
@@ -706,7 +728,7 @@ impl SemanticCk {
             }
             CkExpr::While { cond, body, index } => {
                 // 1. condition
-                self.check_expr(cond)?;
+                self.check_expr(cond, Some(AtomicType::Bool))?;
 
                 let cond_loc = cond.loc.clone();
                 self.type_check(AtomicType::Bool, &mut **cond, None, cond_loc);
@@ -739,7 +761,7 @@ impl SemanticCk {
                 expr.atomtyp = AtomicType::Noreturn;
 
                 if let Some(val) = val {
-                    self.check_expr(val)?;
+                    self.check_expr(val, Some(self.fun_retaty.clone()))?;
 
                     let val_loc = val.loc.clone();
 
@@ -772,7 +794,7 @@ impl SemanticCk {
 
                 // 2. check the value
                 if let Some(val) = val {
-                    self.check_expr(val)?;
+                    self.check_expr(val, Some(atomtyp.clone()))?;
 
                     if atomtyp == AtomicType::Unknown {
                         self.loop_stack.set_atomtyp(idx, val.atomtyp.clone());
@@ -816,7 +838,7 @@ impl SemanticCk {
                 expr.atomtyp = AtomicType::Void;
             }
             CkExpr::PointerType { typ, .. } => {
-                self.check_expr(typ)?;
+                self.check_expr(typ, Some(AtomicType::Type))?;
 
                 if typ.atomtyp != AtomicType::Type {
                     self.sink.push(UnknownType {
@@ -831,7 +853,8 @@ impl SemanticCk {
                 // TODO: if we expected a pointer to be mutable / immutable
                 // and the value was a deref, add an help message like "try to
                 // remove / add the `mut` keyword"
-                self.check_expr(val)?;
+                // TODO: be able to wish a pointer (mutable / immutable)
+                self.check_expr(val, None)?;
 
                 expr.atomtyp = AtomicType::Pointer {
                     mutable: *mutable,
@@ -840,8 +863,34 @@ impl SemanticCk {
             }
         }
 
+        if let AtomicType::UnkConstrained(constraint) = &expr.atomtyp {
+            if let Some(new_atomtyp) = constraint.can_fulfill_wish(&wish) {
+                self.apply_expression_wish(expr, new_atomtyp);
+            } else {
+                // here we are doing nothing if the wish is not fulfilled because later down the line a diag will be emited
+            }
+        }
+
         debug_assert_ne!(expr.atomtyp, AtomicType::Unknown);
         Ok(())
+    }
+
+    pub fn apply_expression_wish(&self, expr: &mut CkExpression, new_aty: AtomicType) {
+        // match &mut expr.expr {
+        //     CkExpr::Ident(MaybeUnresolved::Resolved(Symbol {
+        //         kind,
+        //         atomtyp,
+        //         name,
+        //         which,
+        //         loc,
+        //         uses,
+        //         vis,
+        //     })) => {
+        //         // TODO: modify everywhere the symbol to be with the new type
+        //     }
+        //     _ => {}
+        // }
+        expr.atomtyp = new_aty;
     }
 }
 
@@ -1005,6 +1054,9 @@ pub enum AtomicType {
     /// Unknown, at the end of type checking this type is an error.
     #[default]
     Unknown,
+    /// The type is unknown but we constrained it, we know some informations on
+    /// this type: it is an integer type, a float type etc..
+    UnkConstrained(Constraint),
     /// 8 bit signed integer
     I8,
     /// 16 bit signed integer
@@ -1062,12 +1114,6 @@ pub enum AtomicType {
     /// It indicates that the control flow will halts after evaluating the
     /// expression.
     Noreturn,
-    /// `comptime_int` is the type of every integer literal it can coerce to any
-    /// integer type, `int`, `uint`, `iNN` or `uNN`
-    ComptimeInt,
-    /// `comptime_float` is the type of every float literal it can coerce to any
-    /// float type, `f16`, `f32`, `f64`
-    ComptimeFloat,
     /// pointer.
     Pointer {
         mutable: bool,
@@ -1094,18 +1140,11 @@ impl AtomicType {
         ("str", AtomicType::Str),
         ("noreturn", AtomicType::Noreturn),
         ("void", AtomicType::Void),
-        ("comptime_int", AtomicType::ComptimeInt),
-        ("comptime_float", AtomicType::ComptimeFloat),
     ];
 
     /// returns true if the type is a function
     pub const fn is_func(&self) -> bool {
         matches!(self, AtomicType::Fun { .. })
-    }
-
-    /// returns true if the type is either comptime_type or comptime_float
-    pub const fn is_comptime_number(&self) -> bool {
-        matches!(self, AtomicType::ComptimeInt | AtomicType::ComptimeFloat)
     }
 
     /// Converts a type expression to a type.
@@ -1169,27 +1208,6 @@ impl AtomicType {
         matches!(self, Self::F16 | Self::F32 | Self::F64)
     }
 
-    /// can this atomic type coerce to another atomic type? if yes it returns
-    /// all the atomic types it can coerce to
-    pub fn coercions(&self) -> Option<&[AtomicType]> {
-        match self {
-            AtomicType::ComptimeInt => Some(&[
-                AtomicType::Isize,
-                AtomicType::I8,
-                AtomicType::I16,
-                AtomicType::I32,
-                AtomicType::I64,
-                AtomicType::Usize,
-                AtomicType::U8,
-                AtomicType::U16,
-                AtomicType::U32,
-                AtomicType::U64,
-            ]),
-            AtomicType::ComptimeFloat => Some(&[AtomicType::F16, AtomicType::F32, AtomicType::F64]),
-            _ => None,
-        }
-    }
-
     /// replace this type with `other` if `self` is unknown
     pub fn replace(mut self, other: AtomicType) -> AtomicType {
         if self == AtomicType::Unknown {
@@ -1203,6 +1221,9 @@ impl Display for AtomicType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AtomicType::Unknown => f.write_str("unknown"),
+            AtomicType::UnkConstrained(constraint) => {
+                write!(f, "<{constraint}>")
+            }
             AtomicType::I64 => f.write_str("i64"),
             AtomicType::I32 => f.write_str("i32"),
             AtomicType::I16 => f.write_str("i16"),
@@ -1223,8 +1244,6 @@ impl Display for AtomicType {
             AtomicType::Fun { .. } => f.write_str("fun"),
             AtomicType::Type => f.write_str("type"),
             AtomicType::Noreturn => f.write_str("noreturn"),
-            AtomicType::ComptimeInt => f.write_str("comptime_int"),
-            AtomicType::ComptimeFloat => f.write_str("comptime_float"),
             AtomicType::Pointer { mutable, pointed } => {
                 f.write_str("*")?;
                 if *mutable {
@@ -1233,6 +1252,54 @@ impl Display for AtomicType {
                 Display::fmt(pointed, f)?;
                 Ok(())
             }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Constraint {
+    Integer,
+    Float,
+}
+
+impl Constraint {
+    pub const INTEGER_COERCABLE_TYPES: &[AtomicType] = &[
+        AtomicType::Isize,
+        AtomicType::I8,
+        AtomicType::I16,
+        AtomicType::I32,
+        AtomicType::I64,
+        AtomicType::Usize,
+        AtomicType::U8,
+        AtomicType::U16,
+        AtomicType::U32,
+        AtomicType::U64,
+    ];
+
+    pub const FLOAT_COERCABLE_TYPES: &[AtomicType] =
+        &[AtomicType::F16, AtomicType::F32, AtomicType::F64];
+
+    pub fn can_fulfill_wish(&self, wish: &Option<AtomicType>) -> Option<AtomicType> {
+        let wish = wish.as_ref()?;
+
+        let coercable_types = match self {
+            Self::Integer => Self::INTEGER_COERCABLE_TYPES,
+            Self::Float => Self::FLOAT_COERCABLE_TYPES,
+        };
+
+        if coercable_types.contains(wish) {
+            Some(wish.clone())
+        } else {
+            None
+        }
+    }
+}
+
+impl Display for Constraint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Constraint::Integer => write!(f, "integer"),
+            Constraint::Float => write!(f, "float"),
         }
     }
 }
