@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::iter::zip;
+use std::ops::{Deref, DerefMut};
+use std::sync::{Arc, RwLock};
 
 use ckast::{
     CkArg, CkBlock, CkExpr, CkExpression, CkProgram, CkStatement, CkStmt, FromAst, MaybeUnresolved,
@@ -251,7 +253,7 @@ impl SemanticCk {
                 ckname = String::from("\0");
             }
 
-            let symbol = Symbol::function(
+            let symbol = SymbolRef::new(Symbol::function(
                 AtomicType::Fun {
                     args: args_atomtype,
                     ret: ret_aty,
@@ -261,7 +263,7 @@ impl SemanticCk {
                 // TODO: add a new loc that points to the signature
                 def.loc.clone(),
                 def.vis.clone(),
-            );
+            ));
             def.sym = MaybeUnresolved::Resolved(symbol.clone());
 
             self.table.bind(ckname, symbol);
@@ -287,7 +289,8 @@ impl SemanticCk {
             // reset the loop stack for this new function
             self.loop_stack.reset();
 
-            let fun_ret_atyp = def.sym.clone().unwrap().atomtyp.as_fun_ret();
+            // yeah this is kinda ugly code but.. it works
+            let fun_ret_atyp = def.sym.unwrap().read().unwrap().atomtyp.as_fun_ret();
 
             // store return type to check `return` expr after.
             self.fun_retaty = fun_ret_atyp.clone();
@@ -321,11 +324,16 @@ impl SemanticCk {
 
                 self.table.bind(
                     ckname.clone(),
-                    Symbol::arg(ty, ckname.clone(), self.table.arg_count(), name_loc.clone()),
+                    SymbolRef::new(Symbol::arg(
+                        ty,
+                        ckname.clone(),
+                        self.table.arg_count(),
+                        name_loc.clone(),
+                    )),
                 )
             }
 
-            self.check_block(body)?;
+            self.check_block(body, Some(fun_ret_atyp.clone()))?;
 
             // here we don't use self.type_check(..) because we don't want to
             // coerce to any type
@@ -346,7 +354,11 @@ impl SemanticCk {
         Ok(())
     }
 
-    pub fn check_block(&mut self, block: &mut CkBlock) -> Result<(), Diagnostic> {
+    pub fn check_block(
+        &mut self,
+        block: &mut CkBlock,
+        wish: Option<AtomicType>,
+    ) -> Result<(), Diagnostic> {
         // 1. check all the stmts
         for stmt in &mut block.stmts {
             match self.check_stmt(stmt) {
@@ -357,7 +369,7 @@ impl SemanticCk {
 
         // 2. check the last_expr if any
         if let Some(expr) = &mut block.last_expr {
-            self.check_expr(expr, None)?;
+            self.check_expr(expr, wish)?;
             block.atomtyp = expr.atomtyp.clone();
         } else {
             block.atomtyp = AtomicType::Void;
@@ -445,13 +457,13 @@ impl SemanticCk {
                     ckname = String::from("\0");
                 }
 
-                let symbol = Symbol::var(
+                let symbol = SymbolRef::new(Symbol::var(
                     atomtyp,
                     ckname.clone(),
                     self.table.var_count(),
                     stmt.loc.clone(),
                     *mutable,
-                );
+                ));
 
                 *sym = MaybeUnresolved::Resolved(symbol.clone());
                 self.table.bind(ckname, symbol)
@@ -498,13 +510,14 @@ impl SemanticCk {
                 expr.atomtyp = e.atomtyp.clone();
             }
             CkExpr::Ident(MaybeUnresolved::Unresolved(name)) => {
-                let Some(sym) = self.table.lookup(&*name, true) else {
+                let Some(symref) = self.table.lookup(&*name, true) else {
                     return Err(NotFoundInScope {
                         name: name.clone(),
                         loc: expr.loc.clone(),
                     }
                     .into_diag());
                 };
+                let sym = symref.read().unwrap();
 
                 if sym.name == "_" {
                     return Err(UnderscoreInExpression {
@@ -518,7 +531,7 @@ impl SemanticCk {
                     })
                 }
                 expr.atomtyp = sym.atomtyp.clone();
-                expr.expr = CkExpr::Ident(MaybeUnresolved::Resolved(sym.clone()));
+                expr.expr = CkExpr::Ident(MaybeUnresolved::Resolved(symref.clone()));
             }
             CkExpr::Ident(MaybeUnresolved::Resolved(_)) => {
                 unreachable!("i think it's a bug not sure tho")
@@ -540,12 +553,13 @@ impl SemanticCk {
             ) =>
             {
                 // manualy checking lhs
-                let Some(sym) = self.table.lookup("_", true) else {
+                let Some(symref) = self.table.lookup("_", true) else {
                     unreachable!();
                 };
+                let sym = symref.read().unwrap();
 
                 assert_eq!(sym.atomtyp, AtomicType::Unknown);
-                lhs.expr = CkExpr::Ident(MaybeUnresolved::Resolved(sym.clone()));
+                lhs.expr = CkExpr::Ident(MaybeUnresolved::Resolved(symref.clone()));
 
                 self.check_expr(rhs, None)?;
 
@@ -568,18 +582,22 @@ impl SemanticCk {
                 // check that if lhs is a variable, the variable is mutable
                 // TODO: check if pointer is mutable also
 
-                if let CkExpr::Ident(MaybeUnresolved::Resolved(Symbol {
-                    kind: SymKind::Var { mutable: false },
-                    name,
-                    loc,
-                    ..
-                })) = &lhs.expr
-                {
-                    self.sink.push(MutationOfImmutable {
-                        var_name: name.clone(),
-                        var_loc: loc.clone(),
-                        loc: expr.loc.clone(),
-                    });
+                if let CkExpr::Ident(MaybeUnresolved::Resolved(symref)) = &lhs.expr {
+                    let sym = symref.read().unwrap();
+
+                    if let Symbol {
+                        kind: SymKind::Var { mutable: false },
+                        name,
+                        loc,
+                        ..
+                    } = sym.clone()
+                    {
+                        self.sink.push(MutationOfImmutable {
+                            var_name: name.clone(),
+                            var_loc: loc.clone(),
+                            loc: expr.loc.clone(),
+                        });
+                    }
                 }
             }
             CkExpr::Binary { lhs, op, rhs } => {
@@ -587,12 +605,36 @@ impl SemanticCk {
                 self.check_expr(rhs, wish.clone())?;
 
                 let rhs_loc = rhs.loc.clone();
-                self.type_check(&lhs.atomtyp, &mut **rhs, None, rhs_loc);
+
+                if let AtomicType::UnkConstrained(constraint) = &lhs.atomtyp {
+                    // lhs is unknown constrained, we need to check that the
+                    // constraint and the rhs type kinda match
+                    let coercable_types = match constraint {
+                        Constraint::Integer => Constraint::INTEGER_COERCABLE_TYPES,
+                        Constraint::Float => Constraint::FLOAT_COERCABLE_TYPES,
+                    };
+
+                    if !coercable_types.contains(&rhs.atomtyp) {
+                        // we not fine
+                        self.sink.push(MismatchedTypes {
+                            expected: lhs.atomtyp.to_string(),
+                            found: rhs.atomtyp.clone(),
+                            due_to: None,
+                            loc: rhs.loc.clone(),
+                        });
+                    }
+                } else {
+                    self.type_check(&lhs.atomtyp, &mut **rhs, None, rhs_loc);
+                }
 
                 expr.atomtyp = if op.is_relational() | op.is_logical() {
                     AtomicType::Bool
                 } else {
-                    lhs.atomtyp.clone()
+                    if let AtomicType::UnkConstrained(_) = lhs.atomtyp {
+                        rhs.atomtyp.clone()
+                    } else {
+                        lhs.atomtyp.clone()
+                    }
                 };
             }
             CkExpr::Unary { op, val } => {
@@ -603,7 +645,7 @@ impl SemanticCk {
                         let exp_loc = val.loc.clone();
 
                         self.type_check(
-                            ("comptime_int or comptime_float", |other: &AtomicType| {
+                            ("integer or float", |other: &AtomicType| {
                                 other.is_integer() || other.is_float()
                             }),
                             &mut **val,
@@ -723,7 +765,7 @@ impl SemanticCk {
                 }
             }
             CkExpr::Block(block) => {
-                self.check_block(block)?;
+                self.check_block(block, wish.clone())?;
                 expr.atomtyp = block.atomtyp.clone();
             }
             CkExpr::While { cond, body, index } => {
@@ -737,7 +779,7 @@ impl SemanticCk {
                 *index = Some(self.loop_stack.alloc_loop());
 
                 // 3. body
-                self.check_block(body)?;
+                self.check_block(body, None)?;
 
                 expr.atomtyp =
                     if let Some(Loop { atomtyp, .. }) = self.loop_stack.get(index.unwrap()) {
@@ -876,21 +918,34 @@ impl SemanticCk {
     }
 
     pub fn apply_expression_wish(&self, expr: &mut CkExpression, new_aty: AtomicType) {
-        // match &mut expr.expr {
-        //     CkExpr::Ident(MaybeUnresolved::Resolved(Symbol {
-        //         kind,
-        //         atomtyp,
-        //         name,
-        //         which,
-        //         loc,
-        //         uses,
-        //         vis,
-        //     })) => {
-        //         // TODO: modify everywhere the symbol to be with the new type
-        //     }
-        //     _ => {}
-        // }
+        match &mut expr.expr {
+            CkExpr::Ident(MaybeUnresolved::Resolved(symref)) => {
+                let mut sym = symref.write().unwrap();
+                sym.atomtyp = new_aty.clone();
+                // TODO: modify everywhere the symbol to be with the new type
+            }
+            _ => {}
+        }
         expr.atomtyp = new_aty;
+    }
+}
+
+/// A reference to a symbol, used to mutate symbols everywhere, in the SymbolTable and in the Checked ast.
+#[repr(transparent)]
+#[derive(Debug, Clone)]
+pub struct SymbolRef(Arc<RwLock<Symbol>>);
+
+impl SymbolRef {
+    pub fn new(symbol: Symbol) -> SymbolRef {
+        SymbolRef(Arc::new(RwLock::new(symbol)))
+    }
+}
+
+impl Deref for SymbolRef {
+    type Target = Arc<RwLock<Symbol>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -1150,7 +1205,9 @@ impl AtomicType {
     /// Converts a type expression to a type.
     pub fn from_expr(expr: CkExpression) -> Option<AtomicType> {
         match expr.expr {
-            CkExpr::Ident(MaybeUnresolved::Resolved(Symbol { name, .. })) => {
+            CkExpr::Ident(MaybeUnresolved::Resolved(symref)) => {
+                let Symbol { name, .. } = symref.read().unwrap().clone();
+
                 for (tyname, ty) in AtomicType::PRIMARY_ATOMTYPE_PAIRS {
                     if *tyname == name {
                         return Some(ty.clone());
@@ -1306,7 +1363,7 @@ impl Display for Constraint {
 
 #[derive(Debug, Clone)]
 pub struct SymbolMap {
-    map: HashMap<String, Symbol>,
+    map: HashMap<String, SymbolRef>,
     function_count: usize,
     global_count: usize,
     var_count: usize,
@@ -1329,203 +1386,183 @@ impl SymbolMap {
             map: HashMap::from([
                 (
                     "isize".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "isize".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "i64".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "i64".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "i32".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "i32".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "i16".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "i16".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "i8".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "i8".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "usize".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "usize".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "u64".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "u64".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "u32".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "u32".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "u16".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "u16".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "u8".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "u8".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "f16".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "f16".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "f32".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "f32".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "f64".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "f64".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "bool".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "bool".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "str".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "str".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "noreturn".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "noreturn".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "void".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Type,
                         "void".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
-                ),
-                (
-                    "comptime_int".to_string(),
-                    Symbol::global(
-                        AtomicType::Type,
-                        "comptime_int".to_string(),
-                        0,
-                        Span::ZERO,
-                        Vis::Public,
-                    ),
-                ),
-                (
-                    "comptime_float".to_string(),
-                    Symbol::global(
-                        AtomicType::Type,
-                        "comptime_float".to_string(),
-                        0,
-                        Span::ZERO,
-                        Vis::Public,
-                    ),
+                    )),
                 ),
                 (
                     "_".to_string(),
-                    Symbol::global(
+                    SymbolRef::new(Symbol::global(
                         AtomicType::Unknown,
                         "_".to_string(),
                         0,
                         Span::ZERO,
                         Vis::Public,
-                    ),
+                    )),
                 ),
             ]),
             function_count: 0,
@@ -1576,7 +1613,9 @@ impl SymbolTable {
     pub fn scope_exit(&mut self, sink: &mut DiagnosticSink) {
         assert_ne!(self.tabs.len(), 1, "can't exit out of the global scope");
 
-        for sym in self.last_map().map.values() {
+        for symref in self.last_map().map.values() {
+            let sym = symref.read().unwrap();
+
             // type annotation needed the type is unknown
             if sym.atomtyp == AtomicType::Unknown {
                 sink.push(TypeAnnotationsNeeded {
@@ -1599,9 +1638,9 @@ impl SymbolTable {
     }
 
     /// Bind a name to a symbol in the current scope, will panick if name == `_`
-    pub fn bind(&mut self, name: String, sym: Symbol) {
+    pub fn bind(&mut self, name: String, sym: SymbolRef) {
         assert_ne!(name.as_str(), "_", "`_` is a reserved identifier");
-        match sym.kind {
+        match sym.read().unwrap().kind {
             SymKind::Var { .. } => {
                 self.last_map_mut().var_count += 1;
             }
@@ -1625,23 +1664,22 @@ impl SymbolTable {
 
     /// Lookup for the symbol in the current scope, returns None if there is no
     /// symbol with this name in the current scope
-    pub fn lookup_current(&self, name: impl AsRef<str>) -> Option<&Symbol> {
-        self.last_map().map.get(name.as_ref())
+    pub fn lookup_current(&self, name: impl AsRef<str>) -> Option<SymbolRef> {
+        self.last_map().map.get(name.as_ref()).cloned()
     }
 
     /// Lookup for a symbol with the given name, starting at the current scope
     /// ending at the global scope, returns None if there is no symbol in any
     /// scopes
-    pub fn lookup(&mut self, name: impl AsRef<str>, used: bool) -> Option<&Symbol> {
+    pub fn lookup(&mut self, name: impl AsRef<str>, used: bool) -> Option<SymbolRef> {
         let name = name.as_ref();
         for i in (0..=self.level()).rev() {
-            if let res @ Some(_) = self.tabs[i].map.get_mut(name) {
+            if let Some(symref) = self.tabs[i].map.get(name) {
+                let symref = symref.clone();
                 if used {
-                    if let Some(val) = res {
-                        val.uses += 1;
-                    }
+                    symref.write().unwrap().uses += 1;
                 }
-                return self.tabs[i].map.get(name);
+                return Some(symref);
             }
         }
         None
@@ -1650,7 +1688,10 @@ impl SymbolTable {
     /// Edit a symbol in the scope `which` with the name `name`, will panick if
     /// the scope or the symbol doesn't exist
     pub fn edit(&mut self, which: usize, name: impl AsRef<str>, new_symbol: Symbol) {
-        *self.tabs[which].map.get_mut(name.as_ref()).unwrap() = new_symbol;
+        let symref = self.tabs[which].map.get_mut(name.as_ref()).unwrap().clone();
+        let mut lock = symref.write().unwrap();
+
+        *lock = new_symbol;
     }
 
     /// Returns the Var count of the last symbol map

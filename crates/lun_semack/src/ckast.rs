@@ -353,10 +353,12 @@ impl Display for CkExpr {
             CkExpr::BoolLit(bool) => write!(f, "{bool}")?,
             CkExpr::StringLit(str) => write!(f, "{str:?}")?,
             CkExpr::Grouping(expr) => write!(f, "({expr})")?,
-            CkExpr::Ident(sym) => match sym {
-                MaybeUnresolved::Unresolved(name)
-                | MaybeUnresolved::Resolved(Symbol { name, .. }) => write!(f, "{name}")?,
-            },
+            CkExpr::Ident(MaybeUnresolved::Unresolved(name)) => write!(f, "{name}")?,
+            CkExpr::Ident(MaybeUnresolved::Resolved(symref)) => {
+                let sym = symref.read().unwrap();
+
+                write!(f, "{}", sym.name)?;
+            }
             CkExpr::Binary { lhs, op, rhs } => write!(f, "{lhs} {op} {rhs}")?,
             CkExpr::Unary { op, val } => write!(f, "{op}{val}")?,
             CkExpr::FunCall { called, args } => {
@@ -504,14 +506,14 @@ pub enum CkExpr {
 #[derive(Debug, Clone)]
 pub enum MaybeUnresolved {
     Unresolved(String),
-    Resolved(Symbol),
+    Resolved(SymbolRef),
 }
 
 impl MaybeUnresolved {
-    pub fn unwrap(self) -> Symbol {
+    pub fn unwrap(&self) -> SymbolRef {
         match self {
             MaybeUnresolved::Unresolved(_) => panic!("Called `unwrap` on an Unresolved."),
-            MaybeUnresolved::Resolved(s) => s,
+            MaybeUnresolved::Resolved(s) => s.clone(),
         }
     }
 }
