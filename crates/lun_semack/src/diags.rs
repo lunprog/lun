@@ -14,7 +14,7 @@ pub struct MismatchedTypes {
     /// eg:
     ///
     /// ```lun
-    /// var a: u64 = true;
+    /// let a: u64 = true;
     /// //     ^^^ in this case this would be the `due_to` of the mismatched
     /// //         types diagnostic
     /// ```

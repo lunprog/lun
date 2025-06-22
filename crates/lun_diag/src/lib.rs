@@ -140,13 +140,13 @@ pub enum ErrorCode {
     ///
     /// Erroneus example
     /// ```lun
-    /// var i = 12z34;
+    /// let i = 12z34;
     /// ```
     ///
     /// To fix the error, remove the wrong digit like so
     ///
     /// ```lun
-    /// var i = 1234;
+    /// let i = 1234;
     /// ```
     InvalidDigitNumber = 2,
     /// Too large integer literal, can't fit inside 64 bits.
@@ -158,12 +158,12 @@ pub enum ErrorCode {
     ///
     /// Erroneous example
     /// ```lun
-    /// var s = ";
+    /// let s = ";
     /// ```
     ///
     /// To fix this error, add another " add the end of your string:
     /// ```lun
-    /// var s = "";
+    /// let s = "";
     /// ```
     UnterminatedStringLiteral = 4,
     /// Unknown character escape
@@ -193,7 +193,7 @@ pub enum ErrorCode {
     ///
     /// Erroneous code example:
     /// ```lun
-    /// var a = 12;
+    /// let a = 12;
     /// test(a);
     /// //   ^ E008: the function expected the type `bool` for the first
     /// //           argument but was provided with `int`
@@ -210,8 +210,9 @@ pub enum ErrorCode {
     /// Erroneous code example:
     /// ```lun
     /// test :: fun (a: 12) {
-    ///     //          ^^ E009: here Lun was expecting a type like `bool`, `int`,
-    ///     //                   `float` but you provided an expression `12`
+    ///     //          ^^ E009: here Lun was expecting a type like `bool`,
+    ///     //                   `isize`, `f64`, etc .. but you provided an
+    ///     //                   expression `12`
     /// }
     /// ```
     ExpectedTypeFoundExpr = 9,
@@ -223,7 +224,7 @@ pub enum ErrorCode {
     ///
     /// Erroneous code example:
     /// ```lun
-    /// var a = hello_world();
+    /// let a = hello_world();
     /// //      ^^^^^^^^^^^ E010: `hello_world` is not in scope, Lun doesn't
     /// //                        know what you're trying to refer to.
     /// ```

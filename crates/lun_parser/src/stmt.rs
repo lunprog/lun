@@ -122,7 +122,7 @@ pub enum Stmt {
     // TODO: add checking for uninitialized variables
     //
     // ```lun
-    // var a: int
+    // let a: int;
     //
     // // ...
     //
@@ -132,28 +132,28 @@ pub enum Stmt {
     // definition and the initialization we can't
     //
     // ```lun
-    // var a: int
+    // let a: int;
     //
     // // ...
     //
-    // if some_logic() then
-    //     a = 12
-    // else
-    //     a = 25
-    // end
+    // if some_logic() {
+    //     a = 12;
+    // } else {
+    //     a = 25;
+    // }
     //
     // ```
     // here everything is fine, we can use `a` after the condition so it is
     // initialized
     //
     // ```lun
-    // var a: int
+    // let a: int;
     //
-    // if something do
+    // if something {
     //     a = 12
-    // else if something_else do
+    // } else if something_else {
     //     a = 34
-    // end
+    // }
     // ```
     // here we can't use `a` because it is partially initialized, the compiler
     // is not sure if `a` is initialized, even tho `something_else = !something`
