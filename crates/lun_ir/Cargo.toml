@@ -6,3 +6,4 @@ license.workspace = true
 edition = "2024"
 
 [dependencies]
+lun_semack = { workspace = true }

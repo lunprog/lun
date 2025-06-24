@@ -73,6 +73,9 @@ dependencies = [
 [[package]]
 name = "lun_ir"
 version = "0.1.0"
+dependencies = [
+ "lun_semack",
+]
 
 [[package]]
 name = "lun_lexer"

@@ -16,8 +16,11 @@
 //! end
 //! ```
 
+use std::io::{self, Write};
+
 use crate::{
     diag::{DiagnosticSink, StageResult, tri},
+    ir::IrBuilder,
     lexer::Lexer,
     parser::Parser,
     semack::SemanticCk,
@@ -25,6 +28,7 @@ use crate::{
 
 pub use lun_codegen as codegen;
 pub use lun_diag as diag;
+pub use lun_ir as ir;
 pub use lun_lexer as lexer;
 pub use lun_parser as parser;
 pub use lun_semack as semack;
@@ -55,7 +59,13 @@ pub fn run() -> StageResult<()> {
     let mut semacker = SemanticCk::new(program, sink.clone());
 
     let ckprogram = tri!(semacker.produce(), sink);
-    dbg!(ckprogram);
+
+    // 5. ir generation
+    let mut irbuilder = IrBuilder::new(ckprogram);
+    irbuilder.produce();
+
+    let ir = irbuilder.ir_unit();
+    ir.dump().unwrap();
 
     if sink.is_empty() {
         StageResult::Good(())
