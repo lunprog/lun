@@ -202,6 +202,25 @@ impl Lexer {
                         self.lex_until('\n');
                         return Ok(TokenType::__NotAToken__);
                     }
+                    Some('*') => {
+                        // start of multiline comment
+                        self.pop();
+
+                        loop {
+                            match (self.peek(), self.peek_nth(1)) {
+                                (Some('*'), Some('/')) => break,
+                                (Some(_), _) => {
+                                    self.pop();
+                                }
+                                (None, _) => break,
+                            }
+                        }
+
+                        self.pop(); // pop *
+                        self.pop(); // pop /
+
+                        return Ok(TokenType::__NotAToken__);
+                    }
                     _ => return Ok(Punct(Slash)),
                 }
             }
