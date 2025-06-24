@@ -212,3 +212,31 @@ impl ToDiagnostic for MutationOfImmutable {
             .with_label(Label::secondary((), self.var_loc).with_message("variable defined here"))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct NameDefinedMultipleTimes<'a> {
+    pub name: &'a str,
+    // location of the previous definition
+    pub loc_previous: Span,
+    // location of the new definition
+    pub loc: Span,
+}
+
+impl<'a> ToDiagnostic for NameDefinedMultipleTimes<'a> {
+    fn into_diag(self) -> Diagnostic<()> {
+        Diagnostic::error()
+            .with_code(ErrorCode::NameDefinedMultipleTimes)
+            .with_message(format!(
+                "the name `{}` is defined multiple times",
+                self.name
+            ))
+            .with_label(
+                Label::primary((), self.loc)
+                    .with_message(format!("defined `{}` a second time here", self.name)),
+            )
+            .with_label(
+                Label::secondary((), self.loc_previous)
+                    .with_message("defined here for the first time"),
+            )
+    }
+}

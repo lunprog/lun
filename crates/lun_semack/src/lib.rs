@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::iter::zip;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 
 use ckast::{
@@ -9,8 +9,8 @@ use ckast::{
 };
 use diags::{
     ExpectedTypeFoundExpr, LoopKwOutsideLoop, MismatchedTypes, MutationOfImmutable,
-    NeverUsedSymbol, NotFoundInScope, TypeAnnotationsNeeded, UnderscoreInExpression,
-    UnderscoreReservedIdent, UnknownType,
+    NameDefinedMultipleTimes, NeverUsedSymbol, NotFoundInScope, TypeAnnotationsNeeded,
+    UnderscoreInExpression, UnderscoreReservedIdent, UnknownType,
 };
 use lun_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic, feature_todo};
 use lun_parser::definition::Program;
@@ -266,7 +266,7 @@ impl SemanticCk {
             ));
             def.sym = MaybeUnresolved::Resolved(symbol.clone());
 
-            self.table.bind(ckname, symbol);
+            self.table.bind(ckname, symbol)?;
         }
 
         // 2. now, check the rest of the program
@@ -330,7 +330,7 @@ impl SemanticCk {
                         self.table.arg_count(),
                         name_loc.clone(),
                     )),
-                )
+                )?;
             }
 
             self.check_block(body, Some(fun_ret_atyp.clone()))?;
@@ -466,7 +466,7 @@ impl SemanticCk {
                 ));
 
                 *sym = MaybeUnresolved::Resolved(symbol.clone());
-                self.table.bind(ckname, symbol)
+                self.table.bind(ckname, symbol)?;
             }
             CkStmt::Expression(expr) => {
                 self.check_expr(expr, None)?;
@@ -1638,23 +1638,45 @@ impl SymbolTable {
     }
 
     /// Bind a name to a symbol in the current scope, will panick if name == `_`
-    pub fn bind(&mut self, name: String, sym: SymbolRef) {
+    pub fn bind(&mut self, name: String, symref: SymbolRef) -> Result<(), Diagnostic> {
         assert_ne!(name.as_str(), "_", "`_` is a reserved identifier");
-        match sym.read().unwrap().kind {
-            SymKind::Var { .. } => {
-                self.last_map_mut().var_count += 1;
-            }
-            SymKind::Arg => {
-                self.last_map_mut().arg_count += 1;
-            }
-            SymKind::Global => {
-                self.last_map_mut().global_count += 1;
-            }
-            SymKind::Function => {
-                self.last_map_mut().function_count += 1;
+
+        {
+            // we create a new scope because we want sym to be droped before we insert it
+            let sym = symref.read().unwrap();
+
+            match sym.kind {
+                SymKind::Var { .. } => {
+                    self.last_map_mut().var_count += 1;
+                }
+                SymKind::Arg => {
+                    self.last_map_mut().arg_count += 1;
+                }
+                SymKind::Global => {
+                    self.last_map_mut().global_count += 1;
+                }
+                SymKind::Function => {
+                    if let Some(previous_symref) = self.lookup(&name, false) {
+                        let previous_sym = previous_symref.read().unwrap();
+
+                        if let SymKind::Function = previous_sym.kind {
+                            return Err(NameDefinedMultipleTimes {
+                                name: &name,
+                                loc_previous: previous_sym.loc.clone(),
+                                loc: sym.loc.clone(),
+                            }
+                            .into_diag());
+                        }
+                    }
+
+                    self.last_map_mut().function_count += 1;
+                }
             }
         }
-        self.last_map_mut().map.insert(name, sym);
+
+        self.last_map_mut().map.insert(name, symref);
+
+        Ok(())
     }
 
     /// Return the current scope level

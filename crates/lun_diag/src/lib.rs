@@ -271,6 +271,8 @@ pub enum ErrorCode {
     UnknownType = 17,
     /// mutation of immutable
     MutationOfImmutable = 18,
+    /// name defined multiple times
+    NameDefinedMultipleTimes = 19,
 }
 
 impl Display for ErrorCode {
