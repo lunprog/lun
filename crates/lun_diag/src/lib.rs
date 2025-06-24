@@ -173,12 +173,17 @@ pub enum ErrorCode {
     ///
     /// Existing escapes are:
     /// ```text
-    /// \0   -> 0x00
-    /// \n   -> new line
-    /// \r   -> carriage return
-    /// \t   -> tabulation
-    /// \\   -> \
-    /// \xNN -> 8bit code point escape where NN are exactly two hex digits
+    /// \0   -> 0x00, null
+    /// \n   -> 0x0A, line feed
+    /// \r   -> 0x0D, carriage return
+    /// \f   -> 0x0C, form feed
+    /// \t   -> 0x09, (horizontal) tabulation
+    /// \v   -> 0x0B, vertical tabulation
+    /// \a   -> 0x07, alert / bell
+    /// \b   -> 0x08, backspace
+    /// \e   -> 0x1B, escape [ESC]
+    /// \\   -> `\`
+    /// \xNN -> 0xNN
     /// ```
     UnknownCharacterEscape = 5,
     /// Expected some token found something else.

@@ -367,10 +367,15 @@ impl Lexer {
 
     pub fn make_escape_sequence(&mut self, es: char) -> Result<char, Diagnostic> {
         Ok(match es {
-            '0' => '\0',
-            'n' => '\n',
-            'r' => '\r',
-            't' => '\t',
+            '0' => 0x00 as char,
+            'n' => 0x0A as char,
+            'r' => 0x0D as char,
+            'f' => 0x0C as char,
+            't' => 0x09 as char,
+            'v' => 0x0B as char,
+            'a' => 0x07 as char,
+            'b' => 0x08 as char,
+            'e' => 0x1B as char,
             '\\' => '\\',
             'x' => self.make_hex_es()?,
             'u' | 'U' => {
