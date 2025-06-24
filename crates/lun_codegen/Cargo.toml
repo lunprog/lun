@@ -6,7 +6,7 @@ license.workspace = true
 edition = "2024"
 
 [dependencies]
+lun_ir = { workspace = true }
 lun_utils = { workspace = true }
-lun_bc = { workspace = true }
 lun_semack = { workspace = true }
 lun_diag = { workspace = true }

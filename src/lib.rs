@@ -23,14 +23,12 @@ use crate::{
     semack::SemanticCk,
 };
 
-pub use lun_bc as bc;
 pub use lun_codegen as codegen;
 pub use lun_diag as diag;
 pub use lun_lexer as lexer;
 pub use lun_parser as parser;
 pub use lun_semack as semack;
 pub use lun_utils as utils;
-pub use lun_vm as vm;
 
 // TODO: add a panic hook to tell that if lun had panicked it's a bug an it
 // should be reported.

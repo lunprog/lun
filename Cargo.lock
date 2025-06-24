@@ -3,26 +3,6 @@
 version = 4
 
 [[package]]
-name = "bytemuck"
-version = "1.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c76a5792e44e4abe34d3abf15636779261d45a7450612059293d1d2cfc63422"
-dependencies = [
- "bytemuck_derive",
-]
-
-[[package]]
-name = "bytemuck_derive"
-version = "1.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ecc273b49b3205b83d648f0690daa588925572cc5063745bfe547fe7ec8e1a1"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -51,7 +31,6 @@ version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "459196ed295495a68f7d7fe1d84f6c4b7ff0e21fe3017b2f283c6fac3ad803c9"
 dependencies = [
- "bytemuck",
  "cfg-if",
  "crunchy",
 ]
@@ -62,22 +41,12 @@ version = "0.1.0"
 dependencies = [
  "codespan-reporting",
  "half",
- "lun_bc",
  "lun_codegen",
  "lun_diag",
+ "lun_ir",
  "lun_lexer",
  "lun_parser",
  "lun_semack",
- "lun_utils",
- "lun_vm",
- "thiserror",
-]
-
-[[package]]
-name = "lun_bc"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
  "lun_utils",
  "thiserror",
 ]
@@ -86,8 +55,8 @@ dependencies = [
 name = "lun_codegen"
 version = "0.1.0"
 dependencies = [
- "lun_bc",
  "lun_diag",
+ "lun_ir",
  "lun_semack",
  "lun_utils",
 ]
@@ -100,6 +69,10 @@ dependencies = [
  "lun_utils",
  "thiserror",
 ]
+
+[[package]]
+name = "lun_ir"
+version = "0.1.0"
 
 [[package]]
 name = "lun_lexer"
@@ -131,17 +104,6 @@ dependencies = [
 [[package]]
 name = "lun_utils"
 version = "0.1.0"
-
-[[package]]
-name = "lun_vm"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "half",
- "lun_bc",
- "lun_utils",
- "thiserror",
-]
 
 [[package]]
 name = "proc-macro2"

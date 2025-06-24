@@ -1,14 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-  "crates/lun_bc",
   "crates/lun_codegen",
   "crates/lun_diag",
+  "crates/lun_ir",
   "crates/lun_lexer",
   "crates/lun_parser",
   "crates/lun_semack",
   "crates/lun_utils",
-  "crates/lun_vm",
   ".",
 ]
 
@@ -17,14 +16,13 @@ version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
-lun_bc = { path = "crates/lun_bc" }
 lun_codegen = { path = "crates/lun_codegen" }
 lun_diag = { path = "crates/lun_diag" }
+lun_ir = { path = "crates/lun_ir" }
 lun_lexer = { path = "crates/lun_lexer" }
 lun_parser = { path = "crates/lun_parser" }
 lun_semack = { path = "crates/lun_semack" }
 lun_utils = { path = "crates/lun_utils" }
-lun_vm = { path = "crates/lun_vm" }
 
 # other dependencies
 thiserror = "2.0.12"
@@ -39,14 +37,13 @@ license.workspace = true
 edition = "2024"
 
 [dependencies]
-lun_bc = { workspace = true }
 lun_codegen = { workspace = true }
 lun_diag = { workspace = true }
+lun_ir = { workspace = true }
 lun_lexer = { workspace = true }
 lun_parser = { workspace = true }
 lun_semack = { workspace = true }
 lun_utils = { workspace = true }
-lun_vm = { workspace = true }
 
 # other dependencies
 thiserror = { workspace = true }
