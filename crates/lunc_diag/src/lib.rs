@@ -320,22 +320,6 @@ pub enum StageResult<T> {
     Fail(DiagnosticSink),
 }
 
-#[macro_export]
-macro_rules! tri {
-    ($expr:expr, $sink:expr) => {
-        match $expr {
-            StageResult::Good(val) => val,
-            StageResult::Part(val, sink) => {
-                $sink.merge(sink);
-                val
-            }
-            StageResult::Fail(sink) => {
-                return StageResult::Fail(sink);
-            }
-        }
-    };
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

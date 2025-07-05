@@ -1,6 +1,28 @@
 #!/usr/bin/env python3
-#
+
 # Build system of the compiler
+#
+# Add the following to zshrc or bachrc to have the convenient `$ b` instead of
+# `$ ./b`, or `$ ../b`
+#
+# b() {
+#     local dir="$PWD"
+#     local target="b"
+#
+#     while [ "$dir" != "/" ]; do
+#         if [ -x "$dir/$target" ]; then
+#             "$dir/$target" "$@"
+#             return $?
+#         elif [ -f "$dir/$target" ]; then
+#             echo "Found '$target' at $dir/$target but it's not executable." >&2
+#             return 126
+#         fi
+#         dir="$(dirname "$dir")"
+#     done
+#
+#     echo "Error: '$target' not found in current or parent directories." >&2
+#     return 127
+# }
 
 import subprocess as sp
 import sys
@@ -15,13 +37,14 @@ def main():
         print(usage())
         return
 
+    remaining_args = args[2:]
     match args[1]:
         case "lunc":
-            cmd_lunc(args[2:])
+            cmd_lunc(remaining_args)
         case "build":
             cmd_build()
         case "watch":
-            cmd_watch()
+            cmd_watch(remaining_args)
         case "help" | "h":
             cmd_help()
         case _:
@@ -30,8 +53,11 @@ def main():
 
 def cmd_lunc(args: list[str]):
     # build
-    sp.run(["cargo", "build", "-q"])
-    build(True)
+    res = build(True)
+
+    if res.returncode != 0:
+        # compilation wasn't successful
+        exit(res.returncode)
 
     # run
     run_cmd = ["target/debug/lunc"] + args
@@ -40,7 +66,7 @@ def cmd_lunc(args: list[str]):
 def cmd_build():
     build(False)
 
-def build(quiet: bool):
+def build(quiet: bool) -> any:
     args = []
 
     if quiet:
@@ -48,10 +74,14 @@ def build(quiet: bool):
     else:
         args = ["cargo", "build"]
 
-    sp.run(args)
+    return sp.run(args)
 
-def cmd_watch():
-    sp.run(["cargo", "watch"])
+def cmd_watch(args: list[str]):
+    if len(args) == 0:
+        sp.run(["cargo", "watch"])
+    else:
+        cmd = ["cargo", "watch", "--shell", " ".join(args)]
+        sp.run(cmd)
 
 def cmd_help():
     print("""\
@@ -61,8 +91,8 @@ Usage: ./b
 
 Commands:
     build               Build the lun compiler
-    watch               Watch for changes in source code and runs `cargo check`
-                        if changes were made
+    watch [cmd]         Watch for changes in source code and runs [cmd] if
+                        provided or defaults to `cargo check`
     lunc [ARGS...]      Runs the compiler with the given arguments, rebuild it
                         quietly if needed
     help, h             Prints this message\
