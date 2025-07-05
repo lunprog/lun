@@ -1,0 +1,9 @@
+[package]
+name = "lunc_fir"
+description = "Final Intermediate representation of Lun, the closest to the final assembly."
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]
+lunc_semack = { workspace = true }

@@ -1,0 +1,11 @@
+[package]
+name = "lunc_semack"
+description = "Sematic checker of lun."
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]
+lunc_utils = { workspace = true }
+lunc_diag = { workspace = true }
+lunc_parser = { workspace = true }

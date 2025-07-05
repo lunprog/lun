@@ -36,76 +36,76 @@ dependencies = [
 ]
 
 [[package]]
-name = "lun"
+name = "lunc"
 version = "0.1.0"
 dependencies = [
  "codespan-reporting",
  "half",
- "lun_codegen",
- "lun_diag",
- "lun_ir",
- "lun_lexer",
- "lun_parser",
- "lun_semack",
- "lun_utils",
+ "lunc_codegen",
+ "lunc_diag",
+ "lunc_fir",
+ "lunc_lexer",
+ "lunc_parser",
+ "lunc_semack",
+ "lunc_utils",
  "thiserror",
 ]
 
 [[package]]
-name = "lun_codegen"
+name = "lunc_codegen"
 version = "0.1.0"
 dependencies = [
- "lun_diag",
- "lun_ir",
- "lun_semack",
- "lun_utils",
+ "lunc_diag",
+ "lunc_fir",
+ "lunc_semack",
+ "lunc_utils",
 ]
 
 [[package]]
-name = "lun_diag"
+name = "lunc_diag"
 version = "0.1.0"
 dependencies = [
  "codespan-reporting",
- "lun_utils",
+ "lunc_utils",
  "thiserror",
 ]
 
 [[package]]
-name = "lun_ir"
+name = "lunc_fir"
 version = "0.1.0"
 dependencies = [
- "lun_semack",
+ "lunc_semack",
 ]
 
 [[package]]
-name = "lun_lexer"
+name = "lunc_lexer"
 version = "0.1.0"
 dependencies = [
- "lun_diag",
- "lun_utils",
+ "lunc_diag",
+ "lunc_utils",
  "thiserror",
 ]
 
 [[package]]
-name = "lun_parser"
+name = "lunc_parser"
 version = "0.1.0"
 dependencies = [
- "lun_diag",
- "lun_utils",
+ "lunc_diag",
+ "lunc_utils",
  "thiserror",
 ]
 
 [[package]]
-name = "lun_semack"
+name = "lunc_semack"
 version = "0.1.0"
 dependencies = [
- "lun_diag",
- "lun_parser",
- "lun_utils",
+ "lunc_diag",
+ "lunc_parser",
+ "lunc_utils",
 ]
 
 [[package]]
-name = "lun_utils"
+name = "lunc_utils"
 version = "0.1.0"
 
 [[package]]

@@ -1,0 +1,8 @@
+[package]
+name = "lunc_utils"
+description = "Utils for lun libs."
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]

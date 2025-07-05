@@ -1,14 +1,14 @@
 [workspace]
 resolver = "2"
 members = [
-  "crates/lun_codegen",
-  "crates/lun_diag",
-  "crates/lun_ir",
-  "crates/lun_lexer",
-  "crates/lun_parser",
-  "crates/lun_semack",
-  "crates/lun_utils",
-  ".",
+  "crates/lunc",
+  "crates/lunc_codegen",
+  "crates/lunc_diag",
+  "crates/lunc_fir",
+  "crates/lunc_lexer",
+  "crates/lunc_parser",
+  "crates/lunc_semack",
+  "crates/lunc_utils",
 ]
 
 [workspace.package]
@@ -16,36 +16,16 @@ version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
-lun_codegen = { path = "crates/lun_codegen" }
-lun_diag = { path = "crates/lun_diag" }
-lun_ir = { path = "crates/lun_ir" }
-lun_lexer = { path = "crates/lun_lexer" }
-lun_parser = { path = "crates/lun_parser" }
-lun_semack = { path = "crates/lun_semack" }
-lun_utils = { path = "crates/lun_utils" }
+lunc_codegen = { path = "crates/lunc_codegen" }
+lunc_diag = { path = "crates/lunc_diag" }
+lunc_fir = { path = "crates/lunc_fir" }
+lunc_lexer = { path = "crates/lunc_lexer" }
+lunc_parser = { path = "crates/lunc_parser" }
+lunc_semack = { path = "crates/lunc_semack" }
+lunc_utils = { path = "crates/lunc_utils" }
 
 # other dependencies
 thiserror = "2.0.12"
 codespan-reporting = "0.12.0"
 bytemuck = { version = "1.23.0", features = ["must_cast", "derive"] }
 half = "2.6.0"
-
-[package]
-name = "lun"
-version.workspace = true
-license.workspace = true
-edition = "2024"
-
-[dependencies]
-lun_codegen = { workspace = true }
-lun_diag = { workspace = true }
-lun_ir = { workspace = true }
-lun_lexer = { workspace = true }
-lun_parser = { workspace = true }
-lun_semack = { workspace = true }
-lun_utils = { workspace = true }
-
-# other dependencies
-thiserror = { workspace = true }
-codespan-reporting = { workspace = true }
-half = { workspace = true }

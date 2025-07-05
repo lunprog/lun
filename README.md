@@ -1,4 +1,4 @@
-# lun
+# Lun
 
 Lun is a simple, staticaly typed programming language heavily inspired by Lua.
 
