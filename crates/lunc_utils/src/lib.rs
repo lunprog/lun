@@ -3,6 +3,7 @@ use std::{
     ops::Range,
 };
 
+pub mod target;
 pub mod token;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

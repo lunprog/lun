@@ -426,6 +426,9 @@ dependencies = [
 [[package]]
 name = "lunc_utils"
 version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
 
 [[package]]
 name = "num-conv"
