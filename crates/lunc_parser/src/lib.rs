@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use definition::Program;
 use diags::*;
 use expr::Expression;
-use lunc_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic};
+use lunc_diag::{Diagnostic, DiagnosticSink, ToDiagnostic};
 
 use lunc_utils::{
     Span,
@@ -79,20 +79,20 @@ impl Parser {
         )
     }
 
-    pub fn produce(&mut self) -> StageResult<Program> {
+    pub fn produce(&mut self) -> Option<Program> {
         let ast = match Program::parse(self) {
             Ok(ast) => ast,
             Err(diag) => {
                 self.sink.push(diag);
-                return StageResult::Fail(self.sink.clone());
+                return None;
             }
         };
 
         if self.sink.failed() {
-            return StageResult::Fail(self.sink.clone());
+            return None;
         }
 
-        StageResult::Good(ast)
+        Some(ast)
     }
 
     pub fn parse_node<T: AstNode>(&mut self) -> Result<T, Diagnostic> {

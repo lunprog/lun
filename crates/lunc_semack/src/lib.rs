@@ -12,7 +12,7 @@ use diags::{
     NameDefinedMultipleTimes, NeverUsedSymbol, NotFoundInScope, TypeAnnotationsNeeded,
     UnderscoreInExpression, UnderscoreReservedIdent, UnknownType,
 };
-use lunc_diag::{Diagnostic, DiagnosticSink, StageResult, ToDiagnostic, feature_todo};
+use lunc_diag::{Diagnostic, DiagnosticSink, ToDiagnostic, feature_todo};
 use lunc_parser::definition::Program;
 pub use lunc_parser::definition::Vis;
 use lunc_parser::expr::{BinOp, UnaryOp};
@@ -137,7 +137,7 @@ impl SemanticCk {
         }
     }
 
-    pub fn produce(&mut self) -> StageResult<CkProgram> {
+    pub fn produce(&mut self) -> Option<CkProgram> {
         // 1. create the checked program from the unchecked program.
         let mut ckprogram = CkProgram::from_ast(self.program.clone());
 
@@ -146,17 +146,11 @@ impl SemanticCk {
             Ok(()) => {}
             Err(e) => {
                 self.sink.push(e);
-                return StageResult::Part(ckprogram, self.sink.clone());
+                return Some(ckprogram);
             }
         }
 
-        if self.sink.failed() {
-            StageResult::Fail(self.sink.clone())
-        } else if !self.sink.is_empty() {
-            StageResult::Part(ckprogram, self.sink.clone())
-        } else {
-            StageResult::Good(ckprogram)
-        }
+        Some(ckprogram)
     }
 
     pub fn type_check(

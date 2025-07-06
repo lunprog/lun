@@ -404,38 +404,6 @@ impl Display for WarnCode {
     }
 }
 
-/// A custom result type to use at the end of a stage in the compiler.
-///
-/// In the stage you may be successful, no error, no warnings, no diagnostics,
-/// then you simply return Good(T).
-///
-/// But if you emitted a warning or an error that was recoverable and the stage
-/// was able to produce a "good" but poisoned result you should return
-/// Part(T, sink).
-///
-/// And if the error in the stage is so bad, you just return Fail(sink).
-///
-/// # Why ?
-///
-/// Because the "simple" Result type can't carry easily the informations I want
-/// to correctly handle the diagnostics.
-#[derive(Debug, Clone)]
-pub enum StageResult<T> {
-    Good(T),
-    Part(T, DiagnosticSink),
-    Fail(DiagnosticSink),
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn error_code_formatting() {
-        assert_eq!(String::from("E0001"), ErrorCode::UnknownToken.to_string())
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct FeatureNotImplemented {
     /// name of the feature
@@ -484,4 +452,14 @@ macro_rules! feature_todo {
             compiler_line: ::std::line!(),
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn error_code_formatting() {
+        assert_eq!(String::from("E0001"), ErrorCode::UnknownToken.to_string())
+    }
 }

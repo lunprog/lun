@@ -4,7 +4,7 @@ use diags::{
     InvalidDigitInNumber, TooLargeIntegerLiteral, UnknownCharacterEscape, UnknownToken,
     UnterminatedStringLiteral,
 };
-use lunc_diag::{Diagnostic, DiagnosticSink, FileId, StageResult, feature_todo};
+use lunc_diag::{Diagnostic, DiagnosticSink, FileId, feature_todo};
 
 use lunc_utils::{
     Span, span,
@@ -39,7 +39,7 @@ impl Lexer {
     }
 
     /// Lex the whole source code and return a **finished** TokenTree.
-    pub fn produce(&mut self) -> StageResult<TokenTree> {
+    pub fn produce(&mut self) -> Option<TokenTree> {
         let mut tt = TokenTree::new();
 
         loop {
@@ -62,10 +62,10 @@ impl Lexer {
         tt.finish();
 
         if self.sink.failed() {
-            return StageResult::Part(tt, self.sink.clone());
+            return None;
         }
 
-        StageResult::Good(tt)
+        Some(tt)
     }
 
     /// return the char that is n-chars offseted

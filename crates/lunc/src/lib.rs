@@ -2,15 +2,17 @@
 
 use std::{env, fs::read_to_string, io, path::PathBuf, process::ExitCode, str::FromStr};
 
-use lunc_parser::Parser;
-use lunc_utils::target::{TargetParsingError, TargetTriplet};
 use shadow_rs::shadow;
 use thiserror::Error;
 
 use crate::{
-    diag::{DiagnosticSink, StageResult},
+    diag::DiagnosticSink,
     lexer::Lexer,
-    utils::pluralize,
+    parser::Parser,
+    utils::{
+        pluralize,
+        target::{TargetParsingError, TargetTriplet},
+    },
 };
 
 pub use lunc_codegen as codegen;
@@ -27,21 +29,6 @@ type Result<T, E = CliError> = std::result::Result<T, E>;
 
 pub fn exit_code_compilation_failed() -> ExitCode {
     ExitCode::from(101)
-}
-
-macro_rules! tri {
-    ($expr:expr, $orb_name:expr) => {
-        match $expr {
-            StageResult::Good(val) => val,
-            StageResult::Part(val, _) => val,
-            StageResult::Fail(sink) => {
-                return Err(CliError::CompilerDiagnostics {
-                    sink,
-                    orb_name: $orb_name,
-                });
-            }
-        }
-    };
 }
 
 #[derive(Debug, Error)]
@@ -402,9 +389,14 @@ pub fn run() -> Result<()> {
     let sink = DiagnosticSink::new();
     let root_fid = sink.register_file(input_str, source_code.clone());
 
+    let compil_diags = || CliError::CompilerDiagnostics {
+        sink: sink.clone(),
+        orb_name: argv.orb_name.clone(),
+    };
+
     // 3. lex the file
     let mut lexer = Lexer::new(sink.clone(), source_code, root_fid);
-    let tokentree = tri!(lexer.produce(), argv.orb_name);
+    let tokentree = lexer.produce().ok_or_else(compil_diags)?;
 
     //    maybe print the token tree
     if argv.debug_print_at(DebugPrint::TokenTree) {
@@ -416,7 +408,7 @@ pub fn run() -> Result<()> {
 
     // 4. parse the token tree to an ast
     let mut parser = Parser::new(tokentree, sink.clone());
-    let ast = tri!(parser.produce(), argv.orb_name);
+    let ast = parser.produce().ok_or_else(compil_diags)?;
 
     //    maybe print the ast
     if argv.debug_print_at(DebugPrint::Ast) {
