@@ -10,11 +10,11 @@ pub struct UnknownToken {
 }
 
 impl ToDiagnostic for UnknownToken {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::UnknownToken)
             .with_message(format!("unknown start of token: {}", self.c))
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
 
@@ -28,12 +28,14 @@ pub struct InvalidDigitInNumber {
 }
 
 impl ToDiagnostic for InvalidDigitInNumber {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::InvalidDigitNumber)
             .with_message(format!("invalid digit in integer literal: {}", self.c))
-            .with_label(Label::primary((), self.loc_c))
-            .with_label(Label::secondary((), self.loc_i).with_message("in this integer"))
+            .with_label(Label::primary(self.loc_c.fid, self.loc_c))
+            .with_label(
+                Label::secondary(self.loc_i.fid, self.loc_i).with_message("in this integer"),
+            )
     }
 }
 
@@ -44,11 +46,11 @@ pub struct TooLargeIntegerLiteral {
 }
 
 impl ToDiagnostic for TooLargeIntegerLiteral {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::TooLargeIntegerLiteral)
             .with_message("integer literal is too large")
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
             .with_note(format!("integer exceeds the limit of `{}`", u64::MAX))
     }
 }
@@ -60,11 +62,11 @@ pub struct UnterminatedStringLiteral {
 }
 
 impl ToDiagnostic for UnterminatedStringLiteral {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::UnterminatedStringLiteral)
             .with_message("unterminated string literal")
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
 
@@ -76,10 +78,10 @@ pub struct UnknownCharacterEscape {
 }
 
 impl ToDiagnostic for UnknownCharacterEscape {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::UnknownCharacterEscape)
             .with_message(format!("unknown character escape: {}", self.es))
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }

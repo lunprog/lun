@@ -2,7 +2,7 @@
 
 use std::fmt::{self, Debug, Display};
 
-use crate::Span;
+use crate::{FileId, Span};
 
 /// A list of Tokens, and always ending with a `end of file` token
 #[derive(Clone, Default)]
@@ -37,7 +37,7 @@ impl TokenTree {
     /// Pushes the TokenType with its start and end offsets and return `true`
     /// if the token is End Of File
     #[track_caller]
-    pub fn push(&mut self, tt: TokenType, lo: usize, hi: usize) -> bool {
+    pub fn push(&mut self, tt: TokenType, lo: usize, hi: usize, fid: FileId) -> bool {
         assert!(
             !self.finished,
             "can't push a token to the TokenTree if it's already finished"
@@ -48,7 +48,7 @@ impl TokenTree {
 
         self.toks.push(Token {
             tt,
-            loc: Span { lo, hi },
+            loc: Span { lo, hi, fid },
         });
 
         is_eof

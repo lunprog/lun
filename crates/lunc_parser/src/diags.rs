@@ -92,7 +92,7 @@ impl ToDiagnostic for ExpectedToken {
         Diagnostic::error()
             .with_code(ErrorCode::ExpectedToken)
             .with_message(self.fmt_msg())
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
 
@@ -102,10 +102,10 @@ pub struct ReachedEOF {
 }
 
 impl ToDiagnostic for ReachedEOF {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::ReachedEOF)
             .with_message("reached end of file too early")
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }

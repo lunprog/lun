@@ -1,5 +1,5 @@
 use codespan_reporting::{
-    files::{self, SimpleFile},
+    files::{self, Files, SimpleFile},
     term::{
         self, Config,
         termcolor::{ColorChoice, StandardStream},
@@ -9,31 +9,88 @@ use std::fmt::Display;
 
 use lunc_utils::{Span, pluralize};
 
-pub type Diagnostic<FileId = ()> = codespan_reporting::diagnostic::Diagnostic<FileId>;
+pub type Diagnostic = codespan_reporting::diagnostic::Diagnostic<FileId>;
 pub use codespan_reporting::diagnostic::Label;
 pub use codespan_reporting::diagnostic::Severity;
 pub use codespan_reporting::term::termcolor;
+pub use lunc_utils::FileId;
+
+type SimpFile = SimpleFile<String, String>;
+
+#[derive(Debug, Clone)]
+struct MultiFile {
+    files: Vec<SimpFile>,
+}
+
+impl MultiFile {
+    pub fn new() -> MultiFile {
+        MultiFile { files: Vec::new() }
+    }
+
+    pub fn get(&self, id: FileId) -> &SimpFile {
+        self.files.get(id.as_usize()).expect("unknown file id.")
+    }
+}
+
+impl<'a> Files<'a> for MultiFile {
+    type FileId = FileId;
+    type Name = String;
+    type Source = &'a str;
+
+    fn name(&'a self, id: Self::FileId) -> Result<Self::Name, files::Error> {
+        Ok(self.get(id).name().clone())
+    }
+
+    fn source(&'a self, id: Self::FileId) -> Result<Self::Source, files::Error> {
+        Ok(self.get(id).source().as_str())
+    }
+
+    fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Result<usize, files::Error> {
+        self.get(id).line_index((), byte_index)
+    }
+
+    fn line_range(
+        &'a self,
+        id: Self::FileId,
+        line_index: usize,
+    ) -> Result<std::ops::Range<usize>, files::Error> {
+        self.get(id).line_range((), line_index)
+    }
+}
 
 /// A collector of Diagnostics.
 #[derive(Debug, Clone)]
 pub struct DiagnosticSink {
-    diags: Vec<Diagnostic<()>>,
+    diags: Vec<Diagnostic>,
     /// a count of all the error diagnostics
     errors: usize,
     /// a count of all the warning diagnostics
     warnings: usize,
     /// the file where diagnostics are located.
-    file: SimpleFile<String, String>,
+    files: MultiFile,
+    /// last file id given
+    last_fid: u32,
 }
 
 impl DiagnosticSink {
-    pub fn new(file_name: String, source_code: String) -> DiagnosticSink {
+    /// Create a new diagnostic sink
+    pub fn new() -> DiagnosticSink {
         DiagnosticSink {
             diags: Vec::new(),
             errors: 0,
             warnings: 0,
-            file: SimpleFile::new(file_name, source_code),
+            files: MultiFile::new(),
+            last_fid: 0,
         }
+    }
+
+    /// Registers a new file into the diagnostic sink and returns the correspond file id.
+    pub fn register_file(&mut self, name: String, source: String) -> FileId {
+        let fid = FileId::new(self.last_fid);
+        self.last_fid += 1;
+
+        self.files.files.push(SimpleFile::new(name, source));
+        fid
     }
 
     /// Returns true if there is at least one error in the sink.
@@ -51,7 +108,7 @@ impl DiagnosticSink {
         let config = Config::default();
 
         for diag in &self.diags {
-            term::emit(writer, &config, &self.file, diag)?;
+            term::emit(writer, &config, &self.files, diag)?;
         }
 
         Ok(())
@@ -67,11 +124,11 @@ impl DiagnosticSink {
 
     /// Returns a summary if there was errors or warnings, nothing if there is
     /// neither.
-    pub fn summary(&self) -> Option<String> {
+    pub fn summary(&self, orb_name: &str) -> Option<String> {
         if self.errors > 0 {
             Some(format!(
                 "compilation of `{}` failed due to {} error{} and {} warning{}",
-                self.file.name(),
+                orb_name,
                 self.errors,
                 pluralize(self.errors),
                 self.warnings,
@@ -80,7 +137,7 @@ impl DiagnosticSink {
         } else if self.warnings > 0 {
             Some(format!(
                 "compilation of `{}` succeeded but {} warning{} emitted.",
-                self.file.name(),
+                orb_name,
                 self.warnings,
                 pluralize(self.warnings)
             ))
@@ -111,13 +168,13 @@ impl DiagnosticSink {
 }
 
 /// A type that can be converted to a Diagnostic.
-pub trait ToDiagnostic<FileId = ()> {
-    fn into_diag(self) -> Diagnostic<FileId>;
+pub trait ToDiagnostic {
+    fn into_diag(self) -> Diagnostic;
 }
 
-impl<FileId> ToDiagnostic<FileId> for Diagnostic<FileId> {
+impl ToDiagnostic for Diagnostic {
     #[inline(always)]
-    fn into_diag(self) -> Diagnostic<FileId> {
+    fn into_diag(self) -> Diagnostic {
         self
     }
 }
@@ -345,14 +402,14 @@ pub struct FeatureNotImplemented {
 }
 
 impl ToDiagnostic for FeatureNotImplemented {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::FeatureNotImplemented)
             .with_message(format!(
                 "the feature {}, is not yet implemented",
                 self.feature_name
             ))
-            .with_label(Label::primary((), self.loc).with_message(self.label_text))
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message(self.label_text))
             .with_note(format!(
                 "this diagnostic has been emited in file {:?} at line {}",
                 self.compiler_file, self.compiler_line

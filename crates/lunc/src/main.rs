@@ -11,14 +11,14 @@ fn main() -> ExitCode {
 
     match lunc::run() {
         Ok(()) => ExitCode::SUCCESS,
-        Err(CompilerDiagnostics { mut sink }) => {
+        Err(CompilerDiagnostics { mut sink, orb_name }) => {
             sink.push(
                 if sink.failed() {
                     Diagnostic::error()
                 } else {
                     Diagnostic::warning()
                 }
-                .with_message(sink.summary().unwrap()),
+                .with_message(sink.summary(&orb_name).unwrap()),
             );
 
             sink.emit_to_stderr();

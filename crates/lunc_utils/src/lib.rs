@@ -10,26 +10,40 @@ pub mod token;
 pub struct Span {
     pub lo: usize,
     pub hi: usize,
+    /// file id, to know which file we are refering to.
+    pub fid: FileId,
 }
 
 impl Span {
-    /// Zero location.
-    pub const ZERO: Span = Span { lo: 0, hi: 0 };
+    /// Zero location to the root file
+    pub const ZERO: Span = Span {
+        lo: 0,
+        hi: 0,
+        fid: FileId::ZERO,
+    };
 
     #[inline(always)]
     pub const fn from_ends(lo: Span, hi: Span) -> Span {
+        // NOTE: we are implementing debug_assert_eq manualy because it doesn't
+        // work at compile time
+        if cfg!(debug_assertions) && lo.fid.0 != hi.fid.0 {
+            panic!("expected the file ids of both lo and hi spans to be the same.")
+        }
+
         Span {
             lo: lo.lo,
             hi: hi.hi,
+            fid: lo.fid,
         }
     }
 }
 
 #[inline(always)]
-pub fn span(lo: impl Into<usize>, hi: impl Into<usize>) -> Span {
+pub fn span(lo: impl Into<usize>, hi: impl Into<usize>, fid: FileId) -> Span {
     Span {
         lo: lo.into(),
         hi: hi.into(),
+        fid,
     }
 }
 
@@ -45,11 +59,30 @@ impl From<Span> for Range<usize> {
     }
 }
 
-impl<I: Into<usize>, J: Into<usize>> From<(I, J)> for Span {
-    fn from((lo, hi): (I, J)) -> Self {
-        span(lo, hi)
+impl<I: Into<usize>, J: Into<usize>> From<(I, J, FileId)> for Span {
+    fn from((lo, hi, fid): (I, J, FileId)) -> Self {
+        span(lo, hi, fid)
     }
 }
+
+/// A file id, used to represent, which file we are talking about
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FileId(u32);
+
+impl FileId {
+    /// Note this, file id always refers to the root of the `orb`
+    pub const ZERO: FileId = FileId(0);
+
+    pub fn new(num: impl Into<u32>) -> FileId {
+        FileId(num.into())
+    }
+
+    pub fn as_usize(self) -> usize {
+        self.0 as usize
+    }
+}
+
+// TODO: remove those archaic functions
 
 /// Write a u64 in little endian format at the end of the Vec, and returns the
 /// offset where it was written

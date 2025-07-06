@@ -27,13 +27,13 @@ impl ToDiagnostic for MismatchedTypes {
         Diagnostic::error()
             .with_code(ErrorCode::MismatchedTypes)
             .with_message("mismatched types")
-            .with_label(Label::primary((), self.loc).with_message(format!(
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message(format!(
                 "expected `{}`, found `{}`",
                 self.expected, self.found
             )))
             .with_labels_iter(
                 self.due_to
-                    .map(|loc| Label::secondary((), loc).with_message("expected due to this")),
+                    .map(|loc| Label::secondary(loc.fid, loc).with_message("expected due to this")),
             )
         // TODO: maybe change the message of this error to `mismatched types`
         // and put the `expected type {} found type {}` on the primary label
@@ -48,11 +48,11 @@ pub struct ExpectedTypeFoundExpr {
 }
 
 impl ToDiagnostic for ExpectedTypeFoundExpr {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::ExpectedTypeFoundExpr)
             .with_message("expected type found an expression")
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
             .with_notes(if self.help {
                 vec![
                     "help: this type wasn't found, you could've made a spelling mistake"
@@ -75,7 +75,7 @@ impl ToDiagnostic for NotFoundInScope {
         Diagnostic::error()
             .with_code(ErrorCode::NotFoundInScope)
             .with_message(format!("cannot find `{}` in this scope", self.name))
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
 
@@ -94,7 +94,7 @@ impl ToDiagnostic for CallRequiresFuncType {
             } else {
                 "function call requires function type"
             })
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
 
@@ -109,7 +109,7 @@ impl ToDiagnostic for TypeAnnotationsNeeded {
         Diagnostic::error()
             .with_code(ErrorCode::TypeAnnotationsNeeded)
             .with_message("type annotations needed")
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
 
@@ -121,11 +121,11 @@ pub struct NeverUsedSymbol {
 }
 
 impl ToDiagnostic for NeverUsedSymbol {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::warning()
             .with_code(WarnCode::NeverUsedSymbol)
             .with_message(format!("{} `{}` is never used", self.kind, self.name))
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
 
@@ -135,12 +135,12 @@ pub struct UnderscoreReservedIdent {
 }
 
 impl ToDiagnostic for UnderscoreReservedIdent {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::UnderscoreReservedIdentifier)
             .with_message("`_` is a reserved identifier")
             .with_note("you can't use `_` as a symbol name")
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
 
@@ -150,13 +150,13 @@ pub struct UnderscoreInExpression {
 }
 
 impl ToDiagnostic for UnderscoreInExpression {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::UnderscoreInExpression)
             .with_message(
                 "`_` can only be used in left hand side of assignement not in expressions",
             )
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
 
@@ -167,12 +167,12 @@ pub struct LoopKwOutsideLoop<'a> {
 }
 
 impl<'a> ToDiagnostic for LoopKwOutsideLoop<'a> {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::LoopKwOutsideLoop)
             .with_message(format!("`{}` outside of a loop", self.kw))
             .with_label(
-                Label::primary((), self.loc)
+                Label::primary(self.loc.fid, self.loc)
                     .with_message(format!("cannot `{}` outside of a loop", self.kw)),
             )
     }
@@ -185,11 +185,11 @@ pub struct UnknownType {
 }
 
 impl ToDiagnostic for UnknownType {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::UnknownType)
             .with_message(format!("unknown type `{}`", self.typ))
-            .with_label(Label::primary((), self.loc))
+            .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
 
@@ -201,15 +201,18 @@ pub struct MutationOfImmutable {
 }
 
 impl ToDiagnostic for MutationOfImmutable {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::MutationOfImmutable)
             .with_message("cannot mutate, immutable variable")
-            .with_label(Label::primary((), self.loc).with_message(format!(
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message(format!(
                 "assignement to immmutable variable `{}`",
                 self.var_name
             )))
-            .with_label(Label::secondary((), self.var_loc).with_message("variable defined here"))
+            .with_label(
+                Label::secondary(self.var_loc.fid, self.var_loc)
+                    .with_message("variable defined here"),
+            )
     }
 }
 
@@ -223,7 +226,7 @@ pub struct NameDefinedMultipleTimes<'a> {
 }
 
 impl<'a> ToDiagnostic for NameDefinedMultipleTimes<'a> {
-    fn into_diag(self) -> Diagnostic<()> {
+    fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::NameDefinedMultipleTimes)
             .with_message(format!(
@@ -231,11 +234,11 @@ impl<'a> ToDiagnostic for NameDefinedMultipleTimes<'a> {
                 self.name
             ))
             .with_label(
-                Label::primary((), self.loc)
+                Label::primary(self.loc.fid, self.loc)
                     .with_message(format!("defined `{}` a second time here", self.name)),
             )
             .with_label(
-                Label::secondary((), self.loc_previous)
+                Label::secondary(self.loc_previous.fid, self.loc_previous)
                     .with_message("defined here for the first time"),
             )
     }

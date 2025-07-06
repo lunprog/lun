@@ -4,7 +4,7 @@ use diags::{
     InvalidDigitInNumber, TooLargeIntegerLiteral, UnknownCharacterEscape, UnknownToken,
     UnterminatedStringLiteral,
 };
-use lunc_diag::{Diagnostic, DiagnosticSink, StageResult, feature_todo};
+use lunc_diag::{Diagnostic, DiagnosticSink, FileId, StageResult, feature_todo};
 
 use lunc_utils::{
     Span, span,
@@ -23,15 +23,18 @@ pub struct Lexer {
     prev: usize,
     /// sink of diags
     sink: DiagnosticSink,
+    /// file id of the file we are lexing
+    fid: FileId,
 }
 
 impl Lexer {
-    pub fn new(sink: DiagnosticSink, source_code: String) -> Lexer {
+    pub fn new(sink: DiagnosticSink, source_code: String, fid: FileId) -> Lexer {
         Lexer {
             chars: source_code.chars().collect(),
             cur: 0,
             prev: 0,
             sink,
+            fid,
         }
     }
 
@@ -51,7 +54,7 @@ impl Lexer {
                 }
             };
 
-            if tt.push(t, self.prev, self.cur) {
+            if tt.push(t, self.prev, self.cur, self.fid) {
                 break;
             }
         }
@@ -84,7 +87,7 @@ impl Lexer {
     }
 
     pub fn loc(&self) -> Span {
-        span(self.prev, self.cur)
+        span(self.prev, self.cur, self.fid)
     }
 
     #[track_caller]
@@ -384,14 +387,14 @@ impl Lexer {
                 self.sink.push(feature_todo! {
                     feature: "unicode escape sequence",
                     label: "unicode escape isn't yet implemented.",
-                    loc: span(self.cur - 1, self.cur)
+                    loc: span(self.cur - 1, self.cur, self.fid)
                 });
                 '\0'
             }
             _ => {
                 self.sink.push(UnknownCharacterEscape {
                     es,
-                    loc: span(self.cur - 1, self.cur),
+                    loc: span(self.cur - 1, self.cur, self.fid),
                 });
 
                 '\0'
@@ -447,7 +450,7 @@ impl Lexer {
                     let pos = self.prev + i;
                     self.sink.push(InvalidDigitInNumber {
                         c,
-                        loc_c: span(pos, pos + 1),
+                        loc_c: span(pos, pos + 1, self.fid),
                         loc_i: self.loc(),
                     });
 
@@ -461,7 +464,7 @@ impl Lexer {
                 let pos = self.prev + i;
                 self.sink.push(InvalidDigitInNumber {
                     c,
-                    loc_c: span(pos, pos + 1),
+                    loc_c: span(pos, pos + 1, self.fid),
                     loc_i: self.loc(),
                 });
             }

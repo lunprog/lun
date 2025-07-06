@@ -30,7 +30,7 @@ pub fn exit_code_compilation_failed() -> ExitCode {
 }
 
 macro_rules! tri {
-    ($expr:expr, $sink:expr) => {
+    ($expr:expr, $sink:expr, $orb_name:expr) => {
         match $expr {
             StageResult::Good(val) => val,
             StageResult::Part(val, sink) => {
@@ -38,7 +38,10 @@ macro_rules! tri {
                 val
             }
             StageResult::Fail(sink) => {
-                return Err(CliError::CompilerDiagnostics { sink });
+                return Err(CliError::CompilerDiagnostics {
+                    sink,
+                    orb_name: $orb_name,
+                });
             }
         }
     };
@@ -48,8 +51,11 @@ macro_rules! tri {
 pub enum CliError {
     /// Diagnostics emited in compilation, can contain only warnings, can
     /// contain errors. It is guaranteed to contains at least one diag
-    #[error("Compiler diagnostics, {}", sink.summary().unwrap())]
-    CompilerDiagnostics { sink: DiagnosticSink },
+    #[error("Compiler diagnostics, {}", sink.summary(orb_name).unwrap())]
+    CompilerDiagnostics {
+        sink: DiagnosticSink,
+        orb_name: String,
+    },
     #[error(
         "argument to '{name}' is missing, expected {expected} value{}",
         pluralize(*expected)
@@ -76,12 +82,13 @@ Usage: lunc [OPTIONS] INPUT
 
 Options:
     -h, -help                Display this help message
-    -o <file>                Place the output into <file>, defaults to the input
-                             file's name with the correct file extension for the
-                             target
+    -o <file>                Place the output into <file>, defaults to the orb's
+                             name with the correct file extension for the target.
     -D<flag>[=value]         Debug flags, type `lunc -Dhelp` for details
-        -target <triple>     Compile for the given target, type `lunc -target
-                             help` for details
+        -target <triplet>    Build for the given target triplet, type `lunc
+                             -target help` for details
+        -orb-name <name>     Specify the name of the orb being built, defaults
+                             to the input file name with the extension
     -V, -version             Print version information
     -v, -verbose             Make the output verbose\
 ";
@@ -205,6 +212,7 @@ pub enum TargetInput {
     Triplet(TargetTriplet),
 }
 
+// TODO: add -orb-type <type> arg
 /// Arguments to the `lunc` binary
 #[derive(Debug, Clone, Default)]
 pub struct CliArgs {
@@ -218,6 +226,8 @@ pub struct CliArgs {
     debug: Vec<DebugFlag>,
     /// target
     target: TargetInput,
+    /// the name of the orb you are building
+    orb_name: String,
     /// true if we want to print the version
     version: bool,
     /// verbosity
@@ -235,6 +245,7 @@ impl CliArgs {
         let mut output = None;
         let mut debug = Vec::new();
         let mut target = TargetInput::default();
+        let mut orb_name = None;
         let mut version = false;
         let mut verbose = true;
 
@@ -268,6 +279,9 @@ impl CliArgs {
                     "help" => target = TargetInput::Help,
                     s => target = TargetInput::Triplet(TargetTriplet::from_str(s)?),
                 }
+            } else if arg == "-orb-name" {
+                // TODO: check that the name can be a Lun identifier.
+                orb_name = Some(CliArgs::next_arg(&mut args)?);
             } else if arg == "-V" || arg == "-version" {
                 version = true;
             } else if arg == "-v" || arg == "-verbose" {
@@ -287,6 +301,7 @@ impl CliArgs {
                     output: output.unwrap_or_default(),
                     debug,
                     target,
+                    orb_name: Default::default(),
                     version,
                     verbose,
                 });
@@ -294,7 +309,8 @@ impl CliArgs {
             return Err(CliError::NoInputFile);
         };
 
-        let output = output.unwrap_or(input.with_extension(""));
+        let orb_name = orb_name.unwrap_or(input.with_extension("").to_string_lossy().to_string());
+        let output = output.unwrap_or(PathBuf::from(orb_name.as_str()));
 
         Ok(CliArgs {
             help,
@@ -302,6 +318,7 @@ impl CliArgs {
             output,
             debug,
             target,
+            orb_name,
             version,
             verbose,
         })
@@ -385,11 +402,12 @@ pub fn run() -> Result<()> {
 
     // 2. create the diagnostic sink
     let input_str = argv.input.clone().into_os_string().into_string().unwrap();
-    let mut sink = DiagnosticSink::new(input_str, source_code.clone());
+    let mut sink = DiagnosticSink::new();
+    let root_fid = sink.register_file(input_str, source_code.clone());
 
     // 3. lex the file
-    let mut lexer = Lexer::new(sink.clone(), source_code);
-    let tokentree = tri!(lexer.produce(), sink);
+    let mut lexer = Lexer::new(sink.clone(), source_code, root_fid);
+    let tokentree = tri!(lexer.produce(), sink, argv.orb_name);
 
     //    maybe print the token tree
     if argv.debug_print_at(DebugPrint::TokenTree) {
@@ -401,7 +419,7 @@ pub fn run() -> Result<()> {
 
     // 4. parse the token tree to an ast
     let mut parser = Parser::new(tokentree, sink.clone());
-    let ast = tri!(parser.produce(), sink);
+    let ast = tri!(parser.produce(), sink, argv.orb_name);
 
     //    maybe print the ast
     if argv.debug_print_at(DebugPrint::Ast) {
@@ -413,5 +431,13 @@ pub fn run() -> Result<()> {
 
     // use output to remove the warning
     _ = argv.output;
-    Ok(())
+
+    if sink.is_empty() {
+        Ok(())
+    } else {
+        Err(CliError::CompilerDiagnostics {
+            sink,
+            orb_name: argv.orb_name,
+        })
+    }
 }
