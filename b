@@ -56,12 +56,16 @@ def cmd_lunc(args: list[str]):
     res = build(True)
 
     if res.returncode != 0:
-        # compilation wasn't successful
+        # compilation of lunc wasn't successful
         exit(res.returncode)
 
     # run
     run_cmd = ["target/debug/lunc"] + args
-    sp.run(run_cmd)
+    res = sp.run(run_cmd)
+
+    if res.returncode != 0:
+        # subprocess wasn't successful
+        exit(res.returncode)
 
 def cmd_build():
     build(False)

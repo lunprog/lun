@@ -30,13 +30,10 @@ pub fn exit_code_compilation_failed() -> ExitCode {
 }
 
 macro_rules! tri {
-    ($expr:expr, $sink:expr, $orb_name:expr) => {
+    ($expr:expr, $orb_name:expr) => {
         match $expr {
             StageResult::Good(val) => val,
-            StageResult::Part(val, sink) => {
-                $sink.merge(sink);
-                val
-            }
+            StageResult::Part(val, _) => val,
             StageResult::Fail(sink) => {
                 return Err(CliError::CompilerDiagnostics {
                     sink,
@@ -402,12 +399,12 @@ pub fn run() -> Result<()> {
 
     // 2. create the diagnostic sink
     let input_str = argv.input.clone().into_os_string().into_string().unwrap();
-    let mut sink = DiagnosticSink::new();
+    let sink = DiagnosticSink::new();
     let root_fid = sink.register_file(input_str, source_code.clone());
 
     // 3. lex the file
     let mut lexer = Lexer::new(sink.clone(), source_code, root_fid);
-    let tokentree = tri!(lexer.produce(), sink, argv.orb_name);
+    let tokentree = tri!(lexer.produce(), argv.orb_name);
 
     //    maybe print the token tree
     if argv.debug_print_at(DebugPrint::TokenTree) {
@@ -419,7 +416,7 @@ pub fn run() -> Result<()> {
 
     // 4. parse the token tree to an ast
     let mut parser = Parser::new(tokentree, sink.clone());
-    let ast = tri!(parser.produce(), sink, argv.orb_name);
+    let ast = tri!(parser.produce(), argv.orb_name);
 
     //    maybe print the ast
     if argv.debug_print_at(DebugPrint::Ast) {
@@ -432,12 +429,5 @@ pub fn run() -> Result<()> {
     // use output to remove the warning
     _ = argv.output;
 
-    if sink.is_empty() {
-        Ok(())
-    } else {
-        Err(CliError::CompilerDiagnostics {
-            sink,
-            orb_name: argv.orb_name,
-        })
-    }
+    Ok(())
 }

@@ -5,7 +5,10 @@ use codespan_reporting::{
         termcolor::{ColorChoice, StandardStream},
     },
 };
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    sync::{Arc, RwLock},
+};
 
 use lunc_utils::{Span, pluralize};
 
@@ -57,10 +60,62 @@ impl<'a> Files<'a> for MultiFile {
         self.get(id).line_range((), line_index)
     }
 }
+/// A collector of Diagnostics.
+#[derive(Debug, Clone)]
+pub struct DiagnosticSink(Arc<RwLock<SinkInner>>);
+
+impl DiagnosticSink {
+    /// Create a new diagnostic sink
+    pub fn new() -> DiagnosticSink {
+        DiagnosticSink(Arc::new(RwLock::new(SinkInner::new())))
+    }
+
+    /// Registers a new file into the diagnostic sink and returns the correspond file id.
+    pub fn register_file(&self, name: String, source: String) -> FileId {
+        let mut inner = self.0.write().unwrap();
+        inner.register_file(name, source)
+    }
+
+    /// Returns true if there is at least one error in the sink.
+    pub fn failed(&self) -> bool {
+        let inner = self.0.read().unwrap();
+        inner.failed()
+    }
+
+    /// Returns true if there is no diag, false instead.
+    pub fn is_empty(&self) -> bool {
+        let inner = self.0.read().unwrap();
+        inner.is_empty()
+    }
+
+    /// Print all diagnostics to the given writter, with default config.
+    pub fn emit(&self, writer: &mut StandardStream) -> Result<(), files::Error> {
+        let inner = self.0.read().unwrap();
+        inner.emit(writer)
+    }
+
+    /// Emit all the diagnostics to stderr.
+    pub fn emit_to_stderr(&self) {
+        let inner = self.0.read().unwrap();
+        inner.emit_to_stderr();
+    }
+
+    /// Returns a summary if there was errors or warnings, nothing if there is
+    /// neither.
+    pub fn summary(&self, orb_name: &str) -> Option<String> {
+        let inner = self.0.read().unwrap();
+        inner.summary(orb_name)
+    }
+
+    pub fn push(&mut self, diag: impl ToDiagnostic) {
+        let mut inner = self.0.write().unwrap();
+        inner.push(diag);
+    }
+}
 
 /// A collector of Diagnostics.
 #[derive(Debug, Clone)]
-pub struct DiagnosticSink {
+struct SinkInner {
     diags: Vec<Diagnostic>,
     /// a count of all the error diagnostics
     errors: usize,
@@ -72,10 +127,10 @@ pub struct DiagnosticSink {
     last_fid: u32,
 }
 
-impl DiagnosticSink {
+impl SinkInner {
     /// Create a new diagnostic sink
-    pub fn new() -> DiagnosticSink {
-        DiagnosticSink {
+    pub fn new() -> SinkInner {
+        SinkInner {
             diags: Vec::new(),
             errors: 0,
             warnings: 0,
@@ -158,12 +213,6 @@ impl DiagnosticSink {
         }
 
         self.diags.push(diag);
-    }
-
-    pub fn merge(&mut self, other: DiagnosticSink) {
-        self.diags.extend_from_slice(&other.diags);
-        self.warnings += other.warnings;
-        self.errors += other.errors;
     }
 }
 
