@@ -8,7 +8,7 @@ use std::{
 use thiserror::Error;
 
 /// Target format: <arch><[sub]>-<sys>-<env> where:
-/// - arch = `x64_64`, `x86`, `arm`, `arm64`, `riscv64`, `riscv32`
+/// - arch = `x64_64`, `x86`, `arm`, `aarch64`, `riscv64`, `riscv32`
 /// - sub  = for eg, riscv64 = `imaf`, `g`, `gc`
 /// - sys  = `linux`, `windows`, `android`, `macos`, `none`
 /// - env  = `gnu`, `msvc`, `elf`, `macho`
@@ -36,7 +36,7 @@ impl TargetTriplet {
         } else if cfg!(target_arch = "arm") {
             Arch::arm
         } else if cfg!(target_arch = "aarch64") {
-            Arch::arm64
+            Arch::aarch64
         } else if cfg!(target_arch = "riscv64") {
             Arch::riscv64
         } else if cfg!(target_arch = "riscv32") {
@@ -103,7 +103,7 @@ impl FromStr for TargetTriplet {
             "x86_64" => Arch::x86_64,
             "x86" => Arch::x86,
             "arm" => Arch::arm,
-            "arm64" => Arch::arm64,
+            "aarch64" => Arch::aarch64,
             _ if arch_s.starts_with("riscv64") => Arch::riscv64,
             _ if arch_s.starts_with("riscv32") => Arch::riscv32,
             _ => {
@@ -185,8 +185,7 @@ pub enum Arch {
     x86_64,
     x86,
     arm,
-    // TODO: is `arm64` a good name? the convention seems to be `aarch64`
-    arm64,
+    aarch64,
     riscv32,
     riscv64,
 }
@@ -200,7 +199,7 @@ impl Display for Arch {
                 Arch::x86_64 => "x86_64",
                 Arch::x86 => "x86",
                 Arch::arm => "arm",
-                Arch::arm64 => "arm64",
+                Arch::aarch64 => "aarch64",
                 Arch::riscv32 => "riscv32",
                 Arch::riscv64 => "riscv64",
             }

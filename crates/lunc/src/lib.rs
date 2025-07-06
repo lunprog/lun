@@ -101,7 +101,7 @@ Debug flags help:
 // TODO: add support for bare metal targets like `x86_64-none-elf`
 pub const TARGET_HELP: &str = "\
 Target format: <arch><[sub]>-<sys>-<env> where:
-- arch = `x64_64`, `x86`, `arm`, `arm64`, `riscv64`, `riscv32`
+- arch = `x64_64`, `x86`, `arm`, `aarch64`, `riscv64`, `riscv32`
 - sub  = for eg, riscv64 = `imaf`, `g`, `gc`
 - sys  = `linux`, `windows`, `android`, `macos`, `none`
 - env  = `gnu`, `msvc`, `elf`, `macho`
