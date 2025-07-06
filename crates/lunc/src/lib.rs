@@ -3,6 +3,7 @@
 use std::{env, fs::read_to_string, io, path::PathBuf, process::ExitCode, str::FromStr};
 
 use lunc_parser::Parser;
+use lunc_utils::target::{TargetParsingError, TargetTriplet};
 use shadow_rs::shadow;
 use thiserror::Error;
 
@@ -64,6 +65,8 @@ pub enum CliError {
     UnknownValue { arg: String, value: String },
     #[error("{path}: {err}")]
     FileIoError { path: PathBuf, err: io::Error },
+    #[error(transparent)]
+    TargetParsingError(#[from] TargetParsingError),
 }
 
 pub const HELP_MESSAGE: &str = "\
@@ -73,8 +76,9 @@ Usage: lunc [OPTIONS] INPUT
 
 Options:
     -h, -help                Display this help message
-    -o <file>                Place the output into <file>, defaults to the file
-                             with the correct file extension
+    -o <file>                Place the output into <file>, defaults to the input
+                             file's name with the correct file extension for the
+                             target
     -D<flag>[=value]         Debug flags, type `lunc -Dhelp` for details
         -target <triple>     Compile for the given target, type `lunc -target
                              help` for details
@@ -106,9 +110,9 @@ Debug flags help:
 // TODO: add support for bare metal targets like `x86_64-none-elf`
 pub const TARGET_HELP: &str = "\
 Target format: <arch><[sub]>-<sys>-<env> where:
-- arch = `x64_64`, `arm`, `arm64`, `riscv64`, `riscv32`
+- arch = `x64_64`, `x86`, `arm`, `arm64`, `riscv64`, `riscv32`
 - sub  = for eg, riscv64 = `imaf`, `g`, `gc`
-- sys  = `linux`, `windows`, `android`, `darwin`
+- sys  = `linux`, `windows`, `android`, `macos`, `none`
 - env  = `gnu`, `msvc`, `elf`, `macho`
 
 List of supported targets:
@@ -190,6 +194,17 @@ impl FromStr for DebugPrint {
     }
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum TargetInput {
+    /// the user specified nothing
+    #[default]
+    Unspecified,
+    /// the user wants to print the help message for the targets
+    Help,
+    /// there is a specified target
+    Triplet(TargetTriplet),
+}
+
 /// Arguments to the `lunc` binary
 #[derive(Debug, Clone, Default)]
 pub struct CliArgs {
@@ -198,9 +213,11 @@ pub struct CliArgs {
     /// input file
     input: PathBuf,
     /// output file
-    output: Option<PathBuf>,
+    output: PathBuf,
     /// debug flags
     debug: Vec<DebugFlag>,
+    /// target
+    target: TargetInput,
     /// true if we want to print the version
     version: bool,
     /// verbosity
@@ -208,29 +225,24 @@ pub struct CliArgs {
 }
 
 impl CliArgs {
+    /// Parse the arguments
     pub fn parse_args(mut args: impl Iterator<Item = String>) -> Result<CliArgs> {
         // skip program name
         _ = args.next();
 
+        let mut input = None;
+        let mut help = false;
         let mut output = None;
         let mut debug = Vec::new();
-        let mut verbose = true;
-        let mut input = None;
+        let mut target = TargetInput::default();
         let mut version = false;
-        let mut help = false;
+        let mut verbose = true;
 
         while let Some(arg) = args.next() {
             if arg == "-h" || arg == "-help" {
                 help = true;
             } else if arg == "-o" {
-                if let Some(path) = args.next() {
-                    output = Some(PathBuf::from(path));
-                } else {
-                    return Err(CliError::ArgumentsMissing {
-                        name: String::from("-o"),
-                        expected: 1,
-                    });
-                }
+                output = Some(PathBuf::from(CliArgs::next_arg(&mut args)?));
             } else if arg.starts_with("-D") {
                 // Debug flags
                 let flag_value = &arg[2..];
@@ -251,7 +263,11 @@ impl CliArgs {
                     _ => return Err(CliError::UnreochizedOption { arg }),
                 }
             } else if arg == "-target" {
-                todo!("create a target type and a parsing function for it.")
+                let target_str = CliArgs::next_arg(&mut args)?;
+                match target_str.as_str() {
+                    "help" => target = TargetInput::Help,
+                    s => target = TargetInput::Triplet(TargetTriplet::from_str(s)?),
+                }
             } else if arg == "-V" || arg == "-version" {
                 version = true;
             } else if arg == "-v" || arg == "-verbose" {
@@ -264,12 +280,13 @@ impl CliArgs {
         }
 
         let Some(input) = input else {
-            if version || help || debug.contains(&DebugFlag::Help) {
+            if version || help || target == TargetInput::Help || debug.contains(&DebugFlag::Help) {
                 return Ok(CliArgs {
                     help,
                     input: Default::default(),
-                    output,
+                    output: output.unwrap_or_default(),
                     debug,
+                    target,
                     version,
                     verbose,
                 });
@@ -277,11 +294,14 @@ impl CliArgs {
             return Err(CliError::NoInputFile);
         };
 
+        let output = output.unwrap_or(input.with_extension(""));
+
         Ok(CliArgs {
             help,
             input,
             output,
             debug,
+            target,
             version,
             verbose,
         })
@@ -300,6 +320,13 @@ impl CliArgs {
     /// Return true if one of the debug flags is `-Dhalt-at=STAGE`
     pub fn debug_halt_at(&self, stage: DebugHalt) -> bool {
         self.debug.contains(&DebugFlag::HaltAt(stage))
+    }
+
+    fn next_arg(args: &mut impl Iterator<Item = String>) -> Result<String> {
+        args.next().ok_or_else(|| CliError::ArgumentsMissing {
+            name: String::from("-o"),
+            expected: 1,
+        })
     }
 }
 
@@ -322,7 +349,7 @@ pub fn run() -> Result<()> {
         );
 
         if argv.verbose {
-            // TODO: print the host target
+            eprintln!("host: {}", TargetTriplet::host_target());
             eprintln!("commit-hash: {}", build::COMMIT_HASH);
             eprintln!("commit-date: {}", build::COMMIT_DATE);
             eprintln!("rustc-version: {}", build::RUST_VERSION);
@@ -336,6 +363,14 @@ pub fn run() -> Result<()> {
         eprintln!("{DEBUG_FLAGS_HELP}");
         return Ok(());
     }
+
+    // maybe print the target help message
+    if argv.target == TargetInput::Help {
+        eprintln!("{TARGET_HELP}");
+        return Ok(());
+    }
+
+    // TODO: check here, that the specified target is supported by the codegen
 
     // 1. retrieve the source code
     let source_code = read_to_string(&argv.input).map_err(|err| CliError::FileIoError {
@@ -376,5 +411,7 @@ pub fn run() -> Result<()> {
         return Ok(());
     }
 
+    // use output to remove the warning
+    _ = argv.output;
     Ok(())
 }
