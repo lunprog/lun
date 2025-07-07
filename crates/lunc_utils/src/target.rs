@@ -27,6 +27,13 @@ const _: () = {
 };
 
 impl TargetTriplet {
+    /// List of all supported targets of the compiler
+    pub const SUPPORTED_TARGETS: &[TargetTriplet] = &[TargetTriplet {
+        arch: Arch::x86_64,
+        sys: Sys::Linux,
+        env: Env::Gnu,
+    }];
+
     /// Returns the target triplet
     pub const fn maybe_host_triplet() -> Option<TargetTriplet> {
         let arch = if cfg!(target_arch = "x86_64") {

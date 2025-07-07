@@ -1,6 +1,13 @@
 //! Lun is a staticaly typed programming language.
 
-use std::{env, fs::read_to_string, io, path::PathBuf, process::ExitCode, str::FromStr};
+use std::{
+    env,
+    fs::read_to_string,
+    io::{self, Write, stderr},
+    path::PathBuf,
+    process::ExitCode,
+    str::FromStr,
+};
 
 use shadow_rs::shadow;
 use thiserror::Error;
@@ -49,14 +56,16 @@ pub enum CliError {
     UnreochizedOption { arg: String },
     #[error("no input file")]
     NoInputFile,
-    #[error("the argument `{arg}` is used multiple times")]
+    #[error("the argument '{arg}' is used multiple times")]
     ArgumentUsedMultipleTimes { arg: String },
-    #[error("unknown value `{value}` for argument `{arg}`")]
+    #[error("unknown value '{value}' for argument '{arg}'")]
     UnknownValue { arg: String, value: String },
     #[error("{path}: {err}")]
     FileIoError { path: PathBuf, err: io::Error },
     #[error(transparent)]
     TargetParsingError(#[from] TargetParsingError),
+    #[error("unsupported target: '{target}', type 'lunc -target help' for details")]
+    UnsupportedTargetTriplet { target: TargetTriplet },
 }
 
 pub const HELP_MESSAGE: &str = "\
@@ -98,17 +107,22 @@ Debug flags help:
                              * asm\
 ";
 
-// TODO: add support for bare metal targets like `x86_64-none-elf`
-pub const TARGET_HELP: &str = "\
+pub fn target_help(out: &mut impl Write) {
+    const TARGET_HELP: &str = "\
 Target format: <arch><[sub]>-<sys>-<env> where:
 - arch = `x64_64`, `x86`, `arm`, `aarch64`, `riscv64`, `riscv32`
 - sub  = for eg, riscv64 = `imaf`, `g`, `gc`
 - sys  = `linux`, `windows`, `android`, `macos`, `none`
 - env  = `gnu`, `msvc`, `elf`, `macho`
 
-List of supported targets:
-- x86_64-linux-gnu\
+List of supported targets:\
 ";
+    writeln!(out, "{}", TARGET_HELP).unwrap();
+
+    for target in TargetTriplet::SUPPORTED_TARGETS {
+        writeln!(out, "{target}").unwrap();
+    }
+}
 
 /// Debug flags
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -367,11 +381,17 @@ pub fn run() -> Result<()> {
 
     // maybe print the target help message
     if argv.target == TargetInput::Help {
-        eprintln!("{TARGET_HELP}");
+        target_help(&mut stderr());
         return Ok(());
     }
 
-    // TODO: check here, that the specified target is supported by the codegen
+    if let TargetInput::Triplet(ref target) = argv.target
+        && !TargetTriplet::SUPPORTED_TARGETS.contains(target)
+    {
+        return Err(CliError::UnsupportedTargetTriplet {
+            target: target.clone(),
+        });
+    }
 
     // 1. retrieve the source code
     let source_code = read_to_string(&argv.input).map_err(|err| CliError::FileIoError {
