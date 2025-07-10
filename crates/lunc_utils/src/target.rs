@@ -5,6 +5,10 @@ use std::{
     str::FromStr,
 };
 
+use serde::{
+    Deserialize, Serialize,
+    de::{self, Visitor},
+};
 use thiserror::Error;
 
 /// Target format: <arch><[sub]>-<sys>-<env> where:
@@ -12,7 +16,7 @@ use thiserror::Error;
 /// - sub  = for eg, riscv64 = `imaf`, `g`, `gc`
 /// - sys  = `linux`, `windows`, `android`, `macos`, `none`
 /// - env  = `gnu`, `msvc`, `elf`, `macho`
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TargetTriplet {
     arch: Arch,
     sys: Sys,
@@ -156,6 +160,48 @@ impl FromStr for TargetTriplet {
     }
 }
 
+impl Serialize for TargetTriplet {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for TargetTriplet {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_str(TargetTripletVisitor)
+    }
+}
+
+pub struct TargetTripletVisitor;
+
+impl<'de> Visitor<'de> for TargetTripletVisitor {
+    type Value = TargetTriplet;
+
+    fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "a target")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        TargetTriplet::from_str(v).map_err(de::Error::custom)
+    }
+
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        self.visit_str(&v)
+    }
+}
+
 impl Display for TargetTriplet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}-{}-{}", self.arch, self.sys, self.env)
@@ -187,7 +233,7 @@ pub enum TargetParsingError {
 
 /// Architecture with sub architecture
 #[allow(non_camel_case_types)]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Arch {
     x86_64,
     x86,
@@ -215,7 +261,7 @@ impl Display for Arch {
 }
 
 /// System
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Sys {
     Linux,
     Windows,
@@ -241,7 +287,7 @@ impl Display for Sys {
 }
 
 /// Environment
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Env {
     Gnu,
     Msvc,

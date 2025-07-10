@@ -41,6 +41,8 @@ def main():
     match args[1]:
         case "lunc":
             cmd_lunc(remaining_args)
+        case "test":
+            cmd_test(remaining_args)
         case "build":
             cmd_build()
         case "watch":
@@ -53,7 +55,7 @@ def main():
 
 def cmd_lunc(args: list[str]):
     # build
-    res = build(True)
+    res = build(True, "lunc")
 
     if res.returncode != 0:
         # compilation of lunc wasn't successful
@@ -67,16 +69,32 @@ def cmd_lunc(args: list[str]):
         # subprocess wasn't successful
         exit(res.returncode)
 
-def cmd_build():
-    build(False)
+def cmd_test(args: list[str]):
+    # build
+    res = build(True, "luntests")
 
-def build(quiet: bool) -> any:
+    if res.returncode != 0:
+        # compilation wasn't successful
+        exit(res.returncode)
+
+    # run
+    run_cmd = ["target/debug/luntests"] + args
+    res = sp.run(run_cmd)
+
+    if res.returncode != 0:
+        # tests were not successful
+        exit(res.returncode)
+
+def cmd_build():
+    build(False, "lunc")
+
+def build(quiet: bool, bin: str) -> any:
     args = []
 
     if quiet:
-        args = ["cargo", "build", "-q"]
+        args = ["cargo", "build", "-q", "--bin", bin]
     else:
-        args = ["cargo", "build"]
+        args = ["cargo", "build", "--bin", bin]
 
     return sp.run(args)
 
@@ -99,6 +117,8 @@ Commands:
                         provided or defaults to `cargo check`
     lunc [ARGS...]      Runs the compiler with the given arguments, rebuild it
                         quietly if needed
+    test [ARGS...]      Runs the compiler tests and forwards it the following
+                        arguments
     help, h             Prints this message\
 """)
 

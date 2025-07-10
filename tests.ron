@@ -1,0 +1,70 @@
+{
+    "lexer/integer_literals": (
+        expected_compiler_out: "tokentree = [
+    Token {
+        tt: IntLit(
+            123456789,
+        ),
+        loc: Span {
+            lo: 0,
+            hi: 9,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: EOF,
+        loc: Span {
+            lo: 10,
+            hi: 11,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+]
+",
+        expected_test_out: "",
+    ),
+    "lexer/string_literal": (
+        expected_compiler_out: r#"tokentree = [
+    Token {
+        tt: StringLit(
+            "Hello, world\n",
+        ),
+        loc: Span {
+            lo: 0,
+            hi: 16,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: StringLit(
+            "\0 \n \r \u{c} \t \u{b} \u{7} \u{8} \u{1b} \\ ÿ",
+        ),
+        loc: Span {
+            lo: 17,
+            hi: 53,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: EOF,
+        loc: Span {
+            lo: 54,
+            hi: 55,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+]
+"#,
+        expected_test_out: "",
+    ),
+}

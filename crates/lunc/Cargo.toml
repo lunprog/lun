@@ -17,7 +17,7 @@ lunc_utils = { workspace = true }
 thiserror = { workspace = true }
 codespan-reporting = { workspace = true }
 half = { workspace = true }
-termcolor = "1.4.1"
+termcolor = { workspace = true }
 shadow-rs = "1.0.1"
 
 [build-dependencies]
