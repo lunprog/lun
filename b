@@ -70,6 +70,10 @@ def cmd_lunc(args: list[str]):
         exit(res.returncode)
 
 def cmd_test(args: list[str]):
+    # rebuild the compiler quietly, cargo will recompile only if something
+    # changed
+    build(True, "lunc")
+
     # build
     res = build(True, "luntests")
 
