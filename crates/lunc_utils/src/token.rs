@@ -40,7 +40,7 @@ impl TokenStream {
     /// Pushes the TokenType with its start and end offsets and return `true`
     /// if the token is End Of File
     #[track_caller]
-    pub fn push(&mut self, tt: TokenType, lo: usize, hi: usize, fid: FileId) -> bool {
+    pub fn push(&mut self, tt: TokenType, (lo, hi): (usize, usize), fid: FileId) -> bool {
         assert!(
             !self.finished,
             "can't push a token to the token stream if it's already finished"

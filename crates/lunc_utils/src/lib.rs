@@ -6,6 +6,11 @@ use std::{
 pub mod target;
 pub mod token;
 
+/// Location of something in a file.
+///
+/// INFO:
+/// the `lo` and `hi` field expect and byte index into the underlying string,
+/// not the nth character. They are byte indices to be more efficient
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Span {
     pub lo: usize,

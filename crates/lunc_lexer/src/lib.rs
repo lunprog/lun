@@ -12,15 +12,16 @@ use lunc_utils::{
 };
 
 pub mod diags;
+mod head;
+
+pub use head::*;
 
 #[derive(Debug, Clone)]
 pub struct Lexer {
     /// the list of characters, our source code but character by character
     chars: Vec<char>,
-    /// the current position of the lexing head
-    cur: usize,
-    /// the position of the previous token's end
-    prev: usize,
+    /// lexing head
+    head: LexHead,
     /// sink of diags
     sink: DiagnosticSink,
     /// file id of the file we are lexing
@@ -31,8 +32,7 @@ impl Lexer {
     pub fn new(sink: DiagnosticSink, source_code: String, fid: FileId) -> Lexer {
         Lexer {
             chars: source_code.chars().collect(),
-            cur: 0,
-            prev: 0,
+            head: LexHead::new(),
             sink,
             fid,
         }
@@ -43,7 +43,7 @@ impl Lexer {
         let mut tt = TokenStream::new();
 
         loop {
-            self.prev = self.cur;
+            self.head.reset();
             let t = match self.make_token() {
                 Ok(TokenType::__NotAToken__) => continue,
                 Ok(t) => t,
@@ -54,7 +54,7 @@ impl Lexer {
                 }
             };
 
-            if tt.push(t, self.prev, self.cur, self.fid) {
+            if tt.push(t, self.head.bytes_pos(), self.fid) {
                 break;
             }
         }
@@ -71,23 +71,24 @@ impl Lexer {
     /// return the char that is n-chars offseted
     pub fn peek_nth(&self, offset: isize) -> Option<char> {
         self.chars
-            .get((self.cur as isize + offset) as usize)
+            .get((self.head.cur_chars() as isize + offset) as usize)
             .cloned()
     }
 
     /// return the character a the current position
     pub fn peek(&self) -> Option<char> {
-        self.chars.get(self.cur).cloned()
+        self.chars.get(self.head.cur_chars()).cloned()
     }
 
     pub fn pop(&mut self) -> Option<char> {
         let c = self.peek();
-        self.cur += 1;
+        self.head.increment(c.unwrap_or_default());
         c
     }
 
     pub fn loc(&self) -> Span {
-        span(self.prev, self.cur, self.fid)
+        let (lo, hi) = self.head.bytes_pos();
+        span(lo, hi, self.fid)
     }
 
     #[track_caller]
@@ -242,7 +243,7 @@ impl Lexer {
             Some('a'..='z' | 'A'..='Z' | '_') => return Ok(self.lex_identifier()),
             Some('0'..='9') => return self.lex_number(),
             Some(w) if w.is_whitespace() => {
-                self.cur += 1;
+                self.pop();
                 return Ok(TokenType::__NotAToken__);
             }
             Some(c) => {
@@ -337,12 +338,6 @@ impl Lexer {
                         continue;
                     }
 
-                    // here we change the offset of the previous token to make
-                    // the diagnostic point to the correct digit in the \xXX if
-                    // there was an error, it's kinda a hack but you know lmao
-                    let old_prev = self.prev;
-                    self.prev = self.cur;
-
                     match self.make_escape_sequence(es) {
                         Ok(c) => {
                             str.push(c);
@@ -351,8 +346,6 @@ impl Lexer {
                             self.sink.push(d);
                         }
                     }
-
-                    self.prev = old_prev;
                 }
                 Some(c) => {
                     str.push(c);
@@ -370,8 +363,6 @@ impl Lexer {
     }
 
     pub fn lex_char(&mut self) -> Result<TokenType, Diagnostic> {
-        pub const DEFAULT_CHAR: char = 0x00 as char;
-
         self.expect('\'');
 
         let c = match self.peek() {
@@ -382,30 +373,20 @@ impl Lexer {
                     Some(es) => es,
                     None => {
                         self.sink.push(ReachedEOF { loc: self.loc() });
-                        DEFAULT_CHAR
+                        char::default()
                     }
                 };
 
                 if es == '\'' {
                     es
                 } else {
-                    // here we change the offset of the previous token to make
-                    // the diagnostic point to the correct digit in the \xXX if
-                    // there was an error, it's kinda a hack but you know lmao
-                    let old_prev = self.prev;
-                    self.prev = self.cur;
-
-                    let c = match self.make_escape_sequence(es) {
-                        Ok(c) => c,
+                    match self.make_escape_sequence(es) {
+                        Ok(es) => es,
                         Err(d) => {
                             self.sink.push(d);
-                            DEFAULT_CHAR
+                            char::default()
                         }
-                    };
-
-                    self.prev = old_prev;
-
-                    c
+                    }
                 }
             }
             Some(c) => {
@@ -414,7 +395,7 @@ impl Lexer {
             }
             None => {
                 self.sink.push(ReachedEOF { loc: self.loc() });
-                DEFAULT_CHAR
+                char::default()
             }
         };
 
@@ -423,18 +404,25 @@ impl Lexer {
         Ok(TokenType::CharLit(c))
     }
 
+    /// makes an escape sequence return a tuple of the character that corresponds
+    /// to the escape and the increments to make to the head
     pub fn make_escape_sequence(&mut self, es: char) -> Result<char, Diagnostic> {
-        Ok(match es {
-            '0' => 0x00 as char,
-            'n' => 0x0A as char,
-            'r' => 0x0D as char,
-            'f' => 0x0C as char,
-            't' => 0x09 as char,
-            'v' => 0x0B as char,
-            'a' => 0x07 as char,
-            'b' => 0x08 as char,
-            'e' => 0x1B as char,
-            '\\' => '\\',
+        #[inline(always)]
+        fn char(i: u8) -> char {
+            i as char
+        }
+
+        let es = match es {
+            '0' => char(0x00),
+            'n' => char(0x0A),
+            'r' => char(0x0D),
+            'f' => char(0x0C),
+            't' => char(0x09),
+            'v' => char(0x0B),
+            'a' => char(0x07),
+            'b' => char(0x08),
+            'e' => char(0x1B),
+            '\\' => char(0x5C), // character \
             'x' => self.make_hex_es()?,
             'u' | 'U' => {
                 // TODO: implement the lexing of unicode es
@@ -442,19 +430,20 @@ impl Lexer {
                 self.sink.push(feature_todo! {
                     feature: "unicode escape sequence",
                     label: "unicode escape isn't yet implemented.",
-                    loc: span(self.cur - 1, self.cur, self.fid)
+                    loc: self.loc(),
                 });
-                '\0'
+                char::default()
             }
             _ => {
                 self.sink.push(UnknownCharacterEscape {
                     es,
-                    loc: span(self.cur - 1, self.cur, self.fid),
+                    loc: self.loc(),
                 });
-
-                '\0'
+                char::default()
             }
-        })
+        };
+
+        Ok(es)
     }
 
     pub fn make_hex_es(&mut self) -> Result<char, Diagnostic> {
@@ -502,7 +491,7 @@ impl Lexer {
                 '_' => continue,
                 _ => {
                     had_invalid_digit = true;
-                    let pos = self.prev + i;
+                    let pos = self.head.prev_chars() + i;
                     self.sink.push(InvalidDigitInNumber {
                         c,
                         loc_c: span(pos, pos + 1, self.fid),
@@ -516,7 +505,7 @@ impl Lexer {
 
             if digit >= radix.into() {
                 had_invalid_digit = true;
-                let pos = self.prev + i;
+                let pos = self.head.prev_chars() + i;
                 self.sink.push(InvalidDigitInNumber {
                     c,
                     loc_c: span(pos, pos + 1, self.fid),

@@ -57,8 +57,18 @@
     lexeme: `'\x40'`;
   },
   {
+    tt: character 'ÿ';
+    loc: 56..60 (fid = 0);
+    lexeme: `'ÿ'`;
+  },
+  {
+    tt: character '🌒';
+    loc: 61..67 (fid = 0);
+    lexeme: `'🌒'`;
+  },
+  {
     tt: end of file;
-    loc: 56..57 (fid = 0);
+    loc: 68..69 (fid = 0);
     lexeme: N/A;
   },
 }
@@ -396,8 +406,13 @@
     lexeme: `"'we can use simple quotes inside a string'"`;
   },
   {
+    tt: string "string support UTF-8: ÿ, 🌒 etc..";
+    loc: 99..137 (fid = 0);
+    lexeme: `"string support UTF-8: ÿ, 🌒 etc.."`;
+  },
+  {
     tt: end of file;
-    loc: 99..100 (fid = 0);
+    loc: 138..139 (fid = 0);
     lexeme: N/A;
   },
 }
