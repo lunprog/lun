@@ -19,7 +19,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let workspace_path = Path::new(".");
     let tests_path = workspace_path.join("tests");
-    let mut out = StandardStream::stderr(ColorChoice::Auto);
+    let mut out = StandardStream::stderr(
+        env::var("LUNTESTS_COLOR")
+            .map(|c| c.parse().expect("failed to parse color choice"))
+            .unwrap_or(ColorChoice::Auto),
+    );
 
     let mut tctx = TestContext::new();
     tctx.load_tests(&tests_path)?;
