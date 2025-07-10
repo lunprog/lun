@@ -387,7 +387,7 @@ pub enum CkExpr {
     /// see [`IntLit`]
     ///
     /// [`IntLit`]: lun_parser::expr::Expr::IntLit
-    IntLit(u64),
+    IntLit(u128),
     /// see [`BoolLit`]
     ///
     /// [`BoolLit`]: lun_parser::expr::Expr::BoolLit

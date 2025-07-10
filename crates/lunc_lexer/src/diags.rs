@@ -41,7 +41,7 @@ impl ToDiagnostic for InvalidDigitInNumber {
 
 #[derive(Debug, Clone)]
 pub struct TooLargeIntegerLiteral {
-    /// location of the too large integer to fit in 64 bits
+    /// location of the too large integer to fit in 128 bits
     pub loc: Span,
 }
 
@@ -51,7 +51,7 @@ impl ToDiagnostic for TooLargeIntegerLiteral {
             .with_code(ErrorCode::TooLargeIntegerLiteral)
             .with_message("integer literal is too large")
             .with_label(Label::primary(self.loc.fid, self.loc))
-            .with_note(format!("integer exceeds the limit of `{}`", u64::MAX))
+            .with_note(format!("integer exceeds the limit of `{}`", u128::MAX))
     }
 }
 

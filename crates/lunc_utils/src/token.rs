@@ -177,7 +177,7 @@ pub enum TokenType {
     /// identifier
     Ident(String),
     /// integer literal
-    IntLit(u64),
+    IntLit(u128),
     /// string literal
     StringLit(String),
     /// char literal

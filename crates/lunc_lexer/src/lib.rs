@@ -310,7 +310,7 @@ impl Lexer {
         // TODO: add support for radix like `0x...`, `0o...`, `0b...`
         let int = self.make_word();
 
-        Ok(TokenType::IntLit(self.parse_u64(&int, 10)?))
+        Ok(TokenType::IntLit(self.parse_u128(&int, 10)?))
     }
 
     pub fn lex_string(&mut self) -> Result<TokenType, Diagnostic> {
@@ -461,23 +461,23 @@ impl Lexer {
             })
         }
 
-        Ok(self.parse_u64(&str, 16)? as u8 as char)
+        Ok(self.parse_u128(&str, 16)? as u8 as char)
     }
 
-    /// Parse a number passed as input into a u64 using the radix.
+    /// Parse a number passed as input into a u128 using the radix.
     ///
     /// # Note
     ///
     /// The radix is 'inclusive' if you want to parse a number as a decimal, then
     /// `radix = 10` and if you want to parse a number as hexadecimal `radix = 16`
     /// etc etc...
-    pub fn parse_u64(&mut self, input: &str, radix: u8) -> Result<u64, Diagnostic> {
+    pub fn parse_u128(&mut self, input: &str, radix: u8) -> Result<u128, Diagnostic> {
         if !(2..=36).contains(&radix) {
             panic!("invalid radix provided, {radix}, it must be between 2 and 36 included.")
         }
 
-        let mut result: u64 = 0;
-        // did the literal is too big too fit in a u64
+        let mut result: u128 = 0;
+        // did the literal is too big too fit in a u128
         let mut overflowed = false;
         // don't emit the integer too large if there was an overflow, deal one
         // thing at a time
@@ -515,8 +515,8 @@ impl Lexer {
 
             let prev_result = result;
             result = match result
-                .checked_mul(radix as u64)
-                .and_then(|r| r.checked_add(digit as u64))
+                .checked_mul(radix as u128)
+                .and_then(|r| r.checked_add(digit as u128))
             {
                 Some(val) => val,
                 None => {

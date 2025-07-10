@@ -52,7 +52,7 @@ pub enum Expr {
     /// integer literal expression
     ///
     /// integer
-    IntLit(u64),
+    IntLit(u128),
     /// boolean literal expression
     ///
     /// ("true" | "false")
