@@ -434,13 +434,6 @@ impl ToDiagnostic for FeatureNotImplemented {
     }
 }
 
-// TODO(URGENT): transform the macro to be called like that:
-//
-// feature_todo! {
-//     feature: "MY FEATURE",
-//     label: "MY LABEL",
-//     loc: span(0, 0),
-// }
 #[macro_export]
 macro_rules! feature_todo {
     {feature: $name:tt, label: $label:tt, loc: $loc:expr $( , )?} => {
@@ -452,6 +445,20 @@ macro_rules! feature_todo {
             compiler_line: ::std::line!(),
         }
     };
+}
+
+#[derive(Debug, Clone)]
+pub struct ReachedEOF {
+    pub loc: Span,
+}
+
+impl ToDiagnostic for ReachedEOF {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::ReachedEOF)
+            .with_message("reached end of file too early")
+            .with_label(Label::primary(self.loc.fid, self.loc))
+    }
 }
 
 #[cfg(test)]

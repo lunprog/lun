@@ -95,17 +95,3 @@ impl ToDiagnostic for ExpectedToken {
             .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
-
-#[derive(Debug, Clone)]
-pub struct ReachedEOF {
-    pub loc: Span,
-}
-
-impl ToDiagnostic for ReachedEOF {
-    fn into_diag(self) -> Diagnostic {
-        Diagnostic::error()
-            .with_code(ErrorCode::ReachedEOF)
-            .with_message("reached end of file too early")
-            .with_label(Label::primary(self.loc.fid, self.loc))
-    }
-}

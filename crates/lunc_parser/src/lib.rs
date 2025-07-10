@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use definition::Program;
 use diags::*;
 use expr::Expression;
-use lunc_diag::{Diagnostic, DiagnosticSink, ToDiagnostic};
+use lunc_diag::{Diagnostic, DiagnosticSink, ReachedEOF, ToDiagnostic};
 
 use lunc_utils::{
     Span,

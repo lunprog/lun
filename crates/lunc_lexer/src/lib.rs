@@ -4,7 +4,7 @@ use diags::{
     InvalidDigitInNumber, TooLargeIntegerLiteral, UnknownCharacterEscape, UnknownToken,
     UnterminatedStringLiteral,
 };
-use lunc_diag::{Diagnostic, DiagnosticSink, FileId, feature_todo};
+use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, feature_todo};
 
 use lunc_utils::{
     Span, span,
@@ -237,6 +237,7 @@ impl Lexer {
                     _ => return Ok(Punct(Dot)),
                 }
             }
+            Some('\'') => return self.lex_char(),
             Some('"') => return self.lex_string(),
             Some('a'..='z' | 'A'..='Z' | '_') => return Ok(self.lex_identifier()),
             Some('0'..='9') => return self.lex_number(),
@@ -366,6 +367,60 @@ impl Lexer {
         }
 
         Ok(TokenType::StringLit(str))
+    }
+
+    pub fn lex_char(&mut self) -> Result<TokenType, Diagnostic> {
+        pub const DEFAULT_CHAR: char = 0x00 as char;
+
+        self.expect('\'');
+
+        let c = match self.peek() {
+            Some('\\') => {
+                self.pop();
+
+                let es = match self.pop() {
+                    Some(es) => es,
+                    None => {
+                        self.sink.push(ReachedEOF { loc: self.loc() });
+                        DEFAULT_CHAR
+                    }
+                };
+
+                if es == '\'' {
+                    es
+                } else {
+                    // here we change the offset of the previous token to make
+                    // the diagnostic point to the correct digit in the \xXX if
+                    // there was an error, it's kinda a hack but you know lmao
+                    let old_prev = self.prev;
+                    self.prev = self.cur;
+
+                    let c = match self.make_escape_sequence(es) {
+                        Ok(c) => c,
+                        Err(d) => {
+                            self.sink.push(d);
+                            DEFAULT_CHAR
+                        }
+                    };
+
+                    self.prev = old_prev;
+
+                    c
+                }
+            }
+            Some(c) => {
+                self.pop();
+                c
+            }
+            None => {
+                self.sink.push(ReachedEOF { loc: self.loc() });
+                DEFAULT_CHAR
+            }
+        };
+
+        self.expect('\'');
+
+        Ok(TokenType::CharLit(c))
     }
 
     pub fn make_escape_sequence(&mut self, es: char) -> Result<char, Diagnostic> {
