@@ -72,7 +72,11 @@ def cmd_lunc(args: list[str]):
 def cmd_test(args: list[str]):
     # rebuild the compiler quietly, cargo will recompile only if something
     # changed
-    build(True, "lunc")
+    res = build(True, "lunc")
+
+    if res.returncode != 0:
+        # compilation of lunc wasn't successful
+        exit(res.returncode)
 
     # build
     res = build(True, "luntests")
