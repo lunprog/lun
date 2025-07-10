@@ -98,7 +98,7 @@ Debug flags help:
                              * codegen
 -Dprint=<value>              Prints to the standard error, one or more of:
                              * inputfile
-                             * tokentree
+                             * tokenstream
                              * ast
                              * dir-tree
                              * tir-tree
@@ -167,7 +167,7 @@ impl FromStr for DebugHalt {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DebugPrint {
     InputFile,
-    TokenTree,
+    TokenStream,
     Ast,
     DirTree,
     TirTree,
@@ -184,7 +184,7 @@ impl FromStr for DebugPrint {
 
         match s {
             "inputfile" => Ok(Dp::InputFile),
-            "tokentree" => Ok(Dp::TokenTree),
+            "tokenstream" => Ok(Dp::TokenStream),
             "ast" => Ok(Dp::Ast),
             "dir-tree" => Ok(Dp::DirTree),
             "tir-tree" => Ok(Dp::TirTree),
@@ -416,18 +416,18 @@ pub fn run() -> Result<()> {
 
     // 3. lex the file
     let mut lexer = Lexer::new(sink.clone(), source_code, root_fid);
-    let tokentree = lexer.produce().ok_or_else(compil_diags)?;
+    let tokenstream = lexer.produce().ok_or_else(compil_diags)?;
 
-    //    maybe print the token tree
-    if argv.debug_print_at(DebugPrint::TokenTree) {
-        eprintln!("tokentree = {:#?}", tokentree);
+    //    maybe print the token stream
+    if argv.debug_print_at(DebugPrint::TokenStream) {
+        eprintln!("tokenstream = {:#?}", tokenstream);
     }
     if argv.debug_halt_at(DebugHalt::Lexer) {
         return Ok(());
     }
 
-    // 4. parse the token tree to an ast
-    let mut parser = Parser::new(tokentree, sink.clone());
+    // 4. parse the token stream to an ast
+    let mut parser = Parser::new(tokenstream, sink.clone());
     let ast = parser.produce().ok_or_else(compil_diags)?;
 
     //    maybe print the ast

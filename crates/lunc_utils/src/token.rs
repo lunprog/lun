@@ -1,4 +1,4 @@
-//! Token, TokenTree, everything related to tokens.
+//! Token, TokenStream, everything related to tokens.
 
 use std::fmt::{self, Debug, Display};
 
@@ -6,29 +6,29 @@ use crate::{FileId, Span};
 
 /// A list of Tokens, and always ending with a `end of file` token
 #[derive(Clone, Default)]
-pub struct TokenTree {
+pub struct TokenStream {
     toks: Vec<Token>,
     finished: bool,
 }
 
-impl TokenTree {
-    /// Create a new empty TokenTree.
-    pub fn new() -> TokenTree {
-        TokenTree {
+impl TokenStream {
+    /// Create a new empty TokenStream.
+    pub fn new() -> TokenStream {
+        TokenStream {
             toks: Vec::new(),
             finished: false,
         }
     }
 
-    /// Finish a TokenTree, will ensure the last token is an end of file token
+    /// Finish a TokenStream, will ensure the last token is an end of file token
     /// so if it's not this function will **panic**.
     #[track_caller]
     pub fn finish(&mut self) {
-        assert!(!self.finished, "TokenTree already finished");
+        assert!(!self.finished, "token stream already finished");
         assert_eq!(
             self.toks.last().map(|t| &t.tt),
             Some(&TokenType::EOF),
-            "the last token of a TokenTree must be the end of file token."
+            "the last token of a token stream must be the end of file token."
         );
 
         self.finished = true;
@@ -40,7 +40,7 @@ impl TokenTree {
     pub fn push(&mut self, tt: TokenType, lo: usize, hi: usize, fid: FileId) -> bool {
         assert!(
             !self.finished,
-            "can't push a token to the TokenTree if it's already finished"
+            "can't push a token to the token stream if it's already finished"
         );
         assert_ne!(tt, TokenType::__NotAToken__);
 
@@ -58,32 +58,32 @@ impl TokenTree {
     ///
     /// # Panic
     ///
-    /// This function will panic if you call it on a non-finished TokenTree
+    /// This function will panic if you call it on a non-finished token stream
     #[track_caller]
     pub fn get(&self, idx: usize) -> Option<&Token> {
         assert!(
             self.finished,
-            "can't access tokens while the TokenTree isn't finished."
+            "can't access tokens while the token stream isn't finished."
         );
         self.toks.get(idx)
     }
 
-    /// Get the last token of a finished TokenTree will always be the EOF token
+    /// Get the last token of a finished token stream will always be the EOF token
     ///
     /// # Panic
     ///
-    /// This function will panic if you call it on a non-finished TokenTree
+    /// This function will panic if you call it on a non-finished token stream
     #[track_caller]
     pub fn last(&self) -> Option<&Token> {
         assert!(
             self.finished,
-            "can't access tokens while the TokenTree isn't finished."
+            "can't access tokens while the token stream isn't finished."
         );
         self.toks.last()
     }
 }
 
-impl Debug for TokenTree {
+impl Debug for TokenStream {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_list().entries(&self.toks).finish()
     }
@@ -112,7 +112,7 @@ pub enum TokenType {
     /// End Of File
     EOF,
     /// this is not a token, it is used when encountering a comment or a
-    /// whitespace it can't be pushed into a TokenTree.
+    /// whitespace it can't be pushed into a token stream.
     #[doc(hidden)]
     __NotAToken__,
 }

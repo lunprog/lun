@@ -10,7 +10,7 @@ use lunc_diag::{Diagnostic, DiagnosticSink, ToDiagnostic};
 use lunc_utils::{
     Span,
     token::{
-        Keyword, Punctuation, Token, TokenTree,
+        Keyword, Punctuation, Token, TokenStream,
         TokenType::{self, *},
     },
 };
@@ -22,8 +22,8 @@ pub mod stmt;
 
 #[derive(Debug, Clone)]
 pub struct Parser {
-    /// token tree
-    tt: TokenTree,
+    /// token stream
+    tokstream: TokenStream,
     /// token index
     ti: usize,
     /// sink of diags
@@ -31,9 +31,13 @@ pub struct Parser {
 }
 
 impl Parser {
-    /// Create a new parser with the given token tree.
-    pub fn new(tt: TokenTree, sink: DiagnosticSink) -> Parser {
-        Parser { tt, ti: 0, sink }
+    /// Create a new parser with the given token stream.
+    pub fn new(tokstream: TokenStream, sink: DiagnosticSink) -> Parser {
+        Parser {
+            tokstream,
+            ti: 0,
+            sink,
+        }
     }
 
     /// Pops a tokens of the stream
@@ -50,7 +54,7 @@ impl Parser {
     /// Get the `nth` token ahead of the next to be popped
     #[inline]
     pub fn nth_tok(&self, idx: usize) -> Option<&Token> {
-        self.tt.get(self.ti + idx)
+        self.tokstream.get(self.ti + idx)
     }
 
     /// Get the `nth` token type ahead of the next to be popped
@@ -101,7 +105,7 @@ impl Parser {
 
     pub(crate) fn eof_diag(&self) -> Diagnostic {
         // it's ok to unwrap there is at least the EOF token
-        let eof = self.tt.last().unwrap();
+        let eof = self.tokstream.last().unwrap();
         ReachedEOF {
             loc: eof.loc.clone(),
         }

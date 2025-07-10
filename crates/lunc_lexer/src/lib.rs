@@ -8,7 +8,7 @@ use lunc_diag::{Diagnostic, DiagnosticSink, FileId, feature_todo};
 
 use lunc_utils::{
     Span, span,
-    token::{Keyword, TokenTree, TokenType},
+    token::{Keyword, TokenStream, TokenType},
 };
 
 pub mod diags;
@@ -38,9 +38,9 @@ impl Lexer {
         }
     }
 
-    /// Lex the whole source code and return a **finished** TokenTree.
-    pub fn produce(&mut self) -> Option<TokenTree> {
-        let mut tt = TokenTree::new();
+    /// Lex the whole source code and return a **finished** token stream.
+    pub fn produce(&mut self) -> Option<TokenStream> {
+        let mut tt = TokenStream::new();
 
         loop {
             self.prev = self.cur;

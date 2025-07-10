@@ -1,6 +1,6 @@
 {
     "lexer/integer_literals": (
-        expected_compiler_out: "tokentree = [
+        expected_compiler_out: "tokenstream = [
     Token {
         tt: IntLit(
             123456789,
@@ -28,7 +28,7 @@
         expected_test_out: "",
     ),
     "lexer/kw_idents": (
-        expected_compiler_out: r#"tokentree = [
+        expected_compiler_out: r#"tokenstream = [
     Token {
         tt: Kw(
             And,
@@ -344,7 +344,7 @@
         expected_test_out: "",
     ),
     "lexer/punctuation": (
-        expected_compiler_out: "tokentree = [
+        expected_compiler_out: "tokenstream = [
     Token {
         tt: Punct(
             LParen,
@@ -720,7 +720,7 @@
         expected_test_out: "",
     ),
     "lexer/string_literal": (
-        expected_compiler_out: r#"tokentree = [
+        expected_compiler_out: r#"tokenstream = [
     Token {
         tt: StringLit(
             "Hello, world\n",
