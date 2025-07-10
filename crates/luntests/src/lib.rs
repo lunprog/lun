@@ -106,6 +106,7 @@ impl TestContext {
             build_fail: 0,
             unexpected_build_out: 0,
             duration: Duration::ZERO,
+            test_count: self.tests.len(),
         };
 
         for (n, Test { name, path }) in self.tests.iter().enumerate() {
@@ -231,7 +232,9 @@ pub struct TestSummary {
     ok: usize,
     build_fail: usize,
     unexpected_build_out: usize,
+    // other things..
     duration: Duration,
+    test_count: usize,
 }
 
 impl TestSummary {
@@ -241,6 +244,7 @@ impl TestSummary {
             build_fail,
             unexpected_build_out,
             duration: _,
+            test_count: _,
         } = self;
 
         *build_fail != 0 || *unexpected_build_out != 0
@@ -259,7 +263,7 @@ impl TestSummary {
             )?;
             out.reset()?;
 
-            writeln!(out, ", {} passed successfully", self.ok)?;
+            writeln!(out, ", {}/{} passed successfully", self.ok, self.test_count)?;
             writeln!(
                 out,
                 "{} failed to build and {} had an unexpected compiler output",
