@@ -95,6 +95,8 @@ pub struct Token {
     pub loc: Span,
 }
 
+// NOTE: when adding a new token, a correspond test should be added into
+// `tests/lexer/` that should test everything about this new token
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TokenType {
     /// keyword

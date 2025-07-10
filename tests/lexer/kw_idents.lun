@@ -1,0 +1,28 @@
+// some keywords..
+and
+break
+comptime
+continue
+else
+false
+for
+fun
+if
+impl
+in
+let
+mut
+null
+or
+pub
+return
+self
+then
+trait
+true
+while
+
+// and some identifiers..
+foo
+bar_baz
+FooBarBaz

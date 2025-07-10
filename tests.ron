@@ -27,6 +27,698 @@
 ",
         expected_test_out: "",
     ),
+    "lexer/kw_idents": (
+        expected_compiler_out: r#"tokentree = [
+    Token {
+        tt: Kw(
+            And,
+        ),
+        loc: Span {
+            lo: 19,
+            hi: 22,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Break,
+        ),
+        loc: Span {
+            lo: 23,
+            hi: 28,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Comptime,
+        ),
+        loc: Span {
+            lo: 29,
+            hi: 37,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Continue,
+        ),
+        loc: Span {
+            lo: 38,
+            hi: 46,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Else,
+        ),
+        loc: Span {
+            lo: 47,
+            hi: 51,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            False,
+        ),
+        loc: Span {
+            lo: 52,
+            hi: 57,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            For,
+        ),
+        loc: Span {
+            lo: 58,
+            hi: 61,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Fun,
+        ),
+        loc: Span {
+            lo: 62,
+            hi: 65,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            If,
+        ),
+        loc: Span {
+            lo: 66,
+            hi: 68,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Impl,
+        ),
+        loc: Span {
+            lo: 69,
+            hi: 73,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            In,
+        ),
+        loc: Span {
+            lo: 74,
+            hi: 76,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Let,
+        ),
+        loc: Span {
+            lo: 77,
+            hi: 80,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Mut,
+        ),
+        loc: Span {
+            lo: 81,
+            hi: 84,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Null,
+        ),
+        loc: Span {
+            lo: 85,
+            hi: 89,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Or,
+        ),
+        loc: Span {
+            lo: 90,
+            hi: 92,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Pub,
+        ),
+        loc: Span {
+            lo: 93,
+            hi: 96,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Return,
+        ),
+        loc: Span {
+            lo: 97,
+            hi: 103,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Zelf,
+        ),
+        loc: Span {
+            lo: 104,
+            hi: 108,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Then,
+        ),
+        loc: Span {
+            lo: 109,
+            hi: 113,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            Trait,
+        ),
+        loc: Span {
+            lo: 114,
+            hi: 119,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            True,
+        ),
+        loc: Span {
+            lo: 120,
+            hi: 124,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Kw(
+            While,
+        ),
+        loc: Span {
+            lo: 125,
+            hi: 130,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Ident(
+            "foo",
+        ),
+        loc: Span {
+            lo: 158,
+            hi: 161,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Ident(
+            "bar_baz",
+        ),
+        loc: Span {
+            lo: 162,
+            hi: 169,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Ident(
+            "FooBarBaz",
+        ),
+        loc: Span {
+            lo: 170,
+            hi: 179,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: EOF,
+        loc: Span {
+            lo: 180,
+            hi: 181,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+]
+"#,
+        expected_test_out: "",
+    ),
+    "lexer/punctuation": (
+        expected_compiler_out: "tokentree = [
+    Token {
+        tt: Punct(
+            LParen,
+        ),
+        loc: Span {
+            lo: 0,
+            hi: 1,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            RParen,
+        ),
+        loc: Span {
+            lo: 2,
+            hi: 3,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            LBracket,
+        ),
+        loc: Span {
+            lo: 4,
+            hi: 5,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            RBracket,
+        ),
+        loc: Span {
+            lo: 6,
+            hi: 7,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            LBrace,
+        ),
+        loc: Span {
+            lo: 8,
+            hi: 9,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            RBrace,
+        ),
+        loc: Span {
+            lo: 10,
+            hi: 11,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Plus,
+        ),
+        loc: Span {
+            lo: 12,
+            hi: 13,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Minus,
+        ),
+        loc: Span {
+            lo: 14,
+            hi: 15,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Star,
+        ),
+        loc: Span {
+            lo: 16,
+            hi: 17,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Slash,
+        ),
+        loc: Span {
+            lo: 18,
+            hi: 19,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Colon,
+        ),
+        loc: Span {
+            lo: 20,
+            hi: 21,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Comma,
+        ),
+        loc: Span {
+            lo: 22,
+            hi: 23,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Equal,
+        ),
+        loc: Span {
+            lo: 24,
+            hi: 25,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Equal2,
+        ),
+        loc: Span {
+            lo: 26,
+            hi: 28,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            BangEqual,
+        ),
+        loc: Span {
+            lo: 29,
+            hi: 31,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Bang,
+        ),
+        loc: Span {
+            lo: 32,
+            hi: 33,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            LtEqual,
+        ),
+        loc: Span {
+            lo: 34,
+            hi: 36,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Lt,
+        ),
+        loc: Span {
+            lo: 37,
+            hi: 38,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Lt2,
+        ),
+        loc: Span {
+            lo: 39,
+            hi: 41,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Gt,
+        ),
+        loc: Span {
+            lo: 42,
+            hi: 43,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Gt2,
+        ),
+        loc: Span {
+            lo: 44,
+            hi: 46,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            GtEqual,
+        ),
+        loc: Span {
+            lo: 47,
+            hi: 49,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            SemiColon,
+        ),
+        loc: Span {
+            lo: 50,
+            hi: 51,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Arrow,
+        ),
+        loc: Span {
+            lo: 52,
+            hi: 54,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Carret,
+        ),
+        loc: Span {
+            lo: 55,
+            hi: 56,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Ampsand,
+        ),
+        loc: Span {
+            lo: 57,
+            hi: 58,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Pipe,
+        ),
+        loc: Span {
+            lo: 59,
+            hi: 60,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Percent,
+        ),
+        loc: Span {
+            lo: 61,
+            hi: 62,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            Dot,
+        ),
+        loc: Span {
+            lo: 63,
+            hi: 64,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: Punct(
+            DotStar,
+        ),
+        loc: Span {
+            lo: 65,
+            hi: 67,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+    Token {
+        tt: EOF,
+        loc: Span {
+            lo: 68,
+            hi: 69,
+            fid: FileId(
+                0,
+            ),
+        },
+    },
+]
+",
+        expected_test_out: "",
+    ),
     "lexer/string_literal": (
         expected_compiler_out: r#"tokentree = [
     Token {
