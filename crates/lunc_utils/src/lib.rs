@@ -36,6 +36,10 @@ impl Span {
             fid: lo.fid,
         }
     }
+
+    pub fn slice_str<'str>(&self, s: &'str str) -> &'str str {
+        &s[Range::<usize>::from(self.clone())]
+    }
 }
 
 #[inline(always)]
@@ -49,7 +53,13 @@ pub fn span(lo: impl Into<usize>, hi: impl Into<usize>, fid: FileId) -> Span {
 
 impl Display for Span {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}..{}", self.lo, self.hi)
+        write!(
+            f,
+            "{}..{} (fid = {})",
+            self.lo,
+            self.hi,
+            self.fid.as_usize()
+        )
     }
 }
 

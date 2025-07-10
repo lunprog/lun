@@ -1,6 +1,9 @@
 //! Token, TokenStream, everything related to tokens.
 
-use std::fmt::{self, Debug, Display};
+use std::{
+    fmt::{self, Debug, Display},
+    io::{self, Write},
+};
 
 use crate::{FileId, Span};
 
@@ -81,6 +84,17 @@ impl TokenStream {
         );
         self.toks.last()
     }
+
+    pub fn fmt(&self, out: &mut impl Write, src: &str) -> io::Result<()> {
+        writeln!(out, "{{")?;
+
+        for token in &self.toks {
+            token.fmt(out, src)?;
+        }
+
+        writeln!(out, "}}")?;
+        Ok(())
+    }
 }
 
 impl Debug for TokenStream {
@@ -95,6 +109,65 @@ pub struct Token {
     pub loc: Span,
 }
 
+impl Token {
+    pub fn fmt<W: Write>(&self, out: &mut W, src: &str) -> io::Result<()> {
+        let print_common = |out: &mut W| -> io::Result<()> {
+            writeln!(out, "    loc: {};", self.loc)?;
+            writeln!(out, "    lexeme: `{}`;", self.loc.slice_str(src))?;
+            Ok(())
+        };
+
+        match &self.tt {
+            TokenType::Kw(kw) => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: keyword '{kw}';")?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
+            TokenType::Ident(id) => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: ident '{id}';")?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
+            TokenType::IntLit(i) => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: integer '{i}';")?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
+            TokenType::StringLit(s) => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: string {:?};", s)?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
+            TokenType::CharLit(c) => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: character {c:?};")?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
+            TokenType::Punct(p) => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: punctuation {p};")?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
+            TokenType::EOF => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: end of file;")?;
+                writeln!(out, "    loc: {};", self.loc)?;
+                writeln!(out, "    lexeme: N/A;")?;
+                writeln!(out, "  }},")?;
+            }
+            TokenType::__NotAToken__ => unreachable!(),
+        }
+
+        Ok(())
+    }
+}
+
 // NOTE: when adding a new token, a correspond test should be added into
 // `tests/lexer/` that should test everything about this new token
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -107,6 +180,8 @@ pub enum TokenType {
     IntLit(u64),
     /// string literal
     StringLit(String),
+    /// char literal
+    CharLit(char),
     /// punctuation and operators
     Punct(Punctuation),
     /// End Of File
@@ -125,6 +200,7 @@ impl Display for TokenType {
             Ident(_) => write!(f, "identifier"),
             IntLit(_) => write!(f, "integer literal"),
             StringLit(_) => write!(f, "string literal"),
+            CharLit(_) => write!(f, "character literal"),
             Punct(p) => write!(f, "`{p}`"),
             EOF => write!(f, "\"<eof>\""),
             __NotAToken__ => write!(f, "not a token"),

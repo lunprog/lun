@@ -415,12 +415,13 @@ pub fn run() -> Result<()> {
     };
 
     // 3. lex the file
-    let mut lexer = Lexer::new(sink.clone(), source_code, root_fid);
+    let mut lexer = Lexer::new(sink.clone(), source_code.clone(), root_fid);
     let tokenstream = lexer.produce().ok_or_else(compil_diags)?;
 
     //    maybe print the token stream
     if argv.debug_print_at(DebugPrint::TokenStream) {
-        eprintln!("tokenstream = {:#?}", tokenstream);
+        eprint!("tokenstream = ");
+        tokenstream.fmt(&mut stderr(), &source_code).unwrap();
     }
     if argv.debug_halt_at(DebugHalt::Lexer) {
         return Ok(());

@@ -1,761 +1,340 @@
 {
     "lexer/integer_literals": (
-        expected_compiler_out: "tokenstream = [
-    Token {
-        tt: IntLit(
-            123456789,
-        ),
-        loc: Span {
-            lo: 0,
-            hi: 9,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: EOF,
-        loc: Span {
-            lo: 10,
-            hi: 11,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-]
+        expected_compiler_out: "tokenstream = {
+  {
+    tt: integer '123456789';
+    loc: 0..9 (fid = 0);
+    lexeme: `123456789`;
+  },
+  {
+    tt: end of file;
+    loc: 10..11 (fid = 0);
+    lexeme: N/A;
+  },
+}
 ",
         expected_test_out: "",
     ),
     "lexer/kw_idents": (
-        expected_compiler_out: r#"tokenstream = [
-    Token {
-        tt: Kw(
-            And,
-        ),
-        loc: Span {
-            lo: 19,
-            hi: 22,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Break,
-        ),
-        loc: Span {
-            lo: 23,
-            hi: 28,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Comptime,
-        ),
-        loc: Span {
-            lo: 29,
-            hi: 37,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Continue,
-        ),
-        loc: Span {
-            lo: 38,
-            hi: 46,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Else,
-        ),
-        loc: Span {
-            lo: 47,
-            hi: 51,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            False,
-        ),
-        loc: Span {
-            lo: 52,
-            hi: 57,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            For,
-        ),
-        loc: Span {
-            lo: 58,
-            hi: 61,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Fun,
-        ),
-        loc: Span {
-            lo: 62,
-            hi: 65,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            If,
-        ),
-        loc: Span {
-            lo: 66,
-            hi: 68,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Impl,
-        ),
-        loc: Span {
-            lo: 69,
-            hi: 73,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            In,
-        ),
-        loc: Span {
-            lo: 74,
-            hi: 76,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Let,
-        ),
-        loc: Span {
-            lo: 77,
-            hi: 80,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Mut,
-        ),
-        loc: Span {
-            lo: 81,
-            hi: 84,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Null,
-        ),
-        loc: Span {
-            lo: 85,
-            hi: 89,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Or,
-        ),
-        loc: Span {
-            lo: 90,
-            hi: 92,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Pub,
-        ),
-        loc: Span {
-            lo: 93,
-            hi: 96,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Return,
-        ),
-        loc: Span {
-            lo: 97,
-            hi: 103,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Zelf,
-        ),
-        loc: Span {
-            lo: 104,
-            hi: 108,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Then,
-        ),
-        loc: Span {
-            lo: 109,
-            hi: 113,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            Trait,
-        ),
-        loc: Span {
-            lo: 114,
-            hi: 119,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            True,
-        ),
-        loc: Span {
-            lo: 120,
-            hi: 124,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Kw(
-            While,
-        ),
-        loc: Span {
-            lo: 125,
-            hi: 130,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Ident(
-            "foo",
-        ),
-        loc: Span {
-            lo: 158,
-            hi: 161,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Ident(
-            "bar_baz",
-        ),
-        loc: Span {
-            lo: 162,
-            hi: 169,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Ident(
-            "FooBarBaz",
-        ),
-        loc: Span {
-            lo: 170,
-            hi: 179,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: EOF,
-        loc: Span {
-            lo: 180,
-            hi: 181,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-]
-"#,
+        expected_compiler_out: "tokenstream = {
+  {
+    tt: keyword 'and';
+    loc: 19..22 (fid = 0);
+    lexeme: `and`;
+  },
+  {
+    tt: keyword 'break';
+    loc: 23..28 (fid = 0);
+    lexeme: `break`;
+  },
+  {
+    tt: keyword 'comptime';
+    loc: 29..37 (fid = 0);
+    lexeme: `comptime`;
+  },
+  {
+    tt: keyword 'continue';
+    loc: 38..46 (fid = 0);
+    lexeme: `continue`;
+  },
+  {
+    tt: keyword 'else';
+    loc: 47..51 (fid = 0);
+    lexeme: `else`;
+  },
+  {
+    tt: keyword 'false';
+    loc: 52..57 (fid = 0);
+    lexeme: `false`;
+  },
+  {
+    tt: keyword 'for';
+    loc: 58..61 (fid = 0);
+    lexeme: `for`;
+  },
+  {
+    tt: keyword 'fun';
+    loc: 62..65 (fid = 0);
+    lexeme: `fun`;
+  },
+  {
+    tt: keyword 'if';
+    loc: 66..68 (fid = 0);
+    lexeme: `if`;
+  },
+  {
+    tt: keyword 'impl';
+    loc: 69..73 (fid = 0);
+    lexeme: `impl`;
+  },
+  {
+    tt: keyword 'in';
+    loc: 74..76 (fid = 0);
+    lexeme: `in`;
+  },
+  {
+    tt: keyword 'let';
+    loc: 77..80 (fid = 0);
+    lexeme: `let`;
+  },
+  {
+    tt: keyword 'mut';
+    loc: 81..84 (fid = 0);
+    lexeme: `mut`;
+  },
+  {
+    tt: keyword 'null';
+    loc: 85..89 (fid = 0);
+    lexeme: `null`;
+  },
+  {
+    tt: keyword 'or';
+    loc: 90..92 (fid = 0);
+    lexeme: `or`;
+  },
+  {
+    tt: keyword 'pub';
+    loc: 93..96 (fid = 0);
+    lexeme: `pub`;
+  },
+  {
+    tt: keyword 'return';
+    loc: 97..103 (fid = 0);
+    lexeme: `return`;
+  },
+  {
+    tt: keyword 'self';
+    loc: 104..108 (fid = 0);
+    lexeme: `self`;
+  },
+  {
+    tt: keyword 'then';
+    loc: 109..113 (fid = 0);
+    lexeme: `then`;
+  },
+  {
+    tt: keyword 'trait';
+    loc: 114..119 (fid = 0);
+    lexeme: `trait`;
+  },
+  {
+    tt: keyword 'true';
+    loc: 120..124 (fid = 0);
+    lexeme: `true`;
+  },
+  {
+    tt: keyword 'while';
+    loc: 125..130 (fid = 0);
+    lexeme: `while`;
+  },
+  {
+    tt: ident 'foo';
+    loc: 158..161 (fid = 0);
+    lexeme: `foo`;
+  },
+  {
+    tt: ident 'bar_baz';
+    loc: 162..169 (fid = 0);
+    lexeme: `bar_baz`;
+  },
+  {
+    tt: ident 'FooBarBaz';
+    loc: 170..179 (fid = 0);
+    lexeme: `FooBarBaz`;
+  },
+  {
+    tt: end of file;
+    loc: 180..181 (fid = 0);
+    lexeme: N/A;
+  },
+}
+",
         expected_test_out: "",
     ),
     "lexer/punctuation": (
-        expected_compiler_out: "tokenstream = [
-    Token {
-        tt: Punct(
-            LParen,
-        ),
-        loc: Span {
-            lo: 0,
-            hi: 1,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            RParen,
-        ),
-        loc: Span {
-            lo: 2,
-            hi: 3,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            LBracket,
-        ),
-        loc: Span {
-            lo: 4,
-            hi: 5,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            RBracket,
-        ),
-        loc: Span {
-            lo: 6,
-            hi: 7,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            LBrace,
-        ),
-        loc: Span {
-            lo: 8,
-            hi: 9,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            RBrace,
-        ),
-        loc: Span {
-            lo: 10,
-            hi: 11,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Plus,
-        ),
-        loc: Span {
-            lo: 12,
-            hi: 13,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Minus,
-        ),
-        loc: Span {
-            lo: 14,
-            hi: 15,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Star,
-        ),
-        loc: Span {
-            lo: 16,
-            hi: 17,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Slash,
-        ),
-        loc: Span {
-            lo: 18,
-            hi: 19,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Colon,
-        ),
-        loc: Span {
-            lo: 20,
-            hi: 21,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Comma,
-        ),
-        loc: Span {
-            lo: 22,
-            hi: 23,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Equal,
-        ),
-        loc: Span {
-            lo: 24,
-            hi: 25,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Equal2,
-        ),
-        loc: Span {
-            lo: 26,
-            hi: 28,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            BangEqual,
-        ),
-        loc: Span {
-            lo: 29,
-            hi: 31,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Bang,
-        ),
-        loc: Span {
-            lo: 32,
-            hi: 33,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            LtEqual,
-        ),
-        loc: Span {
-            lo: 34,
-            hi: 36,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Lt,
-        ),
-        loc: Span {
-            lo: 37,
-            hi: 38,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Lt2,
-        ),
-        loc: Span {
-            lo: 39,
-            hi: 41,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Gt,
-        ),
-        loc: Span {
-            lo: 42,
-            hi: 43,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Gt2,
-        ),
-        loc: Span {
-            lo: 44,
-            hi: 46,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            GtEqual,
-        ),
-        loc: Span {
-            lo: 47,
-            hi: 49,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            SemiColon,
-        ),
-        loc: Span {
-            lo: 50,
-            hi: 51,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Arrow,
-        ),
-        loc: Span {
-            lo: 52,
-            hi: 54,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Carret,
-        ),
-        loc: Span {
-            lo: 55,
-            hi: 56,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Ampsand,
-        ),
-        loc: Span {
-            lo: 57,
-            hi: 58,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Pipe,
-        ),
-        loc: Span {
-            lo: 59,
-            hi: 60,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Percent,
-        ),
-        loc: Span {
-            lo: 61,
-            hi: 62,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            Dot,
-        ),
-        loc: Span {
-            lo: 63,
-            hi: 64,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: Punct(
-            DotStar,
-        ),
-        loc: Span {
-            lo: 65,
-            hi: 67,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: EOF,
-        loc: Span {
-            lo: 68,
-            hi: 69,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-]
+        expected_compiler_out: "tokenstream = {
+  {
+    tt: punctuation (;
+    loc: 0..1 (fid = 0);
+    lexeme: `(`;
+  },
+  {
+    tt: punctuation );
+    loc: 2..3 (fid = 0);
+    lexeme: `)`;
+  },
+  {
+    tt: punctuation [;
+    loc: 4..5 (fid = 0);
+    lexeme: `[`;
+  },
+  {
+    tt: punctuation ];
+    loc: 6..7 (fid = 0);
+    lexeme: `]`;
+  },
+  {
+    tt: punctuation {;
+    loc: 8..9 (fid = 0);
+    lexeme: `{`;
+  },
+  {
+    tt: punctuation };
+    loc: 10..11 (fid = 0);
+    lexeme: `}`;
+  },
+  {
+    tt: punctuation +;
+    loc: 12..13 (fid = 0);
+    lexeme: `+`;
+  },
+  {
+    tt: punctuation -;
+    loc: 14..15 (fid = 0);
+    lexeme: `-`;
+  },
+  {
+    tt: punctuation *;
+    loc: 16..17 (fid = 0);
+    lexeme: `*`;
+  },
+  {
+    tt: punctuation /;
+    loc: 18..19 (fid = 0);
+    lexeme: `/`;
+  },
+  {
+    tt: punctuation :;
+    loc: 20..21 (fid = 0);
+    lexeme: `:`;
+  },
+  {
+    tt: punctuation ,;
+    loc: 22..23 (fid = 0);
+    lexeme: `,`;
+  },
+  {
+    tt: punctuation =;
+    loc: 24..25 (fid = 0);
+    lexeme: `=`;
+  },
+  {
+    tt: punctuation ==;
+    loc: 26..28 (fid = 0);
+    lexeme: `==`;
+  },
+  {
+    tt: punctuation !=;
+    loc: 29..31 (fid = 0);
+    lexeme: `!=`;
+  },
+  {
+    tt: punctuation !;
+    loc: 32..33 (fid = 0);
+    lexeme: `!`;
+  },
+  {
+    tt: punctuation <=;
+    loc: 34..36 (fid = 0);
+    lexeme: `<=`;
+  },
+  {
+    tt: punctuation <;
+    loc: 37..38 (fid = 0);
+    lexeme: `<`;
+  },
+  {
+    tt: punctuation <<;
+    loc: 39..41 (fid = 0);
+    lexeme: `<<`;
+  },
+  {
+    tt: punctuation >;
+    loc: 42..43 (fid = 0);
+    lexeme: `>`;
+  },
+  {
+    tt: punctuation >>;
+    loc: 44..46 (fid = 0);
+    lexeme: `>>`;
+  },
+  {
+    tt: punctuation >=;
+    loc: 47..49 (fid = 0);
+    lexeme: `>=`;
+  },
+  {
+    tt: punctuation ;;
+    loc: 50..51 (fid = 0);
+    lexeme: `;`;
+  },
+  {
+    tt: punctuation ->;
+    loc: 52..54 (fid = 0);
+    lexeme: `->`;
+  },
+  {
+    tt: punctuation ^;
+    loc: 55..56 (fid = 0);
+    lexeme: `^`;
+  },
+  {
+    tt: punctuation &;
+    loc: 57..58 (fid = 0);
+    lexeme: `&`;
+  },
+  {
+    tt: punctuation |;
+    loc: 59..60 (fid = 0);
+    lexeme: `|`;
+  },
+  {
+    tt: punctuation %;
+    loc: 61..62 (fid = 0);
+    lexeme: `%`;
+  },
+  {
+    tt: punctuation .;
+    loc: 63..64 (fid = 0);
+    lexeme: `.`;
+  },
+  {
+    tt: punctuation .*;
+    loc: 65..67 (fid = 0);
+    lexeme: `.*`;
+  },
+  {
+    tt: end of file;
+    loc: 68..69 (fid = 0);
+    lexeme: N/A;
+  },
+}
 ",
         expected_test_out: "",
     ),
     "lexer/string_literal": (
-        expected_compiler_out: r#"tokenstream = [
-    Token {
-        tt: StringLit(
-            "Hello, world\n",
-        ),
-        loc: Span {
-            lo: 0,
-            hi: 16,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: StringLit(
-            "\0 \n \r \u{c} \t \u{b} \u{7} \u{8} \u{1b} \\ ÿ",
-        ),
-        loc: Span {
-            lo: 17,
-            hi: 53,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-    Token {
-        tt: EOF,
-        loc: Span {
-            lo: 54,
-            hi: 55,
-            fid: FileId(
-                0,
-            ),
-        },
-    },
-]
+        expected_compiler_out: r#"tokenstream = {
+  {
+    tt: string "Hello, world\n";
+    loc: 0..16 (fid = 0);
+    lexeme: `"Hello, world\n"`;
+  },
+  {
+    tt: string "\0 \n \r \u{c} \t \u{b} \u{7} \u{8} \u{1b} \\ ÿ";
+    loc: 17..53 (fid = 0);
+    lexeme: `"\0 \n \r \f \t \v \a \b \e \\ \xFF"`;
+  },
+  {
+    tt: string "'we can use simple quotes inside a string'";
+    loc: 54..98 (fid = 0);
+    lexeme: `"'we can use simple quotes inside a string'"`;
+  },
+  {
+    tt: end of file;
+    loc: 99..100 (fid = 0);
+    lexeme: N/A;
+  },
+}
 "#,
         expected_test_out: "",
     ),
