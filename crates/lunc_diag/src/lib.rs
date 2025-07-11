@@ -398,6 +398,8 @@ pub enum ErrorCode {
     TooManyCodepointsInCharLiteral = 22,
     /// empty character literal, expected one codepoint found zero
     EmptyCharLiteral = 23,
+    /// not enough hexadecimal digits in escape sequence
+    NotEnoughHexDigits = 24,
 }
 
 impl Display for ErrorCode {

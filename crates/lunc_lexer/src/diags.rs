@@ -153,3 +153,17 @@ impl ToDiagnostic for EmptyCharLiteral {
             )
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct NotEnoughHexDigits {
+    pub loc: Span,
+}
+
+impl ToDiagnostic for NotEnoughHexDigits {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::NotEnoughHexDigits)
+            .with_message("not enough hexadecimal digits in escape sequence")
+            .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}

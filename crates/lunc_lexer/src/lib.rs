@@ -2,8 +2,8 @@
 
 use diags::{
     EmptyCharLiteral, ExpectedExponentPart, InvalidDigitInNumber, NoDigitsInANonDecimal,
-    TooLargeIntegerLiteral, TooManyCodepointsInCharLiteral, UnknownCharacterEscape, UnknownToken,
-    UnterminatedStringLiteral,
+    NotEnoughHexDigits, TooLargeIntegerLiteral, TooManyCodepointsInCharLiteral,
+    UnknownCharacterEscape, UnknownToken, UnterminatedStringLiteral,
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, feature_todo};
 
@@ -636,7 +636,7 @@ impl Lexer {
                         continue;
                     }
 
-                    match self.make_escape_sequence(es) {
+                    match self.make_escape_sequence(es, true) {
                         Ok(c) => {
                             str.push(c);
                         }
@@ -679,7 +679,7 @@ impl Lexer {
                 if es == '\'' {
                     es
                 } else {
-                    match self.make_escape_sequence(es) {
+                    match self.make_escape_sequence(es, false) {
                         Ok(es) => es,
                         Err(d) => {
                             self.sink.push(d);
@@ -726,7 +726,7 @@ impl Lexer {
 
     /// makes an escape sequence return a tuple of the character that corresponds
     /// to the escape and the increments to make to the head
-    pub fn make_escape_sequence(&mut self, es: char) -> Result<char, Diagnostic> {
+    pub fn make_escape_sequence(&mut self, es: char, string: bool) -> Result<char, Diagnostic> {
         #[inline(always)]
         fn char(i: u8) -> char {
             i as char
@@ -743,7 +743,7 @@ impl Lexer {
             'b' => char(0x08),
             'e' => char(0x1B),
             '\\' => char(0x5C), // character \
-            'x' => self.make_hex_es()?,
+            'x' => self.make_hex_es(string)?,
             'u' | 'U' => {
                 // TODO: implement the lexing of unicode es
                 // in the for of \U+FFFF ig
@@ -766,12 +766,27 @@ impl Lexer {
         Ok(es)
     }
 
-    pub fn make_hex_es(&mut self) -> Result<char, Diagnostic> {
+    /// set string to true if the escape sequence is part of a string, false if
+    /// it is part of a char literal
+    pub fn make_hex_es(&mut self, string: bool) -> Result<char, Diagnostic> {
         let mut str = String::with_capacity(2);
         for _ in 0..2 {
-            str.push(match self.pop() {
-                Some(c) => c,
+            str.push(match self.peek() {
+                Some('\'') if !string => {
+                    self.sink.push(NotEnoughHexDigits {
+                        loc: span(self.head.prev_bytes(), self.head.cur_bytes() + 1, self.fid),
+                    });
+                    break;
+                }
+                Some('"') if string => {
+                    self.sink.push(NotEnoughHexDigits {
+                        loc: span(self.head.prev_bytes(), self.head.cur_bytes() + 1, self.fid),
+                    });
+                    break;
+                }
+                Some(_) => self.pop().unwrap(),
                 None => {
+                    self.pop();
                     self.sink
                         .push(UnterminatedStringLiteral { loc: self.loc() });
                     // it's the poisoned value.
