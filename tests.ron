@@ -270,152 +270,152 @@
     "lexer/punctuation": (
         expected_compiler_out: "tokenstream = {
   {
-    tt: punctuation (;
+    tt: punctuation LParen;
     loc: 0..1 (fid = 0);
     lexeme: `(`;
   },
   {
-    tt: punctuation );
+    tt: punctuation RParen;
     loc: 2..3 (fid = 0);
     lexeme: `)`;
   },
   {
-    tt: punctuation [;
+    tt: punctuation LBracket;
     loc: 4..5 (fid = 0);
     lexeme: `[`;
   },
   {
-    tt: punctuation ];
+    tt: punctuation RBracket;
     loc: 6..7 (fid = 0);
     lexeme: `]`;
   },
   {
-    tt: punctuation {;
+    tt: punctuation LBrace;
     loc: 8..9 (fid = 0);
     lexeme: `{`;
   },
   {
-    tt: punctuation };
+    tt: punctuation RBrace;
     loc: 10..11 (fid = 0);
     lexeme: `}`;
   },
   {
-    tt: punctuation +;
+    tt: punctuation Plus;
     loc: 12..13 (fid = 0);
     lexeme: `+`;
   },
   {
-    tt: punctuation -;
+    tt: punctuation Minus;
     loc: 14..15 (fid = 0);
     lexeme: `-`;
   },
   {
-    tt: punctuation *;
+    tt: punctuation Star;
     loc: 16..17 (fid = 0);
     lexeme: `*`;
   },
   {
-    tt: punctuation /;
+    tt: punctuation Slash;
     loc: 18..19 (fid = 0);
     lexeme: `/`;
   },
   {
-    tt: punctuation :;
+    tt: punctuation Colon;
     loc: 20..21 (fid = 0);
     lexeme: `:`;
   },
   {
-    tt: punctuation ,;
+    tt: punctuation Comma;
     loc: 22..23 (fid = 0);
     lexeme: `,`;
   },
   {
-    tt: punctuation =;
+    tt: punctuation Equal;
     loc: 24..25 (fid = 0);
     lexeme: `=`;
   },
   {
-    tt: punctuation ==;
+    tt: punctuation Equal2;
     loc: 26..28 (fid = 0);
     lexeme: `==`;
   },
   {
-    tt: punctuation !=;
+    tt: punctuation BangEqual;
     loc: 29..31 (fid = 0);
     lexeme: `!=`;
   },
   {
-    tt: punctuation !;
+    tt: punctuation Bang;
     loc: 32..33 (fid = 0);
     lexeme: `!`;
   },
   {
-    tt: punctuation <=;
+    tt: punctuation LtEqual;
     loc: 34..36 (fid = 0);
     lexeme: `<=`;
   },
   {
-    tt: punctuation <;
+    tt: punctuation Lt;
     loc: 37..38 (fid = 0);
     lexeme: `<`;
   },
   {
-    tt: punctuation <<;
+    tt: punctuation Lt2;
     loc: 39..41 (fid = 0);
     lexeme: `<<`;
   },
   {
-    tt: punctuation >;
+    tt: punctuation Gt;
     loc: 42..43 (fid = 0);
     lexeme: `>`;
   },
   {
-    tt: punctuation >>;
+    tt: punctuation Gt2;
     loc: 44..46 (fid = 0);
     lexeme: `>>`;
   },
   {
-    tt: punctuation >=;
+    tt: punctuation GtEqual;
     loc: 47..49 (fid = 0);
     lexeme: `>=`;
   },
   {
-    tt: punctuation ;;
+    tt: punctuation SemiColon;
     loc: 50..51 (fid = 0);
     lexeme: `;`;
   },
   {
-    tt: punctuation ->;
+    tt: punctuation Arrow;
     loc: 52..54 (fid = 0);
     lexeme: `->`;
   },
   {
-    tt: punctuation ^;
+    tt: punctuation Carret;
     loc: 55..56 (fid = 0);
     lexeme: `^`;
   },
   {
-    tt: punctuation &;
+    tt: punctuation Ampsand;
     loc: 57..58 (fid = 0);
     lexeme: `&`;
   },
   {
-    tt: punctuation |;
+    tt: punctuation Pipe;
     loc: 59..60 (fid = 0);
     lexeme: `|`;
   },
   {
-    tt: punctuation %;
+    tt: punctuation Percent;
     loc: 61..62 (fid = 0);
     lexeme: `%`;
   },
   {
-    tt: punctuation .;
+    tt: punctuation Dot;
     loc: 63..64 (fid = 0);
     lexeme: `.`;
   },
   {
-    tt: punctuation .*;
+    tt: punctuation DotStar;
     loc: 65..67 (fid = 0);
     lexeme: `.*`;
   },

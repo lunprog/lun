@@ -150,7 +150,7 @@ impl Token {
             }
             TokenType::Punct(p) => {
                 writeln!(out, "  {{")?;
-                writeln!(out, "    tt: punctuation {p};")?;
+                writeln!(out, "    tt: punctuation {p:?};")?;
                 print_common(out)?;
                 writeln!(out, "  }},")?;
             }
