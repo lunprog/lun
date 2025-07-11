@@ -394,6 +394,10 @@ pub enum ErrorCode {
     ExpectedExponentPart = 20,
     /// no digits where found after a number base
     NoDigitsInANonDecimal = 21,
+    /// too many codepoints in a character literal, can only contain one codepoint
+    TooManyCodepointsInCharLiteral = 22,
+    /// empty character literal, expected one codepoint found zero
+    EmptyCharLiteral = 23,
 }
 
 impl Display for ErrorCode {

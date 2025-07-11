@@ -1,8 +1,9 @@
 //! Lexer of lun
 
 use diags::{
-    ExpectedExponentPart, InvalidDigitInNumber, NoDigitsInANonDecimal, TooLargeIntegerLiteral,
-    UnknownCharacterEscape, UnknownToken, UnterminatedStringLiteral,
+    EmptyCharLiteral, ExpectedExponentPart, InvalidDigitInNumber, NoDigitsInANonDecimal,
+    TooLargeIntegerLiteral, TooManyCodepointsInCharLiteral, UnknownCharacterEscape, UnknownToken,
+    UnterminatedStringLiteral,
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, feature_todo};
 
@@ -662,6 +663,7 @@ impl Lexer {
     pub fn lex_char(&mut self) -> Result<TokenType, Diagnostic> {
         self.expect('\'');
 
+        let mut empty_char = false;
         let c = match self.peek() {
             Some('\\') => {
                 self.pop();
@@ -686,6 +688,12 @@ impl Lexer {
                     }
                 }
             }
+            Some('\'') => {
+                self.pop();
+                self.sink.push(EmptyCharLiteral { loc: self.loc() });
+                empty_char = true;
+                char::default()
+            }
             Some(c) => {
                 self.pop();
                 c
@@ -696,7 +704,22 @@ impl Lexer {
             }
         };
 
-        self.expect('\'');
+        if !empty_char {
+            match self.peek() {
+                Some('\'') => {
+                    self.pop();
+                }
+                Some(_) => {
+                    self.lex_until('\'');
+                    self.pop(); // '
+                    self.sink
+                        .push(TooManyCodepointsInCharLiteral { loc: self.loc() });
+                }
+                None => {
+                    self.sink.push(ReachedEOF { loc: self.loc() });
+                }
+            }
+        }
 
         Ok(TokenType::CharLit(c))
     }

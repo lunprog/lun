@@ -119,3 +119,37 @@ impl ToDiagnostic for NoDigitsInANonDecimal {
             .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct TooManyCodepointsInCharLiteral {
+    pub loc: Span,
+}
+
+impl ToDiagnostic for TooManyCodepointsInCharLiteral {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::TooManyCodepointsInCharLiteral)
+            .with_message(
+                "too many characters in character literal, can only contain one codepoint",
+            )
+            .with_note("if you want to write a string literal use double quotes: \"")
+            .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct EmptyCharLiteral {
+    pub loc: Span,
+}
+
+impl ToDiagnostic for EmptyCharLiteral {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::EmptyCharLiteral)
+            .with_message("empty character literal")
+            .with_label(
+                Label::primary(self.loc.fid, self.loc)
+                    .with_message("expected one codepoint found zero"),
+            )
+    }
+}
