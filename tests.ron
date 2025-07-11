@@ -75,6 +75,72 @@
 "#,
         expected_test_out: "",
     ),
+    "lexer/float_literal": (
+        expected_compiler_out: "tokenstream = {
+  {
+    tt: float 1012.3456;
+    loc: 18..31 (fid = 0);
+    lexeme: `1_012.345_600`;
+  },
+  {
+    tt: float 6.0219999999999996e23;
+    loc: 32..41 (fid = 0);
+    lexeme: `6.022e+23`;
+  },
+  {
+    tt: float 1.67e-27;
+    loc: 42..50 (fid = 0);
+    lexeme: `1.67e-27`;
+  },
+  {
+    tt: float 0.0;
+    loc: 51..53 (fid = 0);
+    lexeme: `0.`;
+  },
+  {
+    tt: float 1.2;
+    loc: 54..67 (fid = 0);
+    lexeme: `0001.2000e000`;
+  },
+  {
+    tt: float 15.6;
+    loc: 68..75 (fid = 0);
+    lexeme: `1_5.6_0`;
+  },
+  {
+    tt: float 0.25;
+    loc: 91..97 (fid = 0);
+    lexeme: `0x1p-2`;
+  },
+  {
+    tt: float 2048.0;
+    loc: 115..122 (fid = 0);
+    lexeme: `0x2.p10`;
+  },
+  {
+    tt: float 1.9375;
+    loc: 141..149 (fid = 0);
+    lexeme: `0x1.Fp+0`;
+  },
+  {
+    tt: float 0.5;
+    loc: 167..174 (fid = 0);
+    lexeme: `0X.8p-0`;
+  },
+  {
+    tt: float 0.1249847412109375;
+    loc: 190..201 (fid = 0);
+    lexeme: `0X_1FFFP-16`;
+  },
+  {
+    tt: end of file;
+    loc: 228..229 (fid = 0);
+    lexeme: N/A;
+  },
+}
+",
+        expected_test_out: "",
+    ),
     "lexer/integer_literals": (
         expected_compiler_out: "tokenstream = {
   {
