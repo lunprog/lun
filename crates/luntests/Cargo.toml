@@ -12,3 +12,4 @@ termcolor = { workspace = true }
 serde = { workspace = true }
 ron = "0.10.1"
 indexmap = { version = "2.10.0", features = ["serde"] }
+humantime = "2.2.0"

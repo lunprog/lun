@@ -271,13 +271,11 @@ impl TestSummary {
         writeln!(out)?;
         out.set_color(ColorSpec::new().set_bold(true))?;
 
+        let duration_str = humantime::format_duration(self.duration);
+
         if self.failed() {
             out.set_color(&TestContext::compiler_fail_color_spec())?;
-            write!(
-                out,
-                "Tests failed ({} seconds)",
-                self.duration.as_secs_f32()
-            )?;
+            write!(out, "Tests failed ({})", duration_str)?;
             out.reset()?;
 
             writeln!(out, ", {}/{} passed successfully", self.ok, self.test_count)?;
@@ -289,9 +287,8 @@ impl TestSummary {
         } else {
             writeln!(
                 out,
-                "Tests succeeded, {} passed successfully in {} seconds",
-                self.ok,
-                self.duration.as_secs_f32()
+                "Tests succeeded, {} passed successfully in {}",
+                self.ok, duration_str
             )?;
         }
         out.reset()?;
