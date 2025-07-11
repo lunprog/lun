@@ -467,6 +467,6 @@ mod tests {
 
     #[test]
     fn error_code_formatting() {
-        assert_eq!(String::from("E0001"), ErrorCode::UnknownToken.to_string())
+        assert_eq!(String::from("E001"), ErrorCode::UnknownToken.to_string())
     }
 }

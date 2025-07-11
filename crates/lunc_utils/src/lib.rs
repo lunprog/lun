@@ -102,7 +102,7 @@ impl FileId {
 /// use it like that:
 /// ```
 /// let number = 123; // let's imagine `number` is the result of a function
-/// let idk = format!("you have {number} dollar{}", lun_utils::pluralize(number));
+/// let idk = format!("you have {number} dollar{}", lunc_utils::pluralize(number));
 /// ```
 pub fn pluralize<I>(num: I) -> &'static str
 where
@@ -130,6 +130,134 @@ pub fn list_fmt(list: &[impl Display]) -> String {
     res
 }
 
+/// Compute the number of "digits" needed to represent `n` in the given radix (`RADIX`).
+///
+/// This function supports exactly four radices: 2 (binary), 8 (octal), 10 (decimal), and 16 (hexadecimal).
+/// Any other `RADIX` will produce a compile-time error.
+///
+/// # Parameters
+///
+/// - `n`: The non-negative integer (`u128`) whose digit-length is computed.
+/// - `RADIX`: A const generic specifying the base/radix. Must be one of 2, 8, 10, or 16.
+///
+/// # Returns
+///
+/// The count of "digits" (or characters) needed to express `n` in the specified base:
+///
+/// - **Binary (2)**: number of bits = position of highest set bit + 1 (e.g., 0b10110 = 5 digits).
+/// - **Octal (8)**: `ceil(bit_length / 3)` since each octal digit encodes 3 bits.
+/// - **Hex (16)**: `ceil(bit_length / 4)` since each hex digit encodes 4 bits.
+/// - **Decimal (10)**: uses an unrolled `match` over constant ranges for maximum speed.
+///
+/// # Panics
+///
+/// If instantiated with any `RADIX` other than 2, 8, 10, or 16, this will fail
+/// at compile time with a type-check error.
+///
+/// # Complexity
+///
+/// - **Binary/Octal/Hex**: O(1) bit-operations and arithmetic.
+/// - **Decimal**: O(1) range comparisons via a large `match` (constant-time w.r.t. input).
+///
+/// # Examples
+///
+/// Basic usage in decimal:
+/// ```rust
+/// # use lunc_utils::fast_digit_length;
+/// let n = 42u128;
+/// assert_eq!(fast_digit_length::<10>(n), 2);
+/// ```
+///
+/// Binary bit-length:
+/// ```rust
+/// # use lunc_utils::fast_digit_length;
+/// assert_eq!(fast_digit_length::<2>(0b101101), 6);
+/// ```
+///
+/// Octal digits:
+/// ```rust
+/// # use lunc_utils::fast_digit_length;
+/// assert_eq!(fast_digit_length::<8>(0o755), 3);
+/// ```
+///
+/// Hexadecimal digits:
+/// ```rust
+/// # use lunc_utils::fast_digit_length;
+/// assert_eq!(fast_digit_length::<16>(0xdead_beef), 8);
+/// ```
+pub fn fast_digit_length<const RADIX: u32>(n: u128) -> u32 {
+    // Compile‑time check: only these four radices are allowed.
+    // The trick below will fail to compile if this assertion can’t be
+    // proven true at compile time for your RADIX.
+    const {
+        assert!(RADIX == 2 || RADIX == 8 || RADIX == 10 || RADIX == 16);
+    };
+
+    // Helper for bit‑length: for n>0, 128 - leading_zeros, else 1.
+    #[inline]
+    fn bit_length(n: u128) -> u32 {
+        if n == 0 { 1 } else { 128 - n.leading_zeros() }
+    }
+
+    // Dispatch on the const RADIX. Each branch is evaluated at compile time,
+    // and the others are dropped completely.
+    if RADIX == 2 {
+        // binary: one bit per digit
+        bit_length(n)
+    } else if RADIX == 8 {
+        // octal: 3 bits per digit → ceil(bitlen/3)
+        let bits = bit_length(n);
+        (bits + 2) / 3
+    } else if RADIX == 16 {
+        // hex: 4 bits per digit → ceil(bitlen/4)
+        let bits = bit_length(n);
+        (bits + 3) / 4
+    } else {
+        // decimal: unrolled range match, up to 39 digits for u128
+        match n {
+            0..=9                      => 1,
+            10..=99                    => 2,
+            100..=999                  => 3,
+            1_000..=9_999              => 4,
+            10_000..=99_999            => 5,
+            100_000..=999_999          => 6,
+            1_000_000..=9_999_999      => 7,
+            10_000_000..=99_999_999    => 8,
+            100_000_000..=999_999_999  => 9,
+            1_000_000_000..=9_999_999_999 => 10,
+            10_000_000_000..=99_999_999_999 => 11,
+            100_000_000_000..=999_999_999_999 => 12,
+            1_000_000_000_000..=9_999_999_999_999 => 13,
+            10_000_000_000_000..=99_999_999_999_999 => 14,
+            100_000_000_000_000..=999_999_999_999_999 => 15,
+            1_000_000_000_000_000..=9_999_999_999_999_999 => 16,
+            10_000_000_000_000_000..=99_999_999_999_999_999 => 17,
+            100_000_000_000_000_000..=999_999_999_999_999_999 => 18,
+            1_000_000_000_000_000_000..=9_999_999_999_999_999_999 => 19,
+            10_000_000_000_000_000_000..=99_999_999_999_999_999_999 => 20,
+            100_000_000_000_000_000_000..=999_999_999_999_999_999_999 => 21,
+            1_000_000_000_000_000_000_000..=9_999_999_999_999_999_999_999 => 22,
+            10_000_000_000_000_000_000_000..=99_999_999_999_999_999_999_999 => 23,
+            100_000_000_000_000_000_000_000..=999_999_999_999_999_999_999_999 => 24,
+            1_000_000_000_000_000_000_000_000..=9_999_999_999_999_999_999_999_999 => 25,
+            10_000_000_000_000_000_000_000_000..=99_999_999_999_999_999_999_999_999 => 26,
+            100_000_000_000_000_000_000_000_000..=999_999_999_999_999_999_999_999_999 => 27,
+            1_000_000_000_000_000_000_000_000_000..=9_999_999_999_999_999_999_999_999_999 => 28,
+            10_000_000_000_000_000_000_000_000_000..=99_999_999_999_999_999_999_999_999_999 => 29,
+            100_000_000_000_000_000_000_000_000_000..=999_999_999_999_999_999_999_999_999_999 => 30,
+            1_000_000_000_000_000_000_000_000_000_000..=9_999_999_999_999_999_999_999_999_999_999 => 31,
+            10_000_000_000_000_000_000_000_000_000_000..=99_999_999_999_999_999_999_999_999_999_999 => 32,
+            100_000_000_000_000_000_000_000_000_000_000..=999_999_999_999_999_999_999_999_999_999_999 => 33,
+            1_000_000_000_000_000_000_000_000_000_000_000..=9_999_999_999_999_999_999_999_999_999_999_999 => 34,
+            10_000_000_000_000_000_000_000_000_000_000_000..=99_999_999_999_999_999_999_999_999_999_999_999 => 35,
+            100_000_000_000_000_000_000_000_000_000_000_000..=999_999_999_999_999_999_999_999_999_999_999_999 => 36,
+            1_000_000_000_000_000_000_000_000_000_000_000_000..=9_999_999_999_999_999_999_999_999_999_999_999_999 => 37,
+            10_000_000_000_000_000_000_000_000_000_000_000_000..=99_999_999_999_999_999_999_999_999_999_999_999_999 => 38,
+            _ /* up to u128::MAX */   => 39,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -142,5 +270,74 @@ mod tests {
         assert_eq!("s", pluralize(123usize));
         assert_eq!("s", pluralize(456u128));
         assert_eq!("s", pluralize(789i128));
+    }
+
+    /// Exhaustive test for smaller range (u8) to validate algorithm correctness.
+    #[test]
+    fn exhaustive_24bit_range() {
+        for n in 0u128..=(1 << 24) {
+            for &radix in &[2u32, 8, 10, 16] {
+                let computed = match radix {
+                    2 => fast_digit_length::<2>(n),
+                    8 => fast_digit_length::<8>(n),
+                    10 => fast_digit_length::<10>(n),
+                    16 => fast_digit_length::<16>(n),
+                    _ => unreachable!(),
+                };
+                let repr_len = match radix {
+                    2 => format!("{:b}", n).len(),
+                    8 => format!("{:o}", n).len(),
+                    10 => n.to_string().len(),
+                    16 => format!("{:x}", n).len(),
+                    _ => unreachable!(),
+                };
+                assert_eq!(
+                    computed as usize, repr_len,
+                    "mismatch for n={} radix={}",
+                    n, radix
+                );
+            }
+        }
+    }
+
+    /// Randomized test for large u128 values.
+    #[test]
+    fn random_sampled_u128_range() {
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        // Use a very simple seed based on system time.
+        let seed = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        let mut x = seed;
+        for _ in 0..10_000 {
+            // Simple linear congruential generator
+            x = x.wrapping_mul(6364136223846793005).wrapping_add(1);
+            let n = x as u128 ^ ((x as u128) << 64);
+
+            for &radix in &[2u32, 8, 10, 16] {
+                let computed = match radix {
+                    2 => fast_digit_length::<2>(n),
+                    8 => fast_digit_length::<8>(n),
+                    10 => fast_digit_length::<10>(n),
+                    16 => fast_digit_length::<16>(n),
+                    _ => unreachable!(),
+                };
+                let repr_len = match radix {
+                    2 => format!("{:b}", n).len(),
+                    8 => format!("{:o}", n).len(),
+                    10 => n.to_string().len(),
+                    16 => format!("{:x}", n).len(),
+                    _ => unreachable!(),
+                };
+                assert_eq!(
+                    computed as usize, repr_len,
+                    "mismatch for n={} radix={}",
+                    n, radix
+                );
+            }
+        }
     }
 }

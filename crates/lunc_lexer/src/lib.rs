@@ -291,8 +291,8 @@ impl Lexer {
         }
     }
 
-    /// Lexes the input while the content is alphanumeric with underscore(s) returns the content and if the
-    /// string is numeric, in a tuple.
+    /// Lexes the input while the content is alphanumeric with underscore(s)
+    /// returns the content and if the string is numeric, in a tuple.
     pub fn make_word(&mut self) -> String {
         // TODO: maybe add support for a wider amount of characters in unicode.
         // https://www.unicode.org/reports/tr31/ look at that maybe
@@ -302,11 +302,39 @@ impl Lexer {
             word.push(c);
             self.pop();
         }
+
         word
     }
 
+    /// Lexes the input while the content is decimal digits or underscore,
+    /// returns the content.
+    pub fn make_decimal(&mut self) -> String {
+        // TODO: maybe add support for a wider amount of characters in unicode.
+        // https://www.unicode.org/reports/tr31/ look at that maybe
+        let mut decimal = String::new();
+
+        while let Some(c @ ('_' | '0'..='9')) = self.peek() {
+            decimal.push(c);
+            self.pop();
+        }
+
+        decimal
+    }
+
     pub fn lex_number(&mut self) -> Result<TokenType, Diagnostic> {
-        // TODO: add support for floats.
+        // FIXME: we are not checking that self.peek() is a zero before matching
+
+        // Integer literal grammar:
+        //
+        // int_lit = decimal_lit | binary_lit | octal_lit | hexadecimal_lit ;
+        // decimal_lit = "0" | decimal_digits ;
+        // binary_lit = ("0b" | "0B") binary_digits ;
+        // octal_lit = ("0o" | "0O") octal_digits ;
+        // hex_lit = ("0x" | "0X") hex_digits ;
+        // decimal_digits = { ["_"] decimal_digit } ;
+        // binary_digits = { ["_"] binary_digit } ;
+        // octal_digits = { ["_"] octal_digit } ;
+        // hex_digits = { ["_"] hex_digit } ;
         let radix = match self.peek_nth(1) {
             Some('B' | 'b') => {
                 self.pop(); // 0
@@ -319,15 +347,112 @@ impl Lexer {
                 8
             }
             Some('X' | 'x') => {
-                self.pop(); // 0
-                self.pop(); // X / x
-                16
+                // self.pop(); // 0
+                // self.pop(); // X / x
+                // 16
+                // hexadecimal floating point number grammar:
+                //
+                // hex_float_lit = ("0x" | "0X") hex_mantissa hex_exponent ;
+                // hex_mantissa = ["_"] hex_digits "." [hex_digits]
+                //   | ["_"] hex_digits
+                //   | "." hex_digits ;
+                // hex_exponent = ("p" | "P") ["+" | "-"] decimal_digits ;
+
+                todo!("HEXADECIMAL NUMBER AMBIGUITY");
             }
             _ => 10,
         };
         let int = self.make_word();
 
-        Ok(TokenType::IntLit(self.parse_u128(&int, radix)?))
+        let int_part = self.parse_u128(&int, radix)?;
+
+        match self.peek() {
+            Some('.') if radix == 10 => {
+                // Decimal floating point number grammar:
+                //
+                // float_lit = decimal_float_lit | hex_float_lit ;
+                // decimal_float_lit = decimal_digits "." [decimal_digits] [ decimal_exponent ]
+                //   | decimal_digits decimal_exponent
+                //   | "." decimal_digits [decimal_exponent] ;
+                // decimal_exponent = ("e" | "E") ["+" | "-"] decimal_digits ;
+                self.pop();
+
+                let (frac_part, frac_divisor) = match self.peek() {
+                    Some('0'..='9') => {
+                        let frac_str = self.make_decimal();
+
+                        match self.parse_u128_advanced(&frac_str, 10) {
+                            Ok((f, n)) => (f, n as i32),
+                            Err(d) => {
+                                // NOTE: we are not using ? to propagate the diag, we just use
+                                // a poisoned value
+                                self.sink.push(d);
+                                (0, 0)
+                            }
+                        }
+                    }
+                    _ => (0, 0),
+                };
+
+                let exp_value = match self.peek() {
+                    Some('e' | 'E') => {
+                        self.pop();
+                        let sign = match self.peek() {
+                            Some('-') => {
+                                self.pop();
+                                -1i32
+                            }
+                            Some('+') => {
+                                self.pop();
+                                1
+                            }
+                            Some('_' | '0'..='9') => 1,
+                            Some(c) => {
+                                self.sink.push(InvalidDigitInNumber {
+                                    c,
+                                    loc_c: {
+                                        let (_, cur) = self.head.bytes_pos();
+                                        span(cur, cur + 1, self.fid)
+                                    },
+                                    loc_i: self.loc(),
+                                });
+                                1
+                            }
+                            _ => {
+                                self.sink.push(ReachedEOF { loc: self.loc() });
+                                1
+                            }
+                        };
+
+                        let exp_str = self.make_decimal();
+
+                        let exp = match self.parse_u128(&exp_str, 10) {
+                            Ok(e) => e as i32,
+                            Err(d) => {
+                                self.sink.push(d);
+                                0
+                            }
+                        };
+
+                        sign * exp
+                    }
+                    _ => 0,
+                };
+
+                let int_f64 = int_part as f64;
+                let frac_f64 = frac_part as f64 * 10f64.powi(-frac_divisor);
+
+                let base = int_f64 + frac_f64;
+
+                let float = base * 10.0f64.powi(exp_value);
+
+                Ok(TokenType::FloatLit(float))
+            }
+            Some('.') if radix == 16 => {
+                todo!()
+            }
+            _ => Ok(TokenType::IntLit(int_part)),
+        }
     }
 
     pub fn lex_string(&mut self) -> Result<TokenType, Diagnostic> {
@@ -489,6 +614,15 @@ impl Lexer {
     /// `radix = 10` and if you want to parse a number as hexadecimal `radix = 16`
     /// etc etc...
     pub fn parse_u128(&mut self, input: &str, radix: u8) -> Result<u128, Diagnostic> {
+        self.parse_u128_advanced(input, radix).map(|(int, _)| int)
+    }
+
+    /// returns a tuple of the parsed integer and how many digits has been parsed, leading zero count.
+    pub fn parse_u128_advanced(
+        &mut self,
+        input: &str,
+        radix: u8,
+    ) -> Result<(u128, u32), Diagnostic> {
         if !(2..=36).contains(&radix) {
             panic!("invalid radix provided, {radix}, it must be between 2 and 36 included.")
         }
@@ -499,6 +633,9 @@ impl Lexer {
         // don't emit the integer too large if there was an overflow, deal one
         // thing at a time
         let mut had_invalid_digit = false;
+
+        // count of how many digits of the radix we parsed
+        let mut digit_count = 0;
 
         for (i, c) in input.char_indices().peekable() {
             let digit = match c {
@@ -528,6 +665,8 @@ impl Lexer {
                     loc_c: span(pos, pos + 1, self.fid),
                     loc_i: self.loc(),
                 });
+            } else {
+                digit_count += 1
             }
 
             let prev_result = result;
@@ -547,6 +686,6 @@ impl Lexer {
             self.sink.push(TooLargeIntegerLiteral { loc: self.loc() })
         }
 
-        Ok(result)
+        Ok((result, digit_count))
     }
 }

@@ -148,6 +148,12 @@ impl Token {
                 print_common(out)?;
                 writeln!(out, "  }},")?;
             }
+            TokenType::FloatLit(f) => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: float {f:?};")?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
             TokenType::Punct(p) => {
                 writeln!(out, "  {{")?;
                 writeln!(out, "    tt: punctuation {p:?};")?;
@@ -170,7 +176,7 @@ impl Token {
 
 // NOTE: when adding a new token, a correspond test should be added into
 // `tests/lexer/` that should test everything about this new token
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     /// keyword
     Kw(Keyword),
@@ -182,6 +188,8 @@ pub enum TokenType {
     StringLit(String),
     /// char literal
     CharLit(char),
+    /// float literal
+    FloatLit(f64),
     /// punctuation and operators
     Punct(Punctuation),
     /// End Of File
@@ -201,6 +209,7 @@ impl Display for TokenType {
             IntLit(_) => write!(f, "integer literal"),
             StringLit(_) => write!(f, "string literal"),
             CharLit(_) => write!(f, "character literal"),
+            FloatLit(_) => write!(f, "float literal"),
             Punct(p) => write!(f, "`{p}`"),
             EOF => write!(f, "\"<eof>\""),
             __NotAToken__ => write!(f, "not a token"),
