@@ -384,6 +384,8 @@ pub enum ErrorCode {
     MutationOfImmutable = 18,
     /// name defined multiple times
     NameDefinedMultipleTimes = 19,
+    /// expected exponent part of hexadecimal floating point literal
+    ExpectedExponentPart = 20,
 }
 
 impl Display for ErrorCode {

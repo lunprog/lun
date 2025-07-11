@@ -85,3 +85,23 @@ impl ToDiagnostic for UnknownCharacterEscape {
             .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct ExpectedExponentPart {
+    pub found: char,
+    pub loc_c: Span,
+    pub loc_float: Span,
+}
+
+impl ToDiagnostic for ExpectedExponentPart {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::ExpectedExponentPart)
+            .with_message(format!(
+                "expected exponent part of hexadecimal floating point literal, but found {:?}",
+                self.found
+            ))
+            .with_label(Label::primary(self.loc_c.fid, self.loc_c))
+            .with_label(Label::secondary(self.loc_float.fid, self.loc_float))
+    }
+}

@@ -1,8 +1,8 @@
 //! Lexer of lun
 
 use diags::{
-    InvalidDigitInNumber, TooLargeIntegerLiteral, UnknownCharacterEscape, UnknownToken,
-    UnterminatedStringLiteral,
+    ExpectedExponentPart, InvalidDigitInNumber, TooLargeIntegerLiteral, UnknownCharacterEscape,
+    UnknownToken, UnterminatedStringLiteral,
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, feature_todo};
 
@@ -89,6 +89,11 @@ impl Lexer {
     pub fn loc(&self) -> Span {
         let (lo, hi) = self.head.bytes_pos();
         span(lo, hi, self.fid)
+    }
+
+    pub fn loc_current_char(&self) -> Span {
+        let (_, cur) = self.head.bytes_pos();
+        span(cur, cur + 1, self.fid)
     }
 
     #[track_caller]
@@ -321,6 +326,21 @@ impl Lexer {
         decimal
     }
 
+    /// Lexes the input while the content is hexadecimal digits or underscore,
+    /// returns the content.
+    pub fn make_hexadecimal(&mut self) -> String {
+        // TODO: maybe add support for a wider amount of characters in unicode.
+        // https://www.unicode.org/reports/tr31/ look at that maybe
+        let mut hex = String::new();
+
+        while let Some(c @ ('_' | '0'..='9' | 'A'..='F' | 'a'..='f')) = self.peek() {
+            hex.push(c);
+            self.pop();
+        }
+
+        hex
+    }
+
     pub fn lex_number(&mut self) -> Result<TokenType, Diagnostic> {
         // Integer literal grammar:
         //
@@ -345,9 +365,6 @@ impl Lexer {
                 8
             }
             Some('X' | 'x') if self.peek() == Some('0') => {
-                // self.pop(); // 0
-                // self.pop(); // X / x
-                // 16
                 // hexadecimal floating point number grammar:
                 //
                 // hex_float_lit = ("0x" | "0X") hex_mantissa hex_exponent ;
@@ -356,7 +373,146 @@ impl Lexer {
                 //   | "." hex_digits ;
                 // hex_exponent = ("p" | "P") ["+" | "-"] decimal_digits ;
 
-                todo!("HEXADECIMAL NUMBER AMBIGUITY");
+                self.pop(); // 0
+                self.pop(); // X / x
+                let int_str = self.make_hexadecimal();
+                let int_part = match self.parse_u128(&int_str, 16) {
+                    Ok(h) => h,
+                    Err(d) => {
+                        self.sink.push(d);
+                        0
+                    }
+                };
+
+                match self.peek() {
+                    Some('.') => {
+                        self.pop();
+
+                        let (frac_part, frac_divisor) = match self.peek() {
+                            Some('0'..='9' | 'a'..='f' | 'A'..='F' | '_') => {
+                                let frac_str = self.make_hexadecimal();
+
+                                match self.parse_u128_advanced(&frac_str, 16) {
+                                    Ok((f, n)) => (f, n as i32),
+                                    Err(d) => {
+                                        self.sink.push(d);
+                                        (0, 0)
+                                    }
+                                }
+                            }
+                            _ => (0, 0),
+                        };
+
+                        let exp_value = match self.peek() {
+                            Some('p' | 'P') => {
+                                self.pop();
+                                let sign = match self.peek() {
+                                    Some('-') => {
+                                        self.pop();
+                                        -1i32
+                                    }
+                                    Some('+') => {
+                                        self.pop();
+                                        1i32
+                                    }
+
+                                    Some('_' | '0'..='9') => 1,
+                                    Some(c) => {
+                                        self.sink.push(InvalidDigitInNumber {
+                                            c,
+                                            loc_c: self.loc_current_char(),
+                                            loc_i: self.loc(),
+                                        });
+                                        1
+                                    }
+                                    _ => {
+                                        self.sink.push(ReachedEOF { loc: self.loc() });
+                                        1
+                                    }
+                                };
+
+                                let exp_str = self.make_decimal();
+
+                                let exp = match self.parse_u128(&exp_str, 10) {
+                                    Ok(e) => e as i32,
+                                    Err(d) => {
+                                        self.sink.push(d);
+                                        0
+                                    }
+                                };
+
+                                sign * exp
+                            }
+                            Some(found) => {
+                                self.sink.push(ExpectedExponentPart {
+                                    found,
+                                    loc_c: self.loc_current_char(),
+                                    loc_float: self.loc(),
+                                });
+                                0
+                            }
+                            None => {
+                                self.sink.push(ReachedEOF { loc: self.loc() });
+                                0
+                            }
+                        };
+
+                        let int_f64 = int_part as f64;
+                        let frac_f64 = frac_part as f64 * 16f64.powi(-frac_divisor);
+
+                        let base = int_f64 + frac_f64;
+
+                        let float = base * 2.0f64.powi(exp_value);
+
+                        return Ok(TokenType::FloatLit(float));
+                    }
+                    Some('p' | 'P') => {
+                        self.pop();
+                        let sign = match self.peek() {
+                            Some('-') => {
+                                self.pop();
+                                -1i32
+                            }
+                            Some('+') => {
+                                self.pop();
+                                1i32
+                            }
+
+                            Some('_' | '0'..='9') => 1,
+                            Some(c) => {
+                                self.sink.push(InvalidDigitInNumber {
+                                    c,
+                                    loc_c: self.loc_current_char(),
+                                    loc_i: self.loc(),
+                                });
+                                1
+                            }
+                            _ => {
+                                self.sink.push(ReachedEOF { loc: self.loc() });
+                                1
+                            }
+                        };
+
+                        let exp_str = self.make_decimal();
+
+                        let exp_value = sign
+                            * match self.parse_u128(&exp_str, 10) {
+                                Ok(e) => e as i32,
+                                Err(d) => {
+                                    self.sink.push(d);
+                                    0
+                                }
+                            };
+
+                        let int_f64 = int_part as f64;
+                        let float = int_f64 * 2.0f64.powi(exp_value);
+
+                        return Ok(TokenType::FloatLit(float));
+                    }
+                    _ => {
+                        return Ok(TokenType::IntLit(int_part));
+                    }
+                }
             }
             _ => 10,
         };
@@ -408,10 +564,7 @@ impl Lexer {
                             Some(c) => {
                                 self.sink.push(InvalidDigitInNumber {
                                     c,
-                                    loc_c: {
-                                        let (_, cur) = self.head.bytes_pos();
-                                        span(cur, cur + 1, self.fid)
-                                    },
+                                    loc_c: self.loc_current_char(),
                                     loc_i: self.loc(),
                                 });
                                 1
@@ -445,9 +598,6 @@ impl Lexer {
                 let float = base * 10.0f64.powi(exp_value);
 
                 Ok(TokenType::FloatLit(float))
-            }
-            Some('.') if radix == 16 => {
-                todo!()
             }
             _ => Ok(TokenType::IntLit(int_part)),
         }
