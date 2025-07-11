@@ -92,7 +92,7 @@ impl Lexer {
     }
 
     pub fn loc_current_char(&self) -> Span {
-        let (_, cur) = self.head.bytes_pos();
+        let cur = self.head.cur_bytes();
         span(cur, cur + 1, self.fid)
     }
 
@@ -392,7 +392,7 @@ impl Lexer {
                             Some('0'..='9' | 'a'..='f' | 'A'..='F' | '_') => {
                                 let frac_str = self.make_hexadecimal();
 
-                                match self.parse_u128_advanced(&frac_str, 16) {
+                                match self.parse_u128_with_digit_count(&frac_str, 16) {
                                     Ok((f, n)) => (f, n as i32),
                                     Err(d) => {
                                         self.sink.push(d);
@@ -542,7 +542,7 @@ impl Lexer {
                     Some('0'..='9') => {
                         let frac_str = self.make_decimal();
 
-                        match self.parse_u128_advanced(&frac_str, 10) {
+                        match self.parse_u128_with_digit_count(&frac_str, 10) {
                             Ok((f, n)) => (f, n as i32),
                             Err(d) => {
                                 // NOTE: we are not using ? to propagate the diag, we just use
@@ -758,25 +758,138 @@ impl Lexer {
             })
         }
 
-        Ok(self.parse_u128(&str, 16)? as u8 as char)
+        Ok(self.parse_u128_with_options(
+            &str,
+            16,
+            ParseOptions {
+                base_bytes: self.head.cur_bytes() - 2,
+                int_loc: {
+                    let cur_bytes = self.head.cur_bytes();
+
+                    Some(span(cur_bytes - 2, cur_bytes, self.fid))
+                },
+            },
+        )? as u8 as char)
     }
 
-    /// Parse a number passed as input into a u128 using the radix.
+    /// Parse a string slice into a `u128` integer using the specified radix.
+    ///
+    /// This function is a convenience wrapper that parses the input string and
+    /// returns only the parsed integer. If the input is malformed or the number
+    /// is too large, a diagnostic error is returned.
     ///
     /// # Note
     ///
-    /// The radix is 'inclusive' if you want to parse a number as a decimal, then
-    /// `radix = 10` and if you want to parse a number as hexadecimal `radix = 16`
-    /// etc etc...
+    /// The radix is 'inclusive' if you want to parse a number as a decimal,
+    /// then `radix = 10` and if you want to parse a number as hexadecimal
+    /// `radix = 16` etc etc...
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The string slice to parse.
+    /// * `radix` - The base to use (between 2 and 36).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`Diagnostic`] if the input is invalid or too large.
     pub fn parse_u128(&mut self, input: &str, radix: u8) -> Result<u128, Diagnostic> {
-        self.parse_u128_advanced(input, radix).map(|(int, _)| int)
+        self.parse_u128_with_digit_count(input, radix)
+            .map(|(int, _)| int)
     }
 
-    /// returns a tuple of the parsed integer and how many digits has been parsed, leading zero count.
+    /// Parse a string slice into a `u128` integer using the specified radix and
+    /// custom options.
+    ///
+    /// Allows fine-grained control over how the number is parsed by passing
+    /// additional options like the base byte offset for error location
+    /// reporting.
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The string slice to parse.
+    /// * `radix` - The base to use (between 2 and 36).
+    /// * `options` - Parsing configuration such as base byte offset.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`Diagnostic`] on overflow or invalid input.
+    pub fn parse_u128_with_options(
+        &mut self,
+        input: &str,
+        radix: u8,
+        options: ParseOptions,
+    ) -> Result<u128, Diagnostic> {
+        self.parse_u128_advanced(input, radix, options)
+            .map(|(int, _)| int)
+    }
+
+    /// Parse a string slice into a `u128` and return how many digits were
+    /// parsed.
+    ///
+    /// This is useful when you need to know how many characters in the input
+    /// were part of a valid number. It uses the specified radix.
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The string to parse.
+    /// * `radix` - The numeric base (between 2 and 36).
+    ///
+    /// # Returns
+    ///
+    /// Returns a tuple `(value, digit_count)`:
+    /// * `value` - The parsed `u128` integer.
+    /// * `digit_count` - The number of valid digits parsed.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`Diagnostic`] if the input is invalid or overflows.
+    pub fn parse_u128_with_digit_count(
+        &mut self,
+        input: &str,
+        radix: u8,
+    ) -> Result<(u128, u32), Diagnostic> {
+        self.parse_u128_advanced(
+            input,
+            radix,
+            ParseOptions {
+                base_bytes: self.head.prev_bytes(),
+                int_loc: None,
+            },
+        )
+    }
+
+    /// Low-level parser for a `u128` with full error reporting and
+    /// customization.
+    ///
+    /// This function gives the most control over parsing, including byte
+    /// offset for accurate diagnostics. It reports invalid digits and handles
+    /// underscores as digit separators (like Rust's numeric syntax).
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The string to parse.
+    /// * `radix` - The numeric base (2–36 inclusive).
+    /// * `options` - Parsing options (e.g. base offset for spans).
+    ///
+    /// # Returns
+    ///
+    /// Returns a tuple `(value, digit_count)`:
+    /// * `value` - The parsed `u128` integer.
+    /// * `digit_count` - Number of valid digits parsed (excluding underscores).
+    ///
+    /// # Panics
+    ///
+    /// Panics if `radix` is not between 2 and 36.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`Diagnostic`] if an invalid character is encountered or the
+    /// value overflows.
     pub fn parse_u128_advanced(
         &mut self,
         input: &str,
         radix: u8,
+        options: ParseOptions,
     ) -> Result<(u128, u32), Diagnostic> {
         if !(2..=36).contains(&radix) {
             panic!("invalid radix provided, {radix}, it must be between 2 and 36 included.")
@@ -800,11 +913,11 @@ impl Lexer {
                 '_' => continue,
                 _ => {
                     had_invalid_digit = true;
-                    let pos = self.head.prev_chars() + i;
+                    let pos = options.base_bytes + i;
                     self.sink.push(InvalidDigitInNumber {
                         c,
                         loc_c: span(pos, pos + 1, self.fid),
-                        loc_i: self.loc(),
+                        loc_i: options.int_loc.clone().unwrap_or_else(|| self.loc()),
                     });
 
                     // the poisoned value
@@ -814,11 +927,11 @@ impl Lexer {
 
             if digit >= radix.into() {
                 had_invalid_digit = true;
-                let pos = self.head.prev_chars() + i;
+                let pos = options.base_bytes + i;
                 self.sink.push(InvalidDigitInNumber {
                     c,
                     loc_c: span(pos, pos + 1, self.fid),
-                    loc_i: self.loc(),
+                    loc_i: options.int_loc.clone().unwrap_or_else(|| self.loc()),
                 });
             } else {
                 digit_count += 1
@@ -843,4 +956,21 @@ impl Lexer {
 
         Ok((result, digit_count))
     }
+}
+
+/// Configuration options for number parsing.
+///
+/// This struct is used to customize how parsing diagnostics are reported,
+/// particularly where the input string began in the source, and more.
+///
+/// # Fields
+///
+/// * `base_bytes` - The byte offset of the start of the number in the source
+///                  input. Used for generating accurate error spans.
+#[derive(Debug, Clone)]
+pub struct ParseOptions {
+    /// the base position where the parsing of the integer starts
+    base_bytes: usize,
+    /// location of the integer that is currently parsed
+    int_loc: Option<Span>,
 }

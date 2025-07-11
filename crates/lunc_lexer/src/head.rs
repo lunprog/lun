@@ -5,9 +5,9 @@ pub struct LexHead {
     cur_chars: usize,
     /// the position of the previous token's end, in the `chars` field
     prev_chars: usize,
-    /// the current position of the lexing head, index byte of the currently lexed string
+    /// the current position of the lexing head, index byte of the currently lexed file
     cur_bytes: usize,
-    /// the position of the previous token's end, index byte of the currently lexed string
+    /// the position of the previous token's end, index byte of the currently lexed file
     prev_bytes: usize,
 }
 
@@ -41,6 +41,16 @@ impl LexHead {
     /// Return the previous position in the char array
     pub fn prev_chars(&self) -> usize {
         self.prev_chars
+    }
+
+    /// Return the current position, index byte of the currently lexed file
+    pub fn cur_bytes(&self) -> usize {
+        self.cur_bytes
+    }
+
+    /// Return the previous position, index byte of the currently lexed file
+    pub fn prev_bytes(&self) -> usize {
+        self.prev_bytes
     }
 
     /// Increment the head with the corresponding character
