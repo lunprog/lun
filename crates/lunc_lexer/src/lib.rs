@@ -307,10 +307,27 @@ impl Lexer {
 
     pub fn lex_number(&mut self) -> Result<TokenType, Diagnostic> {
         // TODO: add support for floats.
-        // TODO: add support for radix like `0x...`, `0o...`, `0b...`
+        let radix = match self.peek_nth(1) {
+            Some('B' | 'b') => {
+                self.pop(); // 0
+                self.pop(); // B / b
+                2
+            }
+            Some('O' | 'o') => {
+                self.pop(); // 0
+                self.pop(); // O / o
+                8
+            }
+            Some('X' | 'x') => {
+                self.pop(); // 0
+                self.pop(); // X / x
+                16
+            }
+            _ => 10,
+        };
         let int = self.make_word();
 
-        Ok(TokenType::IntLit(self.parse_u128(&int, 10)?))
+        Ok(TokenType::IntLit(self.parse_u128(&int, radix)?))
     }
 
     pub fn lex_string(&mut self) -> Result<TokenType, Diagnostic> {

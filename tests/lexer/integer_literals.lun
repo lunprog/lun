@@ -1,1 +1,15 @@
 123456789
+
+// binary literal
+0b1111011
+0B1111011
+
+// octal literal
+0o173
+0O173
+
+// hexadecimal literal
+0x7b
+0X7b
+0x7B
+0X7B

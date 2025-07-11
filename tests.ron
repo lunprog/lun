@@ -83,8 +83,48 @@
     lexeme: `123456789`;
   },
   {
+    tt: integer '123';
+    loc: 29..38 (fid = 0);
+    lexeme: `0b1111011`;
+  },
+  {
+    tt: integer '123';
+    loc: 39..48 (fid = 0);
+    lexeme: `0B1111011`;
+  },
+  {
+    tt: integer '123';
+    loc: 67..72 (fid = 0);
+    lexeme: `0o173`;
+  },
+  {
+    tt: integer '123';
+    loc: 73..78 (fid = 0);
+    lexeme: `0O173`;
+  },
+  {
+    tt: integer '123';
+    loc: 103..107 (fid = 0);
+    lexeme: `0x7b`;
+  },
+  {
+    tt: integer '123';
+    loc: 108..112 (fid = 0);
+    lexeme: `0X7b`;
+  },
+  {
+    tt: integer '123';
+    loc: 113..117 (fid = 0);
+    lexeme: `0x7B`;
+  },
+  {
+    tt: integer '123';
+    loc: 118..122 (fid = 0);
+    lexeme: `0X7B`;
+  },
+  {
     tt: end of file;
-    loc: 10..11 (fid = 0);
+    loc: 123..124 (fid = 0);
     lexeme: N/A;
   },
 }
