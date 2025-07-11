@@ -1,8 +1,8 @@
 //! Lexer of lun
 
 use diags::{
-    ExpectedExponentPart, InvalidDigitInNumber, TooLargeIntegerLiteral, UnknownCharacterEscape,
-    UnknownToken, UnterminatedStringLiteral,
+    ExpectedExponentPart, InvalidDigitInNumber, NoDigitsInANonDecimal, TooLargeIntegerLiteral,
+    UnknownCharacterEscape, UnknownToken, UnterminatedStringLiteral,
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, feature_todo};
 
@@ -510,15 +510,22 @@ impl Lexer {
                         return Ok(TokenType::FloatLit(float));
                     }
                     _ => {
+                        if int_str.is_empty() {
+                            self.sink.push(NoDigitsInANonDecimal { loc: self.loc() });
+                        }
                         return Ok(TokenType::IntLit(int_part));
                     }
                 }
             }
             _ => 10,
         };
-        let int = self.make_word();
+        let int_str = self.make_word();
 
-        let int_part = self.parse_u128(&int, radix)?;
+        if int_str.is_empty() {
+            self.sink.push(NoDigitsInANonDecimal { loc: self.loc() });
+        }
+
+        let int_part = self.parse_u128(&int_str, radix)?;
 
         match self.peek() {
             Some('.') if radix == 10 => {

@@ -132,6 +132,9 @@ impl TestContext {
             cmd.arg(path);
 
             write!(out, "[{}/{tests_count}] testing '{name}' ... ", n + 1)?;
+            // force flushing so that we can see the progress of the tests
+            out.flush()?;
+
             let cmd_output = cmd.output()?;
             let compiler_out = String::from_utf8_lossy(&cmd_output.stderr).to_string();
 
@@ -162,6 +165,9 @@ impl TestContext {
             writeln!(out, "OK")?;
             summary.ok += 1;
             out.reset()?;
+
+            // force flushing so that we can see the progress of the tests
+            out.flush()?;
         }
 
         summary.duration = start_test.elapsed();

@@ -105,3 +105,17 @@ impl ToDiagnostic for ExpectedExponentPart {
             .with_label(Label::secondary(self.loc_float.fid, self.loc_float))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct NoDigitsInANonDecimal {
+    pub loc: Span,
+}
+
+impl ToDiagnostic for NoDigitsInANonDecimal {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::NoDigitsInANonDecimal)
+            .with_message("no digits found after the base")
+            .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}

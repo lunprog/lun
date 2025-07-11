@@ -386,6 +386,8 @@ pub enum ErrorCode {
     NameDefinedMultipleTimes = 19,
     /// expected exponent part of hexadecimal floating point literal
     ExpectedExponentPart = 20,
+    /// no digits where found after a number base
+    NoDigitsInANonDecimal = 21,
 }
 
 impl Display for ErrorCode {
