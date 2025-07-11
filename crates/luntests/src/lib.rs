@@ -1,4 +1,6 @@
 use std::{
+    error::Error,
+    fmt,
     fs::{self, File},
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -11,8 +13,19 @@ use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
 
-// TODO: remove this any result and create an error type with thiserror
+// TODO(URGENT): remove this any result and create an error type with thiserror
 type AnyResult<T> = Result<T, Box<dyn std::error::Error>>;
+
+#[derive(Debug, Clone, Copy)]
+pub struct TestFailed;
+
+impl Error for TestFailed {}
+
+impl fmt::Display for TestFailed {
+    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Ok(())
+    }
+}
 
 pub type Records = IndexMap<String, TestRecord>;
 
@@ -153,6 +166,10 @@ impl TestContext {
 
         summary.duration = start_test.elapsed();
         summary.write_report(out)?;
+
+        if summary.failed() {
+            return Err(Box::new(TestFailed));
+        }
 
         Ok(())
     }
