@@ -322,8 +322,6 @@ impl Lexer {
     }
 
     pub fn lex_number(&mut self) -> Result<TokenType, Diagnostic> {
-        // FIXME: we are not checking that self.peek() is a zero before matching
-
         // Integer literal grammar:
         //
         // int_lit = decimal_lit | binary_lit | octal_lit | hexadecimal_lit ;
@@ -336,17 +334,17 @@ impl Lexer {
         // octal_digits = { ["_"] octal_digit } ;
         // hex_digits = { ["_"] hex_digit } ;
         let radix = match self.peek_nth(1) {
-            Some('B' | 'b') => {
+            Some('B' | 'b') if self.peek() == Some('0') => {
                 self.pop(); // 0
                 self.pop(); // B / b
                 2
             }
-            Some('O' | 'o') => {
+            Some('O' | 'o') if self.peek() == Some('0') => {
                 self.pop(); // 0
                 self.pop(); // O / o
                 8
             }
-            Some('X' | 'x') => {
+            Some('X' | 'x') if self.peek() == Some('0') => {
                 // self.pop(); // 0
                 // self.pop(); // X / x
                 // 16
