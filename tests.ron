@@ -83,48 +83,83 @@
     lexeme: `123456789`;
   },
   {
+    tt: integer '123456789';
+    loc: 10..21 (fid = 0);
+    lexeme: `123_456_789`;
+  },
+  {
     tt: integer '123';
-    loc: 29..38 (fid = 0);
+    loc: 41..50 (fid = 0);
     lexeme: `0b1111011`;
   },
   {
     tt: integer '123';
-    loc: 39..48 (fid = 0);
+    loc: 51..60 (fid = 0);
     lexeme: `0B1111011`;
   },
   {
     tt: integer '123';
-    loc: 67..72 (fid = 0);
+    loc: 61..72 (fid = 0);
+    lexeme: `0b0111_1011`;
+  },
+  {
+    tt: integer '123';
+    loc: 73..84 (fid = 0);
+    lexeme: `0B0111_1011`;
+  },
+  {
+    tt: integer '123';
+    loc: 103..108 (fid = 0);
     lexeme: `0o173`;
   },
   {
     tt: integer '123';
-    loc: 73..78 (fid = 0);
+    loc: 109..114 (fid = 0);
     lexeme: `0O173`;
   },
   {
     tt: integer '123';
-    loc: 103..107 (fid = 0);
+    loc: 115..122 (fid = 0);
+    lexeme: `0o01_73`;
+  },
+  {
+    tt: integer '123';
+    loc: 123..130 (fid = 0);
+    lexeme: `0O01_73`;
+  },
+  {
+    tt: integer '123';
+    loc: 155..159 (fid = 0);
     lexeme: `0x7b`;
   },
   {
     tt: integer '123';
-    loc: 108..112 (fid = 0);
+    loc: 160..164 (fid = 0);
     lexeme: `0X7b`;
   },
   {
     tt: integer '123';
-    loc: 113..117 (fid = 0);
+    loc: 165..169 (fid = 0);
     lexeme: `0x7B`;
   },
   {
     tt: integer '123';
-    loc: 118..122 (fid = 0);
+    loc: 170..174 (fid = 0);
     lexeme: `0X7B`;
   },
   {
+    tt: integer '3735928559';
+    loc: 175..186 (fid = 0);
+    lexeme: `0xDEAD_BEEF`;
+  },
+  {
+    tt: integer '3735928559';
+    loc: 187..200 (fid = 0);
+    lexeme: `0Xde_ad_be_ef`;
+  },
+  {
     tt: end of file;
-    loc: 123..124 (fid = 0);
+    loc: 201..202 (fid = 0);
     lexeme: N/A;
   },
 }
