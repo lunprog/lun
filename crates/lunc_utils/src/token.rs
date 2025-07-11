@@ -404,9 +404,9 @@ pub enum Punctuation {
     /// >=
     GtEqual,
     /// ;
-    SemiColon,
+    Semicolon,
     /// ->
-    Arrow,
+    MinusGt,
     /// ^
     Carret,
     /// &
@@ -447,8 +447,8 @@ impl Display for Punctuation {
             Gt => f.write_str(">"),
             Gt2 => f.write_str(">>"),
             GtEqual => f.write_str(">="),
-            SemiColon => f.write_str(";"),
-            Arrow => f.write_str("->"),
+            Semicolon => f.write_str(";"),
+            MinusGt => f.write_str("->"),
             Carret => f.write_str("^"),
             Ampsand => f.write_str("&"),
             Pipe => f.write_str("|"),

@@ -78,9 +78,9 @@ impl AstNode for Block {
 
                     stmts.push(stmt.clone());
                     if expr.is_expr_with_block() {
-                        expect_token!(parser => [Punct(Punctuation::SemiColon), ()] else { continue; });
+                        expect_token!(parser => [Punct(Punctuation::Semicolon), ()] else { continue; });
                     } else {
-                        expect_token!(parser => [Punct(Punctuation::SemiColon), ()], Punct(Punctuation::SemiColon));
+                        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
                     }
                 }
                 (false, false) => {
@@ -88,7 +88,7 @@ impl AstNode for Block {
                     // thing isn't a }, so we push the Statement and expect
                     // a semicolon
                     stmts.push(stmt.clone());
-                    expect_token!(parser => [Punct(Punctuation::SemiColon), ()], Punct(Punctuation::SemiColon));
+                    expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
                 }
             }
         }

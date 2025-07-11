@@ -14,6 +14,7 @@ Sub commands:
 ";
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // TODO: remake using clap
     let mut args = env::args();
     _ = args.next(); // skip program name
 
@@ -39,6 +40,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn record_tests(tctx: &mut TestContext) -> Result<(), Box<dyn Error>> {
+    // TODO: be able to record only one test case
     tctx.record_tests()?;
     tctx.write_test_records()?;
 

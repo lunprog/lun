@@ -380,12 +380,12 @@
     lexeme: `>=`;
   },
   {
-    tt: punctuation SemiColon;
+    tt: punctuation Semicolon;
     loc: 50..51 (fid = 0);
     lexeme: `;`;
   },
   {
-    tt: punctuation Arrow;
+    tt: punctuation MinusGt;
     loc: 52..54 (fid = 0);
     lexeme: `->`;
   },

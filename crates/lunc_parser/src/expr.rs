@@ -733,7 +733,7 @@ pub fn parse_fundef_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
     }
     expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
 
-    let rettype = if let Some(Punct(Punctuation::Arrow)) = parser.peek_tt() {
+    let rettype = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
         parser.pop();
         Some(parse!(box: @fn parser => parse_type_expression))
     } else {

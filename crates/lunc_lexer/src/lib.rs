@@ -135,7 +135,7 @@ impl Lexer {
                 match self.peek() {
                     Some('>') => {
                         self.pop();
-                        return Ok(Punct(Arrow));
+                        return Ok(Punct(MinusGt));
                     }
                     _ => return Ok(Punct(Minus)),
                 }
@@ -143,7 +143,7 @@ impl Lexer {
             Some('*') => Punct(Star),
             Some(':') => Punct(Colon),
             Some(',') => Punct(Comma),
-            Some(';') => Punct(SemiColon),
+            Some(';') => Punct(Semicolon),
             Some('^') => Punct(Carret),
             Some('&') => Punct(Ampsand),
             Some('|') => Punct(Pipe),
