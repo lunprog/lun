@@ -154,7 +154,7 @@ impl ToDiagnostic for UnderscoreInExpression {
         Diagnostic::error()
             .with_code(ErrorCode::UnderscoreInExpression)
             .with_message(
-                "`_` can only be used in left hand side of assignement not in expressions",
+                "`_` can only be used in left hand side of assignment not in expressions",
             )
             .with_label(Label::primary(self.loc.fid, self.loc))
     }
@@ -206,7 +206,7 @@ impl ToDiagnostic for MutationOfImmutable {
             .with_code(ErrorCode::MutationOfImmutable)
             .with_message("cannot mutate, immutable variable")
             .with_label(Label::primary(self.loc.fid, self.loc).with_message(format!(
-                "assignement to immmutable variable `{}`",
+                "assignment to immmutable variable `{}`",
                 self.var_name
             )))
             .with_label(

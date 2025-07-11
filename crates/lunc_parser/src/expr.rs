@@ -321,7 +321,7 @@ pub enum Precedence {
     // HIGHEST_PRECEDENCE constant
     //
     /// `a = b`
-    Assignement,
+    Assignment,
     /// `a or b`
     LogicalOr,
     /// `a and b`
@@ -344,7 +344,7 @@ pub enum Precedence {
     Factor,
     /// `op expression`
     Unary,
-    /// both call and unary right precende:
+    /// both call and unary right precedence:
     ///
     /// `expression "(" expression,* ")"`
     ///
@@ -364,8 +364,8 @@ impl Precedence {
     /// Returns the [`Precedence`] following the one passed as arg.
     pub fn next(self) -> Precedence {
         match self {
-            Self::__First__ => Self::Assignement,
-            Self::Assignement => Self::LogicalOr,
+            Self::__First__ => Self::Assignment,
+            Self::Assignment => Self::LogicalOr,
             Self::LogicalOr => Self::LogicalAnd,
             Self::LogicalAnd => Self::Comparison,
             Self::Comparison => Self::Equality,
@@ -385,7 +385,7 @@ impl Precedence {
 
     pub fn associativity(&self) -> Associativity {
         match self {
-            Self::Assignement => Associativity::RightToLeft,
+            Self::Assignment => Associativity::RightToLeft,
             Self::LogicalOr => Associativity::LeftToRight,
             Self::LogicalAnd => Associativity::LeftToRight,
             Self::Comparison => Associativity::LeftToRight,
@@ -408,7 +408,7 @@ impl Precedence {
     fn from(value: TokenType) -> Option<Precedence> {
         use TokenType::Punct;
         match value {
-            Punct(Punctuation::Equal) => Some(Precedence::Assignement),
+            Punct(Punctuation::Equal) => Some(Precedence::Assignment),
             Kw(Keyword::Or) => Some(Precedence::LogicalOr),
             Kw(Keyword::And) => Some(Precedence::LogicalAnd),
             Punct(
@@ -416,7 +416,7 @@ impl Precedence {
             ) => Some(Precedence::Comparison),
             Punct(Punctuation::Equal2 | Punctuation::BangEqual) => Some(Precedence::Equality),
             Punct(Punctuation::Pipe) => Some(Precedence::BitwiseOr),
-            Punct(Punctuation::Carret) => Some(Precedence::BitwiseXor),
+            Punct(Punctuation::Caret) => Some(Precedence::BitwiseXor),
             Punct(Punctuation::Ampsand) => Some(Precedence::BitwiseAnd),
             Punct(Punctuation::Lt2 | Punctuation::Gt2) => Some(Precedence::Shift),
             Punct(Punctuation::Plus | Punctuation::Minus) => Some(Precedence::Term),
@@ -430,14 +430,14 @@ impl Precedence {
     }
 }
 
-/// The higest precedence of [`Precedence`]
-pub const HIGHEST_PRECEDENCE: Precedence = Precedence::Assignement;
+/// The highest precedence of [`Precedence`]
+pub const HIGHEST_PRECEDENCE: Precedence = Precedence::Assignment;
 
 #[derive(Debug, Clone)]
 pub enum BinOp {
     /// addition
     Add,
-    /// substraction
+    /// subtraction
     Sub,
     /// multiplication
     Mul,
@@ -457,8 +457,8 @@ pub enum BinOp {
     CompEq,
     /// not equal
     CompNe,
-    /// assignement
-    Assignement,
+    /// assignment
+    Assignment,
     /// and
     LogicalAnd,
     /// or
@@ -489,7 +489,7 @@ impl Display for BinOp {
             Self::CompGE => ">=",
             Self::CompEq => "==",
             Self::CompNe => "!=",
-            Self::Assignement => "=",
+            Self::Assignment => "=",
             Self::LogicalAnd => "and",
             Self::LogicalOr => "or",
             Self::BitwiseAnd => "&",
@@ -509,7 +509,7 @@ impl BinOp {
         use Punctuation as Punct;
 
         Some(match punct {
-            Punct::Equal => BOp::Assignement,
+            Punct::Equal => BOp::Assignment,
             Punct::Star => BOp::Mul,
             Punct::Slash => BOp::Div,
             Punct::Percent => BOp::Rem,
@@ -522,7 +522,7 @@ impl BinOp {
             Punct::Equal2 => BOp::CompEq,
             Punct::BangEqual => BOp::CompNe,
             Punct::Ampsand => BOp::BitwiseAnd,
-            Punct::Carret => BOp::BitwiseXor,
+            Punct::Caret => BOp::BitwiseXor,
             Punct::Pipe => BOp::BitwiseOr,
             Punct::Lt2 => BOp::Shl,
             Punct::Gt2 => BOp::Shr,

@@ -15,7 +15,7 @@ pub mod token;
 pub struct Span {
     pub lo: usize,
     pub hi: usize,
-    /// file id, to know which file we are refering to.
+    /// file id, to know which file we are referring to.
     pub fid: FileId,
 }
 
@@ -29,7 +29,7 @@ impl Span {
 
     #[inline(always)]
     pub const fn from_ends(lo: Span, hi: Span) -> Span {
-        // NOTE: we are implementing debug_assert_eq manualy because it doesn't
+        // NOTE: we are implementing debug_assert_eq manually because it doesn't
         // work at compile time
         if cfg!(debug_assertions) && lo.fid.0 != hi.fid.0 {
             panic!("expected the file ids of both lo and hi spans to be the same.")

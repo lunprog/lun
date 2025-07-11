@@ -1,6 +1,6 @@
 # Lun
 
-Lun is a simple, staticaly typed programming language heavily inspired by Lua.
+Lun is a simple, statically typed programming language heavily inspired by Lua.
 
 Make a treesitter parser and check out treereduce.
 
@@ -9,9 +9,9 @@ Make a treesitter parser and check out treereduce.
 - Name resolution -> https://www3.nd.edu/~dthain/compilerbook/chapter7.pdf
   and generally -> https://www3.nd.edu/~dthain/compilerbook/
 - Use https://github.com/brendanzab/codespan for diagnostics or
-  https://github.com/zesterer/ariadne, or `miette`, create a Diagnotic Collector
+  https://github.com/zesterer/ariadne, or `miette`, create a Diagnostic Collector
   `DiagnosticSink`, that we store in the lexer, parser etc and we return it if,
-  we encoutered errors in the current phase.
+  we encountered errors in the current phase.
 - Reimplement with `salsa` to enable incremental compilation and some crazy
   things
 - Using `cranelift`, make this an AOT language? it pretty much already kinda

@@ -530,7 +530,7 @@ impl SemanticCk {
             CkExpr::Ident(MaybeUnresolved::Resolved(_)) => {
                 unreachable!("i think it's a bug not sure tho")
             }
-            // special case of assignement to _
+            // special case of assignment to _
             //
             // it is used to allow
             // _ = expr;
@@ -539,14 +539,14 @@ impl SemanticCk {
             // coerce to any type.
             CkExpr::Binary {
                 lhs,
-                op: BinOp::Assignement,
+                op: BinOp::Assignment,
                 rhs,
             } if matches!(
                 &lhs.expr,
                 CkExpr::Ident(MaybeUnresolved::Unresolved(id)) if id.as_str() == "_"
             ) =>
             {
-                // manualy checking lhs
+                // manually checking lhs
                 let Some(symref) = self.table.lookup("_", true) else {
                     unreachable!();
                 };
@@ -559,10 +559,10 @@ impl SemanticCk {
 
                 expr.atomtyp = AtomicType::Void;
             }
-            // other special case of Binary, make assignement evaluate to Void
+            // other special case of Binary, make assignment evaluate to Void
             CkExpr::Binary {
                 lhs,
-                op: BinOp::Assignement,
+                op: BinOp::Assignment,
                 rhs,
             } => {
                 self.check_expr(lhs, wish.clone())?;
@@ -603,12 +603,12 @@ impl SemanticCk {
                 if let AtomicType::UnkConstrained(constraint) = &lhs.atomtyp {
                     // lhs is unknown constrained, we need to check that the
                     // constraint and the rhs type kinda match
-                    let coercable_types = match constraint {
-                        Constraint::Integer => Constraint::INTEGER_COERCABLE_TYPES,
-                        Constraint::Float => Constraint::FLOAT_COERCABLE_TYPES,
+                    let coercible_types = match constraint {
+                        Constraint::Integer => Constraint::INTEGER_COERCIBLE_TYPES,
+                        Constraint::Float => Constraint::FLOAT_COERCIBLE_TYPES,
                     };
 
-                    if !coercable_types.contains(&rhs.atomtyp) {
+                    if !coercible_types.contains(&rhs.atomtyp) {
                         // we not fine
                         self.sink.push(MismatchedTypes {
                             expected: lhs.atomtyp.to_string(),
@@ -899,7 +899,7 @@ impl SemanticCk {
             if let Some(new_atomtyp) = constraint.can_fulfill_wish(&wish) {
                 self.apply_expression_wish(expr, new_atomtyp);
             } else {
-                // here we are doing nothing if the wish is not fulfilled because later down the line a diag will be emited
+                // here we are doing nothing if the wish is not fulfilled because later down the line a diag will be emitted
             }
         }
 
@@ -1096,7 +1096,7 @@ pub enum AtomicType {
     /// Unknown, at the end of type checking this type is an error.
     #[default]
     Unknown,
-    /// The type is unknown but we constrained it, we know some informations on
+    /// The type is unknown but we constrained it, we know some information on
     /// this type: it is an integer type, a float type etc..
     UnkConstrained(Constraint),
     /// 8 bit signed integer
@@ -1307,7 +1307,7 @@ pub enum Constraint {
 }
 
 impl Constraint {
-    pub const INTEGER_COERCABLE_TYPES: &[AtomicType] = &[
+    pub const INTEGER_COERCIBLE_TYPES: &[AtomicType] = &[
         AtomicType::Isize,
         AtomicType::I8,
         AtomicType::I16,
@@ -1320,18 +1320,18 @@ impl Constraint {
         AtomicType::U64,
     ];
 
-    pub const FLOAT_COERCABLE_TYPES: &[AtomicType] =
+    pub const FLOAT_COERCIBLE_TYPES: &[AtomicType] =
         &[AtomicType::F16, AtomicType::F32, AtomicType::F64];
 
     pub fn can_fulfill_wish(&self, wish: &Option<AtomicType>) -> Option<AtomicType> {
         let wish = wish.as_ref()?;
 
-        let coercable_types = match self {
-            Self::Integer => Self::INTEGER_COERCABLE_TYPES,
-            Self::Float => Self::FLOAT_COERCABLE_TYPES,
+        let coercible_types = match self {
+            Self::Integer => Self::INTEGER_COERCIBLE_TYPES,
+            Self::Float => Self::FLOAT_COERCIBLE_TYPES,
         };
 
-        if coercable_types.contains(wish) {
+        if coercible_types.contains(wish) {
             Some(wish.clone())
         } else {
             None
@@ -1635,7 +1635,7 @@ impl SymbolTable {
         assert_ne!(name.as_str(), "_", "`_` is a reserved identifier");
 
         {
-            // we create a new scope because we want sym to be droped before we insert it
+            // we create a new scope because we want sym to be dropped before we insert it
             let sym = symref.read().unwrap();
 
             match sym.kind {

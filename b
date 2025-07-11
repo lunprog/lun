@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Build system of the compiler
+# TODO(URGENT): convert this to a cargo xtask
 #
 # Add the following to zshrc or bachrc to have the convenient `$ b` instead of
 # `$ ./b`, or `$ ../b`

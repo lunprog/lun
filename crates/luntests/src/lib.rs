@@ -150,7 +150,7 @@ impl TestContext {
             }
 
             if compiler_out != test_record.expected_compiler_out {
-                // compiler outputed something different than what was expected
+                // compiler outputted something different than what was expected
                 out.set_color(&TestContext::compiler_fail_color_spec())?;
                 writeln!(out, "UNEXPECTED BUILD OUT")?;
                 summary.unexpected_build_out += 1;

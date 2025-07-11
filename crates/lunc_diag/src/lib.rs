@@ -88,7 +88,7 @@ impl DiagnosticSink {
         inner.is_empty()
     }
 
-    /// Print all diagnostics to the given writter, with default config.
+    /// Print all diagnostics to the given writer, with default config.
     pub fn emit(&self, writer: &mut StandardStream) -> Result<(), files::Error> {
         let inner = self.0.read().unwrap();
         inner.emit(writer)
@@ -164,7 +164,7 @@ impl SinkInner {
         self.diags.is_empty()
     }
 
-    /// Print all diagnostics to the given writter, with default config.
+    /// Print all diagnostics to the given writer, with default config.
     pub fn emit(&self, writer: &mut StandardStream) -> Result<(), files::Error> {
         let config = Config::default();
 
@@ -250,7 +250,7 @@ pub enum ErrorCode {
     UnknownToken = 1,
     /// Invalid digit in number: in an integer or a float
     ///
-    /// Erroneus example
+    /// Erroneous example
     /// ```lun
     /// let i = 12z34;
     /// ```
@@ -444,7 +444,7 @@ impl ToDiagnostic for FeatureNotImplemented {
             ))
             .with_label(Label::primary(self.loc.fid, self.loc).with_message(self.label_text))
             .with_note(format!(
-                "this diagnostic has been emited in file {:?} at line {}",
+                "this diagnostic has been emitted in file {:?} at line {}",
                 self.compiler_file, self.compiler_line
             ))
     }

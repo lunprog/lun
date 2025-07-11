@@ -13,7 +13,7 @@ pub struct ExpectedToken {
     expected: Vec<Box<dyn Display>>,
     /// what was found instead of the expected token
     found: TokenType,
-    /// where did the error occured, during the parsing of an expression, a
+    /// where did the error occurred, during the parsing of an expression, a
     /// statement? etc
     node: Option<String>,
     /// location of the found token

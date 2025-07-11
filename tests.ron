@@ -511,7 +511,7 @@
     lexeme: `->`;
   },
   {
-    tt: punctuation Carret;
+    tt: punctuation Caret;
     loc: 55..56 (fid = 0);
     lexeme: `^`;
   },

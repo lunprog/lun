@@ -217,7 +217,7 @@ impl Display for TokenType {
     }
 }
 
-// WARN: /!\ If a keyword is added change the `lex_identifer` method of the Lexer
+// WARN: /!\ If a keyword is added change the `lex_identifier` method of the Lexer
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Keyword {
     /// and
@@ -441,7 +441,7 @@ pub enum Punctuation {
     /// ->
     MinusGt,
     /// ^
-    Carret,
+    Caret,
     /// &
     Ampsand,
     /// |
@@ -482,7 +482,7 @@ impl Display for Punctuation {
             GtEqual => f.write_str(">="),
             Semicolon => f.write_str(";"),
             MinusGt => f.write_str("->"),
-            Carret => f.write_str("^"),
+            Caret => f.write_str("^"),
             Ampsand => f.write_str("&"),
             Pipe => f.write_str("|"),
             Percent => f.write_str("%"),

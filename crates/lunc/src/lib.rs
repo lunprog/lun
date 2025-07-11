@@ -1,4 +1,4 @@
-//! Lun is a staticaly typed programming language.
+//! Lun is a statically typed programming language.
 
 use std::{
     env,
@@ -62,7 +62,7 @@ pub fn exit_code_compilation_failed() -> ExitCode {
 
 #[derive(Debug, Error)]
 pub enum CliError {
-    /// Diagnostics emited in compilation, can contain only warnings, can
+    /// Diagnostics emitted in compilation, can contain only warnings, can
     /// contain errors. It is guaranteed to contains at least one diag
     #[error("Compiler diagnostics, {}", sink.summary(orb_name).unwrap())]
     CompilerDiagnostics {

@@ -139,7 +139,7 @@ macro_rules! expect_token {
                     $(
                         $between
                     )?
-                    // we allow unreacheable code because the $between type may be `!`
+                    // we allow unreachable code because the $between type may be `!`
                     #[allow(unreachable_code)]
                     ($result, $parser.pop().unwrap().loc)
                 }
@@ -160,7 +160,7 @@ macro_rules! expect_token {
                     $(
                         $between
                     )?
-                    // we allow unreacheable code because the $between type may
+                    // we allow unreachable code because the $between type may
                     // be `!` and we can use unwraps and we already know that
                     // there is a tokens with a location so it is sure we wont
                     // panic
@@ -192,7 +192,7 @@ macro_rules! expect_token {
                     $(
                         $between
                     )?
-                    // we allow unreacheable code because the $between type may
+                    // we allow unreachable code because the $between type may
                     // be of type `!` and we can use unwraps and we already
                     // know that there is a tokens with a location so it is
                     // sure we wont panic

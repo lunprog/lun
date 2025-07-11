@@ -69,7 +69,7 @@ impl Lexer {
         Some(tt)
     }
 
-    /// return the char that is n-chars offseted
+    /// return the char that is n-chars offsetted
     pub fn peek_nth(&self, offset: isize) -> Option<char> {
         self.chars
             .get((self.head.cur_chars() as isize + offset) as usize)
@@ -150,7 +150,7 @@ impl Lexer {
             Some(':') => Punct(Colon),
             Some(',') => Punct(Comma),
             Some(';') => Punct(Semicolon),
-            Some('^') => Punct(Carret),
+            Some('^') => Punct(Caret),
             Some('&') => Punct(Ampsand),
             Some('|') => Punct(Pipe),
             Some('%') => Punct(Percent),
