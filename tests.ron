@@ -240,128 +240,148 @@
     lexeme: `and`;
   },
   {
+    tt: keyword 'as';
+    loc: 23..25 (fid = 0);
+    lexeme: `as`;
+  },
+  {
     tt: keyword 'break';
-    loc: 23..28 (fid = 0);
+    loc: 26..31 (fid = 0);
     lexeme: `break`;
   },
   {
     tt: keyword 'comptime';
-    loc: 29..37 (fid = 0);
+    loc: 32..40 (fid = 0);
     lexeme: `comptime`;
   },
   {
     tt: keyword 'continue';
-    loc: 38..46 (fid = 0);
+    loc: 41..49 (fid = 0);
     lexeme: `continue`;
   },
   {
+    tt: keyword 'defer';
+    loc: 50..55 (fid = 0);
+    lexeme: `defer`;
+  },
+  {
     tt: keyword 'else';
-    loc: 47..51 (fid = 0);
+    loc: 56..60 (fid = 0);
     lexeme: `else`;
   },
   {
     tt: keyword 'false';
-    loc: 52..57 (fid = 0);
+    loc: 61..66 (fid = 0);
     lexeme: `false`;
   },
   {
     tt: keyword 'for';
-    loc: 58..61 (fid = 0);
+    loc: 67..70 (fid = 0);
     lexeme: `for`;
   },
   {
     tt: keyword 'fun';
-    loc: 62..65 (fid = 0);
+    loc: 71..74 (fid = 0);
     lexeme: `fun`;
   },
   {
     tt: keyword 'if';
-    loc: 66..68 (fid = 0);
+    loc: 75..77 (fid = 0);
     lexeme: `if`;
   },
   {
     tt: keyword 'impl';
-    loc: 69..73 (fid = 0);
+    loc: 78..82 (fid = 0);
     lexeme: `impl`;
   },
   {
     tt: keyword 'in';
-    loc: 74..76 (fid = 0);
+    loc: 83..85 (fid = 0);
     lexeme: `in`;
   },
   {
     tt: keyword 'let';
-    loc: 77..80 (fid = 0);
+    loc: 86..89 (fid = 0);
     lexeme: `let`;
   },
   {
+    tt: keyword 'loop';
+    loc: 90..94 (fid = 0);
+    lexeme: `loop`;
+  },
+  {
     tt: keyword 'mut';
-    loc: 81..84 (fid = 0);
+    loc: 95..98 (fid = 0);
     lexeme: `mut`;
   },
   {
     tt: keyword 'null';
-    loc: 85..89 (fid = 0);
+    loc: 99..103 (fid = 0);
     lexeme: `null`;
   },
   {
     tt: keyword 'or';
-    loc: 90..92 (fid = 0);
+    loc: 104..106 (fid = 0);
     lexeme: `or`;
   },
   {
+    tt: keyword 'orb';
+    loc: 107..110 (fid = 0);
+    lexeme: `orb`;
+  },
+  {
     tt: keyword 'pub';
-    loc: 93..96 (fid = 0);
+    loc: 111..114 (fid = 0);
     lexeme: `pub`;
   },
   {
     tt: keyword 'return';
-    loc: 97..103 (fid = 0);
+    loc: 115..121 (fid = 0);
     lexeme: `return`;
   },
   {
     tt: keyword 'self';
-    loc: 104..108 (fid = 0);
+    loc: 122..126 (fid = 0);
     lexeme: `self`;
   },
   {
     tt: keyword 'then';
-    loc: 109..113 (fid = 0);
+    loc: 127..131 (fid = 0);
     lexeme: `then`;
   },
   {
     tt: keyword 'trait';
-    loc: 114..119 (fid = 0);
+    loc: 132..137 (fid = 0);
     lexeme: `trait`;
   },
   {
     tt: keyword 'true';
-    loc: 120..124 (fid = 0);
+    loc: 138..142 (fid = 0);
     lexeme: `true`;
   },
   {
     tt: keyword 'while';
-    loc: 125..130 (fid = 0);
+    loc: 143..148 (fid = 0);
     lexeme: `while`;
   },
   {
     tt: ident 'foo';
-    loc: 158..161 (fid = 0);
+    loc: 176..179 (fid = 0);
     lexeme: `foo`;
   },
   {
     tt: ident 'bar_baz';
-    loc: 162..169 (fid = 0);
+    loc: 180..187 (fid = 0);
     lexeme: `bar_baz`;
   },
   {
     tt: ident 'FooBarBaz';
-    loc: 170..179 (fid = 0);
+    loc: 188..197 (fid = 0);
     lexeme: `FooBarBaz`;
   },
   {
     tt: end of file;
-    loc: 180..181 (fid = 0);
+    loc: 198..199 (fid = 0);
     lexeme: N/A;
   },
 }

@@ -222,12 +222,16 @@ impl Display for TokenType {
 pub enum Keyword {
     /// and
     And,
+    /// as
+    As,
     /// break
     Break,
     /// comptime
     Comptime,
     /// continue
     Continue,
+    /// defer
+    Defer,
     /// else
     Else,
     /// false
@@ -244,12 +248,16 @@ pub enum Keyword {
     In,
     /// let
     Let,
+    /// loop
+    Loop,
     /// mut
     Mut,
     /// null
     Null,
-    /// Or
+    /// or
     Or,
+    /// orb
+    Orb,
     /// pub
     Pub,
     /// return
@@ -273,6 +281,9 @@ impl Keyword {
     /// `and` keyword.
     pub const AND: &str = "and";
 
+    /// `as` keyword.
+    pub const AS: &str = "as";
+
     /// `break` keyword.
     pub const BREAK: &str = "break";
 
@@ -281,6 +292,9 @@ impl Keyword {
 
     /// `continue` keyword.
     pub const CONTINUE: &str = "continue";
+
+    /// `defer` keyword.
+    pub const DEFER: &str = "defer";
 
     /// `else` keyword.
     pub const ELSE: &str = "else";
@@ -306,6 +320,9 @@ impl Keyword {
     /// `let` keyword.
     pub const LET: &str = "let";
 
+    /// `loop` keyword.
+    pub const LOOP: &str = "loop";
+
     /// `mut` keyword
     pub const MUT: &str = "mut";
 
@@ -314,6 +331,9 @@ impl Keyword {
 
     /// `or` keyword.
     pub const OR: &str = "or";
+
+    /// `orb` keyword.
+    pub const ORB: &str = "orb";
 
     /// `pub` keyword.
     pub const PUB: &str = "pub";
@@ -341,9 +361,11 @@ impl Display for Keyword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Keyword::And => f.write_str(Keyword::AND),
+            Keyword::As => f.write_str(Keyword::AS),
             Keyword::Break => f.write_str(Keyword::BREAK),
             Keyword::Comptime => f.write_str(Keyword::COMPTIME),
             Keyword::Continue => f.write_str(Keyword::CONTINUE),
+            Keyword::Defer => f.write_str(Keyword::DEFER),
             Keyword::Else => f.write_str(Keyword::ELSE),
             Keyword::False => f.write_str(Keyword::FALSE),
             Keyword::For => f.write_str(Keyword::FOR),
@@ -352,9 +374,11 @@ impl Display for Keyword {
             Keyword::Impl => f.write_str(Keyword::IMPL),
             Keyword::In => f.write_str(Keyword::IN),
             Keyword::Let => f.write_str(Keyword::LET),
+            Keyword::Loop => f.write_str(Keyword::LOOP),
             Keyword::Mut => f.write_str(Keyword::MUT),
             Keyword::Null => f.write_str(Keyword::NULL),
             Keyword::Or => f.write_str(Keyword::OR),
+            Keyword::Orb => f.write_str(Keyword::ORB),
             Keyword::Pub => f.write_str(Keyword::PUB),
             Keyword::Return => f.write_str(Keyword::RETURN),
             Keyword::Zelf => f.write_str(Keyword::SELF),

@@ -1,8 +1,10 @@
 // some keywords..
 and
+as
 break
 comptime
 continue
+defer
 else
 false
 for
@@ -11,9 +13,11 @@ if
 impl
 in
 let
+loop
 mut
 null
 or
+orb
 pub
 return
 self
