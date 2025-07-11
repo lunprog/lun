@@ -1,1 +1,1 @@
-//! Code generation of lun, takes [IR](lun_ir) and compiles it to machine code.
+//! Code generation of lun, takes [IR](lunc_fir) and compiles it to machine code.

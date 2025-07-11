@@ -113,6 +113,12 @@ impl DiagnosticSink {
     }
 }
 
+impl Default for DiagnosticSink {
+    fn default() -> Self {
+        DiagnosticSink::new()
+    }
+}
+
 /// A collector of Diagnostics.
 #[derive(Debug, Clone)]
 struct SinkInner {

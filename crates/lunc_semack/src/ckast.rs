@@ -63,7 +63,7 @@ pub fn from_ast<T: FromAst>(ast: T::Unchecked) -> T {
 
 /// Checked Lun Program see [`Program`]
 ///
-/// [`Program`]: lun_parser::definition::Program
+/// [`Program`]: lunc_parser::definition::Program
 #[derive(Debug, Clone)]
 pub struct CkProgram {
     pub defs: Vec<CkDefinition>,
@@ -81,7 +81,7 @@ impl FromAst for CkProgram {
 
 /// Checked Lun Definition see [`Definition`]
 ///
-/// [`Definition`]: lun_parser::definition::Definition
+/// [`Definition`]: lunc_parser::definition::Definition
 #[derive(Debug, Clone)]
 pub struct CkDefinition {
     pub vis: Vis,
@@ -112,7 +112,7 @@ impl FromAst for CkDefinition {
 
 /// Checked block see [`Block`].
 ///
-/// [`Block`]: lun_parser::stmt::Block
+/// [`Block`]: lunc_parser::stmt::Block
 #[derive(Debug, Clone)]
 pub struct CkBlock {
     pub stmts: Vec<CkStatement>,
@@ -136,7 +136,7 @@ impl FromAst for CkBlock {
 
 /// Checked statement see [`Statement`].
 ///
-/// [`Statement`]: lun_parser::stmt::Statement
+/// [`Statement`]: lunc_parser::stmt::Statement
 #[derive(Debug, Clone)]
 pub struct CkStatement {
     pub stmt: CkStmt,
@@ -171,12 +171,12 @@ impl FromAst for CkStatement {
 
 /// see [`Stmt`].
 ///
-/// [`Stmt`]: lun_parser::stmt::Stmt
+/// [`Stmt`]: lunc_parser::stmt::Stmt
 #[derive(Debug, Clone)]
 pub enum CkStmt {
     /// see [`VariableDef`]
     ///
-    /// [`VariableDef`]: lun_parser::stmt::Stmt::VariableDef
+    /// [`VariableDef`]: lunc_parser::stmt::Stmt::VariableDef
     VariableDef {
         name: String,
         name_loc: Span,
@@ -188,13 +188,13 @@ pub enum CkStmt {
     },
     /// see [`Expression`]
     ///
-    /// [`Expression`]: lun_parser::stmt::Stmt::Expression
+    /// [`Expression`]: lunc_parser::stmt::Stmt::Expression
     Expression(CkExpression),
 }
 
 /// see [`Arg`]
 ///
-/// [`Arg`]: lun_parser::expr::Arg
+/// [`Arg`]: lunc_parser::expr::Arg
 #[derive(Debug, Clone)]
 pub struct CkArg {
     pub name: String,
@@ -218,7 +218,7 @@ impl FromAst for CkArg {
 
 /// Checked expression, see [`Expression`] to understand.
 ///
-/// [`Expression`]: lun_parser::expr::Expression
+/// [`Expression`]: lunc_parser::expr::Expression
 #[derive(Debug, Clone)]
 pub struct CkExpression {
     /// the checked expression
@@ -386,27 +386,27 @@ impl Display for CkExpr {
 pub enum CkExpr {
     /// see [`IntLit`]
     ///
-    /// [`IntLit`]: lun_parser::expr::Expr::IntLit
+    /// [`IntLit`]: lunc_parser::expr::Expr::IntLit
     IntLit(u128),
     /// see [`BoolLit`]
     ///
-    /// [`BoolLit`]: lun_parser::expr::Expr::BoolLit
+    /// [`BoolLit`]: lunc_parser::expr::Expr::BoolLit
     BoolLit(bool),
     /// see [`StringLit`]
     ///
-    /// [`StringLit`]: lun_parser::expr::Expr::StringLit
+    /// [`StringLit`]: lunc_parser::expr::Expr::StringLit
     StringLit(String),
     /// see [`Grouping`]
     ///
-    /// [`Grouping`]: lun_parser::expr::Expr::Grouping
+    /// [`Grouping`]: lunc_parser::expr::Expr::Grouping
     Grouping(Box<CkExpression>),
     /// see [`Ident`]
     ///
-    /// [`Ident`]: lun_parser::expr::Expr::Ident
+    /// [`Ident`]: lunc_parser::expr::Expr::Ident
     Ident(MaybeUnresolved),
     /// see [`Binary`]
     ///
-    /// [`Binary`]: lun_parser::expr::Expr::Binary
+    /// [`Binary`]: lunc_parser::expr::Expr::Binary
     Binary {
         lhs: Box<CkExpression>,
         op: BinOp,
@@ -414,18 +414,18 @@ pub enum CkExpr {
     },
     /// see [`Unary`]
     ///
-    /// [`Unary`]: lun_parser::expr::Expr::Unary
+    /// [`Unary`]: lunc_parser::expr::Expr::Unary
     Unary { op: UnaryOp, val: Box<CkExpression> },
     /// see [`FunCall`]
     ///
-    /// [`FunCall`]: lun_parser::expr::Expr::FunCall
+    /// [`FunCall`]: lunc_parser::expr::Expr::FunCall
     FunCall {
         called: Box<CkExpression>,
         args: Vec<CkExpression>,
     },
     /// see [`FunDefinition`]
     ///
-    /// [`FunDefinition`]: lun_parser::expr::Expr::FunDefinition
+    /// [`FunDefinition`]: lunc_parser::expr::Expr::FunDefinition
     FunDefinition {
         args: Vec<CkArg>,
         rettype: Option<Box<CkExpression>>,
@@ -433,8 +433,8 @@ pub enum CkExpr {
     },
     /// see [`If`] and [`IfThenElse`]
     ///
-    /// [`If`]: lun_parser::expr::Expr::If
-    /// [`IfThenElse`]: lun_parser::expr::Expr::IfThenElse
+    /// [`If`]: lunc_parser::expr::Expr::If
+    /// [`IfThenElse`]: lunc_parser::expr::Expr::IfThenElse
     If {
         cond: Box<CkExpression>,
         then_branch: Box<CkExpression>,
@@ -442,11 +442,11 @@ pub enum CkExpr {
     },
     /// see [`Block`]
     ///
-    /// [`Block`]: lun_parser::expr::Expr::Block
+    /// [`Block`]: lunc_parser::expr::Expr::Block
     Block(CkBlock),
     /// see [`While`]
     ///
-    /// [`While`]: lun_parser::expr::Expr::While
+    /// [`While`]: lunc_parser::expr::Expr::While
     While {
         cond: Box<CkExpression>,
         body: CkBlock,
@@ -455,7 +455,7 @@ pub enum CkExpr {
     },
     /// see [`For`]
     ///
-    /// [`For`]: lun_parser::expr::Expr::For
+    /// [`For`]: lunc_parser::expr::Expr::For
     For {
         /// the variable that holds the value of the iterator
         variable: String,
@@ -464,11 +464,11 @@ pub enum CkExpr {
     },
     /// see [`Return`]
     ///
-    /// [`Return`]: lun_parser::expr::Expr::Return
+    /// [`Return`]: lunc_parser::expr::Expr::Return
     Return { val: Option<Box<CkExpression>> },
     /// see [`Break`]
     ///
-    /// [`Break`]: lun_parser::expr::Expr::Break
+    /// [`Break`]: lunc_parser::expr::Expr::Break
     Break {
         val: Option<Box<CkExpression>>,
         /// loop index
@@ -476,25 +476,25 @@ pub enum CkExpr {
     },
     /// see [`Continue`]
     ///
-    /// [`Continue`]: lun_parser::expr::Expr::Continue
+    /// [`Continue`]: lunc_parser::expr::Expr::Continue
     Continue {
         /// loop index
         index: Option<usize>,
     },
     /// see [`Null`]
     ///
-    /// [`Null`]: lun_parser::expr::Expr::Null
+    /// [`Null`]: lunc_parser::expr::Expr::Null
     Null,
     /// see [`PointerType`]
     ///
-    /// [`PointerType`]: lun_parser::expr::Expr::PointerType
+    /// [`PointerType`]: lunc_parser::expr::Expr::PointerType
     PointerType {
         mutable: bool,
         typ: Box<CkExpression>,
     },
     /// see [`Deref`]
     ///
-    /// [`Deref`]: lun_parser::expr::Expr::Deref
+    /// [`Deref`]: lunc_parser::expr::Expr::Deref
     Deref {
         mutable: bool,
         val: Box<CkExpression>,

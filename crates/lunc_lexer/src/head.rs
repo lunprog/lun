@@ -59,3 +59,9 @@ impl LexHead {
         self.cur_bytes += c.len_utf8();
     }
 }
+
+impl Default for LexHead {
+    fn default() -> Self {
+        LexHead::new()
+    }
+}

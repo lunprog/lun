@@ -207,11 +207,11 @@ pub fn fast_digit_length<const RADIX: u32>(n: u128) -> u32 {
     } else if RADIX == 8 {
         // octal: 3 bits per digit → ceil(bitlen/3)
         let bits = bit_length(n);
-        (bits + 2) / 3
+        bits.div_ceil(3)
     } else if RADIX == 16 {
         // hex: 4 bits per digit → ceil(bitlen/4)
         let bits = bit_length(n);
-        (bits + 3) / 4
+        bits.div_ceil(4)
     } else {
         // decimal: unrolled range match, up to 39 digits for u128
         match n {

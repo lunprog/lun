@@ -138,7 +138,7 @@ impl Token {
             }
             TokenType::StringLit(s) => {
                 writeln!(out, "  {{")?;
-                writeln!(out, "    tt: string {:?};", s)?;
+                writeln!(out, "    tt: string {s:?};")?;
                 print_common(out)?;
                 writeln!(out, "  }},")?;
             }
@@ -204,7 +204,7 @@ impl Display for TokenType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use TokenType::*;
         match self {
-            Kw(kw) => write!(f, "keyword `{}`", kw),
+            Kw(kw) => write!(f, "keyword `{kw}`"),
             Ident(_) => write!(f, "identifier"),
             IntLit(_) => write!(f, "integer literal"),
             StringLit(_) => write!(f, "string literal"),

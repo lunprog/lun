@@ -106,7 +106,7 @@ impl TestContext {
                 .depth_limit(80),
         )?;
 
-        writeln!(file, "{}", records_str)?;
+        writeln!(file, "{records_str}")?;
         Ok(())
     }
 
@@ -229,6 +229,12 @@ impl TestContext {
     }
 }
 
+impl Default for TestContext {
+    fn default() -> Self {
+        TestContext::new()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Test {
     name: String,
@@ -247,6 +253,12 @@ impl TestRecord {
             expected_compiler_out: String::new(),
             expected_test_out: String::new(),
         }
+    }
+}
+
+impl Default for TestRecord {
+    fn default() -> Self {
+        TestRecord::new()
     }
 }
 
@@ -281,7 +293,7 @@ impl TestSummary {
 
         if self.failed() {
             out.set_color(&TestContext::compiler_fail_color_spec())?;
-            write!(out, "Tests failed ({})", duration_str)?;
+            write!(out, "Tests failed ({duration_str})")?;
             out.reset()?;
 
             writeln!(out, ", {}/{} passed successfully", self.ok, self.test_count)?;
@@ -293,8 +305,8 @@ impl TestSummary {
         } else {
             writeln!(
                 out,
-                "Tests succeeded, {} passed successfully in {}",
-                self.ok, duration_str
+                "Tests succeeded, {} passed successfully in {duration_str}",
+                self.ok,
             )?;
         }
         out.reset()?;

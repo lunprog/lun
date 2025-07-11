@@ -34,11 +34,7 @@ impl AstNode for Block {
 
             let stmt = parse!(parser => Statement);
 
-            let next_brace = if let Some(Punct(Punctuation::RBrace)) = parser.peek_tt() {
-                true
-            } else {
-                false
-            };
+            let next_brace = matches!(parser.peek_tt(), Some(Punct(Punctuation::RBrace)));
             let is_expr = stmt.is_expr();
 
             match (next_brace, is_expr) {

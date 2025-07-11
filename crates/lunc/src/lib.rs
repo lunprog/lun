@@ -9,7 +9,6 @@ use std::{
     str::FromStr,
 };
 
-use shadow_rs::shadow;
 use thiserror::Error;
 
 use crate::{
@@ -22,15 +21,38 @@ use crate::{
     },
 };
 
-pub use lunc_codegen as codegen;
-pub use lunc_diag as diag;
-pub use lunc_fir as fir;
-pub use lunc_lexer as lexer;
-pub use lunc_parser as parser;
-pub use lunc_semack as semack;
-pub use lunc_utils as utils;
+mod re_exports {
+    #[doc(inline)]
+    pub use lunc_codegen as codegen;
 
-shadow!(build);
+    #[doc(inline)]
+    pub use lunc_diag as diag;
+
+    #[doc(inline)]
+    pub use lunc_fir as fir;
+
+    #[doc(inline)]
+    pub use lunc_lexer as lexer;
+
+    #[doc(inline)]
+    pub use lunc_parser as parser;
+
+    #[doc(inline)]
+    pub use lunc_semack as semack;
+
+    #[doc(inline)]
+    pub use lunc_utils as utils;
+}
+
+#[doc(inline)]
+pub use re_exports::*;
+
+mod build {
+    use shadow_rs::shadow;
+    shadow!(build);
+
+    pub use build::*;
+}
 
 type Result<T, E = CliError> = std::result::Result<T, E>;
 
@@ -117,7 +139,7 @@ Target format: <arch><[sub]>-<sys>-<env> where:
 
 List of supported targets:\
 ";
-    writeln!(out, "{}", TARGET_HELP).unwrap();
+    writeln!(out, "{TARGET_HELP}").unwrap();
 
     for target in TargetTriplet::SUPPORTED_TARGETS {
         writeln!(out, "{target}").unwrap();
@@ -252,9 +274,8 @@ impl CliArgs {
                 help = true;
             } else if arg == "-o" {
                 output = Some(PathBuf::from(CliArgs::next_arg(&mut args)?));
-            } else if arg.starts_with("-D") {
+            } else if let Some(flag_value) = arg.strip_prefix("-D") {
                 // Debug flags
-                let flag_value = &arg[2..];
                 let splits = flag_value.rsplit_once("=");
                 match splits {
                     Some(("halt-at", stage)) => {
@@ -433,7 +454,7 @@ pub fn run() -> Result<()> {
 
     //    maybe print the ast
     if argv.debug_print_at(DebugPrint::Ast) {
-        eprintln!("ast = {:#?}", ast);
+        eprintln!("ast = {ast:#?}");
     }
     if argv.debug_halt_at(DebugHalt::Parser) {
         return Ok(());

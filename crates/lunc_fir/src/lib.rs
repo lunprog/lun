@@ -10,7 +10,7 @@ use lunc_semack::{
 
 /// Ir Unit, for now equivalent to [`CkProgram`].
 ///
-/// [`CkProgram`]: lun_semack::ckast::CkProgram
+/// [`CkProgram`]: lunc_semack::ckast::CkProgram
 #[derive(Debug, Clone)]
 pub struct IrUnit {
     functions: Vec<Fun>,
@@ -53,7 +53,7 @@ impl IrUnit {
             fun.dump_with(&mut out)?;
         }
 
-        if self.rodata.len() != 0 {
+        if !self.rodata.is_empty() {
             writeln!(out)?;
             writeln!(out, "==== Rodata ====")?;
             writeln!(out)?;
@@ -79,7 +79,7 @@ impl IrUnit {
                 if j != 0 && j % 4 == 0 {
                     write!(out, " ")?;
                 }
-                write!(out, " {:02X}", byte)?;
+                write!(out, " {byte:02X}")?;
             }
             if chunk.len() % 4 == 0 && i == chunks.len() - 1 {
                 write!(out, " ")?;
@@ -121,6 +121,12 @@ impl IrUnit {
     }
 }
 
+impl Default for IrUnit {
+    fn default() -> Self {
+        IrUnit::new()
+    }
+}
+
 /// Function
 #[derive(Debug, Clone)]
 pub struct Fun {
@@ -145,7 +151,7 @@ impl Fun {
 
         write!(out, "{name}(")?;
         for (i, arg) in args.iter().enumerate() {
-            write!(out, "{}", arg)?;
+            write!(out, "{arg}")?;
 
             if i != args.len() - 1 {
                 write!(out, ", ")?;
@@ -281,6 +287,12 @@ impl OpBlock {
             }
         }
         Ok(())
+    }
+}
+
+impl Default for OpBlock {
+    fn default() -> Self {
+        OpBlock::new()
     }
 }
 

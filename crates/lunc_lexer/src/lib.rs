@@ -965,8 +965,9 @@ impl Lexer {
 ///
 /// # Fields
 ///
-/// * `base_bytes` - The byte offset of the start of the number in the source
-///                  input. Used for generating accurate error spans.
+/// * `base_bytes`
+///   The byte offset of the start of the number in the source input. Used for
+///   generating accurate error spans.
 #[derive(Debug, Clone)]
 pub struct ParseOptions {
     /// the base position where the parsing of the integer starts

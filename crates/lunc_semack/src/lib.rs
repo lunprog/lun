@@ -63,7 +63,7 @@ impl TypeExpectation for AtomicType {
     }
 
     fn dbg(&self) {
-        println!("{:?}", self);
+        println!("{self:?}");
     }
 }
 
@@ -83,19 +83,19 @@ impl<S: ToString, F: Fn(&AtomicType) -> bool> TypeExpectation for (S, F) {
 
 impl<T: TypeExpectation> TypeExpectation for &T {
     fn matches(&self, other: &AtomicType) -> bool {
-        T::matches(&self, other)
+        T::matches(self, other)
     }
 
     fn as_string(&self) -> String {
-        T::as_string(&self)
+        T::as_string(self)
     }
 
     fn can_coerce(&self, other: &AtomicType) -> Option<AtomicType> {
-        T::can_coerce(&self, other)
+        T::can_coerce(self, other)
     }
 
     fn dbg(&self) {
-        T::dbg(&self);
+        T::dbg(self);
     }
 }
 
@@ -623,12 +623,10 @@ impl SemanticCk {
 
                 expr.atomtyp = if op.is_relational() | op.is_logical() {
                     AtomicType::Bool
+                } else if let AtomicType::UnkConstrained(_) = lhs.atomtyp {
+                    rhs.atomtyp.clone()
                 } else {
-                    if let AtomicType::UnkConstrained(_) = lhs.atomtyp {
-                        rhs.atomtyp.clone()
-                    } else {
-                        lhs.atomtyp.clone()
-                    }
+                    lhs.atomtyp.clone()
                 };
             }
             CkExpr::Unary { op, val } => {
@@ -839,21 +837,19 @@ impl SemanticCk {
 
                         self.type_check(atomtyp, &mut **val, None, val_loc);
                     };
+                } else if atomtyp == AtomicType::Unknown {
+                    self.loop_stack.set_atomtyp(idx, AtomicType::Void);
                 } else {
-                    if atomtyp == AtomicType::Unknown {
-                        self.loop_stack.set_atomtyp(idx, AtomicType::Void);
-                    } else {
-                        self.sink.push(
-                            MismatchedTypes {
-                                expected: atomtyp.as_string(),
-                                found: AtomicType::Void,
-                                due_to: None,
-                                loc: expr.loc.clone(),
-                            }
-                            .into_diag()
-                            .with_note("help: give the `break` a value of the expected type"),
-                        );
-                    }
+                    self.sink.push(
+                        MismatchedTypes {
+                            expected: atomtyp.as_string(),
+                            found: AtomicType::Void,
+                            due_to: None,
+                            loc: expr.loc.clone(),
+                        }
+                        .into_diag()
+                        .with_note("help: give the `break` a value of the expected type"),
+                    );
                 }
             }
             CkExpr::Continue { index } => {
@@ -912,13 +908,10 @@ impl SemanticCk {
     }
 
     pub fn apply_expression_wish(&self, expr: &mut CkExpression, new_aty: AtomicType) {
-        match &mut expr.expr {
-            CkExpr::Ident(MaybeUnresolved::Resolved(symref)) => {
-                let mut sym = symref.write().unwrap();
-                sym.atomtyp = new_aty.clone();
-                // TODO: modify everywhere the symbol to be with the new type
-            }
-            _ => {}
+        if let CkExpr::Ident(MaybeUnresolved::Resolved(symref)) = &mut expr.expr {
+            let mut sym = symref.write().unwrap();
+            sym.atomtyp = new_aty.clone();
+            // TODO: modify everywhere the symbol to be with the new type
         }
         expr.atomtyp = new_aty;
     }
@@ -1567,6 +1560,12 @@ impl SymbolMap {
     }
 }
 
+impl Default for SymbolMap {
+    fn default() -> Self {
+        SymbolMap::new()
+    }
+}
+
 /// Symbol table.
 ///
 /// The symbol table is a stack of hash maps. Each hashmap maps a name to a
@@ -1782,23 +1781,11 @@ impl LoopStack {
     }
 
     pub fn get(&self, index: usize) -> Option<&Loop> {
-        for r#loop in &self.loops {
-            if r#loop.index == index {
-                return Some(r#loop);
-            }
-        }
-
-        None
+        self.loops.iter().find(|r#loop| r#loop.index == index)
     }
 
     fn get_mut(&mut self, index: usize) -> Option<&mut Loop> {
-        for r#loop in &mut self.loops {
-            if r#loop.index == index {
-                return Some(r#loop);
-            }
-        }
-
-        None
+        self.loops.iter_mut().find(|r#loop| r#loop.index == index)
     }
 
     pub fn set_atomtyp(&mut self, index: usize, atomtyp: AtomicType) {
@@ -1817,5 +1804,11 @@ impl LoopStack {
         );
 
         lop.atomtyp = atomtyp;
+    }
+}
+
+impl Default for LoopStack {
+    fn default() -> Self {
+        LoopStack::new()
     }
 }
