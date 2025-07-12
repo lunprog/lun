@@ -17,6 +17,7 @@ mod head;
 
 pub use head::*;
 
+/// Lexer, takes a source code of Lun and turns it into a token stream.
 #[derive(Debug, Clone)]
 pub struct Lexer {
     /// the list of characters, our source code but character by character
@@ -381,6 +382,32 @@ impl Lexer {
     }
 
     pub fn lex_number(&mut self) -> Result<TokenType, Diagnostic> {
+        let number = self.lex_number_internal()?;
+
+        match self.peek() {
+            Some('\'') => {
+                self.pop();
+                let specialization = self.lex_word();
+
+                match number {
+                    TokenType::IntLit(int) => Ok(TokenType::SpecializedIntLit {
+                        specialization,
+                        int,
+                    }),
+                    TokenType::FloatLit(float) => Ok(TokenType::SpecializedFloatLit {
+                        specialization,
+                        float,
+                    }),
+                    _ => unreachable!(),
+                }
+            }
+            _ => Ok(number),
+        }
+    }
+
+    /// function to lex a number BUT does not support specialization, call
+    /// [`lex_number`] instead
+    fn lex_number_internal(&mut self) -> Result<TokenType, Diagnostic> {
         // Integer literal grammar:
         //
         // int_lit = decimal_lit | binary_lit | octal_lit | hexadecimal_lit ;

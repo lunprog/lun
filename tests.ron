@@ -549,6 +549,59 @@
 ",
         expected_test_out: "",
     ),
+    "lexer/specialized_literals": (
+        expected_compiler_out: r#"tokenstream = {
+  {
+    tt: specialized char literal;
+    s12n: "a7";
+    lit: 'C'
+    loc: 28..33 (fid = 0);
+    lexeme: `a7'C'`;
+  },
+  {
+    tt: specialized char literal;
+    s12n: "fun";
+    lit: '\0'
+    loc: 68..75 (fid = 0);
+    lexeme: `fun'\0'`;
+  },
+  {
+    tt: specialized string literal;
+    s12n: "c";
+    lit: "Hello, world! This string is a null terminated string"
+    loc: 107..163 (fid = 0);
+    lexeme: `c"Hello, world! This string is a null terminated string"`;
+  },
+  {
+    tt: specialized string literal;
+    s12n: "orb";
+    lit: "Hello"
+    loc: 211..221 (fid = 0);
+    lexeme: `orb"Hello"`;
+  },
+  {
+    tt: specialized int literal;
+    s12n: "usz";
+    lit: 123456
+    loc: 254..265 (fid = 0);
+    lexeme: `123_456'usz`;
+  },
+  {
+    tt: specialized float literal;
+    s12n: "f64";
+    lit: 12345678.9
+    loc: 296..314 (fid = 0);
+    lexeme: `123_456.789e+2'f64`;
+  },
+  {
+    tt: end of file;
+    loc: 315..316 (fid = 0);
+    lexeme: N/A;
+  },
+}
+"#,
+        expected_test_out: "",
+    ),
     "lexer/string_literal": (
         expected_compiler_out: r#"tokenstream = {
   {

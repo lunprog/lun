@@ -1,0 +1,15 @@
+// specialized char literal
+a7'C'
+// specialization can be keywords
+fun'\0'
+
+// specialized string literal
+c"Hello, world! This string is a null terminated string"
+// specialization can be keywords, also here..
+orb"Hello"
+
+// specialized integer literal
+123_456'usz
+
+// specialized float literal
+123_456.789e+2'f64

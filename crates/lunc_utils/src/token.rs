@@ -154,12 +154,6 @@ impl Token {
                 print_common(out)?;
                 writeln!(out, "  }},")?;
             }
-            TokenType::Punct(p) => {
-                writeln!(out, "  {{")?;
-                writeln!(out, "    tt: punctuation {p:?};")?;
-                print_common(out)?;
-                writeln!(out, "  }},")?;
-            }
             TokenType::SpecializedStringLit {
                 specialization,
                 str,
@@ -179,6 +173,34 @@ impl Token {
                 writeln!(out, "    tt: specialized char literal;")?;
                 writeln!(out, "    s12n: {specialization:?};")?;
                 writeln!(out, "    lit: {char:?}")?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
+            TokenType::SpecializedIntLit {
+                specialization,
+                int,
+            } => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: specialized int literal;")?;
+                writeln!(out, "    s12n: {specialization:?};")?;
+                writeln!(out, "    lit: {int:?}")?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
+            TokenType::SpecializedFloatLit {
+                specialization,
+                float,
+            } => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: specialized float literal;")?;
+                writeln!(out, "    s12n: {specialization:?};")?;
+                writeln!(out, "    lit: {float:?}")?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
+            TokenType::Punct(p) => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: punctuation {p:?};")?;
                 print_common(out)?;
                 writeln!(out, "  }},")?;
             }
@@ -216,6 +238,10 @@ pub enum TokenType {
     SpecializedStringLit { specialization: String, str: String },
     /// specialized char literal
     SpecializedCharLit { specialization: String, char: char },
+    /// specialized integer literal
+    SpecializedIntLit { specialization: String, int: u128 },
+    /// specialized float literal
+    SpecializedFloatLit { specialization: String, float: f64 },
     /// punctuation and operators
     Punct(Punctuation),
     /// End Of File
@@ -239,6 +265,8 @@ impl Display for TokenType {
             FloatLit(_) => write!(f, "float literal"),
             SpecializedStringLit { .. } => write!(f, "specialized string literal"),
             SpecializedCharLit { .. } => write!(f, "specialized character literal"),
+            SpecializedIntLit { .. } => write!(f, "specialized integer literal"),
+            SpecializedFloatLit { .. } => write!(f, "specialized float literal"),
             Punct(p) => write!(f, "`{p}`"),
             EOF => write!(f, "\"<eof>\""),
             __NotAToken__ => write!(f, "not a token"),
