@@ -559,43 +559,57 @@
     lexeme: `a7'C'`;
   },
   {
-    tt: specialized char literal;
-    s12n: "fun";
-    lit: '\0'
-    loc: 68..75 (fid = 0);
-    lexeme: `fun'\0'`;
-  },
-  {
     tt: specialized string literal;
     s12n: "c";
     lit: "Hello, world! This string is a null terminated string"
-    loc: 107..163 (fid = 0);
+    loc: 65..121 (fid = 0);
     lexeme: `c"Hello, world! This string is a null terminated string"`;
-  },
-  {
-    tt: specialized string literal;
-    s12n: "orb";
-    lit: "Hello"
-    loc: 211..221 (fid = 0);
-    lexeme: `orb"Hello"`;
   },
   {
     tt: specialized int literal;
     s12n: "usz";
     lit: 123456
-    loc: 254..265 (fid = 0);
+    loc: 154..165 (fid = 0);
     lexeme: `123_456'usz`;
   },
   {
     tt: specialized float literal;
     s12n: "f64";
     lit: 12345678.9
-    loc: 296..314 (fid = 0);
+    loc: 196..214 (fid = 0);
     lexeme: `123_456.789e+2'f64`;
   },
   {
+    tt: specialized char literal;
+    s12n: "fun";
+    lit: '\0'
+    loc: 287..294 (fid = 0);
+    lexeme: `fun'\0'`;
+  },
+  {
+    tt: specialized string literal;
+    s12n: "orb";
+    lit: "Hello"
+    loc: 343..353 (fid = 0);
+    lexeme: `orb"Hello"`;
+  },
+  {
+    tt: specialized int literal;
+    s12n: "let";
+    lit: 343569
+    loc: 369..380 (fid = 0);
+    lexeme: `3435_69'let`;
+  },
+  {
+    tt: specialized float literal;
+    s12n: "comptime";
+    lit: 6.9
+    loc: 403..415 (fid = 0);
+    lexeme: `6.9'comptime`;
+  },
+  {
     tt: end of file;
-    loc: 315..316 (fid = 0);
+    loc: 416..417 (fid = 0);
     lexeme: N/A;
   },
 }
