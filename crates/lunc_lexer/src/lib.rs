@@ -45,7 +45,7 @@ impl Lexer {
 
         loop {
             self.head.reset();
-            let t = match self.make_token() {
+            let t = match self.lex_token() {
                 Ok(TokenType::__NotAToken__) => continue,
                 Ok(t) => t,
                 Err(diag) => {
@@ -125,7 +125,7 @@ impl Lexer {
         }
     }
 
-    pub fn make_token(&mut self) -> Result<TokenType, Diagnostic> {
+    pub fn lex_token(&mut self) -> Result<TokenType, Diagnostic> {
         use lunc_utils::token::{Punctuation::*, TokenType::*};
 
         let t = match self.peek() {
@@ -266,7 +266,7 @@ impl Lexer {
     }
 
     pub fn lex_identifier(&mut self) -> TokenType {
-        let word = self.make_word();
+        let word = self.lex_word();
 
         match self.peek() {
             Some('\"') => {
@@ -337,7 +337,7 @@ impl Lexer {
 
     /// Lexes the input while the content is alphanumeric with underscore(s)
     /// returns the content and if the string is numeric, in a tuple.
-    pub fn make_word(&mut self) -> String {
+    pub fn lex_word(&mut self) -> String {
         // TODO: maybe add support for a wider amount of characters in unicode.
         // https://www.unicode.org/reports/tr31/ look at that maybe
         let mut word = String::new();
@@ -352,7 +352,7 @@ impl Lexer {
 
     /// Lexes the input while the content is decimal digits or underscore,
     /// returns the content.
-    pub fn make_decimal(&mut self) -> String {
+    pub fn lex_decimal(&mut self) -> String {
         // TODO: maybe add support for a wider amount of characters in unicode.
         // https://www.unicode.org/reports/tr31/ look at that maybe
         let mut decimal = String::new();
@@ -367,7 +367,7 @@ impl Lexer {
 
     /// Lexes the input while the content is hexadecimal digits or underscore,
     /// returns the content.
-    pub fn make_hexadecimal(&mut self) -> String {
+    pub fn lex_hexadecimal(&mut self) -> String {
         // TODO: maybe add support for a wider amount of characters in unicode.
         // https://www.unicode.org/reports/tr31/ look at that maybe
         let mut hex = String::new();
@@ -414,7 +414,7 @@ impl Lexer {
 
                 self.pop(); // 0
                 self.pop(); // X / x
-                let int_str = self.make_hexadecimal();
+                let int_str = self.lex_hexadecimal();
                 let int_part = match self.parse_u128(&int_str, 16) {
                     Ok(h) => h,
                     Err(d) => {
@@ -429,7 +429,7 @@ impl Lexer {
 
                         let (frac_part, frac_divisor) = match self.peek() {
                             Some('0'..='9' | 'a'..='f' | 'A'..='F' | '_') => {
-                                let frac_str = self.make_hexadecimal();
+                                let frac_str = self.lex_hexadecimal();
 
                                 match self.parse_u128_with_digit_count(&frac_str, 16) {
                                     Ok((f, n)) => (f, n as i32),
@@ -470,7 +470,7 @@ impl Lexer {
                                     }
                                 };
 
-                                let exp_str = self.make_decimal();
+                                let exp_str = self.lex_decimal();
 
                                 let exp = match self.parse_u128(&exp_str, 10) {
                                     Ok(e) => e as i32,
@@ -532,7 +532,7 @@ impl Lexer {
                             }
                         };
 
-                        let exp_str = self.make_decimal();
+                        let exp_str = self.lex_decimal();
 
                         let exp_value = sign
                             * match self.parse_u128(&exp_str, 10) {
@@ -558,7 +558,7 @@ impl Lexer {
             }
             _ => 10,
         };
-        let int_str = self.make_word();
+        let int_str = self.lex_word();
 
         if int_str.is_empty() {
             self.sink.push(NoDigitsInANonDecimal { loc: self.loc() });
@@ -579,7 +579,7 @@ impl Lexer {
 
                 let (frac_part, frac_divisor) = match self.peek() {
                     Some('0'..='9') => {
-                        let frac_str = self.make_decimal();
+                        let frac_str = self.lex_decimal();
 
                         match self.parse_u128_with_digit_count(&frac_str, 10) {
                             Ok((f, n)) => (f, n as i32),
@@ -621,7 +621,7 @@ impl Lexer {
                             }
                         };
 
-                        let exp_str = self.make_decimal();
+                        let exp_str = self.lex_decimal();
 
                         let exp = match self.parse_u128(&exp_str, 10) {
                             Ok(e) => e as i32,
@@ -674,7 +674,7 @@ impl Lexer {
                         continue;
                     }
 
-                    match self.make_escape_sequence(es, true) {
+                    match self.lex_escape_sequence(es, true) {
                         Ok(c) => {
                             str.push(c);
                         }
@@ -717,7 +717,7 @@ impl Lexer {
                 if es == '\'' {
                     es
                 } else {
-                    match self.make_escape_sequence(es, false) {
+                    match self.lex_escape_sequence(es, false) {
                         Ok(es) => es,
                         Err(d) => {
                             self.sink.push(d);
@@ -764,7 +764,7 @@ impl Lexer {
 
     /// makes an escape sequence return a tuple of the character that corresponds
     /// to the escape and the increments to make to the head
-    pub fn make_escape_sequence(&mut self, es: char, string: bool) -> Result<char, Diagnostic> {
+    pub fn lex_escape_sequence(&mut self, es: char, string: bool) -> Result<char, Diagnostic> {
         #[inline(always)]
         fn char(i: u8) -> char {
             i as char
@@ -781,7 +781,7 @@ impl Lexer {
             'b' => char(0x08),
             'e' => char(0x1B),
             '\\' => char(0x5C), // character \
-            'x' => self.make_hex_es(string)?,
+            'x' => self.lex_hex_escape(string)?,
             'u' | 'U' => {
                 // TODO: implement the lexing of unicode es
                 // in the for of \U+FFFF ig
@@ -806,7 +806,7 @@ impl Lexer {
 
     /// set string to true if the escape sequence is part of a string, false if
     /// it is part of a char literal
-    pub fn make_hex_es(&mut self, string: bool) -> Result<char, Diagnostic> {
+    pub fn lex_hex_escape(&mut self, string: bool) -> Result<char, Diagnostic> {
         let mut str = String::with_capacity(2);
         for _ in 0..2 {
             str.push(match self.peek() {
