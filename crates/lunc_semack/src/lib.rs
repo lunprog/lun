@@ -13,9 +13,9 @@ use diags::{
     UnderscoreInExpression, UnderscoreReservedIdent, UnknownType,
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, ToDiagnostic, feature_todo};
-use lunc_parser::definition::Program;
-pub use lunc_parser::definition::Vis;
 use lunc_parser::expr::{BinOp, UnaryOp};
+use lunc_parser::item::Program;
+pub use lunc_parser::item::Vis;
 use lunc_utils::Span;
 
 pub mod ckast;

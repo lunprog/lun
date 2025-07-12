@@ -4,8 +4,8 @@ use std::fmt;
 
 pub use lunc_parser::expr::{BinOp, UnaryOp};
 use lunc_parser::{
-    definition::Definition,
     expr::{Arg, Else, Expr, Expression, IfExpression},
+    item::Definition,
     stmt::{Block, Statement, Stmt},
 };
 

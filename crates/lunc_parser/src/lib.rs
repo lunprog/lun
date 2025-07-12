@@ -2,9 +2,9 @@
 
 use std::fmt::Debug;
 
-use definition::Program;
 use diags::*;
 use expr::Expression;
+use item::Program;
 use lunc_diag::{Diagnostic, DiagnosticSink, ReachedEOF, ToDiagnostic};
 
 use lunc_utils::{
@@ -15,9 +15,9 @@ use lunc_utils::{
     },
 };
 
-pub mod definition;
 pub mod diags;
 pub mod expr;
+pub mod item;
 pub mod stmt;
 
 #[derive(Debug, Clone)]
