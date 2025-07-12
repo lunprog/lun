@@ -156,10 +156,10 @@ pub enum Expr {
     ///
     /// "*" "mut"? expression
     PointerType { mutable: bool, typ: Box<Expression> },
-    /// Dereference
+    /// Address of
     ///
     /// "&" "mut"? expression
-    Deref { mutable: bool, val: Box<Expression> },
+    AddressOf { mutable: bool, val: Box<Expression> },
 }
 
 #[derive(Debug, Clone)]
@@ -1027,7 +1027,7 @@ pub fn parse_deref_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let hi = val.loc.clone();
 
     Ok(Expression {
-        expr: Expr::Deref { mutable, val },
+        expr: Expr::AddressOf { mutable, val },
         loc: Span::from_ends(lo, hi),
     })
 }

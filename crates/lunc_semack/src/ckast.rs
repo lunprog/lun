@@ -299,7 +299,7 @@ impl FromAst for CkExpression {
                 mutable,
                 typ: from_ast(*typ),
             },
-            Expr::Deref { mutable, val } => CkExpr::Deref {
+            Expr::AddressOf { mutable, val } => CkExpr::Deref {
                 mutable,
                 val: from_ast(*val),
             },
