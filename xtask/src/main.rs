@@ -1,4 +1,8 @@
-use std::process::{Command, ExitCode, ExitStatus};
+use std::{
+    fs,
+    path::Path,
+    process::{Command, ExitCode, ExitStatus},
+};
 
 use clap::{Parser, Subcommand};
 
@@ -22,13 +26,15 @@ pub enum Cmd {
         #[arg(last = true)]
         args: Vec<String>,
     },
-    /// Watch for changes in source code and runs [cmd] if provided or defaults
-    /// to `cargo check`
+    /// Watch for changes in source code and runs cmd if provided or defaults to
+    /// `cargo check`
     Watch {
         /// arguments to pass to 'cargo watch'
         #[arg(last = true)]
         args: Vec<String>,
     },
+    /// Returns the number of line of codes in the `tests` folder
+    Loc,
 }
 
 pub fn build(quiet: bool, bin: &str) -> ExitStatus {
@@ -109,6 +115,37 @@ fn main() -> ExitCode {
             if !watch_status.success() {
                 return ExitCode::FAILURE;
             }
+
+            ExitCode::SUCCESS
+        }
+        Cmd::Loc => {
+            // start watching
+
+            fn walk_dir(dir: &Path) -> usize {
+                let mut loc = 0;
+
+                if let Ok(entries) = fs::read_dir(dir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        if path.is_dir() {
+                            loc += walk_dir(&path);
+                        } else {
+                            let lines = {
+                                let content =
+                                    fs::read_to_string(&path).expect("failed to read a file");
+                                content.lines().count()
+                            };
+
+                            eprintln!("{:>8} {}", lines, path.display());
+                            loc += lines;
+                        }
+                    }
+                }
+
+                loc
+            }
+
+            eprintln!("{:>8} total", walk_dir(Path::new("tests")));
 
             ExitCode::SUCCESS
         }
