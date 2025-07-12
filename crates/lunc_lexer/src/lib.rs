@@ -272,7 +272,7 @@ impl Lexer {
 
         match self.peek() {
             Some('\"') => {
-                let str = match self.lex_string() {
+                let str = match self.lex_string_with_options(false) {
                     Ok(TokenType::StringLit(s)) => s,
                     Ok(_) => unreachable!(),
                     Err(d) => {
@@ -678,6 +678,13 @@ impl Lexer {
     }
 
     pub fn lex_string(&mut self) -> Result<TokenType, Diagnostic> {
+        self.lex_string_with_options(true)
+    }
+
+    pub fn lex_string_with_options(
+        &mut self,
+        support_escape: bool,
+    ) -> Result<TokenType, Diagnostic> {
         let mut str = String::new();
 
         // pop the first "
@@ -689,7 +696,7 @@ impl Lexer {
                     self.pop();
                     break;
                 }
-                Some('\\') => {
+                Some('\\') if support_escape => {
                     self.pop();
 
                     let es = match self.pop() {

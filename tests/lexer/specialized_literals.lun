@@ -4,6 +4,9 @@ a7'C'
 // specialized string literal
 c"Hello, world! This string is a null terminated string"
 
+// specialized string literal does not escape
+r"no escapes \n\r"
+
 // specialized integer literal
 123_456'usz
 
