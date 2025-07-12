@@ -61,6 +61,14 @@ pub enum Expr {
     ///
     /// string
     StringLit(String),
+    /// character literal expression
+    ///
+    /// char
+    CharLit(char),
+    /// float literal expression
+    ///
+    /// float
+    FloatLit(f64),
     /// grouping expression (just parenthesis)
     ///
     /// "(" expr ")"
@@ -194,8 +202,9 @@ pub fn parse_expr_precedence(
     let mut lhs = match parser.peek_tt() {
         Some(IntLit(_)) => parse!(@fn parser => parse_intlit_expr),
         Some(Kw(Keyword::True | Keyword::False)) => parse!(@fn parser => parse_boollit_expr),
-        // Some(Char(_)) => parse!(@fn parser => parse_charlit_expr),
         Some(StringLit(_)) => parse!(@fn parser => parse_strlit_expr),
+        Some(CharLit(_)) => parse!(@fn parser => parse_charlit_expr),
+        Some(FloatLit(_)) => parse!(@fn parser => parse_floatlit_expr),
         Some(Punct(Punctuation::LParen)) => parse!(@fn parser => parse_grouping_expr),
         Some(Punct(Punctuation::Ampsand)) => parse!(@fn parser => parse_deref_expr),
         Some(Ident(_)) => parse!(@fn parser => parse_ident_expr),
@@ -281,6 +290,26 @@ pub fn parse_strlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
     Ok(Expression {
         expr: Expr::StringLit(str),
+        loc,
+    })
+}
+
+/// Parses a character literal expression
+pub fn parse_charlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (char, loc) = expect_token!(parser => [CharLit(c), *c], "character literal");
+
+    Ok(Expression {
+        expr: Expr::CharLit(char),
+        loc,
+    })
+}
+
+/// Parses a float literal expression
+pub fn parse_floatlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (float, loc) = expect_token!(parser => [FloatLit(f), *f], "float literal");
+
+    Ok(Expression {
+        expr: Expr::FloatLit(float),
         loc,
     })
 }

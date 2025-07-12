@@ -303,6 +303,7 @@ impl FromAst for CkExpression {
                 mutable,
                 val: from_ast(*val),
             },
+            _ => todo!(),
         };
 
         CkExpression {
