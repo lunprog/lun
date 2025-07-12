@@ -160,6 +160,28 @@ impl Token {
                 print_common(out)?;
                 writeln!(out, "  }},")?;
             }
+            TokenType::SpecializedStringLit {
+                specialization,
+                str,
+            } => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: specialized string literal;")?;
+                writeln!(out, "    s12n: {specialization:?};")?;
+                writeln!(out, "    lit: {str:?}")?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
+            TokenType::SpecializedCharLit {
+                specialization,
+                char,
+            } => {
+                writeln!(out, "  {{")?;
+                writeln!(out, "    tt: specialized char literal;")?;
+                writeln!(out, "    s12n: {specialization:?};")?;
+                writeln!(out, "    lit: {char:?}")?;
+                print_common(out)?;
+                writeln!(out, "  }},")?;
+            }
             TokenType::EOF => {
                 writeln!(out, "  {{")?;
                 writeln!(out, "    tt: end of file;")?;
@@ -190,6 +212,10 @@ pub enum TokenType {
     CharLit(char),
     /// float literal
     FloatLit(f64),
+    /// specialized string literal
+    SpecializedStringLit { specialization: String, str: String },
+    /// specialized char literal
+    SpecializedCharLit { specialization: String, char: char },
     /// punctuation and operators
     Punct(Punctuation),
     /// End Of File
@@ -203,6 +229,7 @@ pub enum TokenType {
 impl Display for TokenType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use TokenType::*;
+
         match self {
             Kw(kw) => write!(f, "keyword `{kw}`"),
             Ident(_) => write!(f, "identifier"),
@@ -210,6 +237,8 @@ impl Display for TokenType {
             StringLit(_) => write!(f, "string literal"),
             CharLit(_) => write!(f, "character literal"),
             FloatLit(_) => write!(f, "float literal"),
+            SpecializedStringLit { .. } => write!(f, "specialized string literal"),
+            SpecializedCharLit { .. } => write!(f, "specialized character literal"),
             Punct(p) => write!(f, "`{p}`"),
             EOF => write!(f, "\"<eof>\""),
             __NotAToken__ => write!(f, "not a token"),

@@ -268,36 +268,70 @@ impl Lexer {
     pub fn lex_identifier(&mut self) -> TokenType {
         let word = self.make_word();
 
-        use TokenType::Kw;
+        match self.peek() {
+            Some('\"') => {
+                let str = match self.lex_string() {
+                    Ok(TokenType::StringLit(s)) => s,
+                    Ok(_) => unreachable!(),
+                    Err(d) => {
+                        self.sink.push(d);
+                        String::default()
+                    }
+                };
 
-        match word.as_str() {
-            Keyword::AND => Kw(Keyword::And),
-            Keyword::AS => Kw(Keyword::As),
-            Keyword::BREAK => Kw(Keyword::Break),
-            Keyword::COMPTIME => Kw(Keyword::Comptime),
-            Keyword::CONTINUE => Kw(Keyword::Continue),
-            Keyword::DEFER => Kw(Keyword::Defer),
-            Keyword::ELSE => Kw(Keyword::Else),
-            Keyword::FALSE => Kw(Keyword::False),
-            Keyword::FOR => Kw(Keyword::For),
-            Keyword::FUN => Kw(Keyword::Fun),
-            Keyword::IF => Kw(Keyword::If),
-            Keyword::IMPL => Kw(Keyword::Impl),
-            Keyword::IN => Kw(Keyword::In),
-            Keyword::LET => Kw(Keyword::Let),
-            Keyword::LOOP => Kw(Keyword::Loop),
-            Keyword::MUT => Kw(Keyword::Mut),
-            Keyword::NULL => Kw(Keyword::Null),
-            Keyword::OR => Kw(Keyword::Or),
-            Keyword::ORB => Kw(Keyword::Orb),
-            Keyword::PUB => Kw(Keyword::Pub),
-            Keyword::RETURN => Kw(Keyword::Return),
-            Keyword::SELF => Kw(Keyword::Zelf),
-            Keyword::THEN => Kw(Keyword::Then),
-            Keyword::TRAIT => Kw(Keyword::Trait),
-            Keyword::TRUE => Kw(Keyword::True),
-            Keyword::WHILE => Kw(Keyword::While),
-            _ => TokenType::Ident(word),
+                TokenType::SpecializedStringLit {
+                    specialization: word,
+                    str,
+                }
+            }
+            Some('\'') => {
+                let char = match self.lex_char() {
+                    Ok(TokenType::CharLit(c)) => c,
+                    Ok(_) => unreachable!(),
+                    Err(d) => {
+                        self.sink.push(d);
+                        char::default()
+                    }
+                };
+
+                TokenType::SpecializedCharLit {
+                    specialization: word,
+                    char,
+                }
+            }
+            _ => {
+                use TokenType::Kw;
+
+                match word.as_str() {
+                    Keyword::AND => Kw(Keyword::And),
+                    Keyword::AS => Kw(Keyword::As),
+                    Keyword::BREAK => Kw(Keyword::Break),
+                    Keyword::COMPTIME => Kw(Keyword::Comptime),
+                    Keyword::CONTINUE => Kw(Keyword::Continue),
+                    Keyword::DEFER => Kw(Keyword::Defer),
+                    Keyword::ELSE => Kw(Keyword::Else),
+                    Keyword::FALSE => Kw(Keyword::False),
+                    Keyword::FOR => Kw(Keyword::For),
+                    Keyword::FUN => Kw(Keyword::Fun),
+                    Keyword::IF => Kw(Keyword::If),
+                    Keyword::IMPL => Kw(Keyword::Impl),
+                    Keyword::IN => Kw(Keyword::In),
+                    Keyword::LET => Kw(Keyword::Let),
+                    Keyword::LOOP => Kw(Keyword::Loop),
+                    Keyword::MUT => Kw(Keyword::Mut),
+                    Keyword::NULL => Kw(Keyword::Null),
+                    Keyword::OR => Kw(Keyword::Or),
+                    Keyword::ORB => Kw(Keyword::Orb),
+                    Keyword::PUB => Kw(Keyword::Pub),
+                    Keyword::RETURN => Kw(Keyword::Return),
+                    Keyword::SELF => Kw(Keyword::Zelf),
+                    Keyword::THEN => Kw(Keyword::Then),
+                    Keyword::TRAIT => Kw(Keyword::Trait),
+                    Keyword::TRUE => Kw(Keyword::True),
+                    Keyword::WHILE => Kw(Keyword::While),
+                    _ => TokenType::Ident(word),
+                }
+            }
         }
     }
 
