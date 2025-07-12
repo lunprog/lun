@@ -18,4 +18,4 @@ jobs:
       - name: Build lunc
         run: cargo build --bin lunc
       - name: Run Tests
-        run: python3 b test
+        run: cargo xtask test

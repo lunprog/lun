@@ -1,0 +1,8 @@
+[package]
+name = "xtask"
+edition = "2024"
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+clap = { version = "4.5.41", features = ["derive"] }

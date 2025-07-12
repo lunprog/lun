@@ -1,0 +1,2 @@
+[alias]
+xtask = "-q run -r --package xtask --"

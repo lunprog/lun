@@ -1,6 +1,6 @@
 use std::{env, error::Error, path::Path};
 
-use luntests::TestContext;
+use luntests::{TestContext, TestFailed};
 use termcolor::{ColorChoice, StandardStream};
 
 const HELP_MESSAGE: &str = "\
@@ -33,7 +33,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     match args.next().as_deref() {
         Some("record") => record_tests(&mut tctx)?,
         Some("help") => eprint!("{HELP_MESSAGE}"),
-        _ => run_tests(&mut tctx, &mut out)?,
+        _ => match run_tests(&mut tctx, &mut out) {
+            Ok(()) => {}
+            Err(()) => std::process::exit(1),
+        },
     }
 
     Ok(())
@@ -47,7 +50,14 @@ fn record_tests(tctx: &mut TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn run_tests(tctx: &mut TestContext, out: &mut StandardStream) -> Result<(), Box<dyn Error>> {
-    tctx.run_tests(out)?;
-    Ok(())
+fn run_tests(tctx: &mut TestContext, out: &mut StandardStream) -> Result<(), ()> {
+    let res = tctx.run_tests(out);
+    match res {
+        Ok(()) => Ok(()),
+        Err(e) if e.is::<TestFailed>() => Err(()),
+        Err(e) => {
+            eprintln!("ERROR: {e}");
+            Err(())
+        }
+    }
 }
