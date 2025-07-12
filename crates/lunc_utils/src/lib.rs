@@ -1,6 +1,6 @@
 use std::{
     fmt::{Display, Write},
-    ops::Range,
+    ops::{Add, Range},
 };
 
 pub mod target;
@@ -44,6 +44,19 @@ impl Span {
 
     pub fn slice_str<'str>(&self, s: &'str str) -> &'str str {
         &s[Range::<usize>::from(self.clone())]
+    }
+}
+
+impl Add for Span {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        assert_eq!(self.fid, rhs.fid);
+        Span {
+            lo: self.lo.min(rhs.lo),
+            hi: self.hi.max(rhs.hi),
+            fid: self.fid,
+        }
     }
 }
 

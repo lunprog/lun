@@ -67,8 +67,13 @@
     lexeme: `'🌒'`;
   },
   {
+    tt: character '🌒';
+    loc: 68..79 (fid = 0);
+    lexeme: `'\u{1F312}'`;
+  },
+  {
     tt: end of file;
-    loc: 68..69 (fid = 0);
+    loc: 80..81 (fid = 0);
     lexeme: N/A;
   },
 }
@@ -639,8 +644,13 @@
     lexeme: `"string support UTF-8: ÿ, 🌒 etc.."`;
   },
   {
+    tt: string "and supports unicode escape; Lun: 🌒";
+    loc: 138..183 (fid = 0);
+    lexeme: `"and supports unicode escape; Lun: \u{1f312}"`;
+  },
+  {
     tt: end of file;
-    loc: 138..139 (fid = 0);
+    loc: 184..185 (fid = 0);
     lexeme: N/A;
   },
 }

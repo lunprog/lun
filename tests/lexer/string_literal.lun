@@ -2,3 +2,4 @@
 "\0 \n \r \f \t \v \a \b \e \\ \xFF"
 "'we can use simple quotes inside a string'"
 "string support UTF-8: ÿ, 🌒 etc.."
+"and supports unicode escape; Lun: \u{1f312}"

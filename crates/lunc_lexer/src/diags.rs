@@ -167,3 +167,39 @@ impl ToDiagnostic for NotEnoughHexDigits {
             .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
+
+#[derive(Debug, Clone)]
+pub enum InvalidUnicodeNote {
+    ExpectedOpeningBrace,
+    EmptyUnicode,
+    TooBig,
+    ExpectedClosingBrace,
+    MustNotBeASurrogate,
+}
+
+impl InvalidUnicodeNote {
+    pub fn note_str(&self) -> &str {
+        match self {
+            Self::ExpectedOpeningBrace => "expected '{' after '\\u'",
+            Self::EmptyUnicode => "this escape must have at least one hex digit",
+            Self::TooBig => "this hex number doesn't fit in 32 bits",
+            Self::ExpectedClosingBrace => "expected '}' at the end of the unicode escape",
+            Self::MustNotBeASurrogate => "unicode escape must not be a surrogate",
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct InvalidUnicodeEscape {
+    pub note: InvalidUnicodeNote,
+    pub loc: Span,
+}
+
+impl ToDiagnostic for InvalidUnicodeEscape {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::InvalidUnicodeEscape)
+            .with_message("invalid unicode escape")
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message(self.note.note_str()))
+    }
+}

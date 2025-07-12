@@ -1,11 +1,12 @@
 //! Lexer of lun
 
 use diags::{
-    EmptyCharLiteral, ExpectedExponentPart, InvalidDigitInNumber, NoDigitsInANonDecimal,
-    NotEnoughHexDigits, TooLargeIntegerLiteral, TooManyCodepointsInCharLiteral,
-    UnknownCharacterEscape, UnknownToken, UnterminatedStringLiteral,
+    EmptyCharLiteral, ExpectedExponentPart, InvalidDigitInNumber, InvalidUnicodeEscape,
+    InvalidUnicodeNote, NoDigitsInANonDecimal, NotEnoughHexDigits, TooLargeIntegerLiteral,
+    TooManyCodepointsInCharLiteral, UnknownCharacterEscape, UnknownToken,
+    UnterminatedStringLiteral,
 };
-use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, feature_todo};
+use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF};
 
 use lunc_utils::{
     Span, span,
@@ -807,17 +808,59 @@ impl Lexer {
             'a' => char(0x07),
             'b' => char(0x08),
             'e' => char(0x1B),
-            '\\' => char(0x5C), // character \
+            '\\' => char(0x5C), // \
             'x' => self.lex_hex_escape(string)?,
-            'u' | 'U' => {
-                // TODO: implement the lexing of unicode es
-                // in the for of \U+FFFF ig
-                self.sink.push(feature_todo! {
-                    feature: "unicode escape sequence",
-                    label: "unicode escape isn't yet implemented.",
-                    loc: self.loc(),
-                });
-                char::default()
+            'u' => {
+                match self.peek() {
+                    Some('{') => {
+                        self.pop();
+                    }
+                    _ => self.sink.push(InvalidUnicodeEscape {
+                        note: InvalidUnicodeNote::ExpectedOpeningBrace,
+                        loc: self.loc_current_char(),
+                    }),
+                }
+                let hex_str = self.lex_hexadecimal();
+
+                if hex_str.is_empty() {
+                    self.sink.push(InvalidUnicodeEscape {
+                        note: InvalidUnicodeNote::EmptyUnicode,
+                        loc: self.loc() + self.loc_current_char(),
+                    });
+                }
+
+                let hex: u32 = match self.parse_u128(&hex_str, 16)?.try_into() {
+                    Ok(h) => h,
+                    Err(_) => {
+                        self.sink.push(InvalidUnicodeEscape {
+                            note: InvalidUnicodeNote::TooBig,
+                            loc: self.loc(),
+                        });
+
+                        0x00
+                    }
+                };
+
+                match self.peek() {
+                    Some('}') => {
+                        self.pop();
+                    }
+                    _ => self.sink.push(InvalidUnicodeEscape {
+                        note: InvalidUnicodeNote::ExpectedClosingBrace,
+                        loc: self.loc_current_char(),
+                    }),
+                }
+
+                if let Some(c) = char::from_u32(hex) {
+                    c
+                } else {
+                    self.sink.push(InvalidUnicodeEscape {
+                        note: InvalidUnicodeNote::MustNotBeASurrogate,
+                        loc: self.loc(),
+                    });
+
+                    char::default()
+                }
             }
             _ => {
                 self.sink.push(UnknownCharacterEscape {

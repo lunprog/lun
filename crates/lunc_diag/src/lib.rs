@@ -400,6 +400,8 @@ pub enum ErrorCode {
     EmptyCharLiteral = 23,
     /// not enough hexadecimal digits in escape sequence
     NotEnoughHexDigits = 24,
+    /// invalid unicode escape
+    InvalidUnicodeEscape = 25,
 }
 
 impl Display for ErrorCode {
