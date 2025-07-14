@@ -26,7 +26,11 @@ impl Expression {
     pub fn is_expr_with_block(&self) -> bool {
         matches!(
             self.expr,
-            Expr::If(_) | Expr::Block(_) | Expr::While { .. } | Expr::For { .. }
+            Expr::If(_)
+                | Expr::Block(_)
+                | Expr::While { .. }
+                | Expr::For { .. }
+                | Expr::FunDefinition { .. }
         )
     }
 }

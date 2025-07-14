@@ -2516,4 +2516,182 @@
 "#,
         expected_test_out: "",
     ),
+    "parser/item": (
+        expected_compiler_out: r#"ast = Program {
+    defs: [
+        GlobalConst {
+            name: "main",
+            name_loc: Span {
+                lo: 19,
+                hi: 23,
+                fid: FileId(
+                    0,
+                ),
+            },
+            typ: None,
+            value: Expression {
+                expr: FunDefinition {
+                    args: [],
+                    rettype: None,
+                    body: Block {
+                        stmts: [],
+                        last_expr: None,
+                        loc: Span {
+                            lo: 33,
+                            hi: 35,
+                            fid: FileId(
+                                0,
+                            ),
+                        },
+                    },
+                },
+                loc: Span {
+                    lo: 27,
+                    hi: 35,
+                    fid: FileId(
+                        0,
+                    ),
+                },
+            },
+            loc: Span {
+                lo: 19,
+                hi: 35,
+                fid: FileId(
+                    0,
+                ),
+            },
+        },
+        GlobalConst {
+            name: "avogadro",
+            name_loc: Span {
+                lo: 36,
+                hi: 44,
+                fid: FileId(
+                    0,
+                ),
+            },
+            typ: Some(
+                Expression {
+                    expr: Ident(
+                        "f64",
+                    ),
+                    loc: Span {
+                        lo: 47,
+                        hi: 50,
+                        fid: FileId(
+                            0,
+                        ),
+                    },
+                },
+            ),
+            value: Expression {
+                expr: FloatLit(
+                    6.0219999999999996e23,
+                ),
+                loc: Span {
+                    lo: 53,
+                    hi: 61,
+                    fid: FileId(
+                        0,
+                    ),
+                },
+            },
+            loc: Span {
+                lo: 36,
+                hi: 62,
+                fid: FileId(
+                    0,
+                ),
+            },
+        },
+        GlobalVar {
+            name: "hello",
+            name_loc: Span {
+                lo: 78,
+                hi: 83,
+                fid: FileId(
+                    0,
+                ),
+            },
+            typ: Some(
+                Expression {
+                    expr: PointerType {
+                        mutable: false,
+                        typ: Expression {
+                            expr: Ident(
+                                "str",
+                            ),
+                            loc: Span {
+                                lo: 87,
+                                hi: 90,
+                                fid: FileId(
+                                    0,
+                                ),
+                            },
+                        },
+                    },
+                    loc: Span {
+                        lo: 86,
+                        hi: 90,
+                        fid: FileId(
+                            0,
+                        ),
+                    },
+                },
+            ),
+            value: Expression {
+                expr: StringLit(
+                    "Hello",
+                ),
+                loc: Span {
+                    lo: 93,
+                    hi: 100,
+                    fid: FileId(
+                        0,
+                    ),
+                },
+            },
+            loc: Span {
+                lo: 78,
+                hi: 101,
+                fid: FileId(
+                    0,
+                ),
+            },
+        },
+        GlobalVar {
+            name: "globFloat",
+            name_loc: Span {
+                lo: 102,
+                hi: 111,
+                fid: FileId(
+                    0,
+                ),
+            },
+            typ: None,
+            value: Expression {
+                expr: FloatLit(
+                    12.0,
+                ),
+                loc: Span {
+                    lo: 115,
+                    hi: 119,
+                    fid: FileId(
+                        0,
+                    ),
+                },
+            },
+            loc: Span {
+                lo: 102,
+                hi: 120,
+                fid: FileId(
+                    0,
+                ),
+            },
+        },
+    ],
+}
+"#,
+        expected_test_out: "",
+    ),
 }

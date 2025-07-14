@@ -114,6 +114,7 @@ impl FromAst for CkDefinition {
                 loc,
                 sym: MaybeUnresolved::Unresolved(name),
             },
+            _ => todo!(),
         }
     }
 }
