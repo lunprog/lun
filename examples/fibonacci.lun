@@ -1,8 +1,8 @@
 //! fibonacci - we compute the fibonacci sequence recursively
 
 main :: fun() {
-    let fib10 = fib(10);
-    let fib1million = fib(1_000_000);
+    fib10 :: fib(10);
+    fib1million :: fib(1_000_000);
 }
 
 fib :: fun(n: int) -> int {
