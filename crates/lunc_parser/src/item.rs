@@ -71,7 +71,7 @@ impl AstNode for Item {
             Some(Punct(Punctuation::Hashtag)) => parse_directive_item(parser),
             Some(_) => {
                 let t = parser.peek_tok().unwrap().clone();
-                return Err(ExpectedToken::new("item", t.tt, None::<String>, t.loc).into_diag());
+                Err(ExpectedToken::new("item", t.tt, None::<String>, t.loc).into_diag())
             }
             None => Err(parser.eof_diag()),
         }
@@ -131,12 +131,12 @@ pub fn parse_directive_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
             "mod" => parse_mod_directive(parser),
             _ => {
                 let t = parser.nth_tok(1).unwrap().clone();
-                return Err(ExpectedToken::new(["mod"], t.tt, Some("directive"), t.loc).into_diag());
+                Err(ExpectedToken::new(["mod"], t.tt, Some("directive"), t.loc).into_diag())
             }
         },
         _ => {
             let t = parser.nth_tok(1).unwrap().clone();
-            return Err(ExpectedToken::new(["mod"], t.tt, Some("directive"), t.loc).into_diag());
+            Err(ExpectedToken::new(["mod"], t.tt, Some("directive"), t.loc).into_diag())
         }
     }
 }
