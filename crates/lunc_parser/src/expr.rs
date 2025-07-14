@@ -163,6 +163,10 @@ pub enum Expr {
         expr: Box<Expression>,
         member: String,
     },
+    /// orb expression
+    ///
+    /// "orb"
+    Orb,
     //
     // definitions
     //
@@ -240,6 +244,7 @@ pub fn parse_expr_precedence(
         Some(Kw(Keyword::Break)) => parse!(@fn parser => parse_break_expr),
         Some(Kw(Keyword::Continue)) => parse!(@fn parser => parse_continue_expr),
         Some(Kw(Keyword::Null)) => parse!(@fn parser => parse_null_expr),
+        Some(Kw(Keyword::Orb)) => parse!(@fn parser => parse_orb_expr),
         Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
         Some(Punct(Punctuation::Star))
             if parser.nth_tt(1) == Some(&TokenType::Kw(Keyword::Fun)) =>
@@ -1018,6 +1023,16 @@ pub fn parse_null_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
 
     Ok(Expression {
         expr: Expr::Null,
+        loc,
+    })
+}
+
+/// parses orb expression
+pub fn parse_orb_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, loc) = expect_token!(parser => [Kw(Keyword::Orb), ()], Kw(Keyword::Orb));
+
+    Ok(Expression {
+        expr: Expr::Orb,
         loc,
     })
 }

@@ -77,6 +77,8 @@ main :: fun() {
     // member access
     _ = "Hello".len();
 
+    _ = orb.driver.run();
+
     // types:
 
     // pointer type

@@ -2446,8 +2446,89 @@
                                                     "_",
                                                 ),
                                                 loc: Span {
-                                                    lo: 1055,
-                                                    hi: 1056,
+                                                    lo: 1020,
+                                                    hi: 1021,
+                                                    fid: FileId(
+                                                        0,
+                                                    ),
+                                                },
+                                            },
+                                            op: Assignment,
+                                            rhs: Expression {
+                                                expr: FunCall {
+                                                    called: Expression {
+                                                        expr: MemberAccess {
+                                                            expr: Expression {
+                                                                expr: MemberAccess {
+                                                                    expr: Expression {
+                                                                        expr: Orb,
+                                                                        loc: Span {
+                                                                            lo: 1024,
+                                                                            hi: 1027,
+                                                                            fid: FileId(
+                                                                                0,
+                                                                            ),
+                                                                        },
+                                                                    },
+                                                                    member: "driver",
+                                                                },
+                                                                loc: Span {
+                                                                    lo: 1024,
+                                                                    hi: 1034,
+                                                                    fid: FileId(
+                                                                        0,
+                                                                    ),
+                                                                },
+                                                            },
+                                                            member: "run",
+                                                        },
+                                                        loc: Span {
+                                                            lo: 1024,
+                                                            hi: 1038,
+                                                            fid: FileId(
+                                                                0,
+                                                            ),
+                                                        },
+                                                    },
+                                                    args: [],
+                                                },
+                                                loc: Span {
+                                                    lo: 1024,
+                                                    hi: 1040,
+                                                    fid: FileId(
+                                                        0,
+                                                    ),
+                                                },
+                                            },
+                                        },
+                                        loc: Span {
+                                            lo: 1020,
+                                            hi: 1040,
+                                            fid: FileId(
+                                                0,
+                                            ),
+                                        },
+                                    },
+                                ),
+                                loc: Span {
+                                    lo: 1020,
+                                    hi: 1040,
+                                    fid: FileId(
+                                        0,
+                                    ),
+                                },
+                            },
+                            Statement {
+                                stmt: Expression(
+                                    Expression {
+                                        expr: Binary {
+                                            lhs: Expression {
+                                                expr: Ident(
+                                                    "_",
+                                                ),
+                                                loc: Span {
+                                                    lo: 1082,
+                                                    hi: 1083,
                                                     fid: FileId(
                                                         0,
                                                     ),
@@ -2462,8 +2543,8 @@
                                                             "u32",
                                                         ),
                                                         loc: Span {
-                                                            lo: 1060,
-                                                            hi: 1063,
+                                                            lo: 1087,
+                                                            hi: 1090,
                                                             fid: FileId(
                                                                 0,
                                                             ),
@@ -2471,8 +2552,8 @@
                                                     },
                                                 },
                                                 loc: Span {
-                                                    lo: 1059,
-                                                    hi: 1063,
+                                                    lo: 1086,
+                                                    hi: 1090,
                                                     fid: FileId(
                                                         0,
                                                     ),
@@ -2480,8 +2561,8 @@
                                             },
                                         },
                                         loc: Span {
-                                            lo: 1055,
-                                            hi: 1063,
+                                            lo: 1082,
+                                            hi: 1090,
                                             fid: FileId(
                                                 0,
                                             ),
@@ -2489,8 +2570,8 @@
                                     },
                                 ),
                                 loc: Span {
-                                    lo: 1055,
-                                    hi: 1063,
+                                    lo: 1082,
+                                    hi: 1090,
                                     fid: FileId(
                                         0,
                                     ),
@@ -2505,8 +2586,8 @@
                                                     "_",
                                                 ),
                                                 loc: Span {
-                                                    lo: 1069,
-                                                    hi: 1070,
+                                                    lo: 1096,
+                                                    hi: 1097,
                                                     fid: FileId(
                                                         0,
                                                     ),
@@ -2521,8 +2602,8 @@
                                                             "u32",
                                                         ),
                                                         loc: Span {
-                                                            lo: 1078,
-                                                            hi: 1081,
+                                                            lo: 1105,
+                                                            hi: 1108,
                                                             fid: FileId(
                                                                 0,
                                                             ),
@@ -2530,8 +2611,8 @@
                                                     },
                                                 },
                                                 loc: Span {
-                                                    lo: 1073,
-                                                    hi: 1081,
+                                                    lo: 1100,
+                                                    hi: 1108,
                                                     fid: FileId(
                                                         0,
                                                     ),
@@ -2539,8 +2620,8 @@
                                             },
                                         },
                                         loc: Span {
-                                            lo: 1069,
-                                            hi: 1081,
+                                            lo: 1096,
+                                            hi: 1108,
                                             fid: FileId(
                                                 0,
                                             ),
@@ -2548,8 +2629,8 @@
                                     },
                                 ),
                                 loc: Span {
-                                    lo: 1069,
-                                    hi: 1081,
+                                    lo: 1096,
+                                    hi: 1108,
                                     fid: FileId(
                                         0,
                                     ),
@@ -2564,8 +2645,8 @@
                                                     "_",
                                                 ),
                                                 loc: Span {
-                                                    lo: 1117,
-                                                    hi: 1118,
+                                                    lo: 1144,
+                                                    hi: 1145,
                                                     fid: FileId(
                                                         0,
                                                     ),
@@ -2578,8 +2659,8 @@
                                                     ret: None,
                                                 },
                                                 loc: Span {
-                                                    lo: 1121,
-                                                    hi: 1127,
+                                                    lo: 1148,
+                                                    hi: 1154,
                                                     fid: FileId(
                                                         0,
                                                     ),
@@ -2587,8 +2668,8 @@
                                             },
                                         },
                                         loc: Span {
-                                            lo: 1117,
-                                            hi: 1127,
+                                            lo: 1144,
+                                            hi: 1154,
                                             fid: FileId(
                                                 0,
                                             ),
@@ -2596,8 +2677,8 @@
                                     },
                                 ),
                                 loc: Span {
-                                    lo: 1117,
-                                    hi: 1127,
+                                    lo: 1144,
+                                    hi: 1154,
                                     fid: FileId(
                                         0,
                                     ),
@@ -2612,8 +2693,8 @@
                                                     "_",
                                                 ),
                                                 loc: Span {
-                                                    lo: 1133,
-                                                    hi: 1134,
+                                                    lo: 1160,
+                                                    hi: 1161,
                                                     fid: FileId(
                                                         0,
                                                     ),
@@ -2628,8 +2709,8 @@
                                                                 "usz",
                                                             ),
                                                             loc: Span {
-                                                                lo: 1142,
-                                                                hi: 1145,
+                                                                lo: 1169,
+                                                                hi: 1172,
                                                                 fid: FileId(
                                                                     0,
                                                                 ),
@@ -2640,82 +2721,8 @@
                                                                 "bool",
                                                             ),
                                                             loc: Span {
-                                                                lo: 1147,
-                                                                hi: 1151,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ],
-                                                    ret: Some(
-                                                        Expression {
-                                                            expr: Ident(
-                                                                "usz",
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 1156,
-                                                                hi: 1159,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ),
-                                                },
-                                                loc: Span {
-                                                    lo: 1137,
-                                                    hi: 1159,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 1133,
-                                            hi: 1159,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 1133,
-                                    hi: 1159,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 1165,
-                                                    hi: 1166,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: FunPtrType {
-                                                    args: [
-                                                        Expression {
-                                                            expr: Ident(
-                                                                "usz",
-                                                            ),
-                                                            loc: Span {
                                                                 lo: 1174,
-                                                                hi: 1177,
+                                                                hi: 1178,
                                                                 fid: FileId(
                                                                     0,
                                                                 ),
@@ -2738,7 +2745,7 @@
                                                     ),
                                                 },
                                                 loc: Span {
-                                                    lo: 1169,
+                                                    lo: 1164,
                                                     hi: 1186,
                                                     fid: FileId(
                                                         0,
@@ -2747,7 +2754,7 @@
                                             },
                                         },
                                         loc: Span {
-                                            lo: 1165,
+                                            lo: 1160,
                                             hi: 1186,
                                             fid: FileId(
                                                 0,
@@ -2756,8 +2763,82 @@
                                     },
                                 ),
                                 loc: Span {
-                                    lo: 1165,
+                                    lo: 1160,
                                     hi: 1186,
+                                    fid: FileId(
+                                        0,
+                                    ),
+                                },
+                            },
+                            Statement {
+                                stmt: Expression(
+                                    Expression {
+                                        expr: Binary {
+                                            lhs: Expression {
+                                                expr: Ident(
+                                                    "_",
+                                                ),
+                                                loc: Span {
+                                                    lo: 1192,
+                                                    hi: 1193,
+                                                    fid: FileId(
+                                                        0,
+                                                    ),
+                                                },
+                                            },
+                                            op: Assignment,
+                                            rhs: Expression {
+                                                expr: FunPtrType {
+                                                    args: [
+                                                        Expression {
+                                                            expr: Ident(
+                                                                "usz",
+                                                            ),
+                                                            loc: Span {
+                                                                lo: 1201,
+                                                                hi: 1204,
+                                                                fid: FileId(
+                                                                    0,
+                                                                ),
+                                                            },
+                                                        },
+                                                    ],
+                                                    ret: Some(
+                                                        Expression {
+                                                            expr: Ident(
+                                                                "usz",
+                                                            ),
+                                                            loc: Span {
+                                                                lo: 1210,
+                                                                hi: 1213,
+                                                                fid: FileId(
+                                                                    0,
+                                                                ),
+                                                            },
+                                                        },
+                                                    ),
+                                                },
+                                                loc: Span {
+                                                    lo: 1196,
+                                                    hi: 1213,
+                                                    fid: FileId(
+                                                        0,
+                                                    ),
+                                                },
+                                            },
+                                        },
+                                        loc: Span {
+                                            lo: 1192,
+                                            hi: 1213,
+                                            fid: FileId(
+                                                0,
+                                            ),
+                                        },
+                                    },
+                                ),
+                                loc: Span {
+                                    lo: 1192,
+                                    hi: 1213,
                                     fid: FileId(
                                         0,
                                     ),
@@ -2767,7 +2848,7 @@
                         last_expr: None,
                         loc: Span {
                             lo: 25,
-                            hi: 1189,
+                            hi: 1216,
                             fid: FileId(
                                 0,
                             ),
@@ -2776,7 +2857,7 @@
                 },
                 loc: Span {
                     lo: 19,
-                    hi: 1189,
+                    hi: 1216,
                     fid: FileId(
                         0,
                     ),
@@ -2784,7 +2865,7 @@
             },
             loc: Span {
                 lo: 11,
-                hi: 1189,
+                hi: 1216,
                 fid: FileId(
                     0,
                 ),
