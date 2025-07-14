@@ -125,6 +125,16 @@ impl ExprAtomicType for CkExpression {
     }
 }
 
+impl<T: ExprAtomicType> ExprAtomicType for Box<T> {
+    fn atomic_type(&self) -> &AtomicType {
+        T::atomic_type(self.as_ref())
+    }
+
+    fn set_atomic_type(&mut self, new: AtomicType) {
+        T::set_atomic_type(self.as_mut(), new);
+    }
+}
+
 impl SemanticCk {
     pub fn new(ast: Program, sink: DiagnosticSink) -> SemanticCk {
         SemanticCk {
@@ -410,37 +420,24 @@ impl SemanticCk {
                     None
                 };
 
-                if let Some(value) = value {
-                    // check the value
-                    self.check_expr(value, type_as_atomic.clone())?;
+                // check the value
+                self.check_expr(value, type_as_atomic.clone())?;
 
-                    if let Some(ref typ_as_aty) = type_as_atomic {
-                        let value_loc = value.loc.clone();
+                if let Some(ref typ_as_aty) = type_as_atomic {
+                    let value_loc = value.loc.clone();
 
-                        self.type_check(
-                            typ_as_aty,
-                            value,
-                            typ.as_ref().map(|e| e.loc.clone()),
-                            value_loc,
-                        );
-                    }
-                } else {
-                    // TODO: implement variable initialization checking
-                    self.sink.push(
-                        feature_todo!{
-                            feature: "variable initialization",
-                            label: "for now every variable must be initialized because the check for uninitialized variable is not implemented",
-                            loc: stmt.loc.clone()
-                        }
-                    )
+                    self.type_check(
+                        typ_as_aty,
+                        value,
+                        typ.as_ref().map(|e| e.loc.clone()),
+                        value_loc,
+                    );
                 }
 
                 let atomtyp = if let Some(ref typ_as_aty) = type_as_atomic {
                     typ_as_aty.clone()
-                } else if let Some(value) = value {
-                    value.atomtyp.clone()
                 } else {
-                    AtomicType::Unknown
+                    value.atomtyp.clone()
                 };
 
                 let mut ckname = name.clone();

@@ -2694,4 +2694,222 @@
 "#,
         expected_test_out: "",
     ),
+    "parser/statement": (
+        expected_compiler_out: r#"ast = Program {
+    defs: [
+        GlobalConst {
+            name: "main",
+            name_loc: Span {
+                lo: 0,
+                hi: 4,
+                fid: FileId(
+                    0,
+                ),
+            },
+            typ: None,
+            value: Expression {
+                expr: FunDefinition {
+                    args: [],
+                    rettype: None,
+                    body: Block {
+                        stmts: [
+                            Statement {
+                                stmt: VariableDef {
+                                    name: "a",
+                                    name_loc: Span {
+                                        lo: 48,
+                                        hi: 49,
+                                        fid: FileId(
+                                            0,
+                                        ),
+                                    },
+                                    mutable: false,
+                                    typ: None,
+                                    value: Expression {
+                                        expr: IntLit(
+                                            12,
+                                        ),
+                                        loc: Span {
+                                            lo: 52,
+                                            hi: 54,
+                                            fid: FileId(
+                                                0,
+                                            ),
+                                        },
+                                    },
+                                },
+                                loc: Span {
+                                    lo: 44,
+                                    hi: 54,
+                                    fid: FileId(
+                                        0,
+                                    ),
+                                },
+                            },
+                            Statement {
+                                stmt: VariableDef {
+                                    name: "b",
+                                    name_loc: Span {
+                                        lo: 68,
+                                        hi: 69,
+                                        fid: FileId(
+                                            0,
+                                        ),
+                                    },
+                                    mutable: true,
+                                    typ: None,
+                                    value: Expression {
+                                        expr: IntLit(
+                                            34,
+                                        ),
+                                        loc: Span {
+                                            lo: 72,
+                                            hi: 74,
+                                            fid: FileId(
+                                                0,
+                                            ),
+                                        },
+                                    },
+                                },
+                                loc: Span {
+                                    lo: 60,
+                                    hi: 74,
+                                    fid: FileId(
+                                        0,
+                                    ),
+                                },
+                            },
+                            Statement {
+                                stmt: VariableDef {
+                                    name: "c",
+                                    name_loc: Span {
+                                        lo: 107,
+                                        hi: 108,
+                                        fid: FileId(
+                                            0,
+                                        ),
+                                    },
+                                    mutable: false,
+                                    typ: None,
+                                    value: Expression {
+                                        expr: IntLit(
+                                            56,
+                                        ),
+                                        loc: Span {
+                                            lo: 112,
+                                            hi: 114,
+                                            fid: FileId(
+                                                0,
+                                            ),
+                                        },
+                                    },
+                                },
+                                loc: Span {
+                                    lo: 107,
+                                    hi: 114,
+                                    fid: FileId(
+                                        0,
+                                    ),
+                                },
+                            },
+                            Statement {
+                                stmt: VariableDef {
+                                    name: "d",
+                                    name_loc: Span {
+                                        lo: 120,
+                                        hi: 121,
+                                        fid: FileId(
+                                            0,
+                                        ),
+                                    },
+                                    mutable: true,
+                                    typ: None,
+                                    value: Expression {
+                                        expr: IntLit(
+                                            78,
+                                        ),
+                                        loc: Span {
+                                            lo: 125,
+                                            hi: 127,
+                                            fid: FileId(
+                                                0,
+                                            ),
+                                        },
+                                    },
+                                },
+                                loc: Span {
+                                    lo: 120,
+                                    hi: 127,
+                                    fid: FileId(
+                                        0,
+                                    ),
+                                },
+                            },
+                            Statement {
+                                stmt: Expression(
+                                    Expression {
+                                        expr: FunCall {
+                                            called: Expression {
+                                                expr: Ident(
+                                                    "hello_world",
+                                                ),
+                                                loc: Span {
+                                                    lo: 162,
+                                                    hi: 173,
+                                                    fid: FileId(
+                                                        0,
+                                                    ),
+                                                },
+                                            },
+                                            args: [],
+                                        },
+                                        loc: Span {
+                                            lo: 162,
+                                            hi: 175,
+                                            fid: FileId(
+                                                0,
+                                            ),
+                                        },
+                                    },
+                                ),
+                                loc: Span {
+                                    lo: 162,
+                                    hi: 175,
+                                    fid: FileId(
+                                        0,
+                                    ),
+                                },
+                            },
+                        ],
+                        last_expr: None,
+                        loc: Span {
+                            lo: 14,
+                            hi: 178,
+                            fid: FileId(
+                                0,
+                            ),
+                        },
+                    },
+                },
+                loc: Span {
+                    lo: 8,
+                    hi: 178,
+                    fid: FileId(
+                        0,
+                    ),
+                },
+            },
+            loc: Span {
+                lo: 0,
+                hi: 178,
+                fid: FileId(
+                    0,
+                ),
+            },
+        },
+    ],
+}
+"#,
+        expected_test_out: "",
+    ),
 }

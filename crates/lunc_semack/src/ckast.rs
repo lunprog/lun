@@ -168,7 +168,7 @@ impl FromAst for CkStatement {
                 name_loc,
                 mutable,
                 typ: from_ast(typ),
-                value: from_ast(value),
+                value: from_ast(*value),
                 sym: MaybeUnresolved::Unresolved(name),
             },
             Stmt::Expression(expr) => CkStmt::Expression(from_ast(expr)),
@@ -191,7 +191,7 @@ pub enum CkStmt {
         name_loc: Span,
         mutable: bool,
         typ: Option<CkExpression>,
-        value: Option<CkExpression>,
+        value: Box<CkExpression>,
         /// the symbol representing this function
         sym: MaybeUnresolved,
     },

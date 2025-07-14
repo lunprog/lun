@@ -115,54 +115,17 @@ impl Statement {
 
 #[derive(Debug, Clone)]
 pub enum Stmt {
-    // TODO: add checking for uninitialized variables
-    //
-    // ```lun
-    // let a: int;
-    //
-    // // ...
-    //
-    // a = 24
-    // ```
-    // here `a` is defined, we can use it after the `a = 24` but between the
-    // definition and the initialization we can't
-    //
-    // ```lun
-    // let a: int;
-    //
-    // // ...
-    //
-    // if some_logic() {
-    //     a = 12;
-    // } else {
-    //     a = 25;
-    // }
-    //
-    // ```
-    // here everything is fine, we can use `a` after the condition so it is
-    // initialized
-    //
-    // ```lun
-    // let a: int;
-    //
-    // if something {
-    //     a = 12
-    // } else if something_else {
-    //     a = 34
-    // }
-    // ```
-    // here we can't use `a` because it is partially initialized, the compiler
-    // is not sure if `a` is initialized, even tho `something_else = !something`
-    //
     /// variable definition
     ///
-    /// "let" "mut"? ident [ ":" expr ] [ "=" expr ]
+    /// "let" "mut"? ident [ ":" expr ] "=" expr
+    /// ident ":" [ expr ] ":" expr ";"
+    /// ident ":" [ expr ] "=" expr ";"
     VariableDef {
         name: String,
         name_loc: Span,
         mutable: bool,
         typ: Option<Expression>,
-        value: Option<Expression>,
+        value: Box<Expression>,
     },
     /// statement expression
     ///
@@ -174,6 +137,9 @@ impl AstNode for Statement {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         match parser.peek_tt() {
             Some(Kw(Keyword::Let)) => parse_variable_def_stmt(parser),
+            Some(Ident(_)) if parser.nth_tt(1) == Some(&Punct(Punctuation::Colon)) => {
+                parse_short_variable_stmt(parser)
+            }
             Some(_) => {
                 let expr = parse!(parser => Expression);
 
@@ -187,7 +153,7 @@ impl AstNode for Statement {
     }
 }
 
-/// "let" "mut"? ident [ ":" expr ] [ "=" expr ]
+/// "let" "mut"? ident [ ":" expr ] "=" expr
 pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Let), ()], Kw(Keyword::Let));
 
@@ -208,23 +174,51 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
         None
     };
 
-    let value = if let Some(Punct(Punctuation::Equal)) = parser.peek_tt() {
-        parser.pop();
-        Some(parse!(parser => Expression))
-    } else {
-        None
-    };
+    expect_token!(parser => [Punct(Punctuation::Equal), ()], Punctuation::Equal);
+    let value = parse!(box: parser => Expression);
 
-    let hi = value
-        .clone()
-        .map(|v| v.loc.clone())
-        .or(typ.clone().map(|t| t.loc))
-        .unwrap_or(name_loc.clone());
+    let hi = value.loc.clone();
 
     Ok(Statement {
         stmt: Stmt::VariableDef {
             name,
             name_loc,
+            mutable,
+            typ,
+            value,
+        },
+        loc: Span::from_ends(lo, hi),
+    })
+}
+
+/// ident ":" [ expr ] ":" expr ";"
+/// ident ":" [ expr ] "=" expr ";"
+pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], [Ident(String::new())]);
+
+    expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);
+
+    let typ = match parser.peek_tt() {
+        Some(Punct(Punctuation::Colon | Punctuation::Equal)) => None,
+        _ => Some(parse!(@fn parser => parse_type_expression)),
+    };
+
+    let (mutable, _) = expect_token!(
+        parser => [
+            Punct(Punctuation::Colon), false;
+            Punct(Punctuation::Equal), true;
+        ],
+        [Punctuation::Colon, Punctuation::Equal]
+    );
+
+    let value = parse!(box: parser => Expression);
+
+    let hi = value.loc.clone();
+
+    Ok(Statement {
+        stmt: Stmt::VariableDef {
+            name,
+            name_loc: lo.clone(),
             mutable,
             typ,
             value,
