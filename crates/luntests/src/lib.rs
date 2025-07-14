@@ -215,6 +215,7 @@ impl TestContext {
     fn compiler_args_from_name(name: &str) -> &[&str] {
         match name {
             _ if name.starts_with("lexer/") => &["-Dhalt-at=lexer", "-Dprint=tokenstream"],
+            _ if name.starts_with("parser/") => &["-Dhalt-at=parser", "-Dprint=ast"],
             _ => &[],
         }
     }
