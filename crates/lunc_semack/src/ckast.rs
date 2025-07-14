@@ -281,12 +281,12 @@ impl FromAst for CkExpression {
                 else_branch: Some(from_ast(*false_val)),
             },
             Expr::Block(block) => CkExpr::Block(from_ast(block)),
-            Expr::While { cond, body } => CkExpr::While {
+            Expr::PredicateLoop { cond, body } => CkExpr::While {
                 cond: from_ast(*cond),
                 body: from_ast(body),
                 index: None,
             },
-            Expr::For {
+            Expr::IteratorLoop {
                 variable,
                 iterator,
                 body,

@@ -1972,7 +1972,7 @@
                             Statement {
                                 stmt: Expression(
                                     Expression {
-                                        expr: While {
+                                        expr: PredicateLoop {
                                             cond: Expression {
                                                 expr: FunCall {
                                                     called: Expression {
@@ -2078,7 +2078,7 @@
                             Statement {
                                 stmt: Expression(
                                     Expression {
-                                        expr: For {
+                                        expr: IteratorLoop {
                                             variable: "i",
                                             iterator: Expression {
                                                 expr: FunCall {

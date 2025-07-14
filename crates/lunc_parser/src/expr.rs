@@ -28,8 +28,8 @@ impl Expression {
             self.expr,
             Expr::If(_)
                 | Expr::Block(_)
-                | Expr::While { .. }
-                | Expr::For { .. }
+                | Expr::PredicateLoop { .. }
+                | Expr::IteratorLoop { .. }
                 | Expr::FunDefinition { .. }
         )
     }
@@ -127,14 +127,14 @@ pub enum Expr {
     /// block expression
     // TODO: make the grammar for block expr
     Block(Block),
-    /// while expression
+    /// predicate loop expression
     ///
     /// "while" expression block
-    While { cond: Box<Expression>, body: Block },
-    /// for expression
+    PredicateLoop { cond: Box<Expression>, body: Block },
+    /// iterator loop expression
     ///
     /// "for" ident "in" expression block
-    For {
+    IteratorLoop {
         /// the variable that holds the value of the iterator
         variable: String,
         iterator: Box<Expression>,
@@ -238,8 +238,8 @@ pub fn parse_expr_precedence(
         Some(Ident(_)) => parse!(@fn parser => parse_ident_expr),
         Some(Kw(Keyword::Fun)) => parse!(@fn parser => parse_fundef_expr),
         Some(Kw(Keyword::If)) => parse!(@fn parser => parse_if_else_expr, false),
-        Some(Kw(Keyword::While)) => parse!(@fn parser => parse_while_expr),
-        Some(Kw(Keyword::For)) => parse!(@fn parser => parse_for_expr),
+        Some(Kw(Keyword::While)) => parse!(@fn parser => parse_predicate_loop_expr),
+        Some(Kw(Keyword::For)) => parse!(@fn parser => parse_iterator_loop_expr),
         Some(Kw(Keyword::Return)) => parse!(@fn parser => parse_return_expr),
         Some(Kw(Keyword::Break)) => parse!(@fn parser => parse_break_expr),
         Some(Kw(Keyword::Continue)) => parse!(@fn parser => parse_continue_expr),
@@ -928,8 +928,8 @@ pub fn parse_block_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     })
 }
 
-/// parses while expression
-pub fn parse_while_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+/// parses predicate loop expression
+pub fn parse_predicate_loop_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (_, lo) = expect_token!(parser => [Kw(Keyword::While), ()], Kw(Keyword::While));
 
     let cond = parse!(box: parser => Expression);
@@ -938,13 +938,13 @@ pub fn parse_while_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let hi = body.loc.clone();
 
     Ok(Expression {
-        expr: Expr::While { cond, body },
+        expr: Expr::PredicateLoop { cond, body },
         loc: Span::from_ends(lo, hi),
     })
 }
 
-/// parses for expression
-pub fn parse_for_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+/// parses iterator loop expression
+pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (_, lo) = expect_token!(parser => [Kw(Keyword::For), ()], Kw(Keyword::For));
 
     let (variable, _) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
@@ -958,7 +958,7 @@ pub fn parse_for_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let hi = body.loc.clone();
 
     Ok(Expression {
-        expr: Expr::For {
+        expr: Expr::IteratorLoop {
             variable,
             iterator,
             body,
