@@ -153,9 +153,7 @@ impl ToDiagnostic for UnderscoreInExpression {
     fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
             .with_code(ErrorCode::UnderscoreInExpression)
-            .with_message(
-                "`_` can only be used in left hand side of assignment not in expressions",
-            )
+            .with_message("`_` can only be used in left hand side of assignment not in expressions")
             .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }

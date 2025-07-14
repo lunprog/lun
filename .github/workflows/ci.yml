@@ -17,5 +17,11 @@ jobs:
         run: rustup toolchain install stable --no-self-update --profile minimal
       - name: Build lunc
         run: cargo build --bin lunc
-      - name: Run Tests
+      - name: Run Compiler Tests
         run: cargo xtask test
+      - name: Run Internal Tests
+        run: cargo test
+      - name: Clippy check
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Formatting check
+        run: cargo fmt --check
