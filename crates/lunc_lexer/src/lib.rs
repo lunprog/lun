@@ -156,6 +156,7 @@ impl Lexer {
             Some('&') => Punct(Ampsand),
             Some('|') => Punct(Pipe),
             Some('%') => Punct(Percent),
+            Some('#') => Punct(Hashtag),
             Some('=') => {
                 self.pop();
                 match self.peek() {

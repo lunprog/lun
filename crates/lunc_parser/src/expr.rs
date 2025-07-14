@@ -371,7 +371,7 @@ pub fn parse_grouping_expr(parser: &mut Parser) -> Result<Expression, Diagnostic
 
 /// Parse an identifier expression
 pub fn parse_ident_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (id, loc) = expect_token!(parser => [Ident(s), s.clone()], "integer literal");
+    let (id, loc) = expect_token!(parser => [Ident(s), s.clone()], Ident(String::new()));
 
     Ok(Expression {
         expr: Expr::Ident(id),

@@ -1,6 +1,9 @@
 //! Parsing of lun's definitions.
 
-use crate::expr::parse_type_expression;
+use crate::{
+    directive::{ItemDirective, parse_mod_directive},
+    expr::parse_type_expression,
+};
 
 use super::*;
 
@@ -57,53 +60,83 @@ pub enum Item {
         value: Expression,
         loc: Span,
     },
+    /// A directive, always starts with #
+    Directive(ItemDirective),
 }
 
 impl AstNode for Item {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
-        let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+        match parser.peek_tt() {
+            Some(Ident(_)) => parse_global_item(parser),
+            Some(Punct(Punctuation::Hashtag)) => parse_directive_item(parser),
+            Some(_) => {
+                let t = parser.peek_tok().unwrap().clone();
+                return Err(ExpectedToken::new("item", t.tt, None::<String>, t.loc).into_diag());
+            }
+            None => Err(parser.eof_diag()),
+        }
+    }
+}
 
-        expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);
+pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
+    let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
-        let typ = match parser.peek_tt() {
-            Some(Punct(Punctuation::Colon | Punctuation::Equal)) => None,
-            _ => Some(parse!(@fn parser => parse_type_expression)),
-        };
+    expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);
 
-        let (is_const, _) = expect_token!(
-            parser => [
-                Punct(Punctuation::Colon), true;
-                Punct(Punctuation::Equal), false;
-            ],
-            [Punctuation::Colon, Punctuation::Equal]
-        );
+    let typ = match parser.peek_tt() {
+        Some(Punct(Punctuation::Colon | Punctuation::Equal)) => None,
+        _ => Some(parse!(@fn parser => parse_type_expression)),
+    };
 
-        let value = parse!(parser => Expression);
+    let (is_const, _) = expect_token!(
+        parser => [
+            Punct(Punctuation::Colon), true;
+            Punct(Punctuation::Equal), false;
+        ],
+        [Punctuation::Colon, Punctuation::Equal]
+    );
 
-        let hi = if !value.is_expr_with_block() || !is_const {
-            expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punctuation::Semicolon).1
-        } else {
-            value.loc.clone()
-        };
+    let value = parse!(parser => Expression);
 
-        let loc = Span::from_ends(lo.clone(), hi);
+    let hi = if !value.is_expr_with_block() || !is_const {
+        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punctuation::Semicolon).1
+    } else {
+        value.loc.clone()
+    };
 
-        if is_const {
-            Ok(Item::GlobalConst {
-                name,
-                name_loc: lo,
-                typ,
-                value,
-                loc,
-            })
-        } else {
-            Ok(Item::GlobalVar {
-                name,
-                name_loc: lo,
-                typ,
-                value,
-                loc,
-            })
+    let loc = Span::from_ends(lo.clone(), hi);
+
+    if is_const {
+        Ok(Item::GlobalConst {
+            name,
+            name_loc: lo,
+            typ,
+            value,
+            loc,
+        })
+    } else {
+        Ok(Item::GlobalVar {
+            name,
+            name_loc: lo,
+            typ,
+            value,
+            loc,
+        })
+    }
+}
+
+pub fn parse_directive_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
+    match parser.nth_tt(1) {
+        Some(Ident(id)) => match id.as_str() {
+            "mod" => parse_mod_directive(parser),
+            _ => {
+                let t = parser.nth_tok(1).unwrap().clone();
+                return Err(ExpectedToken::new(["mod"], t.tt, Some("directive"), t.loc).into_diag());
+            }
+        },
+        _ => {
+            let t = parser.nth_tok(1).unwrap().clone();
+            return Err(ExpectedToken::new(["mod"], t.tt, Some("directive"), t.loc).into_diag());
         }
     }
 }

@@ -509,6 +509,8 @@ pub enum Punctuation {
     Dot,
     /// .*
     DotStar,
+    /// #
+    Hashtag,
 }
 
 impl Display for Punctuation {
@@ -545,6 +547,7 @@ impl Display for Punctuation {
             Percent => f.write_str("%"),
             Dot => f.write_str("."),
             DotStar => f.write_str(".*"),
+            Hashtag => f.write_str("#"),
         }
     }
 }

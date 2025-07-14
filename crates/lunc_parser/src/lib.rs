@@ -16,6 +16,7 @@ use lunc_utils::{
 };
 
 pub mod diags;
+pub mod directive;
 pub mod expr;
 pub mod item;
 pub mod stmt;

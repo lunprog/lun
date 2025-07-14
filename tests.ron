@@ -664,6 +664,26 @@
 "#,
         expected_test_out: "",
     ),
+    "parser/directive": (
+        expected_compiler_out: r#"ast = Program {
+    defs: [
+        Directive(
+            Mod {
+                name: "module",
+                loc: Span {
+                    lo: 20,
+                    hi: 32,
+                    fid: FileId(
+                        0,
+                    ),
+                },
+            },
+        ),
+    ],
+}
+"#,
+        expected_test_out: "",
+    ),
     "parser/expression": (
         expected_compiler_out: r#"ast = Program {
     defs: [
