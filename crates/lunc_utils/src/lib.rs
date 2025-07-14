@@ -298,16 +298,15 @@ mod tests {
                     _ => unreachable!(),
                 };
                 let repr_len = match radix {
-                    2 => format!("{:b}", n).len(),
-                    8 => format!("{:o}", n).len(),
+                    2 => format!("{n:b}").len(),
+                    8 => format!("{n:o}").len(),
                     10 => n.to_string().len(),
-                    16 => format!("{:x}", n).len(),
+                    16 => format!("{n:x}").len(),
                     _ => unreachable!(),
                 };
                 assert_eq!(
                     computed as usize, repr_len,
-                    "mismatch for n={} radix={}",
-                    n, radix
+                    "mismatch for n={n} radix={radix}",
                 );
             }
         }
@@ -339,16 +338,15 @@ mod tests {
                     _ => unreachable!(),
                 };
                 let repr_len = match radix {
-                    2 => format!("{:b}", n).len(),
-                    8 => format!("{:o}", n).len(),
+                    2 => format!("{n:b}").len(),
+                    8 => format!("{n:o}").len(),
                     10 => n.to_string().len(),
-                    16 => format!("{:x}", n).len(),
+                    16 => format!("{n:x}").len(),
                     _ => unreachable!(),
                 };
                 assert_eq!(
                     computed as usize, repr_len,
-                    "mismatch for n={} radix={}",
-                    n, radix
+                    "mismatch for n={n} radix={radix}",
                 );
             }
         }
