@@ -9,6 +9,7 @@ use std::{
 };
 
 use indexmap::IndexMap;
+use lunc_utils::fast_digit_length;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
@@ -114,6 +115,8 @@ impl TestContext {
         let start_test = Instant::now();
 
         let tests_count = self.tests.len();
+        let width = fast_digit_length::<10>(tests_count as u128) as usize;
+
         let mut summary = TestSummary {
             ok: 0,
             build_fail: 0,
@@ -131,7 +134,12 @@ impl TestContext {
 
             cmd.arg(path);
 
-            write!(out, "[{}/{tests_count}] testing '{name}' ... ", n + 1)?;
+            write!(
+                out,
+                "[{1:>00$}/{tests_count}] testing '{name}' ... ",
+                width,
+                n + 1
+            )?;
             // force flushing so that we can see the progress of the tests
             out.flush()?;
 
