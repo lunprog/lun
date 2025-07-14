@@ -5,7 +5,7 @@ use std::fmt;
 pub use lunc_parser::expr::{BinOp, UnaryOp};
 use lunc_parser::{
     expr::{Arg, Else, Expr, Expression, IfExpression},
-    item::Definition,
+    item::Item,
     stmt::{Block, Statement, Stmt},
 };
 
@@ -95,17 +95,25 @@ pub struct CkDefinition {
 }
 
 impl FromAst for CkDefinition {
-    type Unchecked = Definition;
+    type Unchecked = Item;
 
     fn from_ast(ast: Self::Unchecked) -> Self {
-        CkDefinition {
-            vis: ast.vis,
-            name: ast.name.clone(),
-            name_loc: ast.name_loc,
-            typ: from_ast(ast.typ),
-            value: from_ast(ast.value),
-            loc: ast.loc,
-            sym: MaybeUnresolved::Unresolved(ast.name),
+        match ast {
+            Item::GlobalConst {
+                name,
+                name_loc,
+                typ,
+                value,
+                loc,
+            } => CkDefinition {
+                vis: Vis::Public,
+                name: name.clone(),
+                name_loc,
+                typ: from_ast(typ),
+                value: from_ast(value),
+                loc,
+                sym: MaybeUnresolved::Unresolved(name),
+            },
         }
     }
 }

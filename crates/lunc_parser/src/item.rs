@@ -15,7 +15,7 @@ pub enum Vis {
 /// Lun program.
 #[derive(Debug, Clone)]
 pub struct Program {
-    pub defs: Vec<Definition>,
+    pub defs: Vec<Item>,
 }
 
 impl AstNode for Program {
@@ -27,38 +27,30 @@ impl AstNode for Program {
                 break;
             }
 
-            defs.push(parse!(parser => Definition));
+            defs.push(parse!(parser => Item));
         }
 
         Ok(Program { defs })
     }
 }
 
-/// Lun program.
-///
-///    vis? ident ":" expression? ":" expr
 #[derive(Debug, Clone)]
-pub struct Definition {
-    pub vis: Vis,
-    pub name: String,
-    pub name_loc: Span,
-    pub typ: Option<Expression>,
-    pub value: Expression,
-    pub loc: Span,
+pub enum Item {
+    /// Global constant.
+    ///
+    /// ident ":" expression? ":" expr
+    GlobalConst {
+        name: String,
+        name_loc: Span,
+        typ: Option<Expression>,
+        value: Expression,
+        loc: Span,
+    },
 }
 
-impl AstNode for Definition {
+impl AstNode for Item {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
-        let (vis, vis_loc) = if let Some(Kw(Keyword::Pub)) = parser.peek_tt() {
-            let loc = parser.pop().unwrap().loc;
-            (Vis::Public, Some(loc))
-        } else {
-            (Vis::Private, None)
-        };
-
-        let (name, name_loc) =
-            expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
-        let lo = vis_loc.unwrap_or(name_loc.clone());
+        let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);
 
@@ -74,10 +66,9 @@ impl AstNode for Definition {
 
         let hi = value.loc.clone();
 
-        Ok(Definition {
-            vis,
+        Ok(Item::GlobalConst {
             name,
-            name_loc,
+            name_loc: lo.clone(),
             typ,
             value,
             loc: Span::from_ends(lo, hi),
