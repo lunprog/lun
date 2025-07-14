@@ -74,6 +74,9 @@ main :: fun() {
     // deref
     _ = some_pointer.*;
 
+    // member access
+    _ = "Hello".len();
+
     // types:
 
     // pointer type

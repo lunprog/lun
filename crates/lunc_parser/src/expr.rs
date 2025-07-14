@@ -164,6 +164,13 @@ pub enum Expr {
     ///
     /// "null"
     Null,
+    /// member access expression
+    ///
+    /// expr "." ident
+    MemberAccess {
+        expr: Box<Expression>,
+        member: String,
+    },
     /// pointer type expression
     ///
     /// "*" "mut"? expression
@@ -254,6 +261,9 @@ pub fn parse_expr_precedence(
         lhs = match parser.peek_tt() {
             Some(Punct(Punctuation::LParen)) => {
                 parse!(@fn parser => parse_funcall_expr, Box::new(lhs))
+            }
+            Some(Punct(Punctuation::Dot)) => {
+                parse!(@fn parser => parse_member_access_expr, lhs)
             }
             Some(maybe_bin_op) if BinOp::from_tt(maybe_bin_op.clone()).is_some() => {
                 parse!(@fn parser => parse_binary_expr, lhs)
@@ -377,14 +387,10 @@ pub enum Precedence {
     Factor,
     /// `op expression`
     Unary,
-    /// both call and unary right precedence:
-    ///
     /// `expression "(" expression,* ")"`
-    ///
-    /// or
-    ///
-    /// `expression op`
     Call,
+    /// `expression "." ident`
+    MemberAccess,
     /// `intlit "true" "false" charlit strlit group`
     Primary,
     // Like `__First__` it is a special variant of `Precedence` that should
@@ -410,7 +416,8 @@ impl Precedence {
             Self::Term => Self::Factor,
             Self::Factor => Self::Unary,
             Self::Unary => Self::Call,
-            Self::Call => Self::Primary,
+            Self::Call => Self::MemberAccess,
+            Self::MemberAccess => Self::Primary,
             Self::Primary => Self::__Last__,
             Self::__Last__ => unreachable!(),
         }
@@ -431,6 +438,7 @@ impl Precedence {
             Self::Factor => Associativity::LeftToRight,
             Self::Unary => Associativity::RightToLeft,
             Self::Call => Associativity::LeftToRight,
+            Self::MemberAccess => Associativity::LeftToRight,
             Self::Primary => Associativity::LeftToRight,
             Self::__Last__ | Self::__First__ => unreachable!(),
         }
@@ -457,6 +465,7 @@ impl Precedence {
                 Some(Precedence::Factor)
             }
             Punct(Punctuation::LParen) => Some(Precedence::Call),
+            Punct(Punctuation::Dot) => Some(Precedence::MemberAccess),
             Punct(Punctuation::DotStar) => Some(Precedence::Primary),
             _ => None,
         }
@@ -1062,5 +1071,24 @@ pub fn parse_deref_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     Ok(Expression {
         expr: Expr::AddressOf { mutable, val },
         loc: Span::from_ends(lo, hi),
+    })
+}
+
+pub fn parse_member_access_expr(
+    parser: &mut Parser,
+    expr: Expression,
+) -> Result<Expression, Diagnostic> {
+    expect_token!(parser => [Punct(Punctuation::Dot), ()], Punctuation::Dot);
+
+    let (member, hi) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+
+    let loc = Span::from_ends(expr.loc.clone(), hi);
+
+    Ok(Expression {
+        expr: Expr::MemberAccess {
+            expr: Box::new(expr),
+            member,
+        },
+        loc,
     })
 }
