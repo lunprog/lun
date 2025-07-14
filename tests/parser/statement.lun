@@ -7,6 +7,9 @@ main :: fun() {
     c :: 56;
     d := 78;
 
+    // defer statement
+    defer {}
+
     // statement expression
     hello_world();
 }

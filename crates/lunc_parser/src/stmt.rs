@@ -80,11 +80,13 @@ impl AstNode for Block {
                     }
                 }
                 (false, false) => {
-                    // here, nothing fancy, we have a statement, the next
-                    // thing isn't a }, so we push the Statement and expect
-                    // a semicolon
+                    // if the statement is a defer with a block expression
+                    // inside we don't expect a semicolon
+                    if !matches!(stmt.stmt, Stmt::Defer { ref expr } if expr.is_expr_with_block()) {
+                        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
+                    }
+
                     stmts.push(stmt.clone());
-                    expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
                 }
             }
         }
@@ -127,6 +129,10 @@ pub enum Stmt {
         typ: Option<Expression>,
         value: Box<Expression>,
     },
+    /// defer statement
+    ///
+    /// "defer" expr
+    Defer { expr: Expression },
     /// statement expression
     ///
     /// expression
@@ -137,6 +143,7 @@ impl AstNode for Statement {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         match parser.peek_tt() {
             Some(Kw(Keyword::Let)) => parse_variable_def_stmt(parser),
+            Some(Kw(Keyword::Defer)) => parse_defer_statement(parser),
             Some(Ident(_)) if parser.nth_tt(1) == Some(&Punct(Punctuation::Colon)) => {
                 parse_short_variable_stmt(parser)
             }
@@ -224,5 +231,19 @@ pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagn
             value,
         },
         loc: Span::from_ends(lo, hi),
+    })
+}
+
+/// parses a defer statement
+pub fn parse_defer_statement(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    let ((), lo) = expect_token!(parser => [Kw(Keyword::Defer), ()], Kw(Keyword::Defer));
+
+    let expr = parse!(parser => Expression);
+
+    let loc = Span::from_ends(lo, expr.loc.clone());
+
+    Ok(Statement {
+        stmt: Stmt::Defer { expr },
+        loc,
     })
 }

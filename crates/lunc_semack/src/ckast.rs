@@ -172,6 +172,7 @@ impl FromAst for CkStatement {
                 sym: MaybeUnresolved::Unresolved(name),
             },
             Stmt::Expression(expr) => CkStmt::Expression(from_ast(expr)),
+            _ => todo!(),
         };
 
         CkStatement { stmt, loc: ast.loc }
