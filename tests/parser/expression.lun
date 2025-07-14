@@ -82,4 +82,9 @@ main :: fun() {
     // pointer type
     _ = *u32;
     _ = *mut u32;
+
+    // function pointer type
+    _ = *fun();
+    _ = *fun(usz, bool) -> usz;
+    _ = *fun(usz,) -> usz;
 }

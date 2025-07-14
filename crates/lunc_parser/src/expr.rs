@@ -112,14 +112,6 @@ pub enum Expr {
         called: Box<Expression>,
         args: Vec<Expression>,
     },
-    /// function definition expression
-    ///
-    /// "fun" "(" ( ident ":" expr ),* ")" [ "->" expr ] block
-    FunDefinition {
-        args: Vec<Arg>,
-        rettype: Option<Box<Expression>>,
-        body: Block,
-    },
     /// if else expression
     ///
     /// "if" expression block [ "else" (if-expr | block-expr) ]
@@ -171,10 +163,31 @@ pub enum Expr {
         expr: Box<Expression>,
         member: String,
     },
+    //
+    // definitions
+    //
+    /// function definition expression
+    ///
+    /// "fun" "(" ( ident ":" expr ),* ")" [ "->" expr ] block
+    FunDefinition {
+        args: Vec<Arg>,
+        rettype: Option<Box<Expression>>,
+        body: Block,
+    },
+    //
+    // type expression
+    //
     /// pointer type expression
     ///
     /// "*" "mut"? expression
     PointerType { mutable: bool, typ: Box<Expression> },
+    /// function pointer type
+    ///
+    /// "*" "fun" "(" ( expr ),* ")" [ "->" expr ]
+    FunPtrType {
+        args: Vec<Expression>,
+        ret: Option<Box<Expression>>,
+    },
     /// Address of
     ///
     /// "&" "mut"? expression
@@ -228,6 +241,11 @@ pub fn parse_expr_precedence(
         Some(Kw(Keyword::Continue)) => parse!(@fn parser => parse_continue_expr),
         Some(Kw(Keyword::Null)) => parse!(@fn parser => parse_null_expr),
         Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
+        Some(Punct(Punctuation::Star))
+            if parser.nth_tt(1) == Some(&TokenType::Kw(Keyword::Fun)) =>
+        {
+            parse!(@fn parser => parse_funptr_type_expr)
+        }
         Some(Punct(Punctuation::Star)) => parse!(@fn parser => parse_pointer_type_expr),
         Some(tt) if UnaryOp::left_from_token(tt.clone()).is_some() => {
             parse!(@fn parser => parse_unary_left_expr)
@@ -1001,6 +1019,45 @@ pub fn parse_null_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     Ok(Expression {
         expr: Expr::Null,
         loc,
+    })
+}
+
+/// parses function pointer type
+pub fn parse_funptr_type_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Punct(Punctuation::Star), ()], Punctuation::Star);
+
+    expect_token!(parser => [Kw(Keyword::Fun), ()], Kw(Keyword::Fun));
+
+    expect_token!(parser => [Punct(Punctuation::LParen), ()], Punctuation::LParen);
+
+    let mut args = Vec::new();
+
+    loop {
+        if let Some(Punct(Punctuation::RParen)) = parser.peek_tt() {
+            break;
+        }
+
+        args.push(parse!(@fn parser => parse_type_expression));
+
+        expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], [Punctuation::Colon, Punctuation::LParen]);
+    }
+
+    let ((), hi_paren) =
+        expect_token!(parser => [Punct(Punctuation::RParen), ()], Punctuation::RParen);
+
+    let (hi, ret) = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
+        parser.pop();
+
+        let t = parse!(box: @fn parser => parse_type_expression);
+
+        (t.loc.clone(), Some(t))
+    } else {
+        (hi_paren, None)
+    };
+
+    Ok(Expression {
+        expr: Expr::FunPtrType { args, ret },
+        loc: Span::from_ends(lo, hi),
     })
 }
 
