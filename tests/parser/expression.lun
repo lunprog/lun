@@ -51,14 +51,20 @@ main :: fun() {
         _ = main();
     }
 
-    // while
+    // predicate loop
     while predicate() {
         println("Hello!");
     }
 
-    // for
+    // iterator loop
     for i in range(1, 12) {
         // body
+    }
+
+    // infinite loop
+    loop {
+        // body
+        break;
     }
 
     // return

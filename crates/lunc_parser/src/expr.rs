@@ -31,6 +31,7 @@ impl Expression {
                 | Expr::PredicateLoop { .. }
                 | Expr::IteratorLoop { .. }
                 | Expr::FunDefinition { .. }
+                | Expr::InfiniteLoop { .. }
         )
     }
 }
@@ -140,6 +141,10 @@ pub enum Expr {
         iterator: Box<Expression>,
         body: Block,
     },
+    /// infinite loop
+    ///
+    /// "loop" block
+    InfiniteLoop { block: Block },
     /// return expression
     ///
     /// "return" expression?
@@ -240,6 +245,7 @@ pub fn parse_expr_precedence(
         Some(Kw(Keyword::If)) => parse!(@fn parser => parse_if_else_expr, false),
         Some(Kw(Keyword::While)) => parse!(@fn parser => parse_predicate_loop_expr),
         Some(Kw(Keyword::For)) => parse!(@fn parser => parse_iterator_loop_expr),
+        Some(Kw(Keyword::Loop)) => parse!(@fn parser => parse_infinite_loop_expr),
         Some(Kw(Keyword::Return)) => parse!(@fn parser => parse_return_expr),
         Some(Kw(Keyword::Break)) => parse!(@fn parser => parse_break_expr),
         Some(Kw(Keyword::Continue)) => parse!(@fn parser => parse_continue_expr),
@@ -963,6 +969,20 @@ pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
             iterator,
             body,
         },
+        loc: Span::from_ends(lo, hi),
+    })
+}
+
+/// parses infinite loop expression
+pub fn parse_infinite_loop_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Loop), ()], Kw(Keyword::Loop));
+
+    let block = parse!(parser => Block);
+
+    let hi = block.loc.clone();
+
+    Ok(Expression {
+        expr: Expr::InfiniteLoop { block },
         loc: Span::from_ends(lo, hi),
     })
 }
