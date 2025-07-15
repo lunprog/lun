@@ -94,6 +94,10 @@ pub enum Expr {
     ///
     /// op expr
     Unary { op: UnaryOp, expr: Box<Expression> },
+    /// Address of
+    ///
+    /// "&" "mut"? expression
+    AddressOf { mutable: bool, val: Box<Expression> },
     // TODO: is the syntax like `add 1, 2, 3` in addition of `add(1, 2, 3)`
     // a good idea? like it could be nice to have sth like that `print "Hello
     // world!"` idk but only for statement function call
@@ -144,7 +148,7 @@ pub enum Expr {
     /// infinite loop
     ///
     /// "loop" block
-    InfiniteLoop { block: Block },
+    InfiniteLoop { body: Block },
     /// return expression
     ///
     /// "return" expression?
@@ -197,10 +201,6 @@ pub enum Expr {
         args: Vec<Expression>,
         ret: Option<Box<Expression>>,
     },
-    /// Address of
-    ///
-    /// "&" "mut"? expression
-    AddressOf { mutable: bool, val: Box<Expression> },
 }
 
 #[derive(Debug, Clone)]
@@ -982,7 +982,7 @@ pub fn parse_infinite_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
     let hi = block.loc.clone();
 
     Ok(Expression {
-        expr: Expr::InfiniteLoop { block },
+        expr: Expr::InfiniteLoop { body: block },
         loc: Span::from_ends(lo, hi),
     })
 }

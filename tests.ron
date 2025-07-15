@@ -665,2799 +665,444 @@
         expected_test_out: "",
     ),
     "parser/directive": (
-        expected_compiler_out: r#"ast = Program {
-    items: [
-        Directive(
-            Mod {
-                name: "module",
-                loc: Span {
-                    lo: 20,
-                    hi: 32,
-                    fid: FileId(
-                        0,
-                    ),
-                },
-            },
-        ),
-        Directive(
-            Use {
-                path: EffectivePath {
-                    path: [
-                        "orb",
-                        "driver",
-                        "run",
-                    ],
-                    loc: Span {
-                        lo: 56,
-                        hi: 70,
-                        fid: FileId(
-                            0,
-                        ),
-                    },
-                },
-                alias: None,
-                loc: Span {
-                    lo: 51,
-                    hi: 71,
-                    fid: FileId(
-                        0,
-                    ),
-                },
-            },
-        ),
-        Directive(
-            Use {
-                path: EffectivePath {
-                    path: [
-                        "std",
-                    ],
-                    loc: Span {
-                        lo: 77,
-                        hi: 80,
-                        fid: FileId(
-                            0,
-                        ),
-                    },
-                },
-                alias: None,
-                loc: Span {
-                    lo: 72,
-                    hi: 81,
-                    fid: FileId(
-                        0,
-                    ),
-                },
-            },
-        ),
-        Directive(
-            Use {
-                path: EffectivePath {
-                    path: [
-                        "std",
-                        "rc",
-                        "Rc",
-                    ],
-                    loc: Span {
-                        lo: 87,
-                        hi: 96,
-                        fid: FileId(
-                            0,
-                        ),
-                    },
-                },
-                alias: Some(
-                    "ReferenceCountedPtr",
-                ),
-                loc: Span {
-                    lo: 82,
-                    hi: 120,
-                    fid: FileId(
-                        0,
-                    ),
-                },
-            },
-        ),
-    ],
-}
-"#,
+        expected_compiler_out: "ast = [
+  Mod {
+    name: module;
+  } @ 20..32 (fid = 0),
+
+  Use {
+    path: orb.driver.run @ 56..70 (fid = 0);
+    alias: none;
+  } @ 51..71 (fid = 0),
+
+  Use {
+    path: std @ 77..80 (fid = 0);
+    alias: none;
+  } @ 72..81 (fid = 0),
+
+  Use {
+    path: std.rc.Rc @ 87..96 (fid = 0);
+    alias: ReferenceCountedPtr;
+  } @ 82..120 (fid = 0),
+]",
         expected_test_out: "",
     ),
     "parser/expression": (
-        expected_compiler_out: r#"ast = Program {
-    items: [
-        GlobalConst {
-            name: "main",
-            name_loc: Span {
-                lo: 11,
-                hi: 15,
-                fid: FileId(
-                    0,
-                ),
-            },
-            typ: None,
-            value: Expression {
-                expr: FunDefinition {
-                    args: [],
-                    rettype: None,
-                    body: Block {
-                        stmts: [
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 54,
-                                                    hi: 55,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: IntLit(
-                                                    12,
-                                                ),
-                                                loc: Span {
-                                                    lo: 58,
-                                                    hi: 60,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 54,
-                                            hi: 60,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 54,
-                                    hi: 60,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 87,
-                                                    hi: 88,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: BoolLit(
-                                                    true,
-                                                ),
-                                                loc: Span {
-                                                    lo: 91,
-                                                    hi: 95,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 87,
-                                            hi: 95,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 87,
-                                    hi: 95,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 101,
-                                                    hi: 102,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: BoolLit(
-                                                    false,
-                                                ),
-                                                loc: Span {
-                                                    lo: 105,
-                                                    hi: 110,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 101,
-                                            hi: 110,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 101,
-                                    hi: 110,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 139,
-                                                    hi: 140,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: StringLit(
-                                                    "Hello world!",
-                                                ),
-                                                loc: Span {
-                                                    lo: 143,
-                                                    hi: 157,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 139,
-                                            hi: 157,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 139,
-                                    hi: 157,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 184,
-                                                    hi: 185,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: CharLit(
-                                                    'C',
-                                                ),
-                                                loc: Span {
-                                                    lo: 188,
-                                                    hi: 191,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 184,
-                                            hi: 191,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 184,
-                                    hi: 191,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 219,
-                                                    hi: 220,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: FloatLit(
-                                                    6.0219999999999996e23,
-                                                ),
-                                                loc: Span {
-                                                    lo: 223,
-                                                    hi: 231,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 219,
-                                            hi: 231,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 219,
-                                    hi: 231,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 259,
-                                                    hi: 260,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: Grouping(
-                                                    Expression {
-                                                        expr: Binary {
-                                                            lhs: Expression {
-                                                                expr: IntLit(
-                                                                    12,
-                                                                ),
-                                                                loc: Span {
-                                                                    lo: 264,
-                                                                    hi: 266,
-                                                                    fid: FileId(
-                                                                        0,
-                                                                    ),
-                                                                },
-                                                            },
-                                                            op: Add,
-                                                            rhs: Expression {
-                                                                expr: IntLit(
-                                                                    3,
-                                                                ),
-                                                                loc: Span {
-                                                                    lo: 269,
-                                                                    hi: 270,
-                                                                    fid: FileId(
-                                                                        0,
-                                                                    ),
-                                                                },
-                                                            },
-                                                        },
-                                                        loc: Span {
-                                                            lo: 264,
-                                                            hi: 270,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                ),
-                                                loc: Span {
-                                                    lo: 263,
-                                                    hi: 271,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 259,
-                                            hi: 271,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 259,
-                                    hi: 271,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 296,
-                                                    hi: 297,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: Ident(
-                                                    "main",
-                                                ),
-                                                loc: Span {
-                                                    lo: 300,
-                                                    hi: 304,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 296,
-                                            hi: 304,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 296,
-                                    hi: 304,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 328,
-                                                    hi: 329,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: Binary {
-                                                    lhs: Expression {
-                                                        expr: IntLit(
-                                                            34,
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 332,
-                                                            hi: 334,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    op: Add,
-                                                    rhs: Expression {
-                                                        expr: IntLit(
-                                                            35,
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 337,
-                                                            hi: 339,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                },
-                                                loc: Span {
-                                                    lo: 332,
-                                                    hi: 339,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 328,
-                                            hi: 339,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 328,
-                                    hi: 339,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 362,
-                                                    hi: 363,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: Unary {
-                                                    op: Not,
-                                                    expr: Expression {
-                                                        expr: BoolLit(
-                                                            false,
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 367,
-                                                            hi: 372,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                },
-                                                loc: Span {
-                                                    lo: 366,
-                                                    hi: 372,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 362,
-                                            hi: 372,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 362,
-                                    hi: 372,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 378,
-                                                    hi: 379,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: Unary {
-                                                    op: Negation,
-                                                    expr: Expression {
-                                                        expr: FloatLit(
-                                                            12.0,
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 383,
-                                                            hi: 387,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                },
-                                                loc: Span {
-                                                    lo: 382,
-                                                    hi: 387,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 378,
-                                            hi: 387,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 378,
-                                    hi: 387,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 410,
-                                                    hi: 411,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: FunCall {
-                                                    called: Expression {
-                                                        expr: Ident(
-                                                            "some_fun",
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 414,
-                                                            hi: 422,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    args: [],
-                                                },
-                                                loc: Span {
-                                                    lo: 414,
-                                                    hi: 424,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 410,
-                                            hi: 424,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 410,
-                                    hi: 424,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 430,
-                                                    hi: 431,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: FunCall {
-                                                    called: Expression {
-                                                        expr: Ident(
-                                                            "some_fun",
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 434,
-                                                            hi: 442,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    args: [
-                                                        Expression {
-                                                            expr: IntLit(
-                                                                1,
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 443,
-                                                                hi: 444,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                                loc: Span {
-                                                    lo: 434,
-                                                    hi: 445,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 430,
-                                            hi: 445,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 430,
-                                    hi: 445,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 451,
-                                                    hi: 452,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: FunCall {
-                                                    called: Expression {
-                                                        expr: Ident(
-                                                            "some_fun",
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 455,
-                                                            hi: 463,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    args: [
-                                                        Expression {
-                                                            expr: IntLit(
-                                                                1,
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 464,
-                                                                hi: 465,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                        Expression {
-                                                            expr: IntLit(
-                                                                2,
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 467,
-                                                                hi: 468,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                                loc: Span {
-                                                    lo: 455,
-                                                    hi: 469,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 451,
-                                            hi: 469,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 451,
-                                    hi: 469,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 475,
-                                                    hi: 476,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: FunCall {
-                                                    called: Expression {
-                                                        expr: Ident(
-                                                            "some_fun",
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 479,
-                                                            hi: 487,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    args: [
-                                                        Expression {
-                                                            expr: IntLit(
-                                                                1,
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 488,
-                                                                hi: 489,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                        Expression {
-                                                            expr: IntLit(
-                                                                2,
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 491,
-                                                                hi: 492,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                                loc: Span {
-                                                    lo: 479,
-                                                    hi: 494,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 475,
-                                            hi: 494,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 475,
-                                    hi: 494,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: If(
-                                            IfExpression {
-                                                cond: Expression {
-                                                    expr: BoolLit(
-                                                        true,
-                                                    ),
-                                                    loc: Span {
-                                                        lo: 514,
-                                                        hi: 518,
-                                                        fid: FileId(
-                                                            0,
-                                                        ),
-                                                    },
-                                                },
-                                                body: Block {
-                                                    stmts: [
-                                                        Statement {
-                                                            stmt: Expression(
-                                                                Expression {
-                                                                    expr: FunCall {
-                                                                        called: Expression {
-                                                                            expr: Ident(
-                                                                                "main",
-                                                                            ),
-                                                                            loc: Span {
-                                                                                lo: 529,
-                                                                                hi: 533,
-                                                                                fid: FileId(
-                                                                                    0,
-                                                                                ),
-                                                                            },
-                                                                        },
-                                                                        args: [],
-                                                                    },
-                                                                    loc: Span {
-                                                                        lo: 529,
-                                                                        hi: 535,
-                                                                        fid: FileId(
-                                                                            0,
-                                                                        ),
-                                                                    },
-                                                                },
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 529,
-                                                                hi: 535,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ],
-                                                    last_expr: None,
-                                                    loc: Span {
-                                                        lo: 519,
-                                                        hi: 542,
-                                                        fid: FileId(
-                                                            0,
-                                                        ),
-                                                    },
-                                                },
-                                                else_branch: Some(
-                                                    Block(
-                                                        Block {
-                                                            stmts: [
-                                                                Statement {
-                                                                    stmt: Expression(
-                                                                        Expression {
-                                                                            expr: FunCall {
-                                                                                called: Expression {
-                                                                                    expr: Ident(
-                                                                                        "main",
-                                                                                    ),
-                                                                                    loc: Span {
-                                                                                        lo: 558,
-                                                                                        hi: 562,
-                                                                                        fid: FileId(
-                                                                                            0,
-                                                                                        ),
-                                                                                    },
-                                                                                },
-                                                                                args: [],
-                                                                            },
-                                                                            loc: Span {
-                                                                                lo: 558,
-                                                                                hi: 564,
-                                                                                fid: FileId(
-                                                                                    0,
-                                                                                ),
-                                                                            },
-                                                                        },
-                                                                    ),
-                                                                    loc: Span {
-                                                                        lo: 558,
-                                                                        hi: 564,
-                                                                        fid: FileId(
-                                                                            0,
-                                                                        ),
-                                                                    },
-                                                                },
-                                                            ],
-                                                            last_expr: None,
-                                                            loc: Span {
-                                                                lo: 548,
-                                                                hi: 571,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ),
-                                                ),
-                                                loc: Span {
-                                                    lo: 511,
-                                                    hi: 571,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        ),
-                                        loc: Span {
-                                            lo: 511,
-                                            hi: 571,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 511,
-                                    hi: 571,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 597,
-                                                    hi: 598,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: IfThenElse {
-                                                    cond: Expression {
-                                                        expr: Binary {
-                                                            lhs: Expression {
-                                                                expr: IntLit(
-                                                                    23,
-                                                                ),
-                                                                loc: Span {
-                                                                    lo: 604,
-                                                                    hi: 606,
-                                                                    fid: FileId(
-                                                                        0,
-                                                                    ),
-                                                                },
-                                                            },
-                                                            op: CompGT,
-                                                            rhs: Expression {
-                                                                expr: IntLit(
-                                                                    12,
-                                                                ),
-                                                                loc: Span {
-                                                                    lo: 609,
-                                                                    hi: 611,
-                                                                    fid: FileId(
-                                                                        0,
-                                                                    ),
-                                                                },
-                                                            },
-                                                        },
-                                                        loc: Span {
-                                                            lo: 604,
-                                                            hi: 611,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    true_val: Expression {
-                                                        expr: BoolLit(
-                                                            false,
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 617,
-                                                            hi: 622,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    false_val: Expression {
-                                                        expr: BoolLit(
-                                                            true,
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 628,
-                                                            hi: 632,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                },
-                                                loc: Span {
-                                                    lo: 601,
-                                                    hi: 632,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 597,
-                                            hi: 632,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 597,
-                                    hi: 632,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Block(
-                                            Block {
-                                                stmts: [
-                                                    Statement {
-                                                        stmt: Expression(
-                                                            Expression {
-                                                                expr: Binary {
-                                                                    lhs: Expression {
-                                                                        expr: Ident(
-                                                                            "_",
-                                                                        ),
-                                                                        loc: Span {
-                                                                            lo: 662,
-                                                                            hi: 663,
-                                                                            fid: FileId(
-                                                                                0,
-                                                                            ),
-                                                                        },
-                                                                    },
-                                                                    op: Assignment,
-                                                                    rhs: Expression {
-                                                                        expr: IntLit(
-                                                                            2,
-                                                                        ),
-                                                                        loc: Span {
-                                                                            lo: 666,
-                                                                            hi: 667,
-                                                                            fid: FileId(
-                                                                                0,
-                                                                            ),
-                                                                        },
-                                                                    },
-                                                                },
-                                                                loc: Span {
-                                                                    lo: 662,
-                                                                    hi: 667,
-                                                                    fid: FileId(
-                                                                        0,
-                                                                    ),
-                                                                },
-                                                            },
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 662,
-                                                            hi: 667,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    Statement {
-                                                        stmt: Expression(
-                                                            Expression {
-                                                                expr: Binary {
-                                                                    lhs: Expression {
-                                                                        expr: Ident(
-                                                                            "_",
-                                                                        ),
-                                                                        loc: Span {
-                                                                            lo: 677,
-                                                                            hi: 678,
-                                                                            fid: FileId(
-                                                                                0,
-                                                                            ),
-                                                                        },
-                                                                    },
-                                                                    op: Assignment,
-                                                                    rhs: Expression {
-                                                                        expr: FunCall {
-                                                                            called: Expression {
-                                                                                expr: Ident(
-                                                                                    "main",
-                                                                                ),
-                                                                                loc: Span {
-                                                                                    lo: 681,
-                                                                                    hi: 685,
-                                                                                    fid: FileId(
-                                                                                        0,
-                                                                                    ),
-                                                                                },
-                                                                            },
-                                                                            args: [],
-                                                                        },
-                                                                        loc: Span {
-                                                                            lo: 681,
-                                                                            hi: 687,
-                                                                            fid: FileId(
-                                                                                0,
-                                                                            ),
-                                                                        },
-                                                                    },
-                                                                },
-                                                                loc: Span {
-                                                                    lo: 677,
-                                                                    hi: 687,
-                                                                    fid: FileId(
-                                                                        0,
-                                                                    ),
-                                                                },
-                                                            },
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 677,
-                                                            hi: 687,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                ],
-                                                last_expr: None,
-                                                loc: Span {
-                                                    lo: 652,
-                                                    hi: 694,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        ),
-                                        loc: Span {
-                                            lo: 652,
-                                            hi: 694,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 652,
-                                    hi: 694,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: PredicateLoop {
-                                            cond: Expression {
-                                                expr: FunCall {
-                                                    called: Expression {
-                                                        expr: Ident(
-                                                            "predicate",
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 728,
-                                                            hi: 737,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    args: [],
-                                                },
-                                                loc: Span {
-                                                    lo: 728,
-                                                    hi: 739,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            body: Block {
-                                                stmts: [
-                                                    Statement {
-                                                        stmt: Expression(
-                                                            Expression {
-                                                                expr: FunCall {
-                                                                    called: Expression {
-                                                                        expr: Ident(
-                                                                            "println",
-                                                                        ),
-                                                                        loc: Span {
-                                                                            lo: 750,
-                                                                            hi: 757,
-                                                                            fid: FileId(
-                                                                                0,
-                                                                            ),
-                                                                        },
-                                                                    },
-                                                                    args: [
-                                                                        Expression {
-                                                                            expr: StringLit(
-                                                                                "Hello!",
-                                                                            ),
-                                                                            loc: Span {
-                                                                                lo: 758,
-                                                                                hi: 766,
-                                                                                fid: FileId(
-                                                                                    0,
-                                                                                ),
-                                                                            },
-                                                                        },
-                                                                    ],
-                                                                },
-                                                                loc: Span {
-                                                                    lo: 750,
-                                                                    hi: 767,
-                                                                    fid: FileId(
-                                                                        0,
-                                                                    ),
-                                                                },
-                                                            },
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 750,
-                                                            hi: 767,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                ],
-                                                last_expr: None,
-                                                loc: Span {
-                                                    lo: 740,
-                                                    hi: 774,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 722,
-                                            hi: 774,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 722,
-                                    hi: 774,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: IteratorLoop {
-                                            variable: "i",
-                                            iterator: Expression {
-                                                expr: FunCall {
-                                                    called: Expression {
-                                                        expr: Ident(
-                                                            "range",
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 810,
-                                                            hi: 815,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    args: [
-                                                        Expression {
-                                                            expr: IntLit(
-                                                                1,
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 816,
-                                                                hi: 817,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                        Expression {
-                                                            expr: IntLit(
-                                                                12,
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 819,
-                                                                hi: 821,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                                loc: Span {
-                                                    lo: 810,
-                                                    hi: 822,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            body: Block {
-                                                stmts: [],
-                                                last_expr: None,
-                                                loc: Span {
-                                                    lo: 823,
-                                                    hi: 846,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 801,
-                                            hi: 846,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 801,
-                                    hi: 846,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: InfiniteLoop {
-                                            block: Block {
-                                                stmts: [
-                                                    Statement {
-                                                        stmt: Expression(
-                                                            Expression {
-                                                                expr: Break {
-                                                                    val: None,
-                                                                },
-                                                                loc: Span {
-                                                                    lo: 904,
-                                                                    hi: 909,
-                                                                    fid: FileId(
-                                                                        0,
-                                                                    ),
-                                                                },
-                                                            },
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 904,
-                                                            hi: 909,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                ],
-                                                last_expr: None,
-                                                loc: Span {
-                                                    lo: 878,
-                                                    hi: 916,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 873,
-                                            hi: 916,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 873,
-                                    hi: 916,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Return {
-                                            val: Some(
-                                                Expression {
-                                                    expr: Binary {
-                                                        lhs: Expression {
-                                                            expr: IntLit(
-                                                                12,
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 943,
-                                                                hi: 945,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                        op: Mul,
-                                                        rhs: Expression {
-                                                            expr: IntLit(
-                                                                8,
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 948,
-                                                                hi: 949,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    },
-                                                    loc: Span {
-                                                        lo: 943,
-                                                        hi: 949,
-                                                        fid: FileId(
-                                                            0,
-                                                        ),
-                                                    },
-                                                },
-                                            ),
-                                        },
-                                        loc: Span {
-                                            lo: 936,
-                                            hi: 949,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 936,
-                                    hi: 949,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Return {
-                                            val: None,
-                                        },
-                                        loc: Span {
-                                            lo: 955,
-                                            hi: 961,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 955,
-                                    hi: 961,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Continue,
-                                        loc: Span {
-                                            lo: 984,
-                                            hi: 992,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 984,
-                                    hi: 992,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 1011,
-                                                    hi: 1012,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: Null,
-                                                loc: Span {
-                                                    lo: 1015,
-                                                    hi: 1019,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 1011,
-                                            hi: 1019,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 1011,
-                                    hi: 1019,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 1039,
-                                                    hi: 1040,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: Unary {
-                                                    op: Dereference,
-                                                    expr: Expression {
-                                                        expr: Ident(
-                                                            "some_pointer",
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 1043,
-                                                            hi: 1055,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                },
-                                                loc: Span {
-                                                    lo: 1043,
-                                                    hi: 1057,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 1039,
-                                            hi: 1057,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 1039,
-                                    hi: 1057,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 1085,
-                                                    hi: 1086,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: FunCall {
-                                                    called: Expression {
-                                                        expr: MemberAccess {
-                                                            expr: Expression {
-                                                                expr: StringLit(
-                                                                    "Hello",
-                                                                ),
-                                                                loc: Span {
-                                                                    lo: 1089,
-                                                                    hi: 1096,
-                                                                    fid: FileId(
-                                                                        0,
-                                                                    ),
-                                                                },
-                                                            },
-                                                            member: "len",
-                                                        },
-                                                        loc: Span {
-                                                            lo: 1089,
-                                                            hi: 1100,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    args: [],
-                                                },
-                                                loc: Span {
-                                                    lo: 1089,
-                                                    hi: 1102,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 1085,
-                                            hi: 1102,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 1085,
-                                    hi: 1102,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 1109,
-                                                    hi: 1110,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: FunCall {
-                                                    called: Expression {
-                                                        expr: MemberAccess {
-                                                            expr: Expression {
-                                                                expr: MemberAccess {
-                                                                    expr: Expression {
-                                                                        expr: Orb,
-                                                                        loc: Span {
-                                                                            lo: 1113,
-                                                                            hi: 1116,
-                                                                            fid: FileId(
-                                                                                0,
-                                                                            ),
-                                                                        },
-                                                                    },
-                                                                    member: "driver",
-                                                                },
-                                                                loc: Span {
-                                                                    lo: 1113,
-                                                                    hi: 1123,
-                                                                    fid: FileId(
-                                                                        0,
-                                                                    ),
-                                                                },
-                                                            },
-                                                            member: "run",
-                                                        },
-                                                        loc: Span {
-                                                            lo: 1113,
-                                                            hi: 1127,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                    args: [],
-                                                },
-                                                loc: Span {
-                                                    lo: 1113,
-                                                    hi: 1129,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 1109,
-                                            hi: 1129,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 1109,
-                                    hi: 1129,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 1171,
-                                                    hi: 1172,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: PointerType {
-                                                    mutable: false,
-                                                    typ: Expression {
-                                                        expr: Ident(
-                                                            "u32",
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 1176,
-                                                            hi: 1179,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                },
-                                                loc: Span {
-                                                    lo: 1175,
-                                                    hi: 1179,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 1171,
-                                            hi: 1179,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 1171,
-                                    hi: 1179,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 1185,
-                                                    hi: 1186,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: PointerType {
-                                                    mutable: true,
-                                                    typ: Expression {
-                                                        expr: Ident(
-                                                            "u32",
-                                                        ),
-                                                        loc: Span {
-                                                            lo: 1194,
-                                                            hi: 1197,
-                                                            fid: FileId(
-                                                                0,
-                                                            ),
-                                                        },
-                                                    },
-                                                },
-                                                loc: Span {
-                                                    lo: 1189,
-                                                    hi: 1197,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 1185,
-                                            hi: 1197,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 1185,
-                                    hi: 1197,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 1233,
-                                                    hi: 1234,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: FunPtrType {
-                                                    args: [],
-                                                    ret: None,
-                                                },
-                                                loc: Span {
-                                                    lo: 1237,
-                                                    hi: 1243,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 1233,
-                                            hi: 1243,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 1233,
-                                    hi: 1243,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 1249,
-                                                    hi: 1250,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: FunPtrType {
-                                                    args: [
-                                                        Expression {
-                                                            expr: Ident(
-                                                                "usz",
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 1258,
-                                                                hi: 1261,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                        Expression {
-                                                            expr: Ident(
-                                                                "bool",
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 1263,
-                                                                hi: 1267,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ],
-                                                    ret: Some(
-                                                        Expression {
-                                                            expr: Ident(
-                                                                "usz",
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 1272,
-                                                                hi: 1275,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ),
-                                                },
-                                                loc: Span {
-                                                    lo: 1253,
-                                                    hi: 1275,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 1249,
-                                            hi: 1275,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 1249,
-                                    hi: 1275,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: Binary {
-                                            lhs: Expression {
-                                                expr: Ident(
-                                                    "_",
-                                                ),
-                                                loc: Span {
-                                                    lo: 1281,
-                                                    hi: 1282,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            op: Assignment,
-                                            rhs: Expression {
-                                                expr: FunPtrType {
-                                                    args: [
-                                                        Expression {
-                                                            expr: Ident(
-                                                                "usz",
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 1290,
-                                                                hi: 1293,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ],
-                                                    ret: Some(
-                                                        Expression {
-                                                            expr: Ident(
-                                                                "usz",
-                                                            ),
-                                                            loc: Span {
-                                                                lo: 1299,
-                                                                hi: 1302,
-                                                                fid: FileId(
-                                                                    0,
-                                                                ),
-                                                            },
-                                                        },
-                                                    ),
-                                                },
-                                                loc: Span {
-                                                    lo: 1285,
-                                                    hi: 1302,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        },
-                                        loc: Span {
-                                            lo: 1281,
-                                            hi: 1302,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 1281,
-                                    hi: 1302,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                        ],
-                        last_expr: None,
-                        loc: Span {
-                            lo: 25,
-                            hi: 1305,
-                            fid: FileId(
-                                0,
-                            ),
-                        },
-                    },
-                },
-                loc: Span {
-                    lo: 19,
-                    hi: 1305,
-                    fid: FileId(
-                        0,
-                    ),
-                },
-            },
-            loc: Span {
-                lo: 11,
-                hi: 1305,
-                fid: FileId(
-                    0,
-                ),
-            },
-        },
-    ],
-}
-"#,
+        expected_compiler_out: r#"ast = [
+  GlobalConst {
+    name: main @ 11..15 (fid = 0);
+    typ: none;
+    value: FunDefinition {
+      args: [];
+      rettype: none;
+      body: [
+        Binary {
+          lhs: ident _ @ 54..55 (fid = 0);
+          op: Assignment;
+          rhs: integer 12 @ 58..60 (fid = 0);
+        } @ 54..60 (fid = 0) @ 54..60 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 87..88 (fid = 0);
+          op: Assignment;
+          rhs: boolean true @ 91..95 (fid = 0);
+        } @ 87..95 (fid = 0) @ 87..95 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 101..102 (fid = 0);
+          op: Assignment;
+          rhs: boolean false @ 105..110 (fid = 0);
+        } @ 101..110 (fid = 0) @ 101..110 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 139..140 (fid = 0);
+          op: Assignment;
+          rhs: string "Hello world!" @ 143..157 (fid = 0);
+        } @ 139..157 (fid = 0) @ 139..157 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 184..185 (fid = 0);
+          op: Assignment;
+          rhs: character 'C' @ 188..191 (fid = 0);
+        } @ 184..191 (fid = 0) @ 184..191 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 219..220 (fid = 0);
+          op: Assignment;
+          rhs: float 602199999999999960000000 @ 223..231 (fid = 0);
+        } @ 219..231 (fid = 0) @ 219..231 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 259..260 (fid = 0);
+          op: Assignment;
+          rhs: Grouping {
+            expr: Binary {
+              lhs: integer 12 @ 264..266 (fid = 0);
+              op: Add;
+              rhs: integer 3 @ 269..270 (fid = 0);
+            } @ 264..270 (fid = 0);
+          } @ 263..271 (fid = 0);
+        } @ 259..271 (fid = 0) @ 259..271 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 296..297 (fid = 0);
+          op: Assignment;
+          rhs: ident main @ 300..304 (fid = 0);
+        } @ 296..304 (fid = 0) @ 296..304 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 328..329 (fid = 0);
+          op: Assignment;
+          rhs: Binary {
+            lhs: integer 34 @ 332..334 (fid = 0);
+            op: Add;
+            rhs: integer 35 @ 337..339 (fid = 0);
+          } @ 332..339 (fid = 0);
+        } @ 328..339 (fid = 0) @ 328..339 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 362..363 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Not;
+            expr: boolean false @ 367..372 (fid = 0);
+          } @ 366..372 (fid = 0);
+        } @ 362..372 (fid = 0) @ 362..372 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 378..379 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Negation;
+            expr: float 12 @ 383..387 (fid = 0);
+          } @ 382..387 (fid = 0);
+        } @ 378..387 (fid = 0) @ 378..387 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 410..411 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            called: ident some_fun @ 414..422 (fid = 0);
+            args: [];
+          } @ 414..424 (fid = 0);
+        } @ 410..424 (fid = 0) @ 410..424 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 430..431 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            called: ident some_fun @ 434..442 (fid = 0);
+            args: [
+              integer 1 @ 443..444 (fid = 0),
+            ];
+          } @ 434..445 (fid = 0);
+        } @ 430..445 (fid = 0) @ 430..445 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 451..452 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            called: ident some_fun @ 455..463 (fid = 0);
+            args: [
+              integer 1 @ 464..465 (fid = 0),
+
+              integer 2 @ 467..468 (fid = 0),
+            ];
+          } @ 455..469 (fid = 0);
+        } @ 451..469 (fid = 0) @ 451..469 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 475..476 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            called: ident some_fun @ 479..487 (fid = 0);
+            args: [
+              integer 1 @ 488..489 (fid = 0),
+
+              integer 2 @ 491..492 (fid = 0),
+            ];
+          } @ 479..494 (fid = 0);
+        } @ 475..494 (fid = 0) @ 475..494 (fid = 0),
+
+        If {
+          cond: boolean true @ 514..518 (fid = 0);
+          body: [
+            FunCall {
+              called: ident main @ 529..533 (fid = 0);
+              args: [];
+            } @ 529..535 (fid = 0) @ 529..535 (fid = 0),
+          ] @ 519..542 (fid = 0);
+          else_br: [
+            FunCall {
+              called: ident main @ 558..562 (fid = 0);
+              args: [];
+            } @ 558..564 (fid = 0) @ 558..564 (fid = 0),
+          ] @ 548..571 (fid = 0);
+        } @ 511..571 (fid = 0) @ 511..571 (fid = 0) @ 511..571 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 597..598 (fid = 0);
+          op: Assignment;
+          rhs: IfThenElse {
+            cond: Binary {
+              lhs: integer 23 @ 604..606 (fid = 0);
+              op: CompGT;
+              rhs: integer 12 @ 609..611 (fid = 0);
+            } @ 604..611 (fid = 0);
+            true_val: boolean false @ 617..622 (fid = 0);
+            false_val: boolean true @ 628..632 (fid = 0);
+          } @ 601..632 (fid = 0);
+        } @ 597..632 (fid = 0) @ 597..632 (fid = 0),
+
+        [
+          Binary {
+            lhs: ident _ @ 662..663 (fid = 0);
+            op: Assignment;
+            rhs: integer 2 @ 666..667 (fid = 0);
+          } @ 662..667 (fid = 0) @ 662..667 (fid = 0),
+
+          Binary {
+            lhs: ident _ @ 677..678 (fid = 0);
+            op: Assignment;
+            rhs: FunCall {
+              called: ident main @ 681..685 (fid = 0);
+              args: [];
+            } @ 681..687 (fid = 0);
+          } @ 677..687 (fid = 0) @ 677..687 (fid = 0),
+        ] @ 652..694 (fid = 0) @ 652..694 (fid = 0) @ 652..694 (fid = 0),
+
+        PredicateLoop {
+          cond: FunCall {
+            called: ident predicate @ 728..737 (fid = 0);
+            args: [];
+          } @ 728..739 (fid = 0);
+          body: [
+            FunCall {
+              called: ident println @ 750..757 (fid = 0);
+              args: [
+                string "Hello!" @ 758..766 (fid = 0),
+              ];
+            } @ 750..767 (fid = 0) @ 750..767 (fid = 0),
+          ] @ 740..774 (fid = 0);
+        } @ 722..774 (fid = 0) @ 722..774 (fid = 0),
+
+        IteratorLoop {
+          variable: i;
+          iterator: FunCall {
+            called: ident range @ 810..815 (fid = 0);
+            args: [
+              integer 1 @ 816..817 (fid = 0),
+
+              integer 12 @ 819..821 (fid = 0),
+            ];
+          } @ 810..822 (fid = 0);
+          body: [] @ 823..846 (fid = 0);
+        } @ 801..846 (fid = 0) @ 801..846 (fid = 0),
+
+        InfiniteLoop {
+          body: [
+            Break {
+              val: none;
+            } @ 904..909 (fid = 0) @ 904..909 (fid = 0),
+          ] @ 878..916 (fid = 0);
+        } @ 873..916 (fid = 0) @ 873..916 (fid = 0),
+
+        Return {
+          val: Binary {
+            lhs: integer 12 @ 943..945 (fid = 0);
+            op: Mul;
+            rhs: integer 8 @ 948..949 (fid = 0);
+          } @ 943..949 (fid = 0);
+        } @ 936..949 (fid = 0) @ 936..949 (fid = 0),
+
+        Return {
+          val: none;
+        } @ 955..961 (fid = 0) @ 955..961 (fid = 0),
+
+        Continue @ 984..992 (fid = 0) @ 984..992 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1011..1012 (fid = 0);
+          op: Assignment;
+          rhs: Null @ 1015..1019 (fid = 0);
+        } @ 1011..1019 (fid = 0) @ 1011..1019 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1039..1040 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Dereference;
+            expr: ident some_pointer @ 1043..1055 (fid = 0);
+          } @ 1043..1057 (fid = 0);
+        } @ 1039..1057 (fid = 0) @ 1039..1057 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1085..1086 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            called: MemberAccess {
+              expr: string "Hello" @ 1089..1096 (fid = 0);
+              member: len;
+            } @ 1089..1100 (fid = 0);
+            args: [];
+          } @ 1089..1102 (fid = 0);
+        } @ 1085..1102 (fid = 0) @ 1085..1102 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1109..1110 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            called: MemberAccess {
+              expr: MemberAccess {
+                expr: Orb @ 1113..1116 (fid = 0);
+                member: driver;
+              } @ 1113..1123 (fid = 0);
+              member: run;
+            } @ 1113..1127 (fid = 0);
+            args: [];
+          } @ 1113..1129 (fid = 0);
+        } @ 1109..1129 (fid = 0) @ 1109..1129 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1171..1172 (fid = 0);
+          op: Assignment;
+          rhs: PointerType {
+            mutable: false;
+            typ: ident u32 @ 1176..1179 (fid = 0);
+          } @ 1175..1179 (fid = 0);
+        } @ 1171..1179 (fid = 0) @ 1171..1179 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1185..1186 (fid = 0);
+          op: Assignment;
+          rhs: PointerType {
+            mutable: true;
+            typ: ident u32 @ 1194..1197 (fid = 0);
+          } @ 1189..1197 (fid = 0);
+        } @ 1185..1197 (fid = 0) @ 1185..1197 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1233..1234 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [];
+            ret: none;
+          } @ 1237..1243 (fid = 0);
+        } @ 1233..1243 (fid = 0) @ 1233..1243 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1249..1250 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [
+              ident usz @ 1258..1261 (fid = 0),
+
+              ident bool @ 1263..1267 (fid = 0),
+            ];
+            ret: ident usz @ 1272..1275 (fid = 0);
+          } @ 1253..1275 (fid = 0);
+        } @ 1249..1275 (fid = 0) @ 1249..1275 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1281..1282 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [
+              ident usz @ 1290..1293 (fid = 0),
+            ];
+            ret: ident usz @ 1299..1302 (fid = 0);
+          } @ 1285..1302 (fid = 0);
+        } @ 1281..1302 (fid = 0) @ 1281..1302 (fid = 0),
+      ] @ 25..1305 (fid = 0);
+    } @ 19..1305 (fid = 0);
+  } @ 11..1305 (fid = 0),
+]"#,
         expected_test_out: "",
     ),
     "parser/item": (
-        expected_compiler_out: r#"ast = Program {
-    items: [
-        GlobalConst {
-            name: "main",
-            name_loc: Span {
-                lo: 19,
-                hi: 23,
-                fid: FileId(
-                    0,
-                ),
-            },
-            typ: None,
-            value: Expression {
-                expr: FunDefinition {
-                    args: [],
-                    rettype: None,
-                    body: Block {
-                        stmts: [],
-                        last_expr: None,
-                        loc: Span {
-                            lo: 33,
-                            hi: 35,
-                            fid: FileId(
-                                0,
-                            ),
-                        },
-                    },
-                },
-                loc: Span {
-                    lo: 27,
-                    hi: 35,
-                    fid: FileId(
-                        0,
-                    ),
-                },
-            },
-            loc: Span {
-                lo: 19,
-                hi: 35,
-                fid: FileId(
-                    0,
-                ),
-            },
-        },
-        GlobalConst {
-            name: "avogadro",
-            name_loc: Span {
-                lo: 36,
-                hi: 44,
-                fid: FileId(
-                    0,
-                ),
-            },
-            typ: Some(
-                Expression {
-                    expr: Ident(
-                        "f64",
-                    ),
-                    loc: Span {
-                        lo: 47,
-                        hi: 50,
-                        fid: FileId(
-                            0,
-                        ),
-                    },
-                },
-            ),
-            value: Expression {
-                expr: FloatLit(
-                    6.0219999999999996e23,
-                ),
-                loc: Span {
-                    lo: 53,
-                    hi: 61,
-                    fid: FileId(
-                        0,
-                    ),
-                },
-            },
-            loc: Span {
-                lo: 36,
-                hi: 62,
-                fid: FileId(
-                    0,
-                ),
-            },
-        },
-        GlobalVar {
-            name: "hello",
-            name_loc: Span {
-                lo: 78,
-                hi: 83,
-                fid: FileId(
-                    0,
-                ),
-            },
-            typ: Some(
-                Expression {
-                    expr: PointerType {
-                        mutable: false,
-                        typ: Expression {
-                            expr: Ident(
-                                "str",
-                            ),
-                            loc: Span {
-                                lo: 87,
-                                hi: 90,
-                                fid: FileId(
-                                    0,
-                                ),
-                            },
-                        },
-                    },
-                    loc: Span {
-                        lo: 86,
-                        hi: 90,
-                        fid: FileId(
-                            0,
-                        ),
-                    },
-                },
-            ),
-            value: Expression {
-                expr: StringLit(
-                    "Hello",
-                ),
-                loc: Span {
-                    lo: 93,
-                    hi: 100,
-                    fid: FileId(
-                        0,
-                    ),
-                },
-            },
-            loc: Span {
-                lo: 78,
-                hi: 101,
-                fid: FileId(
-                    0,
-                ),
-            },
-        },
-        GlobalVar {
-            name: "globFloat",
-            name_loc: Span {
-                lo: 102,
-                hi: 111,
-                fid: FileId(
-                    0,
-                ),
-            },
-            typ: None,
-            value: Expression {
-                expr: FloatLit(
-                    12.0,
-                ),
-                loc: Span {
-                    lo: 115,
-                    hi: 119,
-                    fid: FileId(
-                        0,
-                    ),
-                },
-            },
-            loc: Span {
-                lo: 102,
-                hi: 120,
-                fid: FileId(
-                    0,
-                ),
-            },
-        },
-    ],
-}
-"#,
+        expected_compiler_out: r#"ast = [
+  GlobalConst {
+    name: main @ 19..23 (fid = 0);
+    typ: none;
+    value: FunDefinition {
+      args: [];
+      rettype: none;
+      body: [] @ 33..35 (fid = 0);
+    } @ 27..35 (fid = 0);
+  } @ 19..35 (fid = 0),
+
+  GlobalConst {
+    name: avogadro @ 36..44 (fid = 0);
+    typ: ident f64 @ 47..50 (fid = 0);
+    value: float 602199999999999960000000 @ 53..61 (fid = 0);
+  } @ 36..62 (fid = 0),
+
+  GlobalVar {
+    name: hello @ 78..83 (fid = 0);
+    typ: PointerType {
+      mutable: false;
+      typ: ident str @ 87..90 (fid = 0);
+    } @ 86..90 (fid = 0);
+    value: string "Hello" @ 93..100 (fid = 0);
+  } @ 78..101 (fid = 0),
+
+  GlobalVar {
+    name: globFloat @ 102..111 (fid = 0);
+    typ: none;
+    value: float 12 @ 115..119 (fid = 0);
+  } @ 102..120 (fid = 0),
+]"#,
         expected_test_out: "",
     ),
     "parser/statement": (
-        expected_compiler_out: r#"ast = Program {
-    items: [
-        GlobalConst {
-            name: "main",
-            name_loc: Span {
-                lo: 0,
-                hi: 4,
-                fid: FileId(
-                    0,
-                ),
-            },
-            typ: None,
-            value: Expression {
-                expr: FunDefinition {
-                    args: [],
-                    rettype: None,
-                    body: Block {
-                        stmts: [
-                            Statement {
-                                stmt: VariableDef {
-                                    name: "a",
-                                    name_loc: Span {
-                                        lo: 48,
-                                        hi: 49,
-                                        fid: FileId(
-                                            0,
-                                        ),
-                                    },
-                                    mutable: false,
-                                    typ: None,
-                                    value: Expression {
-                                        expr: IntLit(
-                                            12,
-                                        ),
-                                        loc: Span {
-                                            lo: 52,
-                                            hi: 54,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                },
-                                loc: Span {
-                                    lo: 44,
-                                    hi: 54,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: VariableDef {
-                                    name: "b",
-                                    name_loc: Span {
-                                        lo: 68,
-                                        hi: 69,
-                                        fid: FileId(
-                                            0,
-                                        ),
-                                    },
-                                    mutable: true,
-                                    typ: None,
-                                    value: Expression {
-                                        expr: IntLit(
-                                            34,
-                                        ),
-                                        loc: Span {
-                                            lo: 72,
-                                            hi: 74,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                },
-                                loc: Span {
-                                    lo: 60,
-                                    hi: 74,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: VariableDef {
-                                    name: "c",
-                                    name_loc: Span {
-                                        lo: 107,
-                                        hi: 108,
-                                        fid: FileId(
-                                            0,
-                                        ),
-                                    },
-                                    mutable: false,
-                                    typ: None,
-                                    value: Expression {
-                                        expr: IntLit(
-                                            56,
-                                        ),
-                                        loc: Span {
-                                            lo: 112,
-                                            hi: 114,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                },
-                                loc: Span {
-                                    lo: 107,
-                                    hi: 114,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: VariableDef {
-                                    name: "d",
-                                    name_loc: Span {
-                                        lo: 120,
-                                        hi: 121,
-                                        fid: FileId(
-                                            0,
-                                        ),
-                                    },
-                                    mutable: true,
-                                    typ: None,
-                                    value: Expression {
-                                        expr: IntLit(
-                                            78,
-                                        ),
-                                        loc: Span {
-                                            lo: 125,
-                                            hi: 127,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                },
-                                loc: Span {
-                                    lo: 120,
-                                    hi: 127,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Defer {
-                                    expr: Expression {
-                                        expr: Block(
-                                            Block {
-                                                stmts: [],
-                                                last_expr: None,
-                                                loc: Span {
-                                                    lo: 163,
-                                                    hi: 165,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                        ),
-                                        loc: Span {
-                                            lo: 163,
-                                            hi: 165,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                },
-                                loc: Span {
-                                    lo: 157,
-                                    hi: 165,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                            Statement {
-                                stmt: Expression(
-                                    Expression {
-                                        expr: FunCall {
-                                            called: Expression {
-                                                expr: Ident(
-                                                    "hello_world",
-                                                ),
-                                                loc: Span {
-                                                    lo: 199,
-                                                    hi: 210,
-                                                    fid: FileId(
-                                                        0,
-                                                    ),
-                                                },
-                                            },
-                                            args: [],
-                                        },
-                                        loc: Span {
-                                            lo: 199,
-                                            hi: 212,
-                                            fid: FileId(
-                                                0,
-                                            ),
-                                        },
-                                    },
-                                ),
-                                loc: Span {
-                                    lo: 199,
-                                    hi: 212,
-                                    fid: FileId(
-                                        0,
-                                    ),
-                                },
-                            },
-                        ],
-                        last_expr: None,
-                        loc: Span {
-                            lo: 14,
-                            hi: 215,
-                            fid: FileId(
-                                0,
-                            ),
-                        },
-                    },
-                },
-                loc: Span {
-                    lo: 8,
-                    hi: 215,
-                    fid: FileId(
-                        0,
-                    ),
-                },
-            },
-            loc: Span {
-                lo: 0,
-                hi: 215,
-                fid: FileId(
-                    0,
-                ),
-            },
-        },
-    ],
-}
-"#,
+        expected_compiler_out: "ast = [
+  GlobalConst {
+    name: main @ 0..4 (fid = 0);
+    typ: none;
+    value: FunDefinition {
+      args: [];
+      rettype: none;
+      body: [
+        VariableDef {
+          name: a @ 48..49 (fid = 0);
+          mutable: false;
+          typ: none;
+          value: integer 12 @ 52..54 (fid = 0);
+        } @ 44..54 (fid = 0),
+
+        VariableDef {
+          name: b @ 68..69 (fid = 0);
+          mutable: true;
+          typ: none;
+          value: integer 34 @ 72..74 (fid = 0);
+        } @ 60..74 (fid = 0),
+
+        VariableDef {
+          name: c @ 107..108 (fid = 0);
+          mutable: false;
+          typ: none;
+          value: integer 56 @ 112..114 (fid = 0);
+        } @ 107..114 (fid = 0),
+
+        VariableDef {
+          name: d @ 120..121 (fid = 0);
+          mutable: true;
+          typ: none;
+          value: integer 78 @ 125..127 (fid = 0);
+        } @ 120..127 (fid = 0),
+
+        Defer {
+          expr: [] @ 163..165 (fid = 0) @ 163..165 (fid = 0);
+        } @ 157..165 (fid = 0),
+
+        FunCall {
+          called: ident hello_world @ 199..210 (fid = 0);
+          args: [];
+        } @ 199..212 (fid = 0) @ 199..212 (fid = 0),
+      ] @ 14..215 (fid = 0);
+    } @ 8..215 (fid = 0);
+  } @ 0..215 (fid = 0),
+]",
         expected_test_out: "",
     ),
 }

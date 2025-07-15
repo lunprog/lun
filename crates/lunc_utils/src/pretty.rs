@@ -1,0 +1,255 @@
+//! Pretty tree printer, used for printing the AST, the DSIR, and the HTIR
+
+use std::io::{self, Write};
+
+use crate::Span;
+
+/// A struct helping to dump tree where you encounter a struct
+pub struct StructDump<'ctx> {
+    ctx: &'ctx mut PrettyCtxt,
+    finished: bool,
+}
+
+impl<'ctx> StructDump<'ctx> {
+    pub fn field(self, name: &str, field: &dyn PrettyDump) -> io::Result<StructDump<'ctx>> {
+        assert!(!self.finished);
+        self.ctx.write_indent()?;
+
+        write!(self.ctx.out, "{name}: ")?;
+        field.try_dump(self.ctx)?;
+        writeln!(self.ctx.out, ";")?;
+
+        Ok(self)
+    }
+
+    pub fn finish(mut self) -> io::Result<StructDump<'ctx>> {
+        self.finished = true;
+        self.ctx.deindent();
+        self.ctx.write_indent()?;
+        write!(self.ctx.out, "}}")?;
+
+        Ok(self)
+    }
+}
+
+/// A list helping struct to dump list-like tree nodes
+pub struct ListDump<'ctx> {
+    ctx: &'ctx mut PrettyCtxt,
+    finished: bool,
+    is_empty: bool,
+}
+
+impl<'ctx> ListDump<'ctx> {
+    pub fn item(&mut self, item: &dyn PrettyDump) -> io::Result<&mut ListDump<'ctx>> {
+        assert!(!self.finished);
+
+        writeln!(self.ctx.out)?;
+        self.ctx.write_indent()?;
+        item.try_dump(self.ctx)?;
+        writeln!(self.ctx.out, ",")?;
+        self.is_empty = false;
+
+        Ok(self)
+    }
+
+    pub fn items<'a>(
+        mut self,
+        items: impl Iterator<Item = &'a dyn PrettyDump>,
+    ) -> io::Result<ListDump<'ctx>> {
+        for item in items {
+            self.item(item)?;
+        }
+
+        Ok(self)
+    }
+
+    pub fn finish(mut self) -> io::Result<ListDump<'ctx>> {
+        self.finished = true;
+        self.ctx.deindent();
+        if !self.is_empty {
+            self.ctx.write_indent()?;
+        }
+        write!(self.ctx.out, "]")?;
+
+        Ok(self)
+    }
+}
+
+/// Context of pretty printing trees
+pub struct PrettyCtxt {
+    /// indent amount (count of spaces)
+    indent: usize,
+    /// current indentation amount, (count of spaces)
+    current_indent: usize,
+    pub out: Box<dyn Write>,
+}
+
+impl PrettyCtxt {
+    /// create a new pretty context
+    pub fn new(indent: usize, out: impl Write + 'static) -> PrettyCtxt {
+        PrettyCtxt {
+            indent,
+            current_indent: 0,
+            out: Box::new(out),
+        }
+    }
+
+    /// write the current indentation
+    pub fn write_indent(&mut self) -> io::Result<()> {
+        write!(self.out, "{:1$}", "", self.current_indent)
+    }
+
+    /// increase the indent level by one indent
+    pub fn indent(&mut self) {
+        self.current_indent += self.indent;
+    }
+
+    /// decrease the indent level by one indent
+    pub fn deindent(&mut self) {
+        self.current_indent -= self.indent;
+    }
+
+    /// create a new dump of a struct, used to assist tree dumping when there
+    /// is a struct
+    pub fn pretty_struct<'ctx>(&'ctx mut self, name: &str) -> io::Result<StructDump<'ctx>> {
+        writeln!(self.out, "{name} {{")?;
+        self.indent();
+
+        Ok(StructDump {
+            ctx: self,
+            finished: false,
+        })
+    }
+
+    /// create a new helper for list-like tree nodes dump
+    pub fn pretty_list<'ctx>(&'ctx mut self) -> io::Result<ListDump<'ctx>> {
+        write!(self.out, "[")?;
+        self.indent();
+
+        Ok(ListDump {
+            ctx: self,
+            finished: false,
+            is_empty: true,
+        })
+    }
+
+    /// Print the location attached to a node
+    pub fn print_loc(&mut self, loc: &Span) -> io::Result<()> {
+        write!(self.out, " @ {loc}")
+    }
+}
+
+impl Default for PrettyCtxt {
+    fn default() -> Self {
+        PrettyCtxt::new(2, io::stderr())
+    }
+}
+
+/// Dump a tree, but the Pretty version.
+pub trait PrettyDump {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()>;
+
+    /// Dump the current node with the defaults of PrettyCtxt, to stderr.
+    #[inline]
+    #[track_caller]
+    fn dump(&self) {
+        self.try_dump(&mut PrettyCtxt::default()).unwrap()
+    }
+}
+
+impl PrettyDump for &dyn PrettyDump {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        (*self).try_dump(ctx)
+    }
+}
+impl<T: PrettyDump, const N: usize> PrettyDump for [T; N] {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        (&self[..]).try_dump(ctx)
+    }
+}
+
+impl<T: PrettyDump> PrettyDump for &[T] {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        ctx.pretty_list()?
+            .items(self.iter().map(|node| node as &dyn PrettyDump))?
+            .finish()?;
+
+        Ok(())
+    }
+}
+
+impl<'ctx> PrettyDump for StructDump<'ctx> {
+    fn try_dump(&self, _: &mut PrettyCtxt) -> io::Result<()> {
+        assert!(self.finished);
+        // we already printed everything
+        Ok(())
+    }
+}
+
+impl<'ctx> PrettyDump for ListDump<'ctx> {
+    fn try_dump(&self, _: &mut PrettyCtxt) -> io::Result<()> {
+        assert!(self.finished);
+        // we already printed everything
+        Ok(())
+    }
+}
+
+impl PrettyDump for &str {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        write!(ctx.out, "{self}")
+    }
+}
+
+impl PrettyDump for String {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        self.as_str().try_dump(ctx)
+    }
+}
+
+impl PrettyDump for Span {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        write!(ctx.out, "{self}")
+    }
+}
+
+impl<T: PrettyDump> PrettyDump for &T {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        T::try_dump(self, ctx)
+    }
+}
+
+impl<T: PrettyDump> PrettyDump for &mut T {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        T::try_dump(self, ctx)
+    }
+}
+
+impl<T: PrettyDump> PrettyDump for Option<T> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        if let Some(node) = self {
+            node.try_dump(ctx)
+        } else {
+            write!(ctx.out, "none")
+        }
+    }
+}
+
+impl<T: PrettyDump> PrettyDump for (T, &Span) {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        self.0.try_dump(ctx)?;
+        ctx.print_loc(self.1)?;
+        Ok(())
+    }
+}
+
+impl PrettyDump for bool {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        write!(ctx.out, "{self}")
+    }
+}
+
+impl<T: PrettyDump> PrettyDump for Box<T> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        T::try_dump(self, ctx)
+    }
+}

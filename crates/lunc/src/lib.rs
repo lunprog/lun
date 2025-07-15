@@ -17,6 +17,7 @@ use crate::{
     parser::Parser,
     utils::{
         pluralize,
+        pretty::PrettyDump,
         target::{TargetParsingError, TargetTriplet},
     },
 };
@@ -454,7 +455,9 @@ pub fn run() -> Result<()> {
 
     //    maybe print the ast
     if argv.debug_print_at(DebugPrint::Ast) {
-        eprintln!("ast = {ast:#?}");
+        // eprintln!("ast = {ast:#?}");
+        eprint!("ast = ");
+        ast.dump();
     }
     if argv.debug_halt_at(DebugHalt::Parser) {
         return Ok(());

@@ -3,6 +3,7 @@ use std::{
     ops::{Add, Range},
 };
 
+pub mod pretty;
 pub mod target;
 pub mod token;
 
