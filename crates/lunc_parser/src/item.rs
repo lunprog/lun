@@ -1,7 +1,7 @@
 //! Parsing of lun's definitions.
 
 use crate::{
-    directive::{ItemDirective, parse_mod_directive},
+    directive::{ItemDirective, parse_mod_directive, parse_use_directive},
     expr::parse_type_expression,
 };
 
@@ -18,7 +18,7 @@ pub enum Vis {
 /// Lun program.
 #[derive(Debug, Clone)]
 pub struct Program {
-    pub defs: Vec<Item>,
+    pub items: Vec<Item>,
 }
 
 impl AstNode for Program {
@@ -33,7 +33,7 @@ impl AstNode for Program {
             defs.push(parse!(parser => Item));
         }
 
-        Ok(Program { defs })
+        Ok(Program { items: defs })
     }
 }
 
@@ -129,6 +129,7 @@ pub fn parse_directive_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
     match parser.nth_tt(1) {
         Some(Ident(id)) => match id.as_str() {
             "mod" => parse_mod_directive(parser),
+            "use" => parse_use_directive(parser),
             _ => {
                 let t = parser.nth_tok(1).unwrap().clone();
                 Err(ExpectedToken::new(["mod"], t.tt, Some("directive"), t.loc).into_diag())

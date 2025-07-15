@@ -74,7 +74,7 @@ impl FromAst for CkProgram {
 
     fn from_ast(ast: Self::Unchecked) -> Self {
         CkProgram {
-            defs: from_ast(ast.defs),
+            defs: from_ast(ast.items),
         }
     }
 }

@@ -1,2 +1,7 @@
 // module directive
 #mod module;
+
+// use directive
+#use orb.driver.run;
+#use std;
+#use std.rc.Rc as ReferenceCountedPtr;

@@ -149,7 +149,7 @@ macro_rules! expect_token {
         }
     );
 
-    ($parser:expr => [ $($token:pat, $result:expr $(,in $between:stmt)?);* $( ; )?], $expected:expr $(, in $node:expr)?) => (
+    ($parser:expr => [ $($token:pat, $result:expr $(, if $cond:expr )? $(,in $between:stmt)?);* $( ; )?], $expected:expr $(, in $node:expr)?) => (
         match $parser.peek_tok() {
             $(
                 // we allow unused variable in case of a $between that terminates.
@@ -157,7 +157,7 @@ macro_rules! expect_token {
                 Some(::lunc_utils::token::Token {
                     tt: $token,
                     ..
-                }) => {
+                }) $( if $cond )? => {
                     $(
                         $between
                     )?
@@ -181,34 +181,8 @@ macro_rules! expect_token {
         }
     );
 
-    (@noloc $parser:expr => [ $($token:pat, $result:expr $(,in $between:stmt)?);* $( ; )?], $expected:expr) => (
-        match $parser.peek_tok() {
-            $(
-                // we allow unused variable in case of a $between that terminates.
-                #[allow(unused_variables)]
-                Some(::lun_utils::token::Token {
-                    tt: $token,
-                    ..
-                }) => {
-                    $(
-                        $between
-                    )?
-                    // we allow unreachable code because the $between type may
-                    // be of type `!` and we can use unwraps and we already
-                    // know that there is a tokens with a location so it is
-                    // sure we wont panic
-                    #[allow(unreachable_code)]
-                    {
-                        $parser.pop();
-                        $result
-                    }
-                }
-            )*
-            Some(::lun_utils::token::Token { tt, loc: loc }) => {
-                return Err(ParsingError::new_expected($expected, tt, loc.clone()));
-            }
-            _ => return Err(ParsingError::ReachedEOF)
-        }
+    (noloc: $( $tt:tt )*) => (
+        expect_token!( $( $tt )* ).0
     )
 }
 
