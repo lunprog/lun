@@ -455,7 +455,6 @@ pub fn run() -> Result<()> {
 
     //    maybe print the ast
     if argv.debug_print_at(DebugPrint::Ast) {
-        // eprintln!("ast = {ast:#?}");
         eprint!("ast = ");
         ast.dump();
     }

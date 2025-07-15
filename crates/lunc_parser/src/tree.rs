@@ -129,7 +129,11 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::Block(block) => block.try_dump(ctx),
+            Expr::Block(block) => {
+                write!(ctx.out, "Block ")?;
+                block.try_dump(ctx)?;
+                Ok(())
+            }
             Expr::PredicateLoop { cond, body } => {
                 ctx.pretty_struct("PredicateLoop")?
                     .field("cond", &cond)?

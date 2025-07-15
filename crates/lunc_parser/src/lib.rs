@@ -9,6 +9,7 @@ use lunc_diag::{Diagnostic, DiagnosticSink, ReachedEOF, ToDiagnostic};
 
 use lunc_utils::{
     Span,
+    pretty::PrettyDump,
     token::{
         Keyword, Punctuation, Token, TokenStream,
         TokenType::{self, *},
@@ -116,7 +117,7 @@ impl Parser {
 }
 
 /// A node of the AST that can be parsed.
-pub trait AstNode: Debug {
+pub trait AstNode: Debug + PrettyDump {
     /// parse the node with the given parser and returns the node.
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic>
     where

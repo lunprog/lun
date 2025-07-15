@@ -854,7 +854,7 @@
           } @ 601..632 (fid = 0);
         } @ 597..632 (fid = 0) @ 597..632 (fid = 0),
 
-        [
+        Block [
           Binary {
             lhs: ident _ @ 662..663 (fid = 0);
             op: Assignment;
@@ -1092,7 +1092,7 @@
         } @ 120..127 (fid = 0),
 
         Defer {
-          expr: [] @ 163..165 (fid = 0) @ 163..165 (fid = 0);
+          expr: Block [] @ 163..165 (fid = 0) @ 163..165 (fid = 0);
         } @ 157..165 (fid = 0),
 
         FunCall {
