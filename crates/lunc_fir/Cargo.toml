@@ -6,4 +6,4 @@ license.workspace = true
 edition = "2024"
 
 [dependencies]
-lunc_semack = { workspace = true }
+lunc_parser = { workspace = true }

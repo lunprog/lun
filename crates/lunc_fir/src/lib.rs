@@ -3,10 +3,7 @@
 
 use std::{fmt::Display, io};
 
-use lunc_semack::{
-    AtomicType,
-    ckast::{BinOp, CkDefinition, CkExpr, CkExpression, CkProgram, UnaryOp},
-};
+use lunc_parser::expr::{BinOp, UnaryOp};
 
 /// Ir Unit, for now equivalent to [`CkProgram`].
 ///
@@ -126,6 +123,8 @@ impl Default for IrUnit {
         IrUnit::new()
     }
 }
+
+type AtomicType = String;
 
 /// Function
 #[derive(Debug, Clone)]
@@ -395,64 +394,5 @@ impl Value {
             }
         }
         Ok(())
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct IrBuilder {
-    ast: CkProgram,
-    ir: IrUnit,
-}
-
-impl IrBuilder {
-    pub fn new(ast: CkProgram) -> IrBuilder {
-        IrBuilder {
-            ast,
-            ir: IrUnit::new(),
-        }
-    }
-
-    pub fn produce(&mut self) {
-        for def in self.ast.defs.clone() {
-            self.gen_def(def);
-        }
-    }
-
-    pub fn ir_unit(self) -> IrUnit {
-        self.ir
-    }
-
-    pub fn gen_def(&mut self, def: CkDefinition) {
-        let sym = def.sym.unwrap();
-
-        let sym = sym.read().unwrap();
-        let CkExpression {
-            expr:
-                CkExpr::FunDefinition {
-                    args: _,
-                    rettype: _,
-                    body,
-                },
-            ..
-        } = def.value
-        else {
-            panic!("expected a function")
-        };
-
-        let mut entry = OpBlock::new();
-        entry.push(Op::Return {
-            arg: Some(Arg::IntegerLiteral(0)),
-        });
-        entry.finish();
-
-        let fun = Fun {
-            name: sym.name.clone(),
-            args: sym.atomtyp.as_fun_args(),
-            ret: sym.atomtyp.as_fun_ret(),
-            body: vec![entry],
-        };
-        _ = body;
-
-        self.ir.push_fun(fun);
     }
 }

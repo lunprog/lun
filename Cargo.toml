@@ -8,7 +8,6 @@ members = [
   "crates/lunc_fir",
   "crates/lunc_lexer",
   "crates/lunc_parser",
-  "crates/lunc_semack",
   "crates/lunc_utils",
   "crates/luntests",
 ]
@@ -23,7 +22,6 @@ lunc_diag = { path = "crates/lunc_diag" }
 lunc_fir = { path = "crates/lunc_fir" }
 lunc_lexer = { path = "crates/lunc_lexer" }
 lunc_parser = { path = "crates/lunc_parser" }
-lunc_semack = { path = "crates/lunc_semack" }
 lunc_utils = { path = "crates/lunc_utils" }
 
 # other dependencies

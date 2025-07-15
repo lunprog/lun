@@ -509,7 +509,6 @@ dependencies = [
  "lunc_fir",
  "lunc_lexer",
  "lunc_parser",
- "lunc_semack",
  "lunc_utils",
  "shadow-rs",
  "termcolor",
@@ -522,7 +521,6 @@ version = "0.1.0"
 dependencies = [
  "lunc_diag",
  "lunc_fir",
- "lunc_semack",
  "lunc_utils",
 ]
 
@@ -539,7 +537,7 @@ dependencies = [
 name = "lunc_fir"
 version = "0.1.0"
 dependencies = [
- "lunc_semack",
+ "lunc_parser",
 ]
 
 [[package]]
@@ -558,15 +556,6 @@ dependencies = [
  "lunc_diag",
  "lunc_utils",
  "thiserror",
-]
-
-[[package]]
-name = "lunc_semack"
-version = "0.1.0"
-dependencies = [
- "lunc_diag",
- "lunc_parser",
- "lunc_utils",
 ]
 
 [[package]]

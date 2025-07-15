@@ -39,9 +39,6 @@ mod re_exports {
     pub use lunc_parser as parser;
 
     #[doc(inline)]
-    pub use lunc_semack as semack;
-
-    #[doc(inline)]
     pub use lunc_utils as utils;
 }
 
