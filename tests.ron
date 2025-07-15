@@ -782,7 +782,7 @@
           lhs: ident _ @ 410..411 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            called: ident some_fun @ 414..422 (fid = 0);
+            callee: ident some_fun @ 414..422 (fid = 0);
             args: [];
           } @ 414..424 (fid = 0);
         } @ 410..424 (fid = 0) @ 410..424 (fid = 0),
@@ -791,7 +791,7 @@
           lhs: ident _ @ 430..431 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            called: ident some_fun @ 434..442 (fid = 0);
+            callee: ident some_fun @ 434..442 (fid = 0);
             args: [
               integer 1 @ 443..444 (fid = 0),
             ];
@@ -802,7 +802,7 @@
           lhs: ident _ @ 451..452 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            called: ident some_fun @ 455..463 (fid = 0);
+            callee: ident some_fun @ 455..463 (fid = 0);
             args: [
               integer 1 @ 464..465 (fid = 0),
 
@@ -815,7 +815,7 @@
           lhs: ident _ @ 475..476 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            called: ident some_fun @ 479..487 (fid = 0);
+            callee: ident some_fun @ 479..487 (fid = 0);
             args: [
               integer 1 @ 488..489 (fid = 0),
 
@@ -828,13 +828,13 @@
           cond: boolean true @ 514..518 (fid = 0);
           body: [
             FunCall {
-              called: ident main @ 529..533 (fid = 0);
+              callee: ident main @ 529..533 (fid = 0);
               args: [];
             } @ 529..535 (fid = 0) @ 529..535 (fid = 0),
           ] @ 519..542 (fid = 0);
           else_br: [
             FunCall {
-              called: ident main @ 558..562 (fid = 0);
+              callee: ident main @ 558..562 (fid = 0);
               args: [];
             } @ 558..564 (fid = 0) @ 558..564 (fid = 0),
           ] @ 548..571 (fid = 0);
@@ -865,7 +865,7 @@
             lhs: ident _ @ 677..678 (fid = 0);
             op: Assignment;
             rhs: FunCall {
-              called: ident main @ 681..685 (fid = 0);
+              callee: ident main @ 681..685 (fid = 0);
               args: [];
             } @ 681..687 (fid = 0);
           } @ 677..687 (fid = 0) @ 677..687 (fid = 0),
@@ -873,12 +873,12 @@
 
         PredicateLoop {
           cond: FunCall {
-            called: ident predicate @ 728..737 (fid = 0);
+            callee: ident predicate @ 728..737 (fid = 0);
             args: [];
           } @ 728..739 (fid = 0);
           body: [
             FunCall {
-              called: ident println @ 750..757 (fid = 0);
+              callee: ident println @ 750..757 (fid = 0);
               args: [
                 string "Hello!" @ 758..766 (fid = 0),
               ];
@@ -889,7 +889,7 @@
         IteratorLoop {
           variable: i;
           iterator: FunCall {
-            called: ident range @ 810..815 (fid = 0);
+            callee: ident range @ 810..815 (fid = 0);
             args: [
               integer 1 @ 816..817 (fid = 0),
 
@@ -940,7 +940,7 @@
           lhs: ident _ @ 1085..1086 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            called: MemberAccess {
+            callee: MemberAccess {
               expr: string "Hello" @ 1089..1096 (fid = 0);
               member: len;
             } @ 1089..1100 (fid = 0);
@@ -952,7 +952,7 @@
           lhs: ident _ @ 1109..1110 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            called: MemberAccess {
+            callee: MemberAccess {
               expr: MemberAccess {
                 expr: Orb @ 1113..1116 (fid = 0);
                 member: driver;
@@ -1096,7 +1096,7 @@
         } @ 157..165 (fid = 0),
 
         FunCall {
-          called: ident hello_world @ 199..210 (fid = 0);
+          callee: ident hello_world @ 199..210 (fid = 0);
           args: [];
         } @ 199..212 (fid = 0) @ 199..212 (fid = 0),
       ] @ 14..215 (fid = 0);

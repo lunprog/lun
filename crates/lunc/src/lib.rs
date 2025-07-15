@@ -30,6 +30,9 @@ mod re_exports {
     pub use lunc_diag as diag;
 
     #[doc(inline)]
+    pub use lunc_dsir as dsir;
+
+    #[doc(inline)]
     pub use lunc_fir as fir;
 
     #[doc(inline)]

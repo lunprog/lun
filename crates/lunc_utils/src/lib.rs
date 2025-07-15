@@ -272,6 +272,44 @@ pub fn fast_digit_length<const RADIX: u32>(n: u128) -> u32 {
     }
 }
 
+/// Lowers down a node from a high representation, like AST and lowers it down
+/// to a new representation, DSIR in the case of AST.
+pub trait FromHigher {
+    type Higher;
+
+    fn lower(node: Self::Higher) -> Self;
+}
+
+impl<T: FromHigher> FromHigher for Vec<T> {
+    type Higher = Vec<T::Higher>;
+
+    fn lower(nodes: Self::Higher) -> Self {
+        nodes.into_iter().map(lower).collect()
+    }
+}
+
+impl<T: FromHigher> FromHigher for Option<T> {
+    type Higher = Option<T::Higher>;
+
+    fn lower(node: Self::Higher) -> Self {
+        node.map(lower)
+    }
+}
+
+impl<T: FromHigher> FromHigher for Box<T> {
+    type Higher = Box<T::Higher>;
+
+    fn lower(node: Self::Higher) -> Self {
+        Box::new(T::lower(*node))
+    }
+}
+
+/// Lowers down a node of a higher representation to a node of a lower
+/// representation, see [`FromHigher`]
+pub fn lower<T: FromHigher>(node: T::Higher) -> T {
+    T::lower(node)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

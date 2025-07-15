@@ -5,9 +5,6 @@ use std::{fmt::Display, io};
 
 use lunc_parser::expr::{BinOp, UnaryOp};
 
-/// Ir Unit, for now equivalent to [`CkProgram`].
-///
-/// [`CkProgram`]: lunc_semack::ckast::CkProgram
 #[derive(Debug, Clone)]
 pub struct IrUnit {
     functions: Vec<Fun>,

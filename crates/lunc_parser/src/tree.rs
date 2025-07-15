@@ -107,9 +107,9 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::FunCall { called, args } => {
+            Expr::FunCall { callee, args } => {
                 ctx.pretty_struct("FunCall")?
-                    .field("called", &**called)?
+                    .field("callee", &**callee)?
                     .field("args", &args.as_slice())?
                     .finish()?;
 

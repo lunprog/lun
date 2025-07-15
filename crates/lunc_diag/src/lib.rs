@@ -5,6 +5,7 @@ use codespan_reporting::{
         termcolor::{ColorChoice, StandardStream},
     },
 };
+
 use std::{
     fmt::Display,
     sync::{Arc, RwLock},

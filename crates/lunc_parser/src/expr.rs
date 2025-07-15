@@ -98,23 +98,11 @@ pub enum Expr {
     ///
     /// "&" "mut"? expression
     AddressOf { mutable: bool, val: Box<Expression> },
-    // TODO: is the syntax like `add 1, 2, 3` in addition of `add(1, 2, 3)`
-    // a good idea? like it could be nice to have sth like that `print "Hello
-    // world!"` idk but only for statement function call
-    // TODO: add support for the syntax like in Nim `identifier"string literal"`
-    // and it would be equivalent to `identifier("string literal")` AND MORE
-    // IMPORTANTLY
-    // TODO: add support custom numeric literal like ` 123'custom ` is
-    // equivalent to `custom("123")` idk but the idea is cool :) so if in the
-    // future we add other integer types we can do `123'i8` and it wont be some
-    // magical syntax but a numeric literal idk
     /// function call expression
     ///
     /// expr "(" ( expr ),* ")"
     FunCall {
-        // TODO: rename this field something that looks like `function operand`
-        // do the same for CkExpr::FunCall and (Ck)Stmt::FunCall
-        called: Box<Expression>,
+        callee: Box<Expression>,
         args: Vec<Expression>,
     },
     /// if else expression
@@ -769,7 +757,10 @@ pub fn parse_funcall_expr(
     let ((), hi) = expect_token!(parser => [Punct(Punctuation::RParen), ()], Punctuation::RParen);
 
     Ok(Expression {
-        expr: Expr::FunCall { called, args },
+        expr: Expr::FunCall {
+            callee: called,
+            args,
+        },
         loc: Span::from_ends(lo, hi),
     })
 }

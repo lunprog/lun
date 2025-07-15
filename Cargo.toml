@@ -5,6 +5,7 @@ members = [
   "crates/lunc",
   "crates/lunc_codegen",
   "crates/lunc_diag",
+  "crates/lunc_dsir",
   "crates/lunc_fir",
   "crates/lunc_lexer",
   "crates/lunc_parser",
@@ -19,6 +20,7 @@ license = "MIT OR Apache-2.0"
 [workspace.dependencies]
 lunc_codegen = { path = "crates/lunc_codegen" }
 lunc_diag = { path = "crates/lunc_diag" }
+lunc_dsir = { path = "crates/lunc_dsir" }
 lunc_fir = { path = "crates/lunc_fir" }
 lunc_lexer = { path = "crates/lunc_lexer" }
 lunc_parser = { path = "crates/lunc_parser" }

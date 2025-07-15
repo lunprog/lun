@@ -1,6 +1,6 @@
 [package]
 name = "lunc_lexer"
-description = "Lexer for lun."
+description = "Lexer for Lun."
 version.workspace = true
 license.workspace = true
 edition = "2024"
