@@ -1,0 +1,88 @@
+// fun def
+main :: fun() {
+    // integer literal
+    _ = 12;
+
+    // bool literal
+    _ = true;
+    _ = false;
+
+    // string literal
+    _ = "Hello world!";
+
+    // char literal
+    _ = 'C';
+
+    // float literal
+    _ = 6.022e23;
+
+    // lowering of grouping expr to just an expr
+    _ = (12 + 3);
+
+    // ident expr
+    _ = main;
+
+    // binary op
+    _ = 34 + 35;
+
+    // unary op
+    _ = !false;
+    _ = -12.0;
+
+    // fun call
+    _ = some_fun();
+    _ = some_fun(1);
+    _ = some_fun(1, 2);
+    _ = some_fun(1, 2,);
+
+    // if
+    if true {
+        main();
+    } else {
+        main();
+    }
+
+    // if then else
+    _ = if 23 > 12 then false else true;
+
+    // block
+    {
+        _ = 2;
+        _ = main();
+    }
+
+    // infinite loop
+    loop {
+        // body
+        break;
+    }
+
+    // return
+    return 12 * 8;
+    return;
+
+    // continue
+    continue;
+
+    // null
+    _ = null;
+
+    // deref
+    _ = some_pointer.*;
+
+    // member access
+    _ = "Hello".len();
+
+    _ = orb.driver.run();
+
+    // types:
+
+    // pointer type
+    _ = *u32;
+    _ = *mut u32;
+
+    // function pointer type
+    _ = *fun();
+    _ = *fun(usz, bool) -> usz;
+    _ = *fun(usz,) -> usz;
+}

@@ -93,7 +93,7 @@ impl<'ctx> ListDump<'ctx> {
         self
     }
 
-    pub fn items<'a, I: AsPrettyDump>(mut self, items: impl Iterator<Item = I>) -> ListDump<'ctx> {
+    pub fn items<I: AsPrettyDump>(mut self, items: impl Iterator<Item = I>) -> ListDump<'ctx> {
         if self.finished {
             self.res = Err(io::Error::other("ListDump already finished"));
             return self;

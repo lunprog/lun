@@ -1,4 +1,346 @@
 {
+    "desugaring/expression": (
+        expected_compiler_out: r#"dsir = [
+  GlobalDef {
+    name: main @ 11..15 (fid = 0);
+    mutable: false;
+    typ: none;
+    value: FunDefinition {
+      args: [];
+      rettype: none;
+      body: [
+        Binary {
+          lhs: lazy _ @ 54..55 (fid = 0);
+          op: Assignment;
+          rhs: integer 12 @ 58..60 (fid = 0);
+        } @ 54..60 (fid = 0) @ 54..60 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 87..88 (fid = 0);
+          op: Assignment;
+          rhs: boolean true @ 91..95 (fid = 0);
+        } @ 87..95 (fid = 0) @ 87..95 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 101..102 (fid = 0);
+          op: Assignment;
+          rhs: boolean false @ 105..110 (fid = 0);
+        } @ 101..110 (fid = 0) @ 101..110 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 139..140 (fid = 0);
+          op: Assignment;
+          rhs: string "Hello world!" @ 143..157 (fid = 0);
+        } @ 139..157 (fid = 0) @ 139..157 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 184..185 (fid = 0);
+          op: Assignment;
+          rhs: character 'C' @ 188..191 (fid = 0);
+        } @ 184..191 (fid = 0) @ 184..191 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 219..220 (fid = 0);
+          op: Assignment;
+          rhs: float 602199999999999960000000 @ 223..231 (fid = 0);
+        } @ 219..231 (fid = 0) @ 219..231 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 287..288 (fid = 0);
+          op: Assignment;
+          rhs: Binary {
+            lhs: integer 12 @ 292..294 (fid = 0);
+            op: Add;
+            rhs: integer 3 @ 297..298 (fid = 0);
+          } @ 292..298 (fid = 0);
+        } @ 287..299 (fid = 0) @ 287..299 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 324..325 (fid = 0);
+          op: Assignment;
+          rhs: lazy main @ 328..332 (fid = 0);
+        } @ 324..332 (fid = 0) @ 324..332 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 356..357 (fid = 0);
+          op: Assignment;
+          rhs: Binary {
+            lhs: integer 34 @ 360..362 (fid = 0);
+            op: Add;
+            rhs: integer 35 @ 365..367 (fid = 0);
+          } @ 360..367 (fid = 0);
+        } @ 356..367 (fid = 0) @ 356..367 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 390..391 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Not;
+            expr: boolean false @ 395..400 (fid = 0);
+          } @ 394..400 (fid = 0);
+        } @ 390..400 (fid = 0) @ 390..400 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 406..407 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Negation;
+            expr: float 12 @ 411..415 (fid = 0);
+          } @ 410..415 (fid = 0);
+        } @ 406..415 (fid = 0) @ 406..415 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 438..439 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: lazy some_fun @ 442..450 (fid = 0);
+            args: [];
+          } @ 442..452 (fid = 0);
+        } @ 438..452 (fid = 0) @ 438..452 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 458..459 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: lazy some_fun @ 462..470 (fid = 0);
+            args: [
+              integer 1 @ 471..472 (fid = 0),
+            ];
+          } @ 462..473 (fid = 0);
+        } @ 458..473 (fid = 0) @ 458..473 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 479..480 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: lazy some_fun @ 483..491 (fid = 0);
+            args: [
+              integer 1 @ 492..493 (fid = 0),
+
+              integer 2 @ 495..496 (fid = 0),
+            ];
+          } @ 483..497 (fid = 0);
+        } @ 479..497 (fid = 0) @ 479..497 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 503..504 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: lazy some_fun @ 507..515 (fid = 0);
+            args: [
+              integer 1 @ 516..517 (fid = 0),
+
+              integer 2 @ 519..520 (fid = 0),
+            ];
+          } @ 507..522 (fid = 0);
+        } @ 503..522 (fid = 0) @ 503..522 (fid = 0),
+
+        If {
+          cond: boolean true @ 542..546 (fid = 0);
+          then_br: Block [
+            FunCall {
+              callee: lazy main @ 557..561 (fid = 0);
+              args: [];
+            } @ 557..563 (fid = 0) @ 557..563 (fid = 0),
+          ] @ 547..570 (fid = 0) @ 539..599 (fid = 0);
+          else_br: Block [
+            FunCall {
+              callee: lazy main @ 586..590 (fid = 0);
+              args: [];
+            } @ 586..592 (fid = 0) @ 586..592 (fid = 0),
+          ] @ 576..599 (fid = 0) @ 576..599 (fid = 0);
+        } @ 539..599 (fid = 0) @ 539..599 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 625..626 (fid = 0);
+          op: Assignment;
+          rhs: If {
+            cond: Binary {
+              lhs: integer 23 @ 632..634 (fid = 0);
+              op: CompGT;
+              rhs: integer 12 @ 637..639 (fid = 0);
+            } @ 632..639 (fid = 0);
+            then_br: boolean false @ 645..650 (fid = 0);
+            else_br: boolean true @ 656..660 (fid = 0);
+          } @ 629..660 (fid = 0);
+        } @ 625..660 (fid = 0) @ 625..660 (fid = 0),
+
+        Block [
+          Binary {
+            lhs: lazy _ @ 690..691 (fid = 0);
+            op: Assignment;
+            rhs: integer 2 @ 694..695 (fid = 0);
+          } @ 690..695 (fid = 0) @ 690..695 (fid = 0),
+
+          Binary {
+            lhs: lazy _ @ 705..706 (fid = 0);
+            op: Assignment;
+            rhs: FunCall {
+              callee: lazy main @ 709..713 (fid = 0);
+              args: [];
+            } @ 709..715 (fid = 0);
+          } @ 705..715 (fid = 0) @ 705..715 (fid = 0),
+        ] @ 680..722 (fid = 0) @ 680..722 (fid = 0) @ 680..722 (fid = 0),
+
+        Loop {
+          body: [
+            Break {
+              val: none;
+            } @ 780..785 (fid = 0) @ 780..785 (fid = 0),
+          ] @ 754..792 (fid = 0);
+        } @ 749..792 (fid = 0) @ 749..792 (fid = 0),
+
+        Return {
+          val: Binary {
+            lhs: integer 12 @ 819..821 (fid = 0);
+            op: Mul;
+            rhs: integer 8 @ 824..825 (fid = 0);
+          } @ 819..825 (fid = 0);
+        } @ 812..825 (fid = 0) @ 812..825 (fid = 0),
+
+        Return {
+          val: none;
+        } @ 831..837 (fid = 0) @ 831..837 (fid = 0),
+
+        Continue @ 860..868 (fid = 0) @ 860..868 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 887..888 (fid = 0);
+          op: Assignment;
+          rhs: Null @ 891..895 (fid = 0);
+        } @ 887..895 (fid = 0) @ 887..895 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 915..916 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Dereference;
+            expr: lazy some_pointer @ 919..931 (fid = 0);
+          } @ 919..933 (fid = 0);
+        } @ 915..933 (fid = 0) @ 915..933 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 961..962 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: MemberAccess {
+              expr: string "Hello" @ 965..972 (fid = 0);
+              member: len;
+            } @ 965..976 (fid = 0);
+            args: [];
+          } @ 965..978 (fid = 0);
+        } @ 961..978 (fid = 0) @ 961..978 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 985..986 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: MemberAccess {
+              expr: MemberAccess {
+                expr: Orb @ 989..992 (fid = 0);
+                member: driver;
+              } @ 989..999 (fid = 0);
+              member: run;
+            } @ 989..1003 (fid = 0);
+            args: [];
+          } @ 989..1005 (fid = 0);
+        } @ 985..1005 (fid = 0) @ 985..1005 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 1047..1048 (fid = 0);
+          op: Assignment;
+          rhs: PointerType {
+            mutable: false;
+            typ: lazy u32 @ 1052..1055 (fid = 0);
+          } @ 1051..1055 (fid = 0);
+        } @ 1047..1055 (fid = 0) @ 1047..1055 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 1061..1062 (fid = 0);
+          op: Assignment;
+          rhs: PointerType {
+            mutable: true;
+            typ: lazy u32 @ 1070..1073 (fid = 0);
+          } @ 1065..1073 (fid = 0);
+        } @ 1061..1073 (fid = 0) @ 1061..1073 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 1109..1110 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [];
+            ret: none;
+          } @ 1113..1119 (fid = 0);
+        } @ 1109..1119 (fid = 0) @ 1109..1119 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 1125..1126 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [
+              lazy usz @ 1134..1137 (fid = 0),
+
+              lazy bool @ 1139..1143 (fid = 0),
+            ];
+            ret: lazy usz @ 1148..1151 (fid = 0);
+          } @ 1129..1151 (fid = 0);
+        } @ 1125..1151 (fid = 0) @ 1125..1151 (fid = 0),
+
+        Binary {
+          lhs: lazy _ @ 1157..1158 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [
+              lazy usz @ 1166..1169 (fid = 0),
+            ];
+            ret: lazy usz @ 1175..1178 (fid = 0);
+          } @ 1161..1178 (fid = 0);
+        } @ 1157..1178 (fid = 0) @ 1157..1178 (fid = 0),
+      ] @ 25..1181 (fid = 0);
+    } @ 19..1181 (fid = 0);
+  } @ 11..1181 (fid = 0),
+]"#,
+        expected_test_out: "",
+    ),
+    "desugaring/global_def": (
+        expected_compiler_out: r#"dsir = [
+  GlobalDef {
+    name: main @ 19..23 (fid = 0);
+    mutable: false;
+    typ: none;
+    value: FunDefinition {
+      args: [];
+      rettype: none;
+      body: [] @ 33..35 (fid = 0);
+    } @ 27..35 (fid = 0);
+  } @ 19..35 (fid = 0),
+
+  GlobalDef {
+    name: avogadro @ 36..44 (fid = 0);
+    mutable: false;
+    typ: lazy f64 @ 47..50 (fid = 0);
+    value: float 602199999999999960000000 @ 53..61 (fid = 0);
+  } @ 36..62 (fid = 0),
+
+  GlobalDef {
+    name: hello @ 78..83 (fid = 0);
+    mutable: true;
+    typ: PointerType {
+      mutable: false;
+      typ: lazy str @ 87..90 (fid = 0);
+    } @ 86..90 (fid = 0);
+    value: string "Hello" @ 93..100 (fid = 0);
+  } @ 78..101 (fid = 0),
+
+  GlobalDef {
+    name: globFloat @ 102..111 (fid = 0);
+    mutable: true;
+    typ: none;
+    value: float 12 @ 115..119 (fid = 0);
+  } @ 102..120 (fid = 0),
+]"#,
+        expected_test_out: "",
+    ),
     "desugaring/predicate_loop": (
         expected_compiler_out: r#"dsir = [
   GlobalDef {

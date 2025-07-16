@@ -1,0 +1,7 @@
+// global constant
+main :: fun() {}
+avogadro : f64 : 6.022e23;
+
+// global var
+hello : *str = "Hello";
+globFloat := 12.0;

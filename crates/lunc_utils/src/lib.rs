@@ -1,5 +1,5 @@
 use std::{
-    fmt::{Display, Write},
+    fmt::{Debug, Display, Write},
     ops::{Add, Range},
 };
 
@@ -274,7 +274,8 @@ pub fn fast_digit_length<const RADIX: u32>(n: u128) -> u32 {
 
 /// Lowers down a node from a high representation, like AST and lowers it down
 /// to a new representation, DSIR in the case of AST.
-pub trait FromHigher {
+pub trait FromHigher: Sized {
+    /// The type of the node that is the higher representation of [`Self`].
     type Higher;
 
     /// Takes a high node and lowers it to a low node.
