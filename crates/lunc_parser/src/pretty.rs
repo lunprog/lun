@@ -27,10 +27,10 @@ impl PrettyDump for Item {
                 value,
                 loc,
             } => {
-                ctx.pretty_struct("GlobalConst")?
-                    .field("name", &(name, name_loc))?
-                    .field("typ", &typ)?
-                    .field("value", &value)?
+                ctx.pretty_struct("GlobalConst")
+                    .field("name", (name, name_loc))
+                    .field("typ", typ)
+                    .field("value", value)
                     .finish()?;
                 ctx.print_loc(loc)?;
 
@@ -43,10 +43,10 @@ impl PrettyDump for Item {
                 value,
                 loc,
             } => {
-                ctx.pretty_struct("GlobalVar")?
-                    .field("name", &(name, name_loc))?
-                    .field("typ", &typ)?
-                    .field("value", &value)?
+                ctx.pretty_struct("GlobalVar")
+                    .field("name", (name, name_loc))
+                    .field("typ", typ)
+                    .field("value", value)
                     .finish()?;
                 ctx.print_loc(loc)?;
 
@@ -75,42 +75,40 @@ impl PrettyDump for Expr {
             Expr::CharLit(c) => write!(out, "character {c:?}"),
             Expr::FloatLit(f) => write!(out, "float {f:.}"),
             Expr::Grouping(e) => {
-                ctx.pretty_struct("Grouping")?
-                    .field("expr", &**e)?
-                    .finish()?;
+                ctx.pretty_struct("Grouping").field("expr", e).finish()?;
 
                 Ok(())
             }
             Expr::Ident(id) => write!(out, "ident {id}"),
             Expr::Binary { lhs, op, rhs } => {
-                ctx.pretty_struct("Binary")?
-                    .field("lhs", &**lhs)?
-                    .field("op", &op)?
-                    .field("rhs", &**rhs)?
+                ctx.pretty_struct("Binary")
+                    .field("lhs", lhs)
+                    .field("op", op)
+                    .field("rhs", rhs)
                     .finish()?;
 
                 Ok(())
             }
             Expr::Unary { op, expr } => {
-                ctx.pretty_struct("Unary")?
-                    .field("op", &op)?
-                    .field("expr", &**expr)?
+                ctx.pretty_struct("Unary")
+                    .field("op", op)
+                    .field("expr", expr)
                     .finish()?;
 
                 Ok(())
             }
             Expr::AddressOf { mutable, val } => {
-                ctx.pretty_struct("AddressOf")?
-                    .field("mutable", mutable)?
-                    .field("expr", &val)?
+                ctx.pretty_struct("AddressOf")
+                    .field("mutable", mutable)
+                    .field("expr", val)
                     .finish()?;
 
                 Ok(())
             }
             Expr::FunCall { callee, args } => {
-                ctx.pretty_struct("FunCall")?
-                    .field("callee", &**callee)?
-                    .field("args", &args.as_slice())?
+                ctx.pretty_struct("FunCall")
+                    .field("callee", callee)
+                    .field("args", args.as_slice())
                     .finish()?;
 
                 Ok(())
@@ -121,10 +119,10 @@ impl PrettyDump for Expr {
                 true_val,
                 false_val,
             } => {
-                ctx.pretty_struct("IfThenElse")?
-                    .field("cond", &cond)?
-                    .field("true_val", &true_val)?
-                    .field("false_val", &false_val)?
+                ctx.pretty_struct("IfThenElse")
+                    .field("cond", cond)
+                    .field("true_val", true_val)
+                    .field("false_val", false_val)
                     .finish()?;
 
                 Ok(())
@@ -135,9 +133,9 @@ impl PrettyDump for Expr {
                 Ok(())
             }
             Expr::PredicateLoop { cond, body } => {
-                ctx.pretty_struct("PredicateLoop")?
-                    .field("cond", &cond)?
-                    .field("body", &body)?
+                ctx.pretty_struct("PredicateLoop")
+                    .field("cond", cond)
+                    .field("body", body)
                     .finish()?;
 
                 Ok(())
@@ -147,27 +145,27 @@ impl PrettyDump for Expr {
                 iterator,
                 body,
             } => {
-                ctx.pretty_struct("IteratorLoop")?
-                    .field("variable", &variable)?
-                    .field("iterator", &iterator)?
-                    .field("body", &body)?
+                ctx.pretty_struct("IteratorLoop")
+                    .field("variable", variable)
+                    .field("iterator", iterator)
+                    .field("body", body)
                     .finish()?;
 
                 Ok(())
             }
             Expr::InfiniteLoop { body } => {
-                ctx.pretty_struct("InfiniteLoop")?
-                    .field("body", &body)?
+                ctx.pretty_struct("InfiniteLoop")
+                    .field("body", body)
                     .finish()?;
 
                 Ok(())
             }
             Expr::Return { val } => {
-                ctx.pretty_struct("Return")?.field("val", &val)?.finish()?;
+                ctx.pretty_struct("Return").field("val", val).finish()?;
                 Ok(())
             }
             Expr::Break { val } => {
-                ctx.pretty_struct("Break")?.field("val", &val)?.finish()?;
+                ctx.pretty_struct("Break").field("val", val).finish()?;
                 Ok(())
             }
             Expr::Continue => {
@@ -177,9 +175,9 @@ impl PrettyDump for Expr {
                 write!(ctx.out, "Null")
             }
             Expr::MemberAccess { expr, member } => {
-                ctx.pretty_struct("MemberAccess")?
-                    .field("expr", &expr)?
-                    .field("member", &member)?
+                ctx.pretty_struct("MemberAccess")
+                    .field("expr", expr)
+                    .field("member", member)
                     .finish()?;
 
                 Ok(())
@@ -192,26 +190,26 @@ impl PrettyDump for Expr {
                 rettype,
                 body,
             } => {
-                ctx.pretty_struct("FunDefinition")?
-                    .field("args", &args.as_slice())?
-                    .field("rettype", rettype)?
-                    .field("body", &body)?
+                ctx.pretty_struct("FunDefinition")
+                    .field("args", args.as_slice())
+                    .field("rettype", rettype)
+                    .field("body", body)
                     .finish()?;
 
                 Ok(())
             }
             Expr::PointerType { mutable, typ } => {
-                ctx.pretty_struct("PointerType")?
-                    .field("mutable", mutable)?
-                    .field("typ", typ)?
+                ctx.pretty_struct("PointerType")
+                    .field("mutable", mutable)
+                    .field("typ", typ)
                     .finish()?;
 
                 Ok(())
             }
             Expr::FunPtrType { args, ret } => {
-                ctx.pretty_struct("FunPtrType")?
-                    .field("args", &args.as_slice())?
-                    .field("ret", ret)?
+                ctx.pretty_struct("FunPtrType")
+                    .field("args", args.as_slice())
+                    .field("ret", ret)
                     .finish()?;
 
                 Ok(())
@@ -229,9 +227,9 @@ impl PrettyDump for Arg {
             loc,
         } = self;
 
-        ctx.pretty_struct("Arg")?
-            .field("name", &(name, name_loc))?
-            .field("typ", &typ)?
+        ctx.pretty_struct("Arg")
+            .field("name", (name, name_loc))
+            .field("typ", typ)
             .finish()?;
         ctx.print_loc(loc)?;
 
@@ -244,14 +242,14 @@ impl PrettyDump for IfExpression {
         let IfExpression {
             cond,
             body,
-            else_branch,
+            else_br,
             loc,
         } = &self;
 
-        ctx.pretty_struct("If")?
-            .field("cond", &cond)?
-            .field("body", &body)?
-            .field("else_br", &else_branch)?
+        ctx.pretty_struct("If")
+            .field("cond", cond)
+            .field("body", body)
+            .field("else_br", else_br)
             .finish()?;
 
         ctx.print_loc(loc)?;
@@ -294,9 +292,9 @@ impl PrettyDump for Block {
 
         let last = LastExpr(&self.last_expr);
 
-        ctx.pretty_list()?
-            .items(self.stmts.iter().map(|s| s as &dyn PrettyDump))?
-            .items(last)?
+        ctx.pretty_list()
+            .items(self.stmts.iter().map(|s| s as &dyn PrettyDump))
+            .items(last)
             .finish()?;
 
         ctx.print_loc(&self.loc)?;
@@ -323,16 +321,16 @@ impl PrettyDump for Stmt {
                 typ,
                 value,
             } => {
-                ctx.pretty_struct("VariableDef")?
-                    .field("name", &(name, name_loc))?
-                    .field("mutable", &mutable)?
-                    .field("typ", &typ)?
-                    .field("value", &**value)?
+                ctx.pretty_struct("VariableDef")
+                    .field("name", (name, name_loc))
+                    .field("mutable", mutable)
+                    .field("typ", typ)
+                    .field("value", value)
                     .finish()?;
                 Ok(())
             }
             Stmt::Defer { expr } => {
-                ctx.pretty_struct("Defer")?.field("expr", &expr)?.finish()?;
+                ctx.pretty_struct("Defer").field("expr", expr).finish()?;
                 Ok(())
             }
             Stmt::Expression(expr) => {
@@ -356,15 +354,15 @@ impl PrettyDump for ItemDirective {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
             ItemDirective::Mod { name, loc } => {
-                ctx.pretty_struct("Mod")?.field("name", name)?.finish()?;
+                ctx.pretty_struct("Mod").field("name", name).finish()?;
                 ctx.print_loc(loc)?;
 
                 Ok(())
             }
             ItemDirective::Use { path, alias, loc } => {
-                ctx.pretty_struct("Use")?
-                    .field("path", path)?
-                    .field("alias", alias)?
+                ctx.pretty_struct("Use")
+                    .field("path", path)
+                    .field("alias", alias)
                     .finish()?;
 
                 ctx.print_loc(loc)?;

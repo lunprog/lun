@@ -115,16 +115,16 @@ Debug flags help:
 -Dhalt-at=<stage>            Halts the compilation after <stage>, one of:
                              * lexer
                              * parser
-                             * dir
-                             * tir
+                             * dsir
+                             * htir
                              * fir
                              * codegen
 -Dprint=<value>              Prints to the standard error, one or more of:
                              * inputfile
                              * tokenstream
                              * ast
-                             * dir-tree
-                             * tir-tree
+                             * dsir-tree
+                             * htir-tree
                              * fir-tree
                              * fir
                              * asm\
@@ -160,8 +160,8 @@ pub enum DebugFlag {
 pub enum DebugHalt {
     Lexer,
     Parser,
-    Dir,
-    Tir,
+    Dsir,
+    Htir,
     Fir,
     Codegen,
 }
@@ -175,8 +175,8 @@ impl FromStr for DebugHalt {
         match s {
             "lexer" => Ok(Hs::Lexer),
             "parser" => Ok(Hs::Parser),
-            "dir" => Ok(Hs::Dir),
-            "tir" => Ok(Hs::Tir),
+            "dsir" => Ok(Hs::Dsir),
+            "htir" => Ok(Hs::Htir),
             "fir" => Ok(Hs::Fir),
             "codegen" => Ok(Hs::Codegen),
             _ => Err(CliError::UnknownValue {
@@ -192,8 +192,8 @@ pub enum DebugPrint {
     InputFile,
     TokenStream,
     Ast,
-    DirTree,
-    TirTree,
+    DsirTree,
+    HtirTree,
     FirTree,
     Fir,
     Asm,
@@ -209,8 +209,8 @@ impl FromStr for DebugPrint {
             "inputfile" => Ok(Dp::InputFile),
             "tokenstream" => Ok(Dp::TokenStream),
             "ast" => Ok(Dp::Ast),
-            "dir-tree" => Ok(Dp::DirTree),
-            "tir-tree" => Ok(Dp::TirTree),
+            "dsir-tree" => Ok(Dp::DsirTree),
+            "htir-tree" => Ok(Dp::HtirTree),
             "fir-tree" => Ok(Dp::FirTree),
             "fir" => Ok(Dp::Fir),
             "asm" => Ok(Dp::Asm),

@@ -249,7 +249,7 @@ pub fn lower_if_expression(ifexpr: IfExpression) -> DsExpr {
             expr: DsExpr::Block(lower(*ifexpr.body)),
             loc: Some(ifexpr.loc.clone()),
         }),
-        else_br: match ifexpr.else_branch.map(|e| *e) {
+        else_br: match ifexpr.else_br.map(|e| *e) {
             Some(Else::IfExpr(ifexp)) => Some(Box::new(DsExpression {
                 loc: Some(ifexp.loc.clone()),
                 expr: lower_if_expression(ifexp),

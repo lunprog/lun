@@ -195,7 +195,7 @@ pub enum Expr {
 pub struct IfExpression {
     pub cond: Box<Expression>,
     pub body: Box<Block>,
-    pub else_branch: Option<Box<Else>>,
+    pub else_br: Option<Box<Else>>,
     pub loc: Span,
 }
 
@@ -828,7 +828,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 
         let mut hi = body.loc.clone();
 
-        let else_branch = if let Some(Kw(Keyword::Else)) = parser.peek_tt() {
+        let else_br = if let Some(Kw(Keyword::Else)) = parser.peek_tt() {
             parser.pop();
 
             let else_branch = match parser.peek_tt() {
@@ -877,7 +877,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
             expr: Expr::If(IfExpression {
                 cond,
                 body,
-                else_branch,
+                else_br,
                 loc: loc.clone(),
             }),
             loc,

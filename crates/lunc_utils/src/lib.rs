@@ -277,6 +277,7 @@ pub fn fast_digit_length<const RADIX: u32>(n: u128) -> u32 {
 pub trait FromHigher {
     type Higher;
 
+    /// Takes a high node and lowers it to a low node.
     fn lower(node: Self::Higher) -> Self;
 }
 
