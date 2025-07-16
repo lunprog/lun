@@ -20,8 +20,8 @@ pub mod diags;
 pub mod directive;
 pub mod expr;
 pub mod item;
+pub mod pretty;
 pub mod stmt;
-pub mod tree;
 
 #[derive(Debug, Clone)]
 pub struct Parser {
