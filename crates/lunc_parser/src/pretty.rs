@@ -282,19 +282,11 @@ impl PrettyDump for Block {
             }
         }
 
-        impl<'a> Iterator for LastExpr<'a> {
-            type Item = &'a dyn PrettyDump;
-
-            fn next(&mut self) -> Option<Self::Item> {
-                self.0.iter().map(|e| e as &dyn PrettyDump).next()
-            }
-        }
-
         let last = LastExpr(&self.last_expr);
 
         ctx.pretty_list()
-            .items(self.stmts.iter().map(|s| s as &dyn PrettyDump))
-            .items(last)
+            .items(self.stmts.iter())
+            .items(last.0.iter())
             .finish()?;
 
         ctx.print_loc(&self.loc)?;

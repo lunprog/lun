@@ -1,5 +1,6 @@
 //! Desugared Intermediate Representation of Lun.
 
+use lunc_diag::DiagnosticSink;
 pub use lunc_parser::expr::{BinOp, UnaryOp};
 use lunc_parser::{
     expr::{Arg, Else, Expr, Expression, IfExpression},
@@ -7,6 +8,8 @@ use lunc_parser::{
     stmt::{Block, Statement, Stmt},
 };
 use lunc_utils::{FromHigher, lower};
+
+pub mod pretty;
 
 /// Optional span, used because when we desugar we are creating new nodes, so
 /// there is no location for them.
@@ -161,7 +164,7 @@ impl FromHigher for DsExpression {
                 callee: called,
                 args,
             } => DsExpr::FunCall {
-                called: lower(called),
+                callee: lower(called),
                 args: lower(args),
             },
             Expr::If(ifexpr) => lower_if_expression(ifexpr),
@@ -318,7 +321,7 @@ pub enum DsExpr {
     ///
     /// [`Expr::FunCall`]: lunc_parser::expr::Expr::FunCall
     FunCall {
-        called: Box<DsExpression>,
+        callee: Box<DsExpression>,
         args: Vec<DsExpression>,
     },
     /// See [`Expr::If`] and [`Expr::IfThenElse`]
@@ -480,7 +483,7 @@ pub fn expr_funcall(
 ) -> DsExpression {
     DsExpression {
         expr: DsExpr::FunCall {
-            called: Box::new(called),
+            callee: Box::new(called),
             args: args.collect(),
         },
         loc: None,
@@ -748,5 +751,26 @@ impl FromHigher for DsArg {
             typ: lower(typ),
             loc: Some(loc),
         }
+    }
+}
+
+/// Helping struct to convert AST to DSIR
+#[derive(Debug, Clone)]
+pub struct Desugarrer {
+    sink: DiagnosticSink,
+}
+
+impl Desugarrer {
+    /// Create a new desugarrer.
+    pub const fn new(sink: DiagnosticSink) -> Desugarrer {
+        Desugarrer { sink }
+    }
+
+    pub fn produce(&mut self, ast: Program) -> Option<DsProgram> {
+        let dsir = lower(ast);
+
+        _ = self.sink;
+
+        Some(dsir)
     }
 }

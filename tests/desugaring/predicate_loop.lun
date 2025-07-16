@@ -1,0 +1,7 @@
+// Testing of the desugaring of the predicate loop
+
+main :: fun() {
+    while i < 10 {
+        println("i = {}", i);
+    }
+}

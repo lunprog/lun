@@ -13,6 +13,7 @@ use thiserror::Error;
 
 use crate::{
     diag::DiagnosticSink,
+    dsir::Desugarrer,
     lexer::Lexer,
     parser::Parser,
     utils::{
@@ -459,6 +460,19 @@ pub fn run() -> Result<()> {
         ast.dump();
     }
     if argv.debug_halt_at(DebugHalt::Parser) {
+        return Ok(());
+    }
+
+    // 5. desugar the AST to DSIR
+    let mut desugarrer = Desugarrer::new(sink.clone());
+    let dsir = desugarrer.produce(ast).ok_or_else(compil_diags)?;
+
+    //    maybe print the DSIR
+    if argv.debug_print_at(DebugPrint::DsirTree) {
+        eprint!("dsir = ");
+        dsir.dump();
+    }
+    if argv.debug_halt_at(DebugHalt::Dsir) {
         return Ok(());
     }
 

@@ -1,4 +1,49 @@
 {
+    "desugaring/predicate_loop": (
+        expected_compiler_out: r#"dsir = [
+  GlobalDef {
+    name: main @ 52..56 (fid = 0);
+    mutable: false;
+    typ: none;
+    value: FunDefinition {
+      args: [];
+      rettype: none;
+      body: [
+        Loop {
+          body: [
+            If {
+              cond: Unary {
+                op: Not;
+                expr: Binary {
+                  lhs: lazy i @ 78..79 (fid = 0);
+                  op: CompLT;
+                  rhs: integer 10 @ 82..84 (fid = 0);
+                } @ 78..84 (fid = 0);
+              } @ none;
+              then_br: Break {
+                val: none;
+              } @ none;
+              else_br: none;
+            } @ none @ none,
+
+            Block [
+              FunCall {
+                callee: lazy println @ 95..102 (fid = 0);
+                args: [
+                  string "i = {}" @ 103..111 (fid = 0),
+
+                  lazy i @ 113..114 (fid = 0),
+                ];
+              } @ 95..115 (fid = 0) @ 95..115 (fid = 0),
+            ] @ 85..122 (fid = 0) @ none @ none,
+          ] @ none;
+        } @ 72..122 (fid = 0),
+      ] @ 66..124 (fid = 0);
+    } @ 60..124 (fid = 0);
+  } @ 52..124 (fid = 0),
+]"#,
+        expected_test_out: "",
+    ),
     "lexer/char_literal": (
         expected_compiler_out: r#"tokenstream = {
   {

@@ -224,6 +224,7 @@ impl TestContext {
         match name {
             _ if name.starts_with("lexer/") => &["-Dhalt-at=lexer", "-Dprint=tokenstream"],
             _ if name.starts_with("parser/") => &["-Dhalt-at=parser", "-Dprint=ast"],
+            _ if name.starts_with("desugaring/") => &["-Dhalt-at=dsir", "-Dprint=dsir-tree"],
             _ => &[],
         }
     }

@@ -93,7 +93,7 @@ impl<'ctx> ListDump<'ctx> {
         self
     }
 
-    pub fn items<'a>(mut self, items: impl Iterator<Item = &'a dyn PrettyDump>) -> ListDump<'ctx> {
+    pub fn items<'a, I: AsPrettyDump>(mut self, items: impl Iterator<Item = I>) -> ListDump<'ctx> {
         if self.finished {
             self.res = Err(io::Error::other("ListDump already finished"));
             return self;
@@ -102,6 +102,8 @@ impl<'ctx> ListDump<'ctx> {
         if self.res.is_ok() {
             self.res = (|| {
                 for item in items {
+                    let item = item.as_pretty_dump();
+
                     writeln!(self.ctx.out)?;
                     self.ctx.write_indent()?;
                     item.try_dump(self.ctx)?;
@@ -240,9 +242,7 @@ impl<T: PrettyDump, const N: usize> PrettyDump for [T; N] {
 
 impl<T: PrettyDump> PrettyDump for &[T] {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        ctx.pretty_list()
-            .items(self.iter().map(|node| node as &dyn PrettyDump))
-            .finish()?;
+        ctx.pretty_list().items(self.iter()).finish()?;
 
         Ok(())
     }
