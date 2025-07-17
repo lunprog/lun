@@ -38,6 +38,7 @@ impl MultiFile {
 
 impl<'a> Files<'a> for MultiFile {
     type FileId = FileId;
+    // TODO: maybe change the Name to PathBug instead of String at some point
     type Name = String;
     type Source = &'a str;
 
@@ -111,6 +112,13 @@ impl DiagnosticSink {
     pub fn push(&mut self, diag: impl ToDiagnostic) {
         let mut inner = self.0.write().unwrap();
         inner.push(diag);
+    }
+
+    /// Return the name of the current file
+    pub fn name(&self, fid: FileId) -> Option<String> {
+        let inner = self.0.read().unwrap();
+
+        inner.files.name(fid).ok()
     }
 }
 
@@ -403,6 +411,8 @@ pub enum ErrorCode {
     NotEnoughHexDigits = 24,
     /// invalid unicode escape
     InvalidUnicodeEscape = 25,
+    /// file for module does not exist
+    ModuleFileDoesnotExist = 26,
 }
 
 impl Display for ErrorCode {

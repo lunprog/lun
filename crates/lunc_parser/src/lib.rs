@@ -4,8 +4,8 @@ use std::fmt::Debug;
 
 use diags::*;
 use expr::Expression;
-use item::Program;
-use lunc_diag::{Diagnostic, DiagnosticSink, ReachedEOF, ToDiagnostic};
+use item::Module;
+use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, ToDiagnostic};
 
 use lunc_utils::{
     Span,
@@ -31,15 +31,18 @@ pub struct Parser {
     ti: usize,
     /// sink of diags
     sink: DiagnosticSink,
+    /// file id of the file we are currently parsing
+    fid: FileId,
 }
 
 impl Parser {
     /// Create a new parser with the given token stream.
-    pub fn new(tokstream: TokenStream, sink: DiagnosticSink) -> Parser {
+    pub fn new(tokstream: TokenStream, sink: DiagnosticSink, fid: FileId) -> Parser {
         Parser {
             tokstream,
             ti: 0,
             sink,
+            fid,
         }
     }
 
@@ -86,8 +89,8 @@ impl Parser {
         )
     }
 
-    pub fn produce(&mut self) -> Option<Program> {
-        let ast = match Program::parse(self) {
+    pub fn produce(&mut self) -> Option<Module> {
+        let module = match Module::parse(self) {
             Ok(ast) => ast,
             Err(diag) => {
                 self.sink.push(diag);
@@ -99,7 +102,7 @@ impl Parser {
             return None;
         }
 
-        Some(ast)
+        Some(module)
     }
 
     pub fn parse_node<T: AstNode>(&mut self) -> Result<T, Diagnostic> {

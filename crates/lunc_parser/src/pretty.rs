@@ -7,11 +7,11 @@ use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 use crate::{
     directive::{EffectivePath, ItemDirective},
     expr::{Arg, BinOp, Else, Expr, Expression, IfExpression, UnaryOp},
-    item::{Item, Program},
+    item::{Item, Module},
     stmt::{Block, Statement, Stmt},
 };
 
-impl PrettyDump for Program {
+impl PrettyDump for Module {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         self.items.as_slice().try_dump(ctx)
     }

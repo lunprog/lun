@@ -338,7 +338,92 @@
     typ: none;
     value: float 12 @ 115..119 (fid = 0);
   } @ 102..120 (fid = 0),
+
+  Module {
+    name: nested @ 178..190 (fid = 0);
+    module: [];
+  },
 ]"#,
+        expected_test_out: "",
+    ),
+    "desugaring/my_module": (
+        expected_compiler_out: r#"dsir = [
+  Module {
+    name: global_def @ 61..77 (fid = 0);
+    module: [
+      GlobalDef {
+        name: main @ 19..23 (fid = 1);
+        mutable: false;
+        typ: none;
+        value: FunDefinition {
+          args: [];
+          rettype: none;
+          body: [] @ 33..35 (fid = 1);
+        } @ 27..35 (fid = 1);
+      } @ 19..35 (fid = 1),
+
+      GlobalDef {
+        name: avogadro @ 36..44 (fid = 1);
+        mutable: false;
+        typ: lazy f64 @ 47..50 (fid = 1);
+        value: float 602199999999999960000000 @ 53..61 (fid = 1);
+      } @ 36..62 (fid = 1),
+
+      GlobalDef {
+        name: hello @ 78..83 (fid = 1);
+        mutable: true;
+        typ: PointerType {
+          mutable: false;
+          typ: lazy str @ 87..90 (fid = 1);
+        } @ 86..90 (fid = 1);
+        value: string "Hello" @ 93..100 (fid = 1);
+      } @ 78..101 (fid = 1),
+
+      GlobalDef {
+        name: globFloat @ 102..111 (fid = 1);
+        mutable: true;
+        typ: none;
+        value: float 12 @ 115..119 (fid = 1);
+      } @ 102..120 (fid = 1),
+
+      Module {
+        name: nested @ 178..190 (fid = 1);
+        module: [
+          GlobalDef {
+            name: add @ 65..68 (fid = 2);
+            mutable: false;
+            typ: none;
+            value: FunDefinition {
+              args: [
+                Arg {
+                  name: a @ 76..77 (fid = 2);
+                  typ: lazy usz @ 79..82 (fid = 2);
+                } @ 76..82 (fid = 2),
+
+                Arg {
+                  name: b @ 84..85 (fid = 2);
+                  typ: lazy usz @ 87..90 (fid = 2);
+                } @ 84..90 (fid = 2),
+              ];
+              rettype: lazy usz @ 95..98 (fid = 2);
+              body: [
+                Binary {
+                  lhs: lazy a @ 105..106 (fid = 2);
+                  op: Add;
+                  rhs: lazy b @ 109..110 (fid = 2);
+                } @ 105..110 (fid = 2),
+              ] @ 99..112 (fid = 2);
+            } @ 72..112 (fid = 2);
+          } @ 65..112 (fid = 2),
+        ];
+      },
+    ];
+  },
+]"#,
+        expected_test_out: "",
+    ),
+    "desugaring/nested": (
+        expected_compiler_out: "dsir = []",
         expected_test_out: "",
     ),
     "desugaring/predicate_loop": (

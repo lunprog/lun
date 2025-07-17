@@ -5,11 +5,11 @@ use std::io;
 use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 use crate::{
-    DsArg, DsBlock, DsExpr, DsExpression, DsItem, DsProgram, DsStatement, DsStmt, LazySymbol,
-    Symbol,
+    DsArg, DsBlock, DsExpr, DsExpression, DsItem, DsItemDirective, DsModule, DsStatement, DsStmt,
+    LazySymbol, Symbol,
 };
 
-impl PrettyDump for DsProgram {
+impl PrettyDump for DsModule {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         self.items.as_slice().try_dump(ctx)
     }
@@ -36,7 +36,41 @@ impl PrettyDump for DsItem {
                 ctx.print_loc(loc)?;
                 Ok(())
             }
-            _ => todo!(),
+            DsItem::Module { name, module, loc } => {
+                ctx.pretty_struct("Module")
+                    .field("name", (name, loc))
+                    .field("module", module)
+                    .finish()?;
+
+                Ok(())
+            }
+            DsItem::Directive(directive) => directive.try_dump(ctx),
+        }
+    }
+}
+
+impl PrettyDump for DsItemDirective {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        match self {
+            Self::Use { path, alias, loc } => {
+                ctx.pretty_struct("Directive:Use")
+                    .field("path", path)
+                    .field("alias", alias)
+                    .finish()?;
+
+                ctx.print_loc(loc)?;
+
+                Ok(())
+            }
+            Self::Mod { name, loc } => {
+                ctx.pretty_struct("Directive:Mod")
+                    .field("name", name)
+                    .finish()?;
+
+                ctx.print_loc(loc)?;
+
+                Ok(())
+            }
         }
     }
 }

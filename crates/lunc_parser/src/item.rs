@@ -1,5 +1,7 @@
 //! Parsing of lun's definitions.
 
+use lunc_diag::FileId;
+
 use crate::{
     directive::{ItemDirective, parse_mod_directive, parse_use_directive},
     expr::parse_type_expression,
@@ -17,11 +19,12 @@ pub enum Vis {
 
 /// Lun program.
 #[derive(Debug, Clone)]
-pub struct Program {
+pub struct Module {
     pub items: Vec<Item>,
+    pub fid: FileId,
 }
 
-impl AstNode for Program {
+impl AstNode for Module {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         let mut defs = Vec::new();
 
@@ -33,7 +36,10 @@ impl AstNode for Program {
             defs.push(parse!(parser => Item));
         }
 
-        Ok(Program { items: defs })
+        Ok(Module {
+            items: defs,
+            fid: parser.fid,
+        })
     }
 }
 

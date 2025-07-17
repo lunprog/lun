@@ -32,6 +32,8 @@ pub struct Lexer {
 }
 
 impl Lexer {
+    // TODO: we don't need to retrieve the source code from argument, it already
+    // is in the sink
     pub fn new(sink: DiagnosticSink, source_code: String, fid: FileId) -> Lexer {
         Lexer {
             chars: source_code.chars().collect(),

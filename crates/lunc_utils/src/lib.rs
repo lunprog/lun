@@ -21,11 +21,11 @@ pub struct Span {
 }
 
 impl Span {
-    /// Zero location to the root file
+    /// Zero location to the root module
     pub const ZERO: Span = Span {
         lo: 0,
         hi: 0,
-        fid: FileId::ZERO,
+        fid: FileId::ROOT_MODULE,
     };
 
     #[inline(always)]
@@ -100,14 +100,21 @@ pub struct FileId(u32);
 
 impl FileId {
     /// Note this, file id always refers to the root of the `orb`
-    pub const ZERO: FileId = FileId(0);
+    pub const ROOT_MODULE: FileId = FileId(0);
 
+    /// Creates a new FileId, note that it does not register it self to the sink
     pub fn new(num: impl Into<u32>) -> FileId {
         FileId(num.into())
     }
 
+    /// Converts the file id to a usize
     pub fn as_usize(self) -> usize {
         self.0 as usize
+    }
+
+    /// Is the file id, the one to the root module?
+    pub fn is_root(&self) -> bool {
+        *self == Self::ROOT_MODULE
     }
 }
 

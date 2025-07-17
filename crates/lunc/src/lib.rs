@@ -9,6 +9,7 @@ use std::{
     str::FromStr,
 };
 
+use lunc_diag::FileId;
 use thiserror::Error;
 
 use crate::{
@@ -431,6 +432,7 @@ pub fn run() -> Result<()> {
     let input_str = argv.input.clone().into_os_string().into_string().unwrap();
     let sink = DiagnosticSink::new();
     let root_fid = sink.register_file(input_str, source_code.clone());
+    assert_eq!(root_fid, FileId::ROOT_MODULE);
 
     let compil_diags = || CliError::CompilerDiagnostics {
         sink: sink.clone(),
@@ -451,7 +453,7 @@ pub fn run() -> Result<()> {
     }
 
     // 4. parse the token stream to an ast
-    let mut parser = Parser::new(tokenstream, sink.clone());
+    let mut parser = Parser::new(tokenstream, sink.clone(), root_fid);
     let ast = parser.produce().ok_or_else(compil_diags)?;
 
     //    maybe print the ast

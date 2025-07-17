@@ -1,14 +1,22 @@
 //! Desugared Intermediate Representation of Lun.
 
-use lunc_diag::DiagnosticSink;
-pub use lunc_parser::expr::{BinOp, UnaryOp};
+use std::{fs, path::PathBuf};
+
+use diags::ModuleFileDoesnotExist;
+use lunc_diag::{DiagnosticSink, FileId};
+use lunc_lexer::Lexer;
 use lunc_parser::{
+    Parser,
+    directive::{EffectivePath, ItemDirective},
     expr::{Arg, Else, Expr, Expression, IfExpression},
-    item::{Item, Program},
+    item::{Item, Module},
     stmt::{Block, Statement, Stmt},
 };
 use lunc_utils::{FromHigher, lower};
 
+pub use lunc_parser::expr::{BinOp, UnaryOp};
+
+pub mod diags;
 pub mod pretty;
 
 /// Optional span, used because when we desugar we are creating new nodes, so
@@ -46,20 +54,24 @@ pub struct Symbol {
     pub loc: Span,
 }
 
-/// A desugared program, see the sweet version [`Program`]
+/// A desugared module, see the sweet version [`Module`]
 ///
-/// [`Program`]: lunc_parser::item::Program
+/// [`Module`]: lunc_parser::item::Module
 #[derive(Debug, Clone)]
-pub struct DsProgram {
+pub struct DsModule {
     pub items: Vec<DsItem>,
+    pub fid: FileId,
 }
 
-impl FromHigher for DsProgram {
-    type Higher = Program;
+impl FromHigher for DsModule {
+    type Higher = Module;
 
     fn lower(node: Self::Higher) -> Self {
-        DsProgram {
-            items: lower(node.items),
+        let Module { items, fid } = node;
+
+        DsModule {
+            items: lower(items),
+            fid,
         }
     }
 }
@@ -81,10 +93,52 @@ pub enum DsItem {
         value: Box<DsExpression>,
         loc: Span,
     },
-    /// A [`Mod`], with its items inlined inside this member.
+    /// A [`Mod`], with its items inlined inside this member, constructed from
+    /// the dsir directive `Mod` by the Desugarrer
     ///
     /// [`Mod`]: lunc_parser::directive::ItemDirective::Mod
-    Module { name: String, items: Vec<DsItem> },
+    Module {
+        name: String,
+        module: DsModule,
+        /// location of the directive that defined this module.
+        loc: Span,
+    },
+    /// See [`Item::Directive`]
+    ///
+    /// [`Item::Directive`]: lunc_parser::item::Item::Directive
+    Directive(DsItemDirective),
+}
+
+/// See [`ItemDirective`]
+///
+/// [`ItemDirective`]: lunc_parser::directive::ItemDirective
+#[derive(Debug, Clone)]
+pub enum DsItemDirective {
+    Use {
+        path: EffectivePath,
+        alias: Option<String>,
+        loc: Span,
+    },
+    /// NOTE: This directive will not be here after we pass the lowered DSIR to the desugarrer
+    Mod { name: String, loc: Span },
+}
+
+impl FromHigher for DsItemDirective {
+    type Higher = ItemDirective;
+
+    fn lower(node: Self::Higher) -> Self {
+        match node {
+            ItemDirective::Mod { name, loc } => DsItemDirective::Mod {
+                name,
+                loc: Some(loc),
+            },
+            ItemDirective::Use { path, alias, loc } => Self::Use {
+                path,
+                alias,
+                loc: Some(loc),
+            },
+        }
+    }
 }
 
 impl FromHigher for DsItem {
@@ -120,7 +174,7 @@ impl FromHigher for DsItem {
                 value: Box::new(lower(value)),
                 loc: Some(loc),
             },
-            Item::Directive(_) => todo!("DIRECTIVE LOWERING"),
+            Item::Directive(directive) => DsItem::Directive(lower(directive)),
         }
     }
 }
@@ -766,11 +820,91 @@ impl Desugarrer {
         Desugarrer { sink }
     }
 
-    pub fn produce(&mut self, ast: Program) -> Option<DsProgram> {
-        let dsir = lower(ast);
+    pub fn produce(&mut self, ast: Module) -> Option<DsModule> {
+        let mut root = lower(ast);
 
-        _ = self.sink;
+        self.inline_modules(&mut root);
 
-        Some(dsir)
+        if self.sink.failed() {
+            return None;
+        }
+
+        Some(root)
+    }
+
+    /// Takes a module and converts (recursively) the Mod directive to Item Mod.
+    ///
+    /// So in this function, we:
+    /// 1. look for the file that corresponds to the module name
+    /// 2. lex this file
+    /// 3. parse this token stream
+    /// 4. desugar this ast
+    /// 5. put the items of the module inside the parent module, in a `DsItem::Module`
+    pub fn inline_modules(&mut self, parent: &mut DsModule) {
+        let parent_path = PathBuf::from(self.sink.name(parent.fid).unwrap());
+
+        for item in &mut parent.items {
+            if let DsItem::Directive(DsItemDirective::Mod { name, loc }) = item {
+                // 1. compute the path of the submodule
+                let submodule_path = if parent.fid.is_root() {
+                    // root module's path
+                    parent_path
+                        .with_file_name(name.clone())
+                        .with_extension("lun")
+                } else {
+                    // submodule module's path
+                    parent_path
+                        .with_extension("")
+                        .join(name.clone())
+                        .with_extension("lun")
+                };
+
+                if !submodule_path.exists() {
+                    self.sink.push(ModuleFileDoesnotExist {
+                        name: name.clone(),
+                        expected_path: submodule_path,
+                        loc: loc.clone().unwrap(),
+                    });
+                    continue;
+                }
+
+                // 2. retrieve the source code of the submodule
+                let source_code = fs::read_to_string(&submodule_path).unwrap();
+
+                // 3. add it to the sink
+                let submodule_fid = self.sink.register_file(
+                    submodule_path.to_string_lossy().to_string(),
+                    source_code.clone(),
+                );
+
+                // 4. lex the submodule
+                let mut lexer = Lexer::new(self.sink.clone(), source_code.clone(), submodule_fid);
+                let tokenstream = match lexer.produce() {
+                    Some(toks) => toks,
+                    None => continue,
+                };
+
+                // 5. parse the submodule
+                let mut parser = Parser::new(tokenstream, self.sink.clone(), submodule_fid);
+                let ast = match parser.produce() {
+                    Some(ast) => ast,
+                    None => continue,
+                };
+
+                // 6. desugar it.
+                let submodule_dsir = match self.produce(ast) {
+                    Some(dsir) => dsir,
+                    None => continue,
+                };
+
+                *item = DsItem::Module {
+                    name: name.clone(),
+                    module: submodule_dsir,
+                    loc: loc.clone(),
+                };
+            }
+        }
+
+        // we successfully inlined all modules :)
     }
 }
