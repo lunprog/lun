@@ -340,7 +340,7 @@
   } @ 102..120 (fid = 0),
 
   Module {
-    name: nested @ 178..190 (fid = 0);
+    name: nested @ 179..191 (fid = 0);
     module: [];
   },
 ]"#,
@@ -387,7 +387,7 @@
       } @ 102..120 (fid = 1),
 
       Module {
-        name: nested @ 178..190 (fid = 1);
+        name: nested @ 179..191 (fid = 1);
         module: [
           GlobalDef {
             name: add @ 65..68 (fid = 2);
