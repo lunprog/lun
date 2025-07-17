@@ -1,22 +1,24 @@
-use std::{env, error::Error, path::Path};
+use std::{env, path::Path, process};
 
-use luntests::{TestContext, TestFailed};
+use luntests::{TestContext, TestError};
 use termcolor::{ColorChoice, StandardStream};
 
-const HELP_MESSAGE: &str = "\
-Test suite for the Lun Compiler.
+use clap::{Parser, Subcommand};
 
-Usage: luntests [SUBCOMMAND]
+#[derive(Debug, Clone, Parser)]
+pub struct Cli {
+    #[command(subcommand)]
+    cmd: Option<Cmd>,
+}
 
-Sub commands:
-    record            Record the tests and make it the expected results
-    help              Display this message
-";
+#[derive(Debug, Clone, Subcommand)]
+pub enum Cmd {
+    /// Record tests and make the output the expected output
+    Record,
+}
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // TODO: remake using clap
-    let mut args = env::args();
-    _ = args.next(); // skip program name
+fn main() -> Result<(), TestError> {
+    let args = Cli::parse();
 
     let workspace_path = Path::new(".");
     let tests_path = workspace_path.join("tests");
@@ -30,19 +32,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     tctx.load_tests(&tests_path)?;
     tctx.load_or_create_records()?;
 
-    match args.next().as_deref() {
-        Some("record") => record_tests(&mut tctx)?,
-        Some("help") => eprint!("{HELP_MESSAGE}"),
-        _ => match run_tests(&mut tctx, &mut out) {
+    match args.cmd {
+        Some(Cmd::Record) => record_tests(&mut tctx)?,
+        None => match run_tests(&mut tctx, &mut out) {
             Ok(()) => {}
-            Err(()) => std::process::exit(1),
+            Err(()) => process::exit(1),
         },
     }
 
     Ok(())
 }
 
-fn record_tests(tctx: &mut TestContext) -> Result<(), Box<dyn Error>> {
+fn record_tests(tctx: &mut TestContext) -> Result<(), TestError> {
     // TODO: be able to record only one test case
     tctx.record_tests()?;
     tctx.write_test_records()?;
@@ -54,7 +55,7 @@ fn run_tests(tctx: &mut TestContext, out: &mut StandardStream) -> Result<(), ()>
     let res = tctx.run_tests(out);
     match res {
         Ok(()) => Ok(()),
-        Err(e) if e.is::<TestFailed>() => Err(()),
+        Err(TestError::Failed) => Err(()),
         Err(e) => {
             eprintln!("ERROR: {e}");
             Err(())

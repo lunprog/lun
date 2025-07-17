@@ -581,12 +581,14 @@ dependencies = [
 name = "luntests"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "humantime",
  "indexmap",
  "lunc_utils",
  "ron",
  "serde",
  "termcolor",
+ "thiserror",
 ]
 
 [[package]]

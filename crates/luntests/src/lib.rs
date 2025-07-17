@@ -1,10 +1,10 @@
 use std::{
-    error::Error,
-    fmt,
+    convert::Infallible,
     fs::{self, File},
-    io::{Read, Write},
+    io::{self, Read, Write},
     path::{Path, PathBuf},
     process::{Command, Output},
+    str::FromStr,
     time::{Duration, Instant},
 };
 
@@ -13,24 +13,21 @@ use lunc_utils::fast_digit_length;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
+use thiserror::Error;
 
-// TODO(URGENT): remove this any result and create an error type with thiserror
-type AnyResult<T> = Result<T, Box<dyn std::error::Error>>;
-
-#[derive(Debug, Clone, Copy)]
-pub struct TestFailed;
-
-impl Error for TestFailed {}
-
-impl fmt::Display for TestFailed {
-    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Ok(())
-    }
+#[derive(Debug, Error)]
+pub enum TestError {
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error(transparent)]
+    Ron(#[from] ron::Error),
+    #[error("failed to run the test")]
+    Failed,
 }
 
 pub type Records = IndexMap<String, TestRecord>;
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TestContext {
     /// expected outputs in the test, loaded from the `tests.ron` file
     records: Records,
@@ -48,34 +45,41 @@ impl TestContext {
         }
     }
 
-    pub fn load_tests(&mut self, path: &Path) -> AnyResult<()> {
-        if path.is_dir() {
-            for entry in fs::read_dir(path)? {
-                let entry = entry?;
-                let entry_path = entry.path();
+    pub fn load_tests(&mut self, path: &Path) -> Result<(), TestError> {
+        assert!(path.is_dir());
 
-                if entry_path.is_dir() {
-                    self.load_tests(&entry_path)?;
-                } else {
-                    let name = entry_path
-                        .strip_prefix("./tests/")
-                        .unwrap()
-                        .with_extension("")
-                        .to_string_lossy()
-                        .to_string();
+        let tests_entries = fs::read_dir(path)?;
 
-                    self.tests.push(Test {
-                        name,
-                        path: entry_path,
-                    });
+        for tests_entry in tests_entries.flatten() {
+            let stage_path = tests_entry.path();
+
+            let stage_entries = fs::read_dir(stage_path)?;
+            for stage_entry in stage_entries.flatten() {
+                let test_path = stage_entry.path();
+                if test_path.is_dir() {
+                    continue;
                 }
+
+                let name = test_path
+                    .strip_prefix("./tests/")
+                    .unwrap()
+                    .with_extension("")
+                    .to_string_lossy()
+                    .to_string();
+                let Ok(stage) = TestStage::from_str(&name);
+
+                self.tests.push(Test {
+                    name,
+                    path: test_path,
+                    stage,
+                });
             }
         }
 
         Ok(())
     }
 
-    pub fn load_or_create_records(&mut self) -> AnyResult<()> {
+    pub fn load_or_create_records(&mut self) -> Result<(), TestError> {
         let mut file = File::open(Self::TESTS_PATH)?;
 
         let mut tests_str = String::new();
@@ -84,7 +88,12 @@ impl TestContext {
         let mut records = ron::from_str::<Records>(&tests_str).unwrap_or_else(|_| Records::new());
 
         // populate the missing tests
-        for Test { name, path: _ } in &self.tests {
+        for Test {
+            name,
+            path: _,
+            stage: _,
+        } in &self.tests
+        {
             if !records.contains_key(name) {
                 records.insert(name.clone(), TestRecord::new());
             }
@@ -94,7 +103,7 @@ impl TestContext {
         Ok(())
     }
 
-    pub fn write_test_records(&mut self) -> AnyResult<()> {
+    pub fn write_test_records(&mut self) -> Result<(), TestError> {
         let mut file = File::create(TestContext::TESTS_PATH)?;
 
         // sort the keys so that the output order never changes
@@ -111,7 +120,7 @@ impl TestContext {
         Ok(())
     }
 
-    pub fn run_tests(&self, out: &mut StandardStream) -> AnyResult<()> {
+    pub fn run_tests(&self, out: &mut StandardStream) -> Result<(), TestError> {
         let start_test = Instant::now();
 
         let tests_count = self.tests.len();
@@ -125,11 +134,11 @@ impl TestContext {
             test_count: self.tests.len(),
         };
 
-        for (n, Test { name, path }) in self.tests.iter().enumerate() {
+        for (n, Test { name, path, stage }) in self.tests.iter().enumerate() {
             let test_record = self.records.get(name).unwrap();
             let mut cmd = Command::new("./target/debug/lunc");
 
-            let extra_args = TestContext::compiler_args_from_name(name);
+            let extra_args = stage.to_compiler_args();
             cmd.args(extra_args);
 
             cmd.arg(path);
@@ -182,18 +191,18 @@ impl TestContext {
         summary.write_report(out)?;
 
         if summary.failed() {
-            return Err(Box::new(TestFailed));
+            return Err(TestError::Failed);
         }
 
         Ok(())
     }
 
-    pub fn record_tests(&mut self) -> AnyResult<()> {
-        for Test { name, path } in &self.tests {
+    pub fn record_tests(&mut self) -> Result<(), TestError> {
+        for Test { name, path, stage } in &self.tests {
             let test_record = self.records.get_mut(name).unwrap();
             let mut cmd = Command::new("./target/debug/lunc");
 
-            let extra_args = TestContext::compiler_args_from_name(name);
+            let extra_args = stage.to_compiler_args();
             cmd.args(extra_args);
 
             cmd.arg(path);
@@ -220,16 +229,10 @@ impl TestContext {
         color_spec
     }
 
-    fn compiler_args_from_name(name: &str) -> &[&str] {
-        match name {
-            _ if name.starts_with("lexer/") => &["-Dhalt-at=lexer", "-Dprint=tokenstream"],
-            _ if name.starts_with("parser/") => &["-Dhalt-at=parser", "-Dprint=ast"],
-            _ if name.starts_with("desugaring/") => &["-Dhalt-at=dsir", "-Dprint=dsir-tree"],
-            _ => &[],
-        }
-    }
-
-    fn log_test_compiler_fail(out: &mut StandardStream, cmd_output: &Output) -> AnyResult<()> {
+    fn log_test_compiler_fail(
+        out: &mut StandardStream,
+        cmd_output: &Output,
+    ) -> Result<(), TestError> {
         writeln!(out, "\nstderr:")?;
 
         out.write_all(&cmd_output.stderr)?;
@@ -245,10 +248,48 @@ impl Default for TestContext {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Test {
     name: String,
     path: PathBuf,
+    stage: TestStage,
+}
+
+/// At which stage the compiler should stop
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+pub enum TestStage {
+    /// the compiler should not stop, and so run the test
+    None,
+    Lexer,
+    Parser,
+    Dsir,
+}
+
+impl TestStage {
+    pub fn to_compiler_args(&self) -> &[&str] {
+        match self {
+            TestStage::Lexer => &["-Dhalt-at=lexer", "-Dprint=tokenstream"],
+            TestStage::Parser => &["-Dhalt-at=parser", "-Dprint=ast"],
+            TestStage::Dsir => &["-Dhalt-at=dsir", "-Dprint=dsir-tree"],
+            TestStage::None => &[],
+        }
+    }
+}
+
+impl FromStr for TestStage {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.starts_with("lexer/") {
+            Ok(TestStage::Lexer)
+        } else if s.starts_with("parser/") {
+            Ok(TestStage::Parser)
+        } else if s.starts_with("desugaring/") {
+            Ok(TestStage::Dsir)
+        } else {
+            Ok(TestStage::None)
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -295,7 +336,7 @@ impl TestSummary {
         *build_fail != 0 || *unexpected_build_out != 0
     }
 
-    pub fn write_report(&self, out: &mut StandardStream) -> AnyResult<()> {
+    pub fn write_report(&self, out: &mut StandardStream) -> Result<(), TestError> {
         writeln!(out)?;
         out.set_color(ColorSpec::new().set_bold(true))?;
 
