@@ -86,3 +86,7 @@ main :: fun() {
     _ = *fun(usz, bool) -> usz;
     _ = *fun(usz,) -> usz;
 }
+
+// this works because we stop before type checking
+some_fun :: fun() {}
+some_pointer :: &12;

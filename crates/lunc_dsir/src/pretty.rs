@@ -6,7 +6,7 @@ use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 use crate::{
     DsArg, DsBlock, DsExpr, DsExpression, DsItem, DsItemDirective, DsModule, DsStatement, DsStmt,
-    LazySymbol, Symbol,
+    LazySymbol, SymKind, Symbol, SymbolRef,
 };
 
 impl PrettyDump for DsModule {
@@ -25,21 +25,29 @@ impl PrettyDump for DsItem {
                 typ,
                 value,
                 loc,
+                sym,
             } => {
                 ctx.pretty_struct("GlobalDef")
                     .field("name", (name, name_loc))
                     .field("mutable", mutable)
                     .field("typ", typ)
                     .field("value", value)
+                    .field("sym", sym)
                     .finish()?;
 
                 ctx.print_loc(loc)?;
                 Ok(())
             }
-            DsItem::Module { name, module, loc } => {
+            DsItem::Module {
+                name,
+                module,
+                loc,
+                sym,
+            } => {
                 ctx.pretty_struct("Module")
                     .field("name", (name, loc))
                     .field("module", module)
+                    .field("sym", sym)
                     .finish()?;
 
                 Ok(())
@@ -111,10 +119,10 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::AddressOf { mutable, val } => {
+            DsExpr::AddressOf { mutable, expr } => {
                 ctx.pretty_struct("AddressOf")
                     .field("mutable", mutable)
-                    .field("expr", val)
+                    .field("expr", expr)
                     .finish()?;
 
                 Ok(())
@@ -150,12 +158,12 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Return { val } => {
-                ctx.pretty_struct("Return").field("val", val).finish()?;
+            DsExpr::Return { expr } => {
+                ctx.pretty_struct("Return").field("expr", expr).finish()?;
                 Ok(())
             }
-            DsExpr::Break { val } => {
-                ctx.pretty_struct("Break").field("val", val).finish()?;
+            DsExpr::Break { expr } => {
+                ctx.pretty_struct("Break").field("expr", expr).finish()?;
                 Ok(())
             }
             DsExpr::Continue => {
@@ -175,6 +183,12 @@ impl PrettyDump for DsExpr {
             DsExpr::Orb => {
                 write!(ctx.out, "Orb")
             }
+            DsExpr::EffectivePath { path } => {
+                write!(ctx.out, "EffectivePath ")?;
+
+                path.try_dump(ctx)
+            }
+            DsExpr::Underscore => write!(ctx.out, "Underscore"),
             DsExpr::FunDefinition {
                 args,
                 rettype,
@@ -217,15 +231,28 @@ impl PrettyDump for LazySymbol {
     }
 }
 
-impl PrettyDump for Symbol {
+impl PrettyDump for SymbolRef {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        let Symbol { name, loc } = self;
+        let Symbol {
+            kind,
+            name,
+            which,
+            loc,
+        } = &*self.read().unwrap();
 
         ctx.pretty_struct("Symbol")
+            .field("kind", kind)
             .field("name", (name, loc))
+            .field("which", which)
             .finish()?;
 
         Ok(())
+    }
+}
+
+impl PrettyDump for SymKind {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        write!(ctx.out, "{self}")
     }
 }
 
@@ -236,11 +263,13 @@ impl PrettyDump for DsArg {
             name_loc,
             typ,
             loc,
+            sym,
         } = self;
 
         ctx.pretty_struct("Arg")
             .field("name", (name, name_loc))
             .field("typ", typ)
+            .field("sym", sym)
             .finish()?;
         ctx.print_loc(loc)?;
 
@@ -291,12 +320,14 @@ impl PrettyDump for DsStmt {
                 mutable,
                 typ,
                 value,
+                sym,
             } => {
                 ctx.pretty_struct("VariableDef")
                     .field("name", (name, name_loc))
                     .field("mutable", mutable)
                     .field("typ", typ)
                     .field("value", value)
+                    .field("sym", sym)
                     .finish()?;
                 Ok(())
             }

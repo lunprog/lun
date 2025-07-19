@@ -1,5 +1,197 @@
 {
-    "desugaring/expression": (
+    "desugaring/forward_use": (
+        expected_compiler_out: "dsir = [
+  GlobalDef {
+    name: main @ 79..83 (fid = 0);
+    mutable: false;
+    typ: none;
+    value: FunDefinition {
+      args: [];
+      rettype: none;
+      body: [
+        VariableDef {
+          name: res @ 99..102 (fid = 0);
+          mutable: false;
+          typ: none;
+          value: FunCall {
+            callee: Symbol {
+              kind: function;
+              name: add @ 133..136 (fid = 0);
+              which: 1;
+            } @ 106..109 (fid = 0);
+            args: [
+              integer 1 @ 110..111 (fid = 0),
+
+              integer 2 @ 113..114 (fid = 0),
+            ];
+          } @ 106..115 (fid = 0);
+          sym: Symbol {
+            kind: local;
+            name: res @ 99..102 (fid = 0);
+            which: 0;
+          };
+        } @ 99..115 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 121..122 (fid = 0);
+          op: Assignment;
+          rhs: Symbol {
+            kind: local;
+            name: res @ 99..102 (fid = 0);
+            which: 0;
+          } @ 125..128 (fid = 0);
+        } @ 121..128 (fid = 0) @ 121..128 (fid = 0),
+      ] @ 93..131 (fid = 0);
+    } @ 87..131 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: main @ 79..83 (fid = 0);
+      which: 0;
+    };
+  } @ 79..131 (fid = 0),
+
+  GlobalDef {
+    name: add @ 133..136 (fid = 0);
+    mutable: false;
+    typ: none;
+    value: FunDefinition {
+      args: [
+        Arg {
+          name: a @ 144..145 (fid = 0);
+          typ: Symbol {
+            kind: global;
+            name: isz @ none;
+            which: 0;
+          } @ 147..150 (fid = 0);
+          sym: Symbol {
+            kind: argument;
+            name: a @ 144..145 (fid = 0);
+            which: 0;
+          };
+        } @ 144..150 (fid = 0),
+
+        Arg {
+          name: b @ 152..153 (fid = 0);
+          typ: Symbol {
+            kind: global;
+            name: isz @ none;
+            which: 0;
+          } @ 155..158 (fid = 0);
+          sym: Symbol {
+            kind: argument;
+            name: b @ 152..153 (fid = 0);
+            which: 0;
+          };
+        } @ 152..158 (fid = 0),
+      ];
+      rettype: Symbol {
+        kind: global;
+        name: isz @ none;
+        which: 0;
+      } @ 163..166 (fid = 0);
+      body: [
+        Binary {
+          lhs: Symbol {
+            kind: argument;
+            name: a @ 144..145 (fid = 0);
+            which: 0;
+          } @ 173..174 (fid = 0);
+          op: Add;
+          rhs: Symbol {
+            kind: argument;
+            name: b @ 152..153 (fid = 0);
+            which: 0;
+          } @ 177..178 (fid = 0);
+        } @ 173..178 (fid = 0),
+      ] @ 167..180 (fid = 0);
+    } @ 140..180 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: add @ 133..136 (fid = 0);
+      which: 1;
+    };
+  } @ 133..180 (fid = 0),
+]",
+        expected_test_out: "",
+    ),
+    "desugaring/global_def": (
+        expected_compiler_out: r#"dsir = [
+  GlobalDef {
+    name: main @ 19..23 (fid = 0);
+    mutable: false;
+    typ: none;
+    value: FunDefinition {
+      args: [];
+      rettype: none;
+      body: [] @ 33..35 (fid = 0);
+    } @ 27..35 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: main @ 19..23 (fid = 0);
+      which: 0;
+    };
+  } @ 19..35 (fid = 0),
+
+  GlobalDef {
+    name: avogadro @ 36..44 (fid = 0);
+    mutable: false;
+    typ: Symbol {
+      kind: global;
+      name: f64 @ none;
+      which: 0;
+    } @ 47..50 (fid = 0);
+    value: float 602199999999999960000000 @ 53..61 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: avogadro @ 36..44 (fid = 0);
+      which: 1;
+    };
+  } @ 36..62 (fid = 0),
+
+  GlobalDef {
+    name: hello @ 78..83 (fid = 0);
+    mutable: true;
+    typ: PointerType {
+      mutable: false;
+      typ: Symbol {
+        kind: global;
+        name: str @ none;
+        which: 0;
+      } @ 87..90 (fid = 0);
+    } @ 86..90 (fid = 0);
+    value: string "Hello" @ 93..100 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: hello @ 78..83 (fid = 0);
+      which: 1;
+    };
+  } @ 78..101 (fid = 0),
+
+  GlobalDef {
+    name: globFloat @ 102..111 (fid = 0);
+    mutable: true;
+    typ: none;
+    value: float 12 @ 115..119 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: globFloat @ 102..111 (fid = 0);
+      which: 1;
+    };
+  } @ 102..120 (fid = 0),
+
+  Module {
+    name: nested @ 179..191 (fid = 0);
+    module: [];
+    sym: Symbol {
+      kind: module;
+      name: nested @ 179..191 (fid = 0);
+      which: 1;
+    };
+  },
+]"#,
+        expected_test_out: "",
+    ),
+    "desugaring/lower_expr": (
         expected_compiler_out: r#"dsir = [
   GlobalDef {
     name: main @ 11..15 (fid = 0);
@@ -10,43 +202,43 @@
       rettype: none;
       body: [
         Binary {
-          lhs: lazy _ @ 54..55 (fid = 0);
+          lhs: Underscore @ 54..55 (fid = 0);
           op: Assignment;
           rhs: integer 12 @ 58..60 (fid = 0);
         } @ 54..60 (fid = 0) @ 54..60 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 87..88 (fid = 0);
+          lhs: Underscore @ 87..88 (fid = 0);
           op: Assignment;
           rhs: boolean true @ 91..95 (fid = 0);
         } @ 87..95 (fid = 0) @ 87..95 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 101..102 (fid = 0);
+          lhs: Underscore @ 101..102 (fid = 0);
           op: Assignment;
           rhs: boolean false @ 105..110 (fid = 0);
         } @ 101..110 (fid = 0) @ 101..110 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 139..140 (fid = 0);
+          lhs: Underscore @ 139..140 (fid = 0);
           op: Assignment;
           rhs: string "Hello world!" @ 143..157 (fid = 0);
         } @ 139..157 (fid = 0) @ 139..157 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 184..185 (fid = 0);
+          lhs: Underscore @ 184..185 (fid = 0);
           op: Assignment;
           rhs: character 'C' @ 188..191 (fid = 0);
         } @ 184..191 (fid = 0) @ 184..191 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 219..220 (fid = 0);
+          lhs: Underscore @ 219..220 (fid = 0);
           op: Assignment;
           rhs: float 602199999999999960000000 @ 223..231 (fid = 0);
         } @ 219..231 (fid = 0) @ 219..231 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 287..288 (fid = 0);
+          lhs: Underscore @ 287..288 (fid = 0);
           op: Assignment;
           rhs: Binary {
             lhs: integer 12 @ 292..294 (fid = 0);
@@ -56,13 +248,17 @@
         } @ 287..299 (fid = 0) @ 287..299 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 324..325 (fid = 0);
+          lhs: Underscore @ 324..325 (fid = 0);
           op: Assignment;
-          rhs: lazy main @ 328..332 (fid = 0);
+          rhs: Symbol {
+            kind: function;
+            name: main @ 11..15 (fid = 0);
+            which: 0;
+          } @ 328..332 (fid = 0);
         } @ 324..332 (fid = 0) @ 324..332 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 356..357 (fid = 0);
+          lhs: Underscore @ 356..357 (fid = 0);
           op: Assignment;
           rhs: Binary {
             lhs: integer 34 @ 360..362 (fid = 0);
@@ -72,7 +268,7 @@
         } @ 356..367 (fid = 0) @ 356..367 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 390..391 (fid = 0);
+          lhs: Underscore @ 390..391 (fid = 0);
           op: Assignment;
           rhs: Unary {
             op: Not;
@@ -81,7 +277,7 @@
         } @ 390..400 (fid = 0) @ 390..400 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 406..407 (fid = 0);
+          lhs: Underscore @ 406..407 (fid = 0);
           op: Assignment;
           rhs: Unary {
             op: Negation;
@@ -90,19 +286,27 @@
         } @ 406..415 (fid = 0) @ 406..415 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 438..439 (fid = 0);
+          lhs: Underscore @ 438..439 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            callee: lazy some_fun @ 442..450 (fid = 0);
+            callee: Symbol {
+              kind: function;
+              name: some_fun @ 1234..1242 (fid = 0);
+              which: 1;
+            } @ 442..450 (fid = 0);
             args: [];
           } @ 442..452 (fid = 0);
         } @ 438..452 (fid = 0) @ 438..452 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 458..459 (fid = 0);
+          lhs: Underscore @ 458..459 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            callee: lazy some_fun @ 462..470 (fid = 0);
+            callee: Symbol {
+              kind: function;
+              name: some_fun @ 1234..1242 (fid = 0);
+              which: 1;
+            } @ 462..470 (fid = 0);
             args: [
               integer 1 @ 471..472 (fid = 0),
             ];
@@ -110,10 +314,14 @@
         } @ 458..473 (fid = 0) @ 458..473 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 479..480 (fid = 0);
+          lhs: Underscore @ 479..480 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            callee: lazy some_fun @ 483..491 (fid = 0);
+            callee: Symbol {
+              kind: function;
+              name: some_fun @ 1234..1242 (fid = 0);
+              which: 1;
+            } @ 483..491 (fid = 0);
             args: [
               integer 1 @ 492..493 (fid = 0),
 
@@ -123,10 +331,14 @@
         } @ 479..497 (fid = 0) @ 479..497 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 503..504 (fid = 0);
+          lhs: Underscore @ 503..504 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            callee: lazy some_fun @ 507..515 (fid = 0);
+            callee: Symbol {
+              kind: function;
+              name: some_fun @ 1234..1242 (fid = 0);
+              which: 1;
+            } @ 507..515 (fid = 0);
             args: [
               integer 1 @ 516..517 (fid = 0),
 
@@ -139,20 +351,28 @@
           cond: boolean true @ 542..546 (fid = 0);
           then_br: Block [
             FunCall {
-              callee: lazy main @ 557..561 (fid = 0);
+              callee: Symbol {
+                kind: function;
+                name: main @ 11..15 (fid = 0);
+                which: 0;
+              } @ 557..561 (fid = 0);
               args: [];
             } @ 557..563 (fid = 0) @ 557..563 (fid = 0),
           ] @ 547..570 (fid = 0) @ 539..599 (fid = 0);
           else_br: Block [
             FunCall {
-              callee: lazy main @ 586..590 (fid = 0);
+              callee: Symbol {
+                kind: function;
+                name: main @ 11..15 (fid = 0);
+                which: 0;
+              } @ 586..590 (fid = 0);
               args: [];
             } @ 586..592 (fid = 0) @ 586..592 (fid = 0),
           ] @ 576..599 (fid = 0) @ 576..599 (fid = 0);
         } @ 539..599 (fid = 0) @ 539..599 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 625..626 (fid = 0);
+          lhs: Underscore @ 625..626 (fid = 0);
           op: Assignment;
           rhs: If {
             cond: Binary {
@@ -167,16 +387,20 @@
 
         Block [
           Binary {
-            lhs: lazy _ @ 690..691 (fid = 0);
+            lhs: Underscore @ 690..691 (fid = 0);
             op: Assignment;
             rhs: integer 2 @ 694..695 (fid = 0);
           } @ 690..695 (fid = 0) @ 690..695 (fid = 0),
 
           Binary {
-            lhs: lazy _ @ 705..706 (fid = 0);
+            lhs: Underscore @ 705..706 (fid = 0);
             op: Assignment;
             rhs: FunCall {
-              callee: lazy main @ 709..713 (fid = 0);
+              callee: Symbol {
+                kind: function;
+                name: main @ 11..15 (fid = 0);
+                which: 0;
+              } @ 709..713 (fid = 0);
               args: [];
             } @ 709..715 (fid = 0);
           } @ 705..715 (fid = 0) @ 705..715 (fid = 0),
@@ -185,13 +409,13 @@
         Loop {
           body: [
             Break {
-              val: none;
+              expr: none;
             } @ 780..785 (fid = 0) @ 780..785 (fid = 0),
           ] @ 754..792 (fid = 0);
         } @ 749..792 (fid = 0) @ 749..792 (fid = 0),
 
         Return {
-          val: Binary {
+          expr: Binary {
             lhs: integer 12 @ 819..821 (fid = 0);
             op: Mul;
             rhs: integer 8 @ 824..825 (fid = 0);
@@ -199,28 +423,32 @@
         } @ 812..825 (fid = 0) @ 812..825 (fid = 0),
 
         Return {
-          val: none;
+          expr: none;
         } @ 831..837 (fid = 0) @ 831..837 (fid = 0),
 
         Continue @ 860..868 (fid = 0) @ 860..868 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 887..888 (fid = 0);
+          lhs: Underscore @ 887..888 (fid = 0);
           op: Assignment;
           rhs: Null @ 891..895 (fid = 0);
         } @ 887..895 (fid = 0) @ 887..895 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 915..916 (fid = 0);
+          lhs: Underscore @ 915..916 (fid = 0);
           op: Assignment;
           rhs: Unary {
             op: Dereference;
-            expr: lazy some_pointer @ 919..931 (fid = 0);
+            expr: Symbol {
+              kind: global;
+              name: some_pointer @ 1255..1267 (fid = 0);
+              which: 2;
+            } @ 919..931 (fid = 0);
           } @ 919..933 (fid = 0);
         } @ 915..933 (fid = 0) @ 915..933 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 961..962 (fid = 0);
+          lhs: Underscore @ 961..962 (fid = 0);
           op: Assignment;
           rhs: FunCall {
             callee: MemberAccess {
@@ -232,7 +460,7 @@
         } @ 961..978 (fid = 0) @ 961..978 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 985..986 (fid = 0);
+          lhs: Underscore @ 985..986 (fid = 0);
           op: Assignment;
           rhs: FunCall {
             callee: MemberAccess {
@@ -247,25 +475,33 @@
         } @ 985..1005 (fid = 0) @ 985..1005 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 1047..1048 (fid = 0);
+          lhs: Underscore @ 1047..1048 (fid = 0);
           op: Assignment;
           rhs: PointerType {
             mutable: false;
-            typ: lazy u32 @ 1052..1055 (fid = 0);
+            typ: Symbol {
+              kind: global;
+              name: u32 @ none;
+              which: 0;
+            } @ 1052..1055 (fid = 0);
           } @ 1051..1055 (fid = 0);
         } @ 1047..1055 (fid = 0) @ 1047..1055 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 1061..1062 (fid = 0);
+          lhs: Underscore @ 1061..1062 (fid = 0);
           op: Assignment;
           rhs: PointerType {
             mutable: true;
-            typ: lazy u32 @ 1070..1073 (fid = 0);
+            typ: Symbol {
+              kind: global;
+              name: u32 @ none;
+              which: 0;
+            } @ 1070..1073 (fid = 0);
           } @ 1065..1073 (fid = 0);
         } @ 1061..1073 (fid = 0) @ 1061..1073 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 1109..1110 (fid = 0);
+          lhs: Underscore @ 1109..1110 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [];
@@ -274,75 +510,87 @@
         } @ 1109..1119 (fid = 0) @ 1109..1119 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 1125..1126 (fid = 0);
+          lhs: Underscore @ 1125..1126 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [
-              lazy usz @ 1134..1137 (fid = 0),
+              Symbol {
+                kind: global;
+                name: usz @ none;
+                which: 0;
+              } @ 1134..1137 (fid = 0),
 
-              lazy bool @ 1139..1143 (fid = 0),
+              Symbol {
+                kind: global;
+                name: bool @ none;
+                which: 0;
+              } @ 1139..1143 (fid = 0),
             ];
-            ret: lazy usz @ 1148..1151 (fid = 0);
+            ret: Symbol {
+              kind: global;
+              name: usz @ none;
+              which: 0;
+            } @ 1148..1151 (fid = 0);
           } @ 1129..1151 (fid = 0);
         } @ 1125..1151 (fid = 0) @ 1125..1151 (fid = 0),
 
         Binary {
-          lhs: lazy _ @ 1157..1158 (fid = 0);
+          lhs: Underscore @ 1157..1158 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [
-              lazy usz @ 1166..1169 (fid = 0),
+              Symbol {
+                kind: global;
+                name: usz @ none;
+                which: 0;
+              } @ 1166..1169 (fid = 0),
             ];
-            ret: lazy usz @ 1175..1178 (fid = 0);
+            ret: Symbol {
+              kind: global;
+              name: usz @ none;
+              which: 0;
+            } @ 1175..1178 (fid = 0);
           } @ 1161..1178 (fid = 0);
         } @ 1157..1178 (fid = 0) @ 1157..1178 (fid = 0),
       ] @ 25..1181 (fid = 0);
     } @ 19..1181 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: main @ 11..15 (fid = 0);
+      which: 0;
+    };
   } @ 11..1181 (fid = 0),
-]"#,
-        expected_test_out: "",
-    ),
-    "desugaring/global_def": (
-        expected_compiler_out: r#"dsir = [
+
   GlobalDef {
-    name: main @ 19..23 (fid = 0);
+    name: some_fun @ 1234..1242 (fid = 0);
     mutable: false;
     typ: none;
     value: FunDefinition {
       args: [];
       rettype: none;
-      body: [] @ 33..35 (fid = 0);
-    } @ 27..35 (fid = 0);
-  } @ 19..35 (fid = 0),
+      body: [] @ 1252..1254 (fid = 0);
+    } @ 1246..1254 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: some_fun @ 1234..1242 (fid = 0);
+      which: 1;
+    };
+  } @ 1234..1254 (fid = 0),
 
   GlobalDef {
-    name: avogadro @ 36..44 (fid = 0);
+    name: some_pointer @ 1255..1267 (fid = 0);
     mutable: false;
-    typ: lazy f64 @ 47..50 (fid = 0);
-    value: float 602199999999999960000000 @ 53..61 (fid = 0);
-  } @ 36..62 (fid = 0),
-
-  GlobalDef {
-    name: hello @ 78..83 (fid = 0);
-    mutable: true;
-    typ: PointerType {
-      mutable: false;
-      typ: lazy str @ 87..90 (fid = 0);
-    } @ 86..90 (fid = 0);
-    value: string "Hello" @ 93..100 (fid = 0);
-  } @ 78..101 (fid = 0),
-
-  GlobalDef {
-    name: globFloat @ 102..111 (fid = 0);
-    mutable: true;
     typ: none;
-    value: float 12 @ 115..119 (fid = 0);
-  } @ 102..120 (fid = 0),
-
-  Module {
-    name: nested @ 179..191 (fid = 0);
-    module: [];
-  },
+    value: AddressOf {
+      mutable: false;
+      expr: integer 12 @ 1272..1274 (fid = 0);
+    } @ 1271..1274 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: some_pointer @ 1255..1267 (fid = 0);
+      which: 2;
+    };
+  } @ 1255..1275 (fid = 0),
 ]"#,
         expected_test_out: "",
     ),
@@ -360,13 +608,27 @@
           rettype: none;
           body: [] @ 33..35 (fid = 1);
         } @ 27..35 (fid = 1);
+        sym: Symbol {
+          kind: function;
+          name: main @ 19..23 (fid = 1);
+          which: 0;
+        };
       } @ 19..35 (fid = 1),
 
       GlobalDef {
         name: avogadro @ 36..44 (fid = 1);
         mutable: false;
-        typ: lazy f64 @ 47..50 (fid = 1);
+        typ: Symbol {
+          kind: global;
+          name: f64 @ none;
+          which: 0;
+        } @ 47..50 (fid = 1);
         value: float 602199999999999960000000 @ 53..61 (fid = 1);
+        sym: Symbol {
+          kind: global;
+          name: avogadro @ 36..44 (fid = 1);
+          which: 1;
+        };
       } @ 36..62 (fid = 1),
 
       GlobalDef {
@@ -374,9 +636,18 @@
         mutable: true;
         typ: PointerType {
           mutable: false;
-          typ: lazy str @ 87..90 (fid = 1);
+          typ: Symbol {
+            kind: global;
+            name: str @ none;
+            which: 0;
+          } @ 87..90 (fid = 1);
         } @ 86..90 (fid = 1);
         value: string "Hello" @ 93..100 (fid = 1);
+        sym: Symbol {
+          kind: global;
+          name: hello @ 78..83 (fid = 1);
+          which: 1;
+        };
       } @ 78..101 (fid = 1),
 
       GlobalDef {
@@ -384,6 +655,11 @@
         mutable: true;
         typ: none;
         value: float 12 @ 115..119 (fid = 1);
+        sym: Symbol {
+          kind: global;
+          name: globFloat @ 102..111 (fid = 1);
+          which: 1;
+        };
       } @ 102..120 (fid = 1),
 
       Module {
@@ -397,27 +673,72 @@
               args: [
                 Arg {
                   name: a @ 76..77 (fid = 2);
-                  typ: lazy usz @ 79..82 (fid = 2);
+                  typ: Symbol {
+                    kind: global;
+                    name: usz @ none;
+                    which: 0;
+                  } @ 79..82 (fid = 2);
+                  sym: Symbol {
+                    kind: argument;
+                    name: a @ 76..77 (fid = 2);
+                    which: 0;
+                  };
                 } @ 76..82 (fid = 2),
 
                 Arg {
                   name: b @ 84..85 (fid = 2);
-                  typ: lazy usz @ 87..90 (fid = 2);
+                  typ: Symbol {
+                    kind: global;
+                    name: usz @ none;
+                    which: 0;
+                  } @ 87..90 (fid = 2);
+                  sym: Symbol {
+                    kind: argument;
+                    name: b @ 84..85 (fid = 2);
+                    which: 0;
+                  };
                 } @ 84..90 (fid = 2),
               ];
-              rettype: lazy usz @ 95..98 (fid = 2);
+              rettype: Symbol {
+                kind: global;
+                name: usz @ none;
+                which: 0;
+              } @ 95..98 (fid = 2);
               body: [
                 Binary {
-                  lhs: lazy a @ 105..106 (fid = 2);
+                  lhs: Symbol {
+                    kind: argument;
+                    name: a @ 76..77 (fid = 2);
+                    which: 0;
+                  } @ 105..106 (fid = 2);
                   op: Add;
-                  rhs: lazy b @ 109..110 (fid = 2);
+                  rhs: Symbol {
+                    kind: argument;
+                    name: b @ 84..85 (fid = 2);
+                    which: 0;
+                  } @ 109..110 (fid = 2);
                 } @ 105..110 (fid = 2),
               ] @ 99..112 (fid = 2);
             } @ 72..112 (fid = 2);
+            sym: Symbol {
+              kind: function;
+              name: add @ 65..68 (fid = 2);
+              which: 0;
+            };
           } @ 65..112 (fid = 2),
         ];
+        sym: Symbol {
+          kind: module;
+          name: nested @ 179..191 (fid = 1);
+          which: 1;
+        };
       },
     ];
+    sym: Symbol {
+      kind: module;
+      name: global_def @ 61..77 (fid = 0);
+      which: 0;
+    };
   },
 ]"#,
         expected_test_out: "",
@@ -429,45 +750,90 @@
     "desugaring/predicate_loop": (
         expected_compiler_out: r#"dsir = [
   GlobalDef {
-    name: main @ 52..56 (fid = 0);
+    name: println @ 138..145 (fid = 0);
+    mutable: false;
+    typ: none;
+    value: FunDefinition {
+      args: [];
+      rettype: none;
+      body: [] @ 155..157 (fid = 0);
+    } @ 149..157 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: println @ 138..145 (fid = 0);
+      which: 0;
+    };
+  } @ 138..157 (fid = 0),
+
+  GlobalDef {
+    name: main @ 159..163 (fid = 0);
     mutable: false;
     typ: none;
     value: FunDefinition {
       args: [];
       rettype: none;
       body: [
+        VariableDef {
+          name: i @ 179..180 (fid = 0);
+          mutable: true;
+          typ: none;
+          value: integer 0 @ 184..185 (fid = 0);
+          sym: Symbol {
+            kind: local;
+            name: i @ 179..180 (fid = 0);
+            which: 0;
+          };
+        } @ 179..185 (fid = 0),
+
         Loop {
           body: [
             If {
               cond: Unary {
                 op: Not;
                 expr: Binary {
-                  lhs: lazy i @ 78..79 (fid = 0);
+                  lhs: Symbol {
+                    kind: local;
+                    name: i @ 179..180 (fid = 0);
+                    which: 0;
+                  } @ 198..199 (fid = 0);
                   op: CompLT;
-                  rhs: integer 10 @ 82..84 (fid = 0);
-                } @ 78..84 (fid = 0);
+                  rhs: integer 10 @ 202..204 (fid = 0);
+                } @ 198..204 (fid = 0);
               } @ none;
               then_br: Break {
-                val: none;
+                expr: none;
               } @ none;
               else_br: none;
             } @ none @ none,
 
             Block [
               FunCall {
-                callee: lazy println @ 95..102 (fid = 0);
+                callee: Symbol {
+                  kind: function;
+                  name: println @ 138..145 (fid = 0);
+                  which: 0;
+                } @ 215..222 (fid = 0);
                 args: [
-                  string "i = {}" @ 103..111 (fid = 0),
+                  string "i = {}" @ 223..231 (fid = 0),
 
-                  lazy i @ 113..114 (fid = 0),
+                  Symbol {
+                    kind: local;
+                    name: i @ 179..180 (fid = 0);
+                    which: 0;
+                  } @ 233..234 (fid = 0),
                 ];
-              } @ 95..115 (fid = 0) @ 95..115 (fid = 0),
-            ] @ 85..122 (fid = 0) @ none @ none,
+              } @ 215..235 (fid = 0) @ 215..235 (fid = 0),
+            ] @ 205..242 (fid = 0) @ none @ none,
           ] @ none;
-        } @ 72..122 (fid = 0),
-      ] @ 66..124 (fid = 0);
-    } @ 60..124 (fid = 0);
-  } @ 52..124 (fid = 0),
+        } @ 192..242 (fid = 0),
+      ] @ 173..244 (fid = 0);
+    } @ 167..244 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: main @ 159..163 (fid = 0);
+      which: 1;
+    };
+  } @ 159..244 (fid = 0),
 ]"#,
         expected_test_out: "",
     ),
@@ -1374,13 +1740,13 @@
         InfiniteLoop {
           body: [
             Break {
-              val: none;
+              expr: none;
             } @ 904..909 (fid = 0) @ 904..909 (fid = 0),
           ] @ 878..916 (fid = 0);
         } @ 873..916 (fid = 0) @ 873..916 (fid = 0),
 
         Return {
-          val: Binary {
+          expr: Binary {
             lhs: integer 12 @ 943..945 (fid = 0);
             op: Mul;
             rhs: integer 8 @ 948..949 (fid = 0);
@@ -1388,7 +1754,7 @@
         } @ 936..949 (fid = 0) @ 936..949 (fid = 0),
 
         Return {
-          val: none;
+          expr: none;
         } @ 955..961 (fid = 0) @ 955..961 (fid = 0),
 
         Continue @ 984..992 (fid = 0) @ 984..992 (fid = 0),

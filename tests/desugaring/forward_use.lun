@@ -5,6 +5,6 @@ main :: fun() {
     _ = res;
 }
 
-add :: fun(a: int, b: int) -> int {
+add :: fun(a: isz, b: isz) -> isz {
     a + b
 }

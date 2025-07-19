@@ -331,3 +331,9 @@ impl<T: PrettyDump> PrettyDump for Box<T> {
         T::try_dump(self, ctx)
     }
 }
+
+impl PrettyDump for usize {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        write!(ctx.out, "{self}")
+    }
+}

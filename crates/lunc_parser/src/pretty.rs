@@ -97,10 +97,10 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::AddressOf { mutable, val } => {
+            Expr::AddressOf { mutable, expr } => {
                 ctx.pretty_struct("AddressOf")
                     .field("mutable", mutable)
-                    .field("expr", val)
+                    .field("expr", expr)
                     .finish()?;
 
                 Ok(())
@@ -160,12 +160,12 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::Return { val } => {
-                ctx.pretty_struct("Return").field("val", val).finish()?;
+            Expr::Return { expr } => {
+                ctx.pretty_struct("Return").field("expr", expr).finish()?;
                 Ok(())
             }
-            Expr::Break { val } => {
-                ctx.pretty_struct("Break").field("val", val).finish()?;
+            Expr::Break { expr } => {
+                ctx.pretty_struct("Break").field("expr", expr).finish()?;
                 Ok(())
             }
             Expr::Continue => {

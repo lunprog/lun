@@ -1,6 +1,12 @@
 // Testing of the desugaring of the predicate loop
 
+// this is a dummy println it only works because we halt compilation at
+// desugaring
+println :: fun() {}
+
 main :: fun() {
+    i := 0;
+
     while i < 10 {
         println("i = {}", i);
     }

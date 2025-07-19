@@ -97,7 +97,10 @@ pub enum Expr {
     /// Address of
     ///
     /// "&" "mut"? expression
-    AddressOf { mutable: bool, val: Box<Expression> },
+    AddressOf {
+        mutable: bool,
+        expr: Box<Expression>,
+    },
     /// function call expression
     ///
     /// expr "(" ( expr ),* ")"
@@ -140,11 +143,11 @@ pub enum Expr {
     /// return expression
     ///
     /// "return" expression?
-    Return { val: Option<Box<Expression>> },
+    Return { expr: Option<Box<Expression>> },
     /// break expression
     ///
     /// "break" expression?
-    Break { val: Option<Box<Expression>> },
+    Break { expr: Option<Box<Expression>> },
     /// continue expression
     ///
     /// "continue"
@@ -993,7 +996,7 @@ pub fn parse_return_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
     };
 
     Ok(Expression {
-        expr: Expr::Return { val },
+        expr: Expr::Return { expr: val },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1013,7 +1016,7 @@ pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     };
 
     Ok(Expression {
-        expr: Expr::Break { val },
+        expr: Expr::Break { expr: val },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1152,7 +1155,7 @@ pub fn parse_deref_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let hi = val.loc.clone();
 
     Ok(Expression {
-        expr: Expr::AddressOf { mutable, val },
+        expr: Expr::AddressOf { mutable, expr: val },
         loc: Span::from_ends(lo, hi),
     })
 }
