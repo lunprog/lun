@@ -571,11 +571,11 @@ pub enum DsExpr {
     QualifiedPath {
         /// path to the symbol
         path: QualifiedPath,
-        /// the symbol we are reffering to
+        /// the symbol we are referring to
         sym: LazySymbol,
     },
     /// Constructed from the lazy ident `_`, but only in certain cases, like
-    /// when it's part of an assignement like so: `_ = expr`
+    /// when it's part of an assignment like so: `_ = expr`
     Underscore,
     /// See [`Expr::FunDefinition`]
     ///
@@ -1245,7 +1245,7 @@ impl Desugarrer {
                 op: BinOp::Assignment,
                 rhs,
             } if matches!(&lhs.expr, DsExpr::Ident(LazySymbol::Name(id)) if id.as_str() == "_") => {
-                // we allow _ in lhs of assignement
+                // we allow _ in lhs of assignment
                 lhs.expr = DsExpr::Underscore;
                 self.resolve_expr(rhs)
             }
