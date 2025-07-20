@@ -2,8 +2,12 @@
 
 #mod dbg;
 
+#use orb.dbg.nested;
+
 run :: fun () {
     orb.dbg.puts("Hello world!");
+    dbg.puts("Hello world!");
+    nested.fib(12);
 }
 
 divide :: fun(lhs: f16, rhs: f16) -> f16 {

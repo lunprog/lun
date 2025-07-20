@@ -1,5 +1,7 @@
 #use orb.divide;
 
+#mod nested;
+
 // put string function
 puts :: fun(msg: *str) {
     _ = msg;

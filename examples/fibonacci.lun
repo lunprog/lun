@@ -5,7 +5,7 @@ main :: fun() {
     fib1million :: fib(1_000_000);
 }
 
-fib :: fun(n: int) -> int {
+fib :: fun(n: usz) -> usz {
     if n <= 1 {
         n
     } else {

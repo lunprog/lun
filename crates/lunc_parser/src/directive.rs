@@ -63,7 +63,7 @@ pub fn parse_use_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
     }))
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EffectivePath(Vec<String>);
 
 impl EffectivePath {
@@ -127,6 +127,10 @@ impl EffectivePath {
     /// Pops the last member of the path and returns it
     pub fn pop(&mut self) -> Option<String> {
         self.0.pop()
+    }
+
+    pub fn is_root(&self) -> bool {
+        self.0 == ["orb"]
     }
 }
 
