@@ -1,0 +1,11 @@
+#use orb.divide;
+
+// put string function
+puts :: fun(msg: *str) {
+    _ = msg;
+    // *printing to stdout*
+}
+
+some_other_thing :: fun() {
+    half :: divide(1., 2.);
+}

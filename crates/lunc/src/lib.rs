@@ -466,7 +466,7 @@ pub fn run() -> Result<()> {
     }
 
     // 5. desugar the AST to DSIR
-    let mut desugarrer = Desugarrer::new(sink.clone());
+    let mut desugarrer = Desugarrer::new(sink.clone(), argv.orb_name.clone());
     let dsir = desugarrer.produce(ast).ok_or_else(compil_diags)?;
 
     //    maybe print the DSIR

@@ -452,7 +452,7 @@ impl ToDiagnostic for FeatureNotImplemented {
         Diagnostic::error()
             .with_code(ErrorCode::FeatureNotImplemented)
             .with_message(format!(
-                "the feature {}, is not yet implemented",
+                "the feature '{}', is not yet implemented",
                 self.feature_name
             ))
             .with_label(Label::primary(self.loc.fid, self.loc).with_message(self.label_text))
@@ -472,7 +472,7 @@ macro_rules! feature_todo {
             loc: $loc,
             compiler_file: ::std::file!().to_string(),
             compiler_line: ::std::line!(),
-        }
+        }.into_diag()
     };
 }
 

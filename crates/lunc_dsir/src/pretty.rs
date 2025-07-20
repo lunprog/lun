@@ -183,10 +183,13 @@ impl PrettyDump for DsExpr {
             DsExpr::Orb => {
                 write!(ctx.out, "Orb")
             }
-            DsExpr::EffectivePath { path } => {
-                write!(ctx.out, "EffectivePath ")?;
+            DsExpr::QualifiedPath { path, sym } => {
+                ctx.pretty_struct("QualifiedPath")
+                    .field("path", path)
+                    .field("sym", sym)
+                    .finish()?;
 
-                path.try_dump(ctx)
+                Ok(())
             }
             DsExpr::Underscore => write!(ctx.out, "Underscore"),
             DsExpr::FunDefinition {
@@ -237,6 +240,7 @@ impl PrettyDump for SymbolRef {
             kind,
             name,
             which,
+            path,
             loc,
         } = &*self.read().unwrap();
 
@@ -244,6 +248,7 @@ impl PrettyDump for SymbolRef {
             .field("kind", kind)
             .field("name", (name, loc))
             .field("which", which)
+            .field("path", path)
             .finish()?;
 
         Ok(())

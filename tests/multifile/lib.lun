@@ -1,0 +1,13 @@
+// Multiple file tests
+
+#mod dbg;
+
+run :: fun () {
+    orb.dbg.puts("Hello world!");
+}
+
+divide :: fun(lhs: f16, rhs: f16) -> f16 {
+    lhs / rhs
+}
+
+MY_LIL_CONSTANT :: 1234;

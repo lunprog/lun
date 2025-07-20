@@ -60,6 +60,12 @@ impl TestContext {
                     continue;
                 }
 
+                if test_path.starts_with("./tests/multifile/") {
+                    // NOTE: we are not really skipping this test, we just add
+                    // him after but just the `multifile/lib` one
+                    continue;
+                }
+
                 let name = test_path
                     .strip_prefix("./tests/")
                     .unwrap()
@@ -75,6 +81,12 @@ impl TestContext {
                 });
             }
         }
+
+        self.tests.push(Test {
+            name: String::from("multifile/lib"),
+            path: PathBuf::from("./tests/multifile/lib.lun"),
+            stage: TestStage::Multifile,
+        });
 
         Ok(())
     }
@@ -263,15 +275,19 @@ pub enum TestStage {
     Lexer,
     Parser,
     Dsir,
+    Multifile,
 }
 
 impl TestStage {
     pub fn to_compiler_args(&self) -> &[&str] {
         match self {
+            TestStage::None => &[],
             TestStage::Lexer => &["-Dhalt-at=lexer", "-Dprint=tokenstream"],
             TestStage::Parser => &["-Dhalt-at=parser", "-Dprint=ast"],
             TestStage::Dsir => &["-Dhalt-at=dsir", "-Dprint=dsir-tree"],
-            TestStage::None => &[],
+            // NOTE: we print the dsir tree but we do not halt like the Dsir
+            // stage does.
+            TestStage::Multifile => &["-Dprint=dsir-tree", "-orb-name", "multifile"],
         }
     }
 }
