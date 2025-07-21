@@ -373,17 +373,24 @@ impl FromHigher for DsExpression {
                 then_br: lower(true_val),
                 else_br: Some(lower(false_val)),
             },
-            Expr::Block(block) => DsExpr::Block(lower(block)),
-            Expr::PredicateLoop { cond, body } => DsExpr::Loop {
+            Expr::Block(block) => DsExpr::Block {
+                label: None,
+                block: lower(block),
+            },
+            Expr::BlockWithLabel { label, block } => DsExpr::Block {
+                label: Some(label),
+                block: lower(block),
+            },
+            Expr::PredicateLoop { label, cond, body } => DsExpr::Loop {
                 // NOTE: here we make the following conversion eg:
                 //
-                // while condition {
+                // label: while condition {
                 //     // body
                 // }
                 //
                 // gets lowered down to
                 //
-                // loop {
+                // label: loop {
                 //     if !condition {
                 //         break
                 //     }
@@ -392,11 +399,12 @@ impl FromHigher for DsExpression {
                 //         // body
                 //     }
                 // }
+                label,
                 body: block(
                     vec![
                         stmt_expr(expr_if(
                             expr_unary(UnaryOp::Not, lower(*cond)),
-                            expr_break(None),
+                            expr_break(None, None),
                             None,
                         )),
                         stmt_expr(expr_block(lower(body))),
@@ -405,10 +413,16 @@ impl FromHigher for DsExpression {
                 ),
             },
             Expr::IteratorLoop { .. } => todo!("iterator loop"),
-            Expr::InfiniteLoop { body } => DsExpr::Loop { body: lower(body) },
+            Expr::InfiniteLoop { label, body } => DsExpr::Loop {
+                label,
+                body: lower(body),
+            },
             Expr::Return { expr: val } => DsExpr::Return { expr: lower(val) },
-            Expr::Break { expr: val } => DsExpr::Break { expr: lower(val) },
-            Expr::Continue => DsExpr::Continue,
+            Expr::Break { label, expr: val } => DsExpr::Break {
+                label,
+                expr: lower(val),
+            },
+            Expr::Continue { label } => DsExpr::Continue { label },
             Expr::Null => DsExpr::Null,
             Expr::MemberAccess { expr, member } => DsExpr::MemberAccess {
                 expr: lower(expr),
@@ -445,7 +459,7 @@ pub fn lower_if_expression(ifexpr: IfExpression) -> DsExpr {
     DsExpr::If {
         cond: lower(ifexpr.cond),
         then_br: Box::new(DsExpression {
-            expr: DsExpr::Block(lower(*ifexpr.body)),
+            expr: expr_block(lower(*ifexpr.body)).expr,
             loc: Some(ifexpr.loc.clone()),
         }),
         else_br: match ifexpr.else_br.map(|e| *e) {
@@ -455,7 +469,7 @@ pub fn lower_if_expression(ifexpr: IfExpression) -> DsExpr {
             })),
             Some(Else::Block(block)) => Some(Box::new(DsExpression {
                 loc: Some(block.loc.clone()),
-                expr: DsExpr::Block(lower(block)),
+                expr: expr_block(lower(block)).expr,
             })),
             None => None,
         },
@@ -532,13 +546,19 @@ pub enum DsExpr {
     /// See [`Expr::Block`]
     ///
     /// [`Expr::Block`]: lunc_parser::expr::Expr::Block
-    Block(DsBlock),
+    Block {
+        label: Option<String>,
+        block: DsBlock,
+    },
     /// See [`Expr::InfiniteLoop`], [`Expr::IteratorLoop`] and [`Expr::PredicateLoop`].
     ///
     /// [`Expr::InfiniteLoop`]: lunc_parser::expr::Expr::InfiniteLoop
     /// [`Expr::IteratorLoop`]: lunc_parser::expr::Expr::IteratorLoop
     /// [`Expr::PredicateLoop`]: lunc_parser::expr::Expr::PredicateLoop
-    Loop { body: DsBlock },
+    Loop {
+        label: Option<String>,
+        body: DsBlock,
+    },
     /// See [`Expr::Return`]
     ///
     /// [`Expr::Return`]: lunc_parser::expr::Expr::Return
@@ -546,11 +566,14 @@ pub enum DsExpr {
     /// See [`Expr::Break`]
     ///
     /// [`Expr::Break`]: lunc_parser::expr::Expr::Break
-    Break { expr: Option<Box<DsExpression>> },
+    Break {
+        label: Option<String>,
+        expr: Option<Box<DsExpression>>,
+    },
     /// See [`Expr::Continue`]
     ///
     /// [`Expr::Continue`]: lunc_parser::expr::Expr::Continue
-    Continue,
+    Continue { label: Option<String> },
     /// See [`Expr::Null`]
     ///
     /// [`Expr::Null`]: lunc_parser::expr::Expr::Null
@@ -725,15 +748,15 @@ pub fn expr_if(
 /// Creates a block expression without location.
 pub fn expr_block(block: DsBlock) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Block(block),
+        expr: DsExpr::Block { label: None, block },
         loc: None,
     }
 }
 
 /// Creates a loop expression without location.
-pub fn expr_loop(body: DsBlock) -> DsExpression {
+pub fn expr_loop(label: Option<String>, body: DsBlock) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Loop { body },
+        expr: DsExpr::Loop { label, body },
         loc: None,
     }
 }
@@ -749,9 +772,10 @@ pub fn expr_return(val: impl Into<Option<DsExpression>>) -> DsExpression {
 }
 
 /// Creates a break expression without location.
-pub fn expr_break(val: impl Into<Option<DsExpression>>) -> DsExpression {
+pub fn expr_break(label: Option<String>, val: impl Into<Option<DsExpression>>) -> DsExpression {
     DsExpression {
         expr: DsExpr::Break {
+            label,
             expr: val.into().map(Box::new),
         },
         loc: None,
@@ -759,9 +783,9 @@ pub fn expr_break(val: impl Into<Option<DsExpression>>) -> DsExpression {
 }
 
 /// Creates a continue expression without location.
-pub fn expr_continue() -> DsExpression {
+pub fn expr_continue(label: Option<String>) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Continue,
+        expr: DsExpr::Continue { label },
         loc: None,
     }
 }
@@ -1270,19 +1294,21 @@ impl Desugarrer {
 
                 Ok(())
             }
-            DsExpr::Block(block) | DsExpr::Loop { body: block } => {
+            DsExpr::Block { label, block } | DsExpr::Loop { label, body: block } => {
+                _ = label;
+
                 self.resolve_block(block);
 
                 Ok(())
             }
-            DsExpr::Return { expr } | DsExpr::Break { expr } => {
+            DsExpr::Return { expr } | DsExpr::Break { label: _, expr } => {
                 if let Some(expr) = expr {
                     self.resolve_expr(expr)?;
                 }
 
                 Ok(())
             }
-            DsExpr::Continue | DsExpr::Null | DsExpr::Orb => Ok(()),
+            DsExpr::Continue { label: _ } | DsExpr::Null | DsExpr::Orb => Ok(()),
             DsExpr::PointerType { mutable: _, typ } => self.resolve_expr(typ),
             DsExpr::FunPtrType { args, ret } => {
                 for arg in args {

@@ -130,10 +130,20 @@ impl PrettyDump for Expr {
             Expr::Block(block) => {
                 write!(ctx.out, "Block ")?;
                 block.try_dump(ctx)?;
+
                 Ok(())
             }
-            Expr::PredicateLoop { cond, body } => {
+            Expr::BlockWithLabel { label, block } => {
+                ctx.pretty_struct("BlockWithLabel")
+                    .field("label", label)
+                    .field("block", block)
+                    .finish()?;
+
+                Ok(())
+            }
+            Expr::PredicateLoop { label, cond, body } => {
                 ctx.pretty_struct("PredicateLoop")
+                    .field("label", label)
                     .field("cond", cond)
                     .field("body", body)
                     .finish()?;
@@ -141,11 +151,13 @@ impl PrettyDump for Expr {
                 Ok(())
             }
             Expr::IteratorLoop {
+                label,
                 variable,
                 iterator,
                 body,
             } => {
                 ctx.pretty_struct("IteratorLoop")
+                    .field("label", label)
                     .field("variable", variable)
                     .field("iterator", iterator)
                     .field("body", body)
@@ -153,8 +165,9 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::InfiniteLoop { body } => {
+            Expr::InfiniteLoop { label, body } => {
                 ctx.pretty_struct("InfiniteLoop")
+                    .field("label", label)
                     .field("body", body)
                     .finish()?;
 
@@ -164,12 +177,20 @@ impl PrettyDump for Expr {
                 ctx.pretty_struct("Return").field("expr", expr).finish()?;
                 Ok(())
             }
-            Expr::Break { expr } => {
-                ctx.pretty_struct("Break").field("expr", expr).finish()?;
+            Expr::Break { label, expr } => {
+                ctx.pretty_struct("Break")
+                    .field("label", label)
+                    .field("expr", expr)
+                    .finish()?;
+
                 Ok(())
             }
-            Expr::Continue => {
-                write!(ctx.out, "Continue")
+            Expr::Continue { label } => {
+                if label.is_some() {
+                    ctx.pretty_struct("Continue").field("label", label).finish()
+                } else {
+                    write!(ctx.out, "Continue")
+                }
             }
             Expr::Null => {
                 write!(ctx.out, "Null")

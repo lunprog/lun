@@ -144,9 +144,7 @@ impl AstNode for Statement {
         match parser.peek_tt() {
             Some(Kw(Keyword::Let)) => parse_variable_def_stmt(parser),
             Some(Kw(Keyword::Defer)) => parse_defer_statement(parser),
-            Some(Ident(_)) if parser.nth_tt(1) == Some(&Punct(Punctuation::Colon)) => {
-                parse_short_variable_stmt(parser)
-            }
+            Some(Ident(_)) if parser.is_short_variable_def() => parse_short_variable_stmt(parser),
             Some(_) => {
                 let expr = parse!(parser => Expression);
 
@@ -157,6 +155,18 @@ impl AstNode for Statement {
             }
             None => Err(parser.eof_diag()),
         }
+    }
+}
+
+impl Parser {
+    pub fn is_short_variable_def(&self) -> bool {
+        matches!(self.nth_tt(1), Some(Punct(Punctuation::Colon)))
+            && !matches!(
+                self.nth_tt(2),
+                Some(
+                    Kw(Keyword::While | Keyword::For | Keyword::Loop) | Punct(Punctuation::LBrace)
+                )
+            )
     }
 }
 

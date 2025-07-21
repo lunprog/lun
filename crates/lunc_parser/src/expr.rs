@@ -1,6 +1,6 @@
 //! Parsing of lun's expressions.
 
-use std::fmt::Display;
+use std::{fmt::Display, hint::unreachable_unchecked};
 
 use crate::stmt::Block;
 
@@ -28,6 +28,7 @@ impl Expression {
             self.expr,
             Expr::If(_)
                 | Expr::Block(_)
+                | Expr::BlockWithLabel { .. }
                 | Expr::PredicateLoop { .. }
                 | Expr::IteratorLoop { .. }
                 | Expr::FunDefinition { .. }
@@ -123,15 +124,21 @@ pub enum Expr {
     /// block expression
     // TODO: make the grammar for block expr
     Block(Block),
+    /// block with label
+    BlockWithLabel { label: String, block: Block },
     /// predicate loop expression
     ///
     /// "while" expression block
-    PredicateLoop { cond: Box<Expression>, body: Block },
+    PredicateLoop {
+        label: Option<String>,
+        cond: Box<Expression>,
+        body: Block,
+    },
     /// iterator loop expression
     ///
     /// "for" ident "in" expression block
     IteratorLoop {
-        /// the variable that holds the value of the iterator
+        label: Option<String>,
         variable: String,
         iterator: Box<Expression>,
         body: Block,
@@ -139,19 +146,22 @@ pub enum Expr {
     /// infinite loop
     ///
     /// "loop" block
-    InfiniteLoop { body: Block },
+    InfiniteLoop { label: Option<String>, body: Block },
     /// return expression
     ///
     /// "return" expression?
     Return { expr: Option<Box<Expression>> },
     /// break expression
     ///
-    /// "break" expression?
-    Break { expr: Option<Box<Expression>> },
+    /// "break" [ ":" ident ] expression?
+    Break {
+        label: Option<String>,
+        expr: Option<Box<Expression>>,
+    },
     /// continue expression
     ///
     /// "continue"
-    Continue,
+    Continue { label: Option<String> },
     /// null expression
     ///
     /// "null"
@@ -231,6 +241,15 @@ pub fn parse_expr_precedence(
         Some(FloatLit(_)) => parse!(@fn parser => parse_floatlit_expr),
         Some(Punct(Punctuation::LParen)) => parse!(@fn parser => parse_grouping_expr),
         Some(Punct(Punctuation::Ampsand)) => parse!(@fn parser => parse_deref_expr),
+        Some(Ident(_)) if parser.is_labeled_expr() => match parser.nth_tt(2) {
+            Some(Kw(Keyword::Loop)) => parse!(@fn parser => parse_infinite_loop_expr),
+            Some(Kw(Keyword::While)) => parse!(@fn parser => parse_predicate_loop_expr),
+            Some(Kw(Keyword::For)) => parse!(@fn parser => parse_iterator_loop_expr),
+            Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
+            // SAFETY: we checked in the if of the match arm that it can only
+            // be a keyword and one of loop, while or for
+            _ => unsafe { unreachable_unchecked() },
+        },
         Some(Ident(_)) => parse!(@fn parser => parse_ident_expr),
         Some(Kw(Keyword::Fun)) => parse!(@fn parser => parse_fundef_expr),
         Some(Kw(Keyword::If)) => parse!(@fn parser => parse_if_else_expr, false),
@@ -296,6 +315,18 @@ pub fn parse_expr_precedence(
     }
 
     Ok(lhs)
+}
+
+impl Parser {
+    pub fn is_labeled_expr(&self) -> bool {
+        matches!(self.nth_tt(1), Some(Punct(Punctuation::Colon)))
+            && matches!(
+                self.nth_tt(2),
+                Some(
+                    Kw(Keyword::While | Keyword::For | Keyword::Loop) | Punct(Punctuation::LBrace)
+                )
+            )
+    }
 }
 
 /// Parse an integer literal expression
@@ -919,6 +950,23 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 
 /// parses block expression
 pub fn parse_block_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    if let Some(Ident(id)) = parser.peek_tt() {
+        let label = id.clone();
+        let Some(Token { tt: _, loc: lo }) = parser.pop() else {
+            unsafe { unreachable_unchecked() }
+        };
+
+        expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
+
+        let block = parse!(parser => Block);
+        let hi = block.loc.clone();
+
+        return Ok(Expression {
+            expr: Expr::BlockWithLabel { label, block },
+            loc: Span::from_ends(lo, hi),
+        });
+    }
+
     let block = parse!(parser => Block);
     let loc = block.loc.clone();
 
@@ -930,7 +978,21 @@ pub fn parse_block_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
 
 /// parses predicate loop expression
 pub fn parse_predicate_loop_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (_, lo) = expect_token!(parser => [Kw(Keyword::While), ()], Kw(Keyword::While));
+    let label = if let Some(Ident(id)) = parser.peek_tt() {
+        let label = id.clone();
+        let Some(Token { tt: _, loc }) = parser.pop() else {
+            unsafe { unreachable_unchecked() }
+        };
+
+        expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
+
+        Some((label, loc))
+    } else {
+        None
+    };
+
+    let (_, lo_while) = expect_token!(parser => [Kw(Keyword::While), ()], Kw(Keyword::While));
+    let lo = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo_while);
 
     let cond = parse!(box: parser => Expression);
     let body = parse!(parser => Block);
@@ -938,14 +1000,32 @@ pub fn parse_predicate_loop_expr(parser: &mut Parser) -> Result<Expression, Diag
     let hi = body.loc.clone();
 
     Ok(Expression {
-        expr: Expr::PredicateLoop { cond, body },
+        expr: Expr::PredicateLoop {
+            label: label.map(|l| l.0),
+            cond,
+            body,
+        },
         loc: Span::from_ends(lo, hi),
     })
 }
 
 /// parses iterator loop expression
 pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (_, lo) = expect_token!(parser => [Kw(Keyword::For), ()], Kw(Keyword::For));
+    let label = if let Some(Ident(id)) = parser.peek_tt() {
+        let label = id.clone();
+        let Some(Token { tt: _, loc }) = parser.pop() else {
+            unsafe { unreachable_unchecked() }
+        };
+
+        expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
+
+        Some((label, loc))
+    } else {
+        None
+    };
+
+    let (_, lo_for) = expect_token!(parser => [Kw(Keyword::For), ()], Kw(Keyword::For));
+    let lo = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo_for);
 
     let (variable, _) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
@@ -959,6 +1039,7 @@ pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
 
     Ok(Expression {
         expr: Expr::IteratorLoop {
+            label: label.map(|l| l.0),
             variable,
             iterator,
             body,
@@ -969,14 +1050,31 @@ pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
 
 /// parses infinite loop expression
 pub fn parse_infinite_loop_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (_, lo) = expect_token!(parser => [Kw(Keyword::Loop), ()], Kw(Keyword::Loop));
+    let label = if let Some(Ident(id)) = parser.peek_tt() {
+        let label = id.clone();
+        let Some(Token { tt: _, loc }) = parser.pop() else {
+            unsafe { unreachable_unchecked() }
+        };
+
+        expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
+
+        Some((label, loc))
+    } else {
+        None
+    };
+
+    let (_, lo_loop) = expect_token!(parser => [Kw(Keyword::Loop), ()], Kw(Keyword::Loop));
+    let lo = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo_loop);
 
     let block = parse!(parser => Block);
 
     let hi = block.loc.clone();
 
     Ok(Expression {
-        expr: Expr::InfiniteLoop { body: block },
+        expr: Expr::InfiniteLoop {
+            label: label.map(|l| l.0),
+            body: block,
+        },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1003,10 +1101,25 @@ pub fn parse_return_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
 /// parses break expression
 pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (_, lo) = expect_token!(parser => [Kw(Keyword::Break), ()], Kw(Keyword::Break));
+    let (_, lo_break) = expect_token!(parser => [Kw(Keyword::Break), ()], Kw(Keyword::Break));
+
+    let label = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
+        let Some(Token { loc, .. }) = parser.pop() else {
+            // SAFETY: we already checked that the next token is here.
+            unsafe { unreachable_unchecked() }
+        };
+
+        let label = expect_token!(noloc: parser => [Ident(id), id.clone()], Ident(String::new()));
+
+        Some((label, loc))
+    } else {
+        None
+    };
+
+    let lo = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo_break);
     let mut hi = lo.clone();
 
-    let val = if parser.is_stmt_end() {
+    let expr = if parser.is_stmt_end() {
         None
     } else {
         let expr = parse!(box: parser => Expression);
@@ -1016,18 +1129,38 @@ pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     };
 
     Ok(Expression {
-        expr: Expr::Break { expr: val },
+        expr: Expr::Break {
+            label: label.map(|l| l.0),
+            expr,
+        },
         loc: Span::from_ends(lo, hi),
     })
 }
 
 /// parses continue expression
 pub fn parse_continue_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (_, loc) = expect_token!(parser => [Kw(Keyword::Continue), ()], Kw(Keyword::Continue));
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Continue), ()], Kw(Keyword::Continue));
+
+    let label = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
+        let Some(Token { loc, .. }) = parser.pop() else {
+            // SAFETY: we already checked that the next token is here.
+            unsafe { unreachable_unchecked() }
+        };
+
+        let label = expect_token!(noloc: parser => [Ident(id), id.clone()], Ident(String::new()));
+
+        Some((label, loc))
+    } else {
+        None
+    };
+
+    let hi = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo.clone());
 
     Ok(Expression {
-        expr: Expr::Continue,
-        loc,
+        expr: Expr::Continue {
+            label: label.map(|l| l.0),
+        },
+        loc: Span::from_ends(lo, hi),
     })
 }
 

@@ -51,9 +51,18 @@ main :: fun() {
         _ = main();
     }
 
+    label_block: {
+        break :label_block;
+    }
+
     // predicate loop
     while predicate() {
         println("Hello!");
+    }
+
+    label: while condition {
+        println("Hello from loop with label");
+        continue :label;
     }
 
     // iterator loop
@@ -61,10 +70,18 @@ main :: fun() {
         // body
     }
 
+    label2: for j in range(13, 16) {
+        // body
+    }
+
     // infinite loop
     loop {
         // body
         break;
+    }
+
+    label3: loop {
+        // body
     }
 
     // return

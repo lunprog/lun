@@ -148,13 +148,19 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Block(block) => {
-                write!(ctx.out, "Block ")?;
-                block.try_dump(ctx)?;
+            DsExpr::Block { label, block } => {
+                ctx.pretty_struct("Block")
+                    .field("label", label)
+                    .field("block", block)
+                    .finish()?;
+
                 Ok(())
             }
-            DsExpr::Loop { body } => {
-                ctx.pretty_struct("Loop").field("body", body).finish()?;
+            DsExpr::Loop { label, body } => {
+                ctx.pretty_struct("Loop")
+                    .field("label", label)
+                    .field("body", body)
+                    .finish()?;
 
                 Ok(())
             }
@@ -162,12 +168,19 @@ impl PrettyDump for DsExpr {
                 ctx.pretty_struct("Return").field("expr", expr).finish()?;
                 Ok(())
             }
-            DsExpr::Break { expr } => {
-                ctx.pretty_struct("Break").field("expr", expr).finish()?;
+            DsExpr::Break { label, expr } => {
+                ctx.pretty_struct("Break")
+                    .field("label", label)
+                    .field("expr", expr)
+                    .finish()?;
                 Ok(())
             }
-            DsExpr::Continue => {
-                write!(ctx.out, "Continue")
+            DsExpr::Continue { label } => {
+                if label.is_some() {
+                    ctx.pretty_struct("Continue").field("label", label).finish()
+                } else {
+                    write!(ctx.out, "Continue")
+                }
             }
             DsExpr::Null => {
                 write!(ctx.out, "Null")

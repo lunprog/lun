@@ -10,4 +10,10 @@ main :: fun() {
     while i < 10 {
         println("i = {}", i);
     }
+
+    j := 3;
+
+    label: while j < 10 and j > 2 {
+        println("j = {}", j);
+    }
 }

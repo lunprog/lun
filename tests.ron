@@ -373,28 +373,34 @@
 
         If {
           cond: boolean true @ 542..546 (fid = 0);
-          then_br: Block [
-            FunCall {
-              callee: Symbol {
-                kind: function;
-                name: main @ 11..15 (fid = 0);
-                which: 0;
-                path: orb.main;
-              } @ 557..561 (fid = 0);
-              args: [];
-            } @ 557..563 (fid = 0) @ 557..563 (fid = 0),
-          ] @ 547..570 (fid = 0) @ 539..599 (fid = 0);
-          else_br: Block [
-            FunCall {
-              callee: Symbol {
-                kind: function;
-                name: main @ 11..15 (fid = 0);
-                which: 0;
-                path: orb.main;
-              } @ 586..590 (fid = 0);
-              args: [];
-            } @ 586..592 (fid = 0) @ 586..592 (fid = 0),
-          ] @ 576..599 (fid = 0) @ 576..599 (fid = 0);
+          then_br: Block {
+            label: none;
+            block: [
+              FunCall {
+                callee: Symbol {
+                  kind: function;
+                  name: main @ 11..15 (fid = 0);
+                  which: 0;
+                  path: orb.main;
+                } @ 557..561 (fid = 0);
+                args: [];
+              } @ 557..563 (fid = 0) @ 557..563 (fid = 0),
+            ] @ 547..570 (fid = 0);
+          } @ 539..599 (fid = 0);
+          else_br: Block {
+            label: none;
+            block: [
+              FunCall {
+                callee: Symbol {
+                  kind: function;
+                  name: main @ 11..15 (fid = 0);
+                  which: 0;
+                  path: orb.main;
+                } @ 586..590 (fid = 0);
+                args: [];
+              } @ 586..592 (fid = 0) @ 586..592 (fid = 0),
+            ] @ 576..599 (fid = 0);
+          } @ 576..599 (fid = 0);
         } @ 539..599 (fid = 0) @ 539..599 (fid = 0),
 
         Binary {
@@ -411,31 +417,36 @@
           } @ 629..660 (fid = 0);
         } @ 625..660 (fid = 0) @ 625..660 (fid = 0),
 
-        Block [
-          Binary {
-            lhs: Underscore @ 690..691 (fid = 0);
-            op: Assignment;
-            rhs: integer 2 @ 694..695 (fid = 0);
-          } @ 690..695 (fid = 0) @ 690..695 (fid = 0),
+        Block {
+          label: none;
+          block: [
+            Binary {
+              lhs: Underscore @ 690..691 (fid = 0);
+              op: Assignment;
+              rhs: integer 2 @ 694..695 (fid = 0);
+            } @ 690..695 (fid = 0) @ 690..695 (fid = 0),
 
-          Binary {
-            lhs: Underscore @ 705..706 (fid = 0);
-            op: Assignment;
-            rhs: FunCall {
-              callee: Symbol {
-                kind: function;
-                name: main @ 11..15 (fid = 0);
-                which: 0;
-                path: orb.main;
-              } @ 709..713 (fid = 0);
-              args: [];
-            } @ 709..715 (fid = 0);
-          } @ 705..715 (fid = 0) @ 705..715 (fid = 0),
-        ] @ 680..722 (fid = 0) @ 680..722 (fid = 0) @ 680..722 (fid = 0),
+            Binary {
+              lhs: Underscore @ 705..706 (fid = 0);
+              op: Assignment;
+              rhs: FunCall {
+                callee: Symbol {
+                  kind: function;
+                  name: main @ 11..15 (fid = 0);
+                  which: 0;
+                  path: orb.main;
+                } @ 709..713 (fid = 0);
+                args: [];
+              } @ 709..715 (fid = 0);
+            } @ 705..715 (fid = 0) @ 705..715 (fid = 0),
+          ] @ 680..722 (fid = 0);
+        } @ 680..722 (fid = 0) @ 680..722 (fid = 0),
 
         Loop {
+          label: none;
           body: [
             Break {
+              label: none;
               expr: none;
             } @ 780..785 (fid = 0) @ 780..785 (fid = 0),
           ] @ 754..792 (fid = 0);
@@ -815,6 +826,7 @@
         } @ 179..185 (fid = 0),
 
         Loop {
+          label: none;
           body: [
             If {
               cond: Unary {
@@ -831,42 +843,122 @@
                 } @ 198..204 (fid = 0);
               } @ none;
               then_br: Break {
+                label: none;
                 expr: none;
               } @ none;
               else_br: none;
             } @ none @ none,
 
-            Block [
-              FunCall {
-                callee: Symbol {
-                  kind: function;
-                  name: println @ 138..145 (fid = 0);
-                  which: 0;
-                  path: orb.println;
-                } @ 215..222 (fid = 0);
-                args: [
-                  string "i = {}" @ 223..231 (fid = 0),
-
-                  Symbol {
-                    kind: local;
-                    name: i @ 179..180 (fid = 0);
+            Block {
+              label: none;
+              block: [
+                FunCall {
+                  callee: Symbol {
+                    kind: function;
+                    name: println @ 138..145 (fid = 0);
                     which: 0;
-                    path: i;
-                  } @ 233..234 (fid = 0),
-                ];
-              } @ 215..235 (fid = 0) @ 215..235 (fid = 0),
-            ] @ 205..242 (fid = 0) @ none @ none,
+                    path: orb.println;
+                  } @ 215..222 (fid = 0);
+                  args: [
+                    string "i = {}" @ 223..231 (fid = 0),
+
+                    Symbol {
+                      kind: local;
+                      name: i @ 179..180 (fid = 0);
+                      which: 0;
+                      path: i;
+                    } @ 233..234 (fid = 0),
+                  ];
+                } @ 215..235 (fid = 0) @ 215..235 (fid = 0),
+              ] @ 205..242 (fid = 0);
+            } @ none @ none,
           ] @ none;
-        } @ 192..242 (fid = 0),
-      ] @ 173..244 (fid = 0);
-    } @ 167..244 (fid = 0);
+        } @ 192..242 (fid = 0) @ 192..242 (fid = 0),
+
+        VariableDef {
+          name: j @ 248..249 (fid = 0);
+          mutable: true;
+          typ: none;
+          value: integer 3 @ 253..254 (fid = 0);
+          sym: Symbol {
+            kind: local;
+            name: j @ 248..249 (fid = 0);
+            which: 1;
+            path: j;
+          };
+        } @ 248..254 (fid = 0),
+
+        Loop {
+          label: label;
+          body: [
+            If {
+              cond: Unary {
+                op: Not;
+                expr: Binary {
+                  lhs: Binary {
+                    lhs: Symbol {
+                      kind: local;
+                      name: j @ 248..249 (fid = 0);
+                      which: 1;
+                      path: j;
+                    } @ 274..275 (fid = 0);
+                    op: CompLT;
+                    rhs: integer 10 @ 278..280 (fid = 0);
+                  } @ 274..280 (fid = 0);
+                  op: LogicalAnd;
+                  rhs: Binary {
+                    lhs: Symbol {
+                      kind: local;
+                      name: j @ 248..249 (fid = 0);
+                      which: 1;
+                      path: j;
+                    } @ 285..286 (fid = 0);
+                    op: CompGT;
+                    rhs: integer 2 @ 289..290 (fid = 0);
+                  } @ 285..290 (fid = 0);
+                } @ 274..290 (fid = 0);
+              } @ none;
+              then_br: Break {
+                label: none;
+                expr: none;
+              } @ none;
+              else_br: none;
+            } @ none @ none,
+
+            Block {
+              label: none;
+              block: [
+                FunCall {
+                  callee: Symbol {
+                    kind: function;
+                    name: println @ 138..145 (fid = 0);
+                    which: 0;
+                    path: orb.println;
+                  } @ 301..308 (fid = 0);
+                  args: [
+                    string "j = {}" @ 309..317 (fid = 0),
+
+                    Symbol {
+                      kind: local;
+                      name: j @ 248..249 (fid = 0);
+                      which: 1;
+                      path: j;
+                    } @ 319..320 (fid = 0),
+                  ];
+                } @ 301..321 (fid = 0) @ 301..321 (fid = 0),
+              ] @ 291..328 (fid = 0);
+            } @ none @ none,
+          ] @ none;
+        } @ 261..328 (fid = 0),
+      ] @ 173..330 (fid = 0);
+    } @ 167..330 (fid = 0);
     sym: Symbol {
       kind: function;
       name: main @ 159..163 (fid = 0);
       which: 0;
       path: orb.main;
     };
-  } @ 159..244 (fid = 0),
+  } @ 159..330 (fid = 0),
 ]"#,
         expected_test_out: "",
     ),
@@ -1588,59 +1680,65 @@
                     op: CompLE;
                     rhs: integer 1 @ 40..41 (fid = 2);
                   } @ 35..41 (fid = 2);
-                  then_br: Block [
-                    Symbol {
-                      kind: argument;
-                      name: n @ 11..12 (fid = 2);
-                      which: 0;
-                      path: n;
-                    } @ 52..53 (fid = 2),
-                  ] @ 42..59 (fid = 2) @ 32..104 (fid = 2);
-                  else_br: Block [
-                    Binary {
-                      lhs: FunCall {
-                        callee: Symbol {
-                          kind: function;
-                          name: fib @ 0..3 (fid = 2);
-                          which: 0;
-                          path: orb.dbg.nested.fib;
-                        } @ 75..78 (fid = 2);
-                        args: [
-                          Binary {
-                            lhs: Symbol {
-                              kind: argument;
-                              name: n @ 11..12 (fid = 2);
-                              which: 0;
-                              path: n;
-                            } @ 79..80 (fid = 2);
-                            op: Sub;
-                            rhs: integer 1 @ 83..84 (fid = 2);
-                          } @ 79..84 (fid = 2),
-                        ];
-                      } @ 75..85 (fid = 2);
-                      op: Add;
-                      rhs: FunCall {
-                        callee: Symbol {
-                          kind: function;
-                          name: fib @ 0..3 (fid = 2);
-                          which: 0;
-                          path: orb.dbg.nested.fib;
-                        } @ 88..91 (fid = 2);
-                        args: [
-                          Binary {
-                            lhs: Symbol {
-                              kind: argument;
-                              name: n @ 11..12 (fid = 2);
-                              which: 0;
-                              path: n;
-                            } @ 92..93 (fid = 2);
-                            op: Sub;
-                            rhs: integer 2 @ 96..97 (fid = 2);
-                          } @ 92..97 (fid = 2),
-                        ];
-                      } @ 88..98 (fid = 2);
-                    } @ 75..98 (fid = 2),
-                  ] @ 65..104 (fid = 2) @ 65..104 (fid = 2);
+                  then_br: Block {
+                    label: none;
+                    block: [
+                      Symbol {
+                        kind: argument;
+                        name: n @ 11..12 (fid = 2);
+                        which: 0;
+                        path: n;
+                      } @ 52..53 (fid = 2),
+                    ] @ 42..59 (fid = 2);
+                  } @ 32..104 (fid = 2);
+                  else_br: Block {
+                    label: none;
+                    block: [
+                      Binary {
+                        lhs: FunCall {
+                          callee: Symbol {
+                            kind: function;
+                            name: fib @ 0..3 (fid = 2);
+                            which: 0;
+                            path: orb.dbg.nested.fib;
+                          } @ 75..78 (fid = 2);
+                          args: [
+                            Binary {
+                              lhs: Symbol {
+                                kind: argument;
+                                name: n @ 11..12 (fid = 2);
+                                which: 0;
+                                path: n;
+                              } @ 79..80 (fid = 2);
+                              op: Sub;
+                              rhs: integer 1 @ 83..84 (fid = 2);
+                            } @ 79..84 (fid = 2),
+                          ];
+                        } @ 75..85 (fid = 2);
+                        op: Add;
+                        rhs: FunCall {
+                          callee: Symbol {
+                            kind: function;
+                            name: fib @ 0..3 (fid = 2);
+                            which: 0;
+                            path: orb.dbg.nested.fib;
+                          } @ 88..91 (fid = 2);
+                          args: [
+                            Binary {
+                              lhs: Symbol {
+                                kind: argument;
+                                name: n @ 11..12 (fid = 2);
+                                which: 0;
+                                path: n;
+                              } @ 92..93 (fid = 2);
+                              op: Sub;
+                              rhs: integer 2 @ 96..97 (fid = 2);
+                            } @ 92..97 (fid = 2),
+                          ];
+                        } @ 88..98 (fid = 2);
+                      } @ 75..98 (fid = 2),
+                    ] @ 65..104 (fid = 2);
+                  } @ 65..104 (fid = 2);
                 } @ 32..104 (fid = 2),
               ] @ 26..106 (fid = 2);
             } @ 7..106 (fid = 2);
@@ -2116,151 +2214,201 @@
           } @ 677..687 (fid = 0) @ 677..687 (fid = 0),
         ] @ 652..694 (fid = 0) @ 652..694 (fid = 0) @ 652..694 (fid = 0),
 
+        BlockWithLabel {
+          label: label_block;
+          block: [
+            Break {
+              label: label_block;
+              expr: none;
+            } @ 729..730 (fid = 0) @ 729..730 (fid = 0),
+          ] @ 713..748 (fid = 0);
+        } @ 700..748 (fid = 0) @ 700..748 (fid = 0),
+
         PredicateLoop {
+          label: none;
           cond: FunCall {
-            callee: ident predicate @ 728..737 (fid = 0);
+            callee: ident predicate @ 782..791 (fid = 0);
             args: [];
-          } @ 728..739 (fid = 0);
+          } @ 782..793 (fid = 0);
           body: [
             FunCall {
-              callee: ident println @ 750..757 (fid = 0);
+              callee: ident println @ 804..811 (fid = 0);
               args: [
-                string "Hello!" @ 758..766 (fid = 0),
+                string "Hello!" @ 812..820 (fid = 0),
               ];
-            } @ 750..767 (fid = 0) @ 750..767 (fid = 0),
-          ] @ 740..774 (fid = 0);
-        } @ 722..774 (fid = 0) @ 722..774 (fid = 0),
+            } @ 804..821 (fid = 0) @ 804..821 (fid = 0),
+          ] @ 794..828 (fid = 0);
+        } @ 776..828 (fid = 0) @ 776..828 (fid = 0),
+
+        PredicateLoop {
+          label: label;
+          cond: ident condition @ 847..856 (fid = 0);
+          body: [
+            FunCall {
+              callee: ident println @ 867..874 (fid = 0);
+              args: [
+                string "Hello from loop with label" @ 875..903 (fid = 0),
+              ];
+            } @ 867..904 (fid = 0) @ 867..904 (fid = 0),
+
+            Continue {
+              label: label;
+            } @ 914..924 (fid = 0) @ 914..924 (fid = 0),
+          ] @ 857..936 (fid = 0);
+        } @ 834..936 (fid = 0) @ 834..936 (fid = 0),
 
         IteratorLoop {
+          label: none;
           variable: i;
           iterator: FunCall {
-            callee: ident range @ 810..815 (fid = 0);
+            callee: ident range @ 972..977 (fid = 0);
             args: [
-              integer 1 @ 816..817 (fid = 0),
+              integer 1 @ 978..979 (fid = 0),
 
-              integer 12 @ 819..821 (fid = 0),
+              integer 12 @ 981..983 (fid = 0),
             ];
-          } @ 810..822 (fid = 0);
-          body: [] @ 823..846 (fid = 0);
-        } @ 801..846 (fid = 0) @ 801..846 (fid = 0),
+          } @ 972..984 (fid = 0);
+          body: [] @ 985..1008 (fid = 0);
+        } @ 963..1008 (fid = 0) @ 963..1008 (fid = 0),
+
+        IteratorLoop {
+          label: label2;
+          variable: j;
+          iterator: FunCall {
+            callee: ident range @ 1031..1036 (fid = 0);
+            args: [
+              integer 13 @ 1037..1039 (fid = 0),
+
+              integer 16 @ 1041..1043 (fid = 0),
+            ];
+          } @ 1031..1044 (fid = 0);
+          body: [] @ 1045..1068 (fid = 0);
+        } @ 1014..1068 (fid = 0) @ 1014..1068 (fid = 0),
 
         InfiniteLoop {
+          label: none;
           body: [
             Break {
+              label: none;
               expr: none;
-            } @ 904..909 (fid = 0) @ 904..909 (fid = 0),
-          ] @ 878..916 (fid = 0);
-        } @ 873..916 (fid = 0) @ 873..916 (fid = 0),
+            } @ 1126..1131 (fid = 0) @ 1126..1131 (fid = 0),
+          ] @ 1100..1138 (fid = 0);
+        } @ 1095..1138 (fid = 0) @ 1095..1138 (fid = 0),
+
+        InfiniteLoop {
+          label: label3;
+          body: [] @ 1157..1180 (fid = 0);
+        } @ 1144..1180 (fid = 0) @ 1144..1180 (fid = 0),
 
         Return {
           expr: Binary {
-            lhs: integer 12 @ 943..945 (fid = 0);
+            lhs: integer 12 @ 1207..1209 (fid = 0);
             op: Mul;
-            rhs: integer 8 @ 948..949 (fid = 0);
-          } @ 943..949 (fid = 0);
-        } @ 936..949 (fid = 0) @ 936..949 (fid = 0),
+            rhs: integer 8 @ 1212..1213 (fid = 0);
+          } @ 1207..1213 (fid = 0);
+        } @ 1200..1213 (fid = 0) @ 1200..1213 (fid = 0),
 
         Return {
           expr: none;
-        } @ 955..961 (fid = 0) @ 955..961 (fid = 0),
+        } @ 1219..1225 (fid = 0) @ 1219..1225 (fid = 0),
 
-        Continue @ 984..992 (fid = 0) @ 984..992 (fid = 0),
+        Continue @ 1248..1256 (fid = 0) @ 1248..1256 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1011..1012 (fid = 0);
+          lhs: ident _ @ 1275..1276 (fid = 0);
           op: Assignment;
-          rhs: Null @ 1015..1019 (fid = 0);
-        } @ 1011..1019 (fid = 0) @ 1011..1019 (fid = 0),
+          rhs: Null @ 1279..1283 (fid = 0);
+        } @ 1275..1283 (fid = 0) @ 1275..1283 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1039..1040 (fid = 0);
+          lhs: ident _ @ 1303..1304 (fid = 0);
           op: Assignment;
           rhs: Unary {
             op: Dereference;
-            expr: ident some_pointer @ 1043..1055 (fid = 0);
-          } @ 1043..1057 (fid = 0);
-        } @ 1039..1057 (fid = 0) @ 1039..1057 (fid = 0),
+            expr: ident some_pointer @ 1307..1319 (fid = 0);
+          } @ 1307..1321 (fid = 0);
+        } @ 1303..1321 (fid = 0) @ 1303..1321 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1085..1086 (fid = 0);
+          lhs: ident _ @ 1349..1350 (fid = 0);
           op: Assignment;
           rhs: FunCall {
             callee: MemberAccess {
-              expr: string "Hello" @ 1089..1096 (fid = 0);
+              expr: string "Hello" @ 1353..1360 (fid = 0);
               member: len;
-            } @ 1089..1100 (fid = 0);
+            } @ 1353..1364 (fid = 0);
             args: [];
-          } @ 1089..1102 (fid = 0);
-        } @ 1085..1102 (fid = 0) @ 1085..1102 (fid = 0),
+          } @ 1353..1366 (fid = 0);
+        } @ 1349..1366 (fid = 0) @ 1349..1366 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1109..1110 (fid = 0);
+          lhs: ident _ @ 1373..1374 (fid = 0);
           op: Assignment;
           rhs: FunCall {
             callee: MemberAccess {
               expr: MemberAccess {
-                expr: Orb @ 1113..1116 (fid = 0);
+                expr: Orb @ 1377..1380 (fid = 0);
                 member: driver;
-              } @ 1113..1123 (fid = 0);
+              } @ 1377..1387 (fid = 0);
               member: run;
-            } @ 1113..1127 (fid = 0);
+            } @ 1377..1391 (fid = 0);
             args: [];
-          } @ 1113..1129 (fid = 0);
-        } @ 1109..1129 (fid = 0) @ 1109..1129 (fid = 0),
+          } @ 1377..1393 (fid = 0);
+        } @ 1373..1393 (fid = 0) @ 1373..1393 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1171..1172 (fid = 0);
+          lhs: ident _ @ 1435..1436 (fid = 0);
           op: Assignment;
           rhs: PointerType {
             mutable: false;
-            typ: ident u32 @ 1176..1179 (fid = 0);
-          } @ 1175..1179 (fid = 0);
-        } @ 1171..1179 (fid = 0) @ 1171..1179 (fid = 0),
+            typ: ident u32 @ 1440..1443 (fid = 0);
+          } @ 1439..1443 (fid = 0);
+        } @ 1435..1443 (fid = 0) @ 1435..1443 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1185..1186 (fid = 0);
+          lhs: ident _ @ 1449..1450 (fid = 0);
           op: Assignment;
           rhs: PointerType {
             mutable: true;
-            typ: ident u32 @ 1194..1197 (fid = 0);
-          } @ 1189..1197 (fid = 0);
-        } @ 1185..1197 (fid = 0) @ 1185..1197 (fid = 0),
+            typ: ident u32 @ 1458..1461 (fid = 0);
+          } @ 1453..1461 (fid = 0);
+        } @ 1449..1461 (fid = 0) @ 1449..1461 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1233..1234 (fid = 0);
+          lhs: ident _ @ 1497..1498 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [];
             ret: none;
-          } @ 1237..1243 (fid = 0);
-        } @ 1233..1243 (fid = 0) @ 1233..1243 (fid = 0),
+          } @ 1501..1507 (fid = 0);
+        } @ 1497..1507 (fid = 0) @ 1497..1507 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1249..1250 (fid = 0);
+          lhs: ident _ @ 1513..1514 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [
-              ident usz @ 1258..1261 (fid = 0),
+              ident usz @ 1522..1525 (fid = 0),
 
-              ident bool @ 1263..1267 (fid = 0),
+              ident bool @ 1527..1531 (fid = 0),
             ];
-            ret: ident usz @ 1272..1275 (fid = 0);
-          } @ 1253..1275 (fid = 0);
-        } @ 1249..1275 (fid = 0) @ 1249..1275 (fid = 0),
+            ret: ident usz @ 1536..1539 (fid = 0);
+          } @ 1517..1539 (fid = 0);
+        } @ 1513..1539 (fid = 0) @ 1513..1539 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1281..1282 (fid = 0);
+          lhs: ident _ @ 1545..1546 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [
-              ident usz @ 1290..1293 (fid = 0),
+              ident usz @ 1554..1557 (fid = 0),
             ];
-            ret: ident usz @ 1299..1302 (fid = 0);
-          } @ 1285..1302 (fid = 0);
-        } @ 1281..1302 (fid = 0) @ 1281..1302 (fid = 0),
-      ] @ 25..1305 (fid = 0);
-    } @ 19..1305 (fid = 0);
-  } @ 11..1305 (fid = 0),
+            ret: ident usz @ 1563..1566 (fid = 0);
+          } @ 1549..1566 (fid = 0);
+        } @ 1545..1566 (fid = 0) @ 1545..1566 (fid = 0),
+      ] @ 25..1569 (fid = 0);
+    } @ 19..1569 (fid = 0);
+  } @ 11..1569 (fid = 0),
 ]"#,
         expected_test_out: "",
     ),
