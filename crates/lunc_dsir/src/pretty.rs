@@ -22,7 +22,7 @@ impl PrettyDump for DsItem {
                 name,
                 name_loc,
                 mutable,
-                typ,
+                typexpr,
                 value,
                 loc,
                 sym,
@@ -30,7 +30,7 @@ impl PrettyDump for DsItem {
                 ctx.pretty_struct("GlobalDef")
                     .field("name", (name, name_loc))
                     .field("mutable", mutable)
-                    .field("typ", typ)
+                    .field("typexpr", typexpr)
                     .field("value", value)
                     .field("sym", sym)
                     .finish()?;
@@ -207,21 +207,21 @@ impl PrettyDump for DsExpr {
             DsExpr::Underscore => write!(ctx.out, "Underscore"),
             DsExpr::FunDefinition {
                 args,
-                rettype,
+                rettypexpr,
                 body,
             } => {
                 ctx.pretty_struct("FunDefinition")
                     .field("args", args.as_slice())
-                    .field("rettype", rettype)
+                    .field("rettypexpr", rettypexpr)
                     .field("body", body)
                     .finish()?;
 
                 Ok(())
             }
-            DsExpr::PointerType { mutable, typ } => {
+            DsExpr::PointerType { mutable, typexpr } => {
                 ctx.pretty_struct("PointerType")
                     .field("mutable", mutable)
-                    .field("typ", typ)
+                    .field("typexpr", typexpr)
                     .finish()?;
 
                 Ok(())
@@ -279,14 +279,14 @@ impl PrettyDump for DsArg {
         let DsArg {
             name,
             name_loc,
-            typ,
+            typexpr,
             loc,
             sym,
         } = self;
 
         ctx.pretty_struct("Arg")
             .field("name", (name, name_loc))
-            .field("typ", typ)
+            .field("typexpr", typexpr)
             .field("sym", sym)
             .finish()?;
         ctx.print_loc(loc)?;
@@ -336,14 +336,14 @@ impl PrettyDump for DsStmt {
                 name,
                 name_loc,
                 mutable,
-                typ,
+                typexpr,
                 value,
                 sym,
             } => {
                 ctx.pretty_struct("VariableDef")
                     .field("name", (name, name_loc))
                     .field("mutable", mutable)
-                    .field("typ", typ)
+                    .field("typexpr", typexpr)
                     .field("value", value)
                     .field("sym", sym)
                     .finish()?;

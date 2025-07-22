@@ -41,7 +41,7 @@ impl Expression {
 ///
 /// a "type expression" is just an expression that resolves to the atomic type
 /// `comptime type`
-pub fn parse_type_expression(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+pub fn parse_typexpr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     parse_expr_precedence(parser, Precedence::LogicalOr)
 }
 
@@ -185,7 +185,7 @@ pub enum Expr {
     /// "fun" "(" ( ident ":" expr ),* ")" [ "->" expr ] block
     FunDefinition {
         args: Vec<Arg>,
-        rettype: Option<Box<Expression>>,
+        rettypexpr: Option<Box<Expression>>,
         body: Block,
     },
     //
@@ -194,7 +194,10 @@ pub enum Expr {
     /// pointer type expression
     ///
     /// "*" "mut"? expression
-    PointerType { mutable: bool, typ: Box<Expression> },
+    PointerType {
+        mutable: bool,
+        typexpr: Box<Expression>,
+    },
     /// function pointer type
     ///
     /// "*" "fun" "(" ( expr ),* ")" [ "->" expr ]
@@ -222,7 +225,7 @@ pub enum Else {
 pub struct Arg {
     pub name: String,
     pub name_loc: Span,
-    pub typ: Expression,
+    pub typexpr: Expression,
     pub loc: Span,
 }
 
@@ -816,22 +819,22 @@ pub fn parse_fundef_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
 
-        let typ = parse!(@fn parser => parse_type_expression);
+        let typexpr = parse!(@fn parser => parse_typexpr);
 
         args.push(Arg {
             name,
             name_loc: lo_arg.clone(),
-            typ: typ.clone(),
-            loc: Span::from_ends(lo_arg, typ.loc),
+            typexpr: typexpr.clone(),
+            loc: Span::from_ends(lo_arg, typexpr.loc),
         });
 
         expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], Punct(Punctuation::Comma));
     }
     expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
 
-    let rettype = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
+    let rettypexpr = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
         parser.pop();
-        Some(parse!(box: @fn parser => parse_type_expression))
+        Some(parse!(box: @fn parser => parse_typexpr))
     } else {
         None
     };
@@ -842,7 +845,7 @@ pub fn parse_fundef_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
     Ok(Expression {
         expr: Expr::FunDefinition {
             args,
-            rettype,
+            rettypexpr,
             body,
         },
         loc: Span::from_ends(lo, hi),
@@ -1199,7 +1202,7 @@ pub fn parse_funptr_type_expr(parser: &mut Parser) -> Result<Expression, Diagnos
             break;
         }
 
-        args.push(parse!(@fn parser => parse_type_expression));
+        args.push(parse!(@fn parser => parse_typexpr));
 
         expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], [Punctuation::Colon, Punctuation::LParen]);
     }
@@ -1210,7 +1213,7 @@ pub fn parse_funptr_type_expr(parser: &mut Parser) -> Result<Expression, Diagnos
     let (hi, ret) = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
         parser.pop();
 
-        let t = parse!(box: @fn parser => parse_type_expression);
+        let t = parse!(box: @fn parser => parse_typexpr);
 
         (t.loc.clone(), Some(t))
     } else {
@@ -1234,11 +1237,11 @@ pub fn parse_pointer_type_expr(parser: &mut Parser) -> Result<Expression, Diagno
         false
     };
 
-    let typ = parse!(box: @fn parser => parse_type_expression);
-    let hi = typ.loc.clone();
+    let typexpr = parse!(box: @fn parser => parse_typexpr);
+    let hi = typexpr.loc.clone();
 
     Ok(Expression {
-        expr: Expr::PointerType { mutable, typ },
+        expr: Expr::PointerType { mutable, typexpr },
         loc: Span::from_ends(lo, hi),
     })
 }

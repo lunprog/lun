@@ -4,15 +4,15 @@
   GlobalDef {
     name: main @ 79..83 (fid = 0);
     mutable: false;
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [];
-      rettype: none;
+      rettypexpr: none;
       body: [
         VariableDef {
           name: res @ 99..102 (fid = 0);
           mutable: false;
-          typ: none;
+          typexpr: none;
           value: FunCall {
             callee: Symbol {
               kind: function;
@@ -57,12 +57,12 @@
   GlobalDef {
     name: add @ 133..136 (fid = 0);
     mutable: false;
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [
         Arg {
           name: a @ 144..145 (fid = 0);
-          typ: Symbol {
+          typexpr: Symbol {
             kind: global;
             name: isz @ none;
             which: 0;
@@ -78,7 +78,7 @@
 
         Arg {
           name: b @ 152..153 (fid = 0);
-          typ: Symbol {
+          typexpr: Symbol {
             kind: global;
             name: isz @ none;
             which: 0;
@@ -92,7 +92,7 @@
           };
         } @ 152..158 (fid = 0),
       ];
-      rettype: Symbol {
+      rettypexpr: Symbol {
         kind: global;
         name: isz @ none;
         which: 0;
@@ -131,10 +131,10 @@
   GlobalDef {
     name: main @ 19..23 (fid = 0);
     mutable: false;
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [];
-      rettype: none;
+      rettypexpr: none;
       body: [] @ 33..35 (fid = 0);
     } @ 27..35 (fid = 0);
     sym: Symbol {
@@ -148,7 +148,7 @@
   GlobalDef {
     name: avogadro @ 36..44 (fid = 0);
     mutable: false;
-    typ: Symbol {
+    typexpr: Symbol {
       kind: global;
       name: f64 @ none;
       which: 0;
@@ -166,9 +166,9 @@
   GlobalDef {
     name: hello @ 78..83 (fid = 0);
     mutable: true;
-    typ: PointerType {
+    typexpr: PointerType {
       mutable: false;
-      typ: Symbol {
+      typexpr: Symbol {
         kind: global;
         name: str @ none;
         which: 0;
@@ -187,7 +187,7 @@
   GlobalDef {
     name: globFloat @ 102..111 (fid = 0);
     mutable: true;
-    typ: none;
+    typexpr: none;
     value: float 12 @ 115..119 (fid = 0);
     sym: Symbol {
       kind: global;
@@ -215,10 +215,10 @@
   GlobalDef {
     name: main @ 11..15 (fid = 0);
     mutable: false;
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [];
-      rettype: none;
+      rettypexpr: none;
       body: [
         Binary {
           lhs: Underscore @ 54..55 (fid = 0);
@@ -491,7 +491,7 @@
           op: Assignment;
           rhs: PointerType {
             mutable: false;
-            typ: Symbol {
+            typexpr: Symbol {
               kind: global;
               name: u32 @ none;
               which: 0;
@@ -505,7 +505,7 @@
           op: Assignment;
           rhs: PointerType {
             mutable: true;
-            typ: Symbol {
+            typexpr: Symbol {
               kind: global;
               name: u32 @ none;
               which: 0;
@@ -584,10 +584,10 @@
   GlobalDef {
     name: some_fun @ 1162..1170 (fid = 0);
     mutable: false;
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [];
-      rettype: none;
+      rettypexpr: none;
       body: [] @ 1180..1182 (fid = 0);
     } @ 1174..1182 (fid = 0);
     sym: Symbol {
@@ -601,7 +601,7 @@
   GlobalDef {
     name: some_pointer @ 1183..1195 (fid = 0);
     mutable: false;
-    typ: none;
+    typexpr: none;
     value: AddressOf {
       mutable: false;
       expr: integer 12 @ 1200..1202 (fid = 0);
@@ -624,10 +624,10 @@
       GlobalDef {
         name: main @ 19..23 (fid = 1);
         mutable: false;
-        typ: none;
+        typexpr: none;
         value: FunDefinition {
           args: [];
-          rettype: none;
+          rettypexpr: none;
           body: [] @ 33..35 (fid = 1);
         } @ 27..35 (fid = 1);
         sym: Symbol {
@@ -641,7 +641,7 @@
       GlobalDef {
         name: avogadro @ 36..44 (fid = 1);
         mutable: false;
-        typ: Symbol {
+        typexpr: Symbol {
           kind: global;
           name: f64 @ none;
           which: 0;
@@ -659,9 +659,9 @@
       GlobalDef {
         name: hello @ 78..83 (fid = 1);
         mutable: true;
-        typ: PointerType {
+        typexpr: PointerType {
           mutable: false;
-          typ: Symbol {
+          typexpr: Symbol {
             kind: global;
             name: str @ none;
             which: 0;
@@ -680,7 +680,7 @@
       GlobalDef {
         name: globFloat @ 102..111 (fid = 1);
         mutable: true;
-        typ: none;
+        typexpr: none;
         value: float 12 @ 115..119 (fid = 1);
         sym: Symbol {
           kind: global;
@@ -696,12 +696,12 @@
           GlobalDef {
             name: add @ 65..68 (fid = 2);
             mutable: false;
-            typ: none;
+            typexpr: none;
             value: FunDefinition {
               args: [
                 Arg {
                   name: a @ 76..77 (fid = 2);
-                  typ: Symbol {
+                  typexpr: Symbol {
                     kind: global;
                     name: usz @ none;
                     which: 0;
@@ -717,7 +717,7 @@
 
                 Arg {
                   name: b @ 84..85 (fid = 2);
-                  typ: Symbol {
+                  typexpr: Symbol {
                     kind: global;
                     name: usz @ none;
                     which: 0;
@@ -731,7 +731,7 @@
                   };
                 } @ 84..90 (fid = 2),
               ];
-              rettype: Symbol {
+              rettypexpr: Symbol {
                 kind: global;
                 name: usz @ none;
                 which: 0;
@@ -790,10 +790,10 @@
   GlobalDef {
     name: println @ 138..145 (fid = 0);
     mutable: false;
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [];
-      rettype: none;
+      rettypexpr: none;
       body: [] @ 155..157 (fid = 0);
     } @ 149..157 (fid = 0);
     sym: Symbol {
@@ -807,15 +807,15 @@
   GlobalDef {
     name: main @ 159..163 (fid = 0);
     mutable: false;
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [];
-      rettype: none;
+      rettypexpr: none;
       body: [
         VariableDef {
           name: i @ 179..180 (fid = 0);
           mutable: true;
-          typ: none;
+          typexpr: none;
           value: integer 0 @ 184..185 (fid = 0);
           sym: Symbol {
             kind: local;
@@ -878,7 +878,7 @@
         VariableDef {
           name: j @ 248..249 (fid = 0);
           mutable: true;
-          typ: none;
+          typexpr: none;
           value: integer 3 @ 253..254 (fid = 0);
           sym: Symbol {
             kind: local;
@@ -1643,12 +1643,12 @@
           GlobalDef {
             name: fib @ 0..3 (fid = 2);
             mutable: false;
-            typ: none;
+            typexpr: none;
             value: FunDefinition {
               args: [
                 Arg {
                   name: n @ 11..12 (fid = 2);
-                  typ: Symbol {
+                  typexpr: Symbol {
                     kind: global;
                     name: usz @ none;
                     which: 0;
@@ -1662,7 +1662,7 @@
                   };
                 } @ 11..17 (fid = 2),
               ];
-              rettype: Symbol {
+              rettypexpr: Symbol {
                 kind: global;
                 name: usz @ none;
                 which: 0;
@@ -1761,14 +1761,14 @@
       GlobalDef {
         name: puts @ 55..59 (fid = 1);
         mutable: false;
-        typ: none;
+        typexpr: none;
         value: FunDefinition {
           args: [
             Arg {
               name: msg @ 67..70 (fid = 1);
-              typ: PointerType {
+              typexpr: PointerType {
                 mutable: false;
-                typ: Symbol {
+                typexpr: Symbol {
                   kind: global;
                   name: str @ none;
                   which: 0;
@@ -1783,7 +1783,7 @@
               };
             } @ 67..76 (fid = 1),
           ];
-          rettype: none;
+          rettypexpr: none;
           body: [
             Binary {
               lhs: Underscore @ 84..85 (fid = 1);
@@ -1808,15 +1808,15 @@
       GlobalDef {
         name: some_other_thing @ 124..140 (fid = 1);
         mutable: false;
-        typ: none;
+        typexpr: none;
         value: FunDefinition {
           args: [];
-          rettype: none;
+          rettypexpr: none;
           body: [
             VariableDef {
               name: half @ 156..160 (fid = 1);
               mutable: false;
-              typ: none;
+              typexpr: none;
               value: FunCall {
                 callee: Symbol {
                   kind: function;
@@ -1863,10 +1863,10 @@
   GlobalDef {
     name: run @ 57..60 (fid = 0);
     mutable: false;
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [];
-      rettype: none;
+      rettypexpr: none;
       body: [
         FunCall {
           callee: QualifiedPath {
@@ -1925,12 +1925,12 @@
   GlobalDef {
     name: divide @ 160..166 (fid = 0);
     mutable: false;
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [
         Arg {
           name: lhs @ 174..177 (fid = 0);
-          typ: Symbol {
+          typexpr: Symbol {
             kind: global;
             name: f16 @ none;
             which: 0;
@@ -1946,7 +1946,7 @@
 
         Arg {
           name: rhs @ 184..187 (fid = 0);
-          typ: Symbol {
+          typexpr: Symbol {
             kind: global;
             name: f16 @ none;
             which: 0;
@@ -1960,7 +1960,7 @@
           };
         } @ 184..192 (fid = 0),
       ];
-      rettype: Symbol {
+      rettypexpr: Symbol {
         kind: global;
         name: f16 @ none;
         which: 0;
@@ -1995,7 +1995,7 @@
   GlobalDef {
     name: MY_LIL_CONSTANT @ 220..235 (fid = 0);
     mutable: false;
-    typ: none;
+    typexpr: none;
     value: integer 1234 @ 239..243 (fid = 0);
     sym: Symbol {
       kind: global;
@@ -2034,10 +2034,10 @@
         expected_compiler_out: r#"ast = [
   GlobalConst {
     name: main @ 11..15 (fid = 0);
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [];
-      rettype: none;
+      rettypexpr: none;
       body: [
         Binary {
           lhs: ident _ @ 54..55 (fid = 0);
@@ -2361,7 +2361,7 @@
           op: Assignment;
           rhs: PointerType {
             mutable: false;
-            typ: ident u32 @ 1440..1443 (fid = 0);
+            typexpr: ident u32 @ 1440..1443 (fid = 0);
           } @ 1439..1443 (fid = 0);
         } @ 1435..1443 (fid = 0) @ 1435..1443 (fid = 0),
 
@@ -2370,7 +2370,7 @@
           op: Assignment;
           rhs: PointerType {
             mutable: true;
-            typ: ident u32 @ 1458..1461 (fid = 0);
+            typexpr: ident u32 @ 1458..1461 (fid = 0);
           } @ 1453..1461 (fid = 0);
         } @ 1449..1461 (fid = 0) @ 1449..1461 (fid = 0),
 
@@ -2416,32 +2416,32 @@
         expected_compiler_out: r#"ast = [
   GlobalConst {
     name: main @ 19..23 (fid = 0);
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [];
-      rettype: none;
+      rettypexpr: none;
       body: [] @ 33..35 (fid = 0);
     } @ 27..35 (fid = 0);
   } @ 19..35 (fid = 0),
 
   GlobalConst {
     name: avogadro @ 36..44 (fid = 0);
-    typ: ident f64 @ 47..50 (fid = 0);
+    typexpr: ident f64 @ 47..50 (fid = 0);
     value: float 602199999999999960000000 @ 53..61 (fid = 0);
   } @ 36..62 (fid = 0),
 
   GlobalVar {
     name: hello @ 78..83 (fid = 0);
-    typ: PointerType {
+    typexpr: PointerType {
       mutable: false;
-      typ: ident str @ 87..90 (fid = 0);
+      typexpr: ident str @ 87..90 (fid = 0);
     } @ 86..90 (fid = 0);
     value: string "Hello" @ 93..100 (fid = 0);
   } @ 78..101 (fid = 0),
 
   GlobalVar {
     name: globFloat @ 102..111 (fid = 0);
-    typ: none;
+    typexpr: none;
     value: float 12 @ 115..119 (fid = 0);
   } @ 102..120 (fid = 0),
 ]"#,
@@ -2451,36 +2451,36 @@
         expected_compiler_out: "ast = [
   GlobalConst {
     name: main @ 0..4 (fid = 0);
-    typ: none;
+    typexpr: none;
     value: FunDefinition {
       args: [];
-      rettype: none;
+      rettypexpr: none;
       body: [
         VariableDef {
           name: a @ 48..49 (fid = 0);
           mutable: false;
-          typ: none;
+          typexpr: none;
           value: integer 12 @ 52..54 (fid = 0);
         } @ 44..54 (fid = 0),
 
         VariableDef {
           name: b @ 68..69 (fid = 0);
           mutable: true;
-          typ: none;
+          typexpr: none;
           value: integer 34 @ 72..74 (fid = 0);
         } @ 60..74 (fid = 0),
 
         VariableDef {
           name: c @ 107..108 (fid = 0);
           mutable: false;
-          typ: none;
+          typexpr: none;
           value: integer 56 @ 112..114 (fid = 0);
         } @ 107..114 (fid = 0),
 
         VariableDef {
           name: d @ 120..121 (fid = 0);
           mutable: true;
-          typ: none;
+          typexpr: none;
           value: integer 78 @ 125..127 (fid = 0);
         } @ 120..127 (fid = 0),
 

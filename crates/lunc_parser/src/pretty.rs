@@ -23,13 +23,13 @@ impl PrettyDump for Item {
             Item::GlobalConst {
                 name,
                 name_loc,
-                typ,
+                typexpr,
                 value,
                 loc,
             } => {
                 ctx.pretty_struct("GlobalConst")
                     .field("name", (name, name_loc))
-                    .field("typ", typ)
+                    .field("typexpr", typexpr)
                     .field("value", value)
                     .finish()?;
                 ctx.print_loc(loc)?;
@@ -39,13 +39,13 @@ impl PrettyDump for Item {
             Item::GlobalVar {
                 name,
                 name_loc,
-                typ,
+                typexpr,
                 value,
                 loc,
             } => {
                 ctx.pretty_struct("GlobalVar")
                     .field("name", (name, name_loc))
-                    .field("typ", typ)
+                    .field("typexpr", typexpr)
                     .field("value", value)
                     .finish()?;
                 ctx.print_loc(loc)?;
@@ -208,21 +208,21 @@ impl PrettyDump for Expr {
             }
             Expr::FunDefinition {
                 args,
-                rettype,
+                rettypexpr,
                 body,
             } => {
                 ctx.pretty_struct("FunDefinition")
                     .field("args", args.as_slice())
-                    .field("rettype", rettype)
+                    .field("rettypexpr", rettypexpr)
                     .field("body", body)
                     .finish()?;
 
                 Ok(())
             }
-            Expr::PointerType { mutable, typ } => {
+            Expr::PointerType { mutable, typexpr } => {
                 ctx.pretty_struct("PointerType")
                     .field("mutable", mutable)
-                    .field("typ", typ)
+                    .field("typexpr", typexpr)
                     .finish()?;
 
                 Ok(())
@@ -244,13 +244,13 @@ impl PrettyDump for Arg {
         let Arg {
             name,
             name_loc,
-            typ,
+            typexpr,
             loc,
         } = self;
 
         ctx.pretty_struct("Arg")
             .field("name", (name, name_loc))
-            .field("typ", typ)
+            .field("typexpr", typexpr)
             .finish()?;
         ctx.print_loc(loc)?;
 
@@ -331,13 +331,13 @@ impl PrettyDump for Stmt {
                 name,
                 name_loc,
                 mutable,
-                typ,
+                typexpr,
                 value,
             } => {
                 ctx.pretty_struct("VariableDef")
                     .field("name", (name, name_loc))
                     .field("mutable", mutable)
-                    .field("typ", typ)
+                    .field("typexpr", typexpr)
                     .field("value", value)
                     .finish()?;
                 Ok(())

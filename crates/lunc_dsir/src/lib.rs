@@ -225,7 +225,7 @@ pub enum DsItem {
         name: String,
         name_loc: Span,
         mutable: bool,
-        typ: Option<DsExpression>,
+        typexpr: Option<DsExpression>,
         value: Box<DsExpression>,
         loc: Span,
         /// corresponding symbol of this definition
@@ -289,7 +289,7 @@ impl FromHigher for DsItem {
             Item::GlobalConst {
                 name,
                 name_loc,
-                typ,
+                typexpr,
                 value,
                 loc,
             } => DsItem::GlobalDef {
@@ -297,14 +297,14 @@ impl FromHigher for DsItem {
                 name,
                 name_loc: Some(name_loc),
                 mutable: false,
-                typ: lower(typ),
+                typexpr: lower(typexpr),
                 value: Box::new(lower(value)),
                 loc: Some(loc),
             },
             Item::GlobalVar {
                 name,
                 name_loc,
-                typ,
+                typexpr,
                 value,
                 loc,
             } => DsItem::GlobalDef {
@@ -312,7 +312,7 @@ impl FromHigher for DsItem {
                 name,
                 name_loc: Some(name_loc),
                 mutable: true,
-                typ: lower(typ),
+                typexpr: lower(typexpr),
                 value: Box::new(lower(value)),
                 loc: Some(loc),
             },
@@ -431,16 +431,16 @@ impl FromHigher for DsExpression {
             Expr::Orb => DsExpr::Orb,
             Expr::FunDefinition {
                 args,
-                rettype,
+                rettypexpr,
                 body,
             } => DsExpr::FunDefinition {
                 args: lower(args),
-                rettype: lower(rettype),
+                rettypexpr: lower(rettypexpr),
                 body: lower(body),
             },
-            Expr::PointerType { mutable, typ } => DsExpr::PointerType {
+            Expr::PointerType { mutable, typexpr } => DsExpr::PointerType {
                 mutable,
-                typ: lower(typ),
+                typexpr: lower(typexpr),
             },
             Expr::FunPtrType { args, ret } => DsExpr::FunPtrType {
                 args: lower(args),
@@ -608,7 +608,7 @@ pub enum DsExpr {
     /// [`Expr::FunDefinition`]: lunc_parser::expr::Expr::FunDefinition
     FunDefinition {
         args: Vec<DsArg>,
-        rettype: Option<Box<DsExpression>>,
+        rettypexpr: Option<Box<DsExpression>>,
         body: DsBlock,
     },
     /// See [`Expr::PointerType`]
@@ -616,7 +616,7 @@ pub enum DsExpr {
     /// [`Expr::PointerType`]: lunc_parser::expr::Expr::PointerType
     PointerType {
         mutable: bool,
-        typ: Box<DsExpression>,
+        typexpr: Box<DsExpression>,
     },
     /// See [`Expr::FunPtrType`]
     ///
@@ -820,13 +820,13 @@ pub fn expr_orb() -> DsExpression {
 /// Creates a function definition expression without location.
 pub fn expr_fundef(
     args: Vec<DsArg>,
-    rettype: impl Into<Option<DsExpression>>,
+    rettypexpr: impl Into<Option<DsExpression>>,
     body: DsBlock,
 ) -> DsExpression {
     DsExpression {
         expr: DsExpr::FunDefinition {
             args,
-            rettype: rettype.into().map(Box::new),
+            rettypexpr: rettypexpr.into().map(Box::new),
             body,
         },
         loc: None,
@@ -834,11 +834,11 @@ pub fn expr_fundef(
 }
 
 /// Creates a pointer type expression without location.
-pub fn expr_ptr_type(mutable: bool, typ: DsExpression) -> DsExpression {
+pub fn expr_ptr_type(mutable: bool, typexpr: DsExpression) -> DsExpression {
     DsExpression {
         expr: DsExpr::PointerType {
             mutable,
-            typ: Box::new(typ),
+            typexpr: Box::new(typexpr),
         },
         loc: None,
     }
@@ -913,14 +913,14 @@ impl FromHigher for DsStatement {
                 name,
                 name_loc,
                 mutable,
-                typ,
+                typexpr,
                 value,
             } => DsStmt::VariableDef {
                 sym: LazySymbol::Name(name.clone()),
                 name,
                 name_loc: Some(name_loc),
                 mutable,
-                typ: lower(typ),
+                typexpr: lower(typexpr),
                 value: lower(value),
             },
             Stmt::Defer { expr } => DsStmt::Defer { expr: lower(expr) },
@@ -943,7 +943,7 @@ pub enum DsStmt {
         name: String,
         name_loc: Span,
         mutable: bool,
-        typ: Option<DsExpression>,
+        typexpr: Option<DsExpression>,
         value: Box<DsExpression>,
         sym: LazySymbol,
     },
@@ -972,7 +972,7 @@ pub fn stmt_expr(expr: DsExpression) -> DsStatement {
 pub struct DsArg {
     pub name: String,
     pub name_loc: Span,
-    pub typ: DsExpression,
+    pub typexpr: DsExpression,
     pub loc: Span,
     pub sym: LazySymbol,
 }
@@ -984,7 +984,7 @@ impl FromHigher for DsArg {
         let Arg {
             name,
             name_loc,
-            typ,
+            typexpr,
             loc,
         } = node;
 
@@ -992,7 +992,7 @@ impl FromHigher for DsArg {
             sym: LazySymbol::Name(name.clone()),
             name,
             name_loc: Some(name_loc),
-            typ: lower(typ),
+            typexpr: lower(typexpr),
             loc: Some(loc),
         }
     }
@@ -1173,9 +1173,9 @@ impl Desugarrer {
     /// Resolve names of an item
     pub fn resolve_item(&mut self, item: &mut DsItem) -> Result<(), Diagnostic> {
         match item {
-            DsItem::GlobalDef { typ, value, .. } => {
-                if let Some(typ) = typ {
-                    self.resolve_expr(typ)?;
+            DsItem::GlobalDef { typexpr, value, .. } => {
+                if let Some(typexpr) = typexpr {
+                    self.resolve_expr(typexpr)?;
                 }
 
                 self.resolve_expr(value)?;
@@ -1214,13 +1214,13 @@ impl Desugarrer {
                 name,
                 name_loc,
                 mutable,
-                typ,
+                typexpr,
                 value,
                 sym,
             } => {
                 match (|| -> Result<(), Diagnostic> {
-                    if let Some(typ) = typ {
-                        self.resolve_expr(typ)?;
+                    if let Some(typexpr) = typexpr {
+                        self.resolve_expr(typexpr)?;
                     }
                     self.resolve_expr(value)?;
 
@@ -1309,7 +1309,10 @@ impl Desugarrer {
                 Ok(())
             }
             DsExpr::Continue { label: _ } | DsExpr::Null | DsExpr::Orb => Ok(()),
-            DsExpr::PointerType { mutable: _, typ } => self.resolve_expr(typ),
+            DsExpr::PointerType {
+                mutable: _,
+                typexpr,
+            } => self.resolve_expr(typexpr),
             DsExpr::FunPtrType { args, ret } => {
                 for arg in args {
                     self.resolve_expr(arg)?;
@@ -1411,18 +1414,18 @@ impl Desugarrer {
             }
             DsExpr::FunDefinition {
                 args,
-                rettype,
+                rettypexpr: rettype,
                 body,
             } => {
                 for DsArg {
                     name,
                     name_loc,
-                    typ,
+                    typexpr,
                     loc: _,
                     sym,
                 } in args
                 {
-                    match self.resolve_expr(typ) {
+                    match self.resolve_expr(typexpr) {
                         Ok(()) => {}
                         Err(d) => self.sink.push(d),
                     }
@@ -1500,7 +1503,7 @@ impl Desugarrer {
                 name,
                 name_loc,
                 mutable: _,
-                typ: _,
+                typexpr: _,
                 value,
                 loc: _,
                 sym,
@@ -1528,7 +1531,7 @@ impl Desugarrer {
                 name,
                 name_loc,
                 mutable,
-                typ: _,
+                typexpr: _,
                 value: _,
                 loc: _,
                 sym,

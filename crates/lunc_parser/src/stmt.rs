@@ -2,7 +2,7 @@
 
 use std::hint::unreachable_unchecked;
 
-use crate::expr::parse_type_expression;
+use crate::expr::parse_typexpr;
 
 use super::*;
 
@@ -126,7 +126,7 @@ pub enum Stmt {
         name: String,
         name_loc: Span,
         mutable: bool,
-        typ: Option<Expression>,
+        typexpr: Option<Expression>,
         value: Box<Expression>,
     },
     /// defer statement
@@ -184,9 +184,9 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
     let (name, name_loc) =
         expect_token!(parser => [Ident(name), name.clone()], Ident(String::new()));
 
-    let typ = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
+    let typexpr = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
         parser.pop();
-        Some(parse!(@fn parser => parse_type_expression))
+        Some(parse!(@fn parser => parse_typexpr))
     } else {
         None
     };
@@ -201,7 +201,7 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
             name,
             name_loc,
             mutable,
-            typ,
+            typexpr,
             value,
         },
         loc: Span::from_ends(lo, hi),
@@ -215,9 +215,9 @@ pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagn
 
     expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);
 
-    let typ = match parser.peek_tt() {
+    let typexpr = match parser.peek_tt() {
         Some(Punct(Punctuation::Colon | Punctuation::Equal)) => None,
-        _ => Some(parse!(@fn parser => parse_type_expression)),
+        _ => Some(parse!(@fn parser => parse_typexpr)),
     };
 
     let (mutable, _) = expect_token!(
@@ -237,7 +237,7 @@ pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagn
             name,
             name_loc: lo.clone(),
             mutable,
-            typ,
+            typexpr,
             value,
         },
         loc: Span::from_ends(lo, hi),

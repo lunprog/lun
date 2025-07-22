@@ -4,7 +4,7 @@ use lunc_diag::FileId;
 
 use crate::{
     directive::{ItemDirective, parse_mod_directive, parse_use_directive},
-    expr::parse_type_expression,
+    expr::parse_typexpr,
 };
 
 use super::*;
@@ -52,7 +52,7 @@ pub enum Item {
     GlobalConst {
         name: String,
         name_loc: Span,
-        typ: Option<Expression>,
+        typexpr: Option<Expression>,
         value: Expression,
         loc: Span,
     },
@@ -62,7 +62,7 @@ pub enum Item {
     GlobalVar {
         name: String,
         name_loc: Span,
-        typ: Option<Expression>,
+        typexpr: Option<Expression>,
         value: Expression,
         loc: Span,
     },
@@ -89,9 +89,9 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
 
     expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);
 
-    let typ = match parser.peek_tt() {
+    let typexpr = match parser.peek_tt() {
         Some(Punct(Punctuation::Colon | Punctuation::Equal)) => None,
-        _ => Some(parse!(@fn parser => parse_type_expression)),
+        _ => Some(parse!(@fn parser => parse_typexpr)),
     };
 
     let (is_const, _) = expect_token!(
@@ -116,7 +116,7 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
         Ok(Item::GlobalConst {
             name,
             name_loc: lo,
-            typ,
+            typexpr,
             value,
             loc,
         })
@@ -124,7 +124,7 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
         Ok(Item::GlobalVar {
             name,
             name_loc: lo,
-            typ,
+            typexpr,
             value,
             loc,
         })
