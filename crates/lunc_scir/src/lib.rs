@@ -12,6 +12,9 @@ use lunc_dsir::{
 };
 use lunc_utils::{FromHigher, lower};
 
+pub mod pretty;
+
+/// The underlying type of an expression
 #[derive(Debug, Clone)]
 pub enum Type {}
 

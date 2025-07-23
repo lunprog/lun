@@ -487,7 +487,8 @@ pub fn run() -> Result<()> {
 
     //    maybe print the SCIR
     if argv.debug_print_at(DebugPrint::ScirTree) {
-        eprintln!("scir = {scir:#?}");
+        eprint!("scir = ");
+        scir.dump();
     }
     if argv.debug_halt_at(DebugHalt::Scir) {
         return Ok(());
