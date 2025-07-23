@@ -11,6 +11,7 @@ lunc_dsir = { workspace = true }
 lunc_fir = { workspace = true }
 lunc_lexer = { workspace = true }
 lunc_parser = { workspace = true }
+lunc_scir = { workspace = true }
 lunc_utils = { workspace = true }
 
 # other dependencies

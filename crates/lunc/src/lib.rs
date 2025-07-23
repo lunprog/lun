@@ -9,14 +9,14 @@ use std::{
     str::FromStr,
 };
 
-use lunc_diag::FileId;
 use thiserror::Error;
 
 use crate::{
-    diag::DiagnosticSink,
+    diag::{DiagnosticSink, FileId},
     dsir::Desugarrer,
     lexer::Lexer,
     parser::Parser,
+    scir::SemaChecker,
     utils::{
         pluralize,
         pretty::PrettyDump,
@@ -42,6 +42,9 @@ mod re_exports {
 
     #[doc(inline)]
     pub use lunc_parser as parser;
+
+    #[doc(inline)]
+    pub use lunc_scir as scir;
 
     #[doc(inline)]
     pub use lunc_utils as utils;
@@ -118,7 +121,7 @@ Debug flags help:
                              * lexer
                              * parser
                              * dsir
-                             * htir
+                             * scir
                              * fir
                              * codegen
 -Dprint=<value>              Prints to the standard error, one or more of:
@@ -126,7 +129,7 @@ Debug flags help:
                              * tokenstream
                              * ast
                              * dsir-tree
-                             * htir-tree
+                             * scir-tree
                              * fir-tree
                              * fir
                              * asm\
@@ -163,7 +166,7 @@ pub enum DebugHalt {
     Lexer,
     Parser,
     Dsir,
-    Htir,
+    Scir,
     Fir,
     Codegen,
 }
@@ -178,7 +181,7 @@ impl FromStr for DebugHalt {
             "lexer" => Ok(Hs::Lexer),
             "parser" => Ok(Hs::Parser),
             "dsir" => Ok(Hs::Dsir),
-            "htir" => Ok(Hs::Htir),
+            "scir" => Ok(Hs::Scir),
             "fir" => Ok(Hs::Fir),
             "codegen" => Ok(Hs::Codegen),
             _ => Err(CliError::UnknownValue {
@@ -195,7 +198,7 @@ pub enum DebugPrint {
     TokenStream,
     Ast,
     DsirTree,
-    HtirTree,
+    ScirTree,
     FirTree,
     Fir,
     Asm,
@@ -212,7 +215,7 @@ impl FromStr for DebugPrint {
             "tokenstream" => Ok(Dp::TokenStream),
             "ast" => Ok(Dp::Ast),
             "dsir-tree" => Ok(Dp::DsirTree),
-            "htir-tree" => Ok(Dp::HtirTree),
+            "scir-tree" => Ok(Dp::ScirTree),
             "fir-tree" => Ok(Dp::FirTree),
             "fir" => Ok(Dp::Fir),
             "asm" => Ok(Dp::Asm),
@@ -417,7 +420,7 @@ pub fn run() -> Result<()> {
         });
     }
 
-    // 1. retrieve the source code
+    // 1. retrieve the source code, file => text
     let source_code = read_to_string(&argv.input).map_err(|err| CliError::FileIoError {
         path: argv.input.clone(),
         err,
@@ -439,7 +442,7 @@ pub fn run() -> Result<()> {
         orb_name: argv.orb_name.clone(),
     };
 
-    // 3. lex the file
+    // 3. lexing, text => token stream
     let mut lexer = Lexer::new(sink.clone(), source_code.clone(), root_fid);
     let tokenstream = lexer.produce().ok_or_else(compil_diags)?;
 
@@ -452,7 +455,7 @@ pub fn run() -> Result<()> {
         return Ok(());
     }
 
-    // 4. parse the token stream to an ast
+    // 4. parsing, token stream => AST
     let mut parser = Parser::new(tokenstream, sink.clone(), root_fid);
     let ast = parser.produce().ok_or_else(compil_diags)?;
 
@@ -465,7 +468,7 @@ pub fn run() -> Result<()> {
         return Ok(());
     }
 
-    // 5. desugar the AST to DSIR
+    // 5. desugarring, AST => DSIR
     let mut desugarrer = Desugarrer::new(sink.clone(), argv.orb_name.clone());
     let dsir = desugarrer.produce(ast).ok_or_else(compil_diags)?;
 
@@ -475,6 +478,18 @@ pub fn run() -> Result<()> {
         dsir.dump();
     }
     if argv.debug_halt_at(DebugHalt::Dsir) {
+        return Ok(());
+    }
+
+    // 6. type-checking and all the semantic analysis, DSIR => SCIR
+    let mut semacker = SemaChecker::new(sink.clone());
+    let scir = semacker.produce(dsir).ok_or_else(compil_diags)?;
+
+    //    maybe print the SCIR
+    if argv.debug_print_at(DebugPrint::ScirTree) {
+        eprintln!("scir = {scir:#?}");
+    }
+    if argv.debug_halt_at(DebugHalt::Scir) {
         return Ok(());
     }
 

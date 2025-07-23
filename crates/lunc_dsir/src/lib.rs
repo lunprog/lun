@@ -18,14 +18,17 @@ use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic};
 use lunc_lexer::Lexer;
 use lunc_parser::{
     Parser,
-    directive::{EffectivePath, ItemDirective, QualifiedPath},
+    directive::ItemDirective,
     expr::{Arg, Else, Expr, Expression, IfExpression},
     item::{Item, Module},
     stmt::{Block, Statement, Stmt},
 };
 use lunc_utils::{FromHigher, lower};
 
-pub use lunc_parser::expr::{BinOp, UnaryOp};
+pub use lunc_parser::{
+    directive::{EffectivePath, QualifiedPath},
+    expr::{BinOp, UnaryOp},
+};
 
 pub mod diags;
 pub mod pretty;
@@ -236,7 +239,9 @@ pub enum DsItem {
     ///
     /// [`Mod`]: lunc_parser::directive::ItemDirective::Mod
     Module {
+        /// the name of the module when declared
         name: String,
+        /// the items of the module
         module: DsModule,
         /// location of the directive that defined this module.
         loc: Span,

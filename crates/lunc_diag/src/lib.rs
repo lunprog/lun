@@ -1,3 +1,5 @@
+//! Diagnostic reporting system for the Lun Compiler.
+
 use codespan_reporting::{
     files::{self, Files, SimpleFile},
     term::{

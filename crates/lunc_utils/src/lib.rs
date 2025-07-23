@@ -1,3 +1,5 @@
+//! Common useful types, functions and traits across the Lun Compiler.
+
 use std::{
     fmt::{Debug, Display, Write},
     ops::{Add, Range},
@@ -9,7 +11,8 @@ pub mod token;
 
 /// Location of something in a file.
 ///
-/// INFO:
+/// # Note
+///
 /// the `lo` and `hi` field expect and byte index into the underlying string,
 /// not the nth character. They are byte indices to be more efficient
 #[derive(Debug, Clone, PartialEq, Eq)]

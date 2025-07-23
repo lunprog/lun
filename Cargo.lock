@@ -510,6 +510,7 @@ dependencies = [
  "lunc_fir",
  "lunc_lexer",
  "lunc_parser",
+ "lunc_scir",
  "lunc_utils",
  "shadow-rs",
  "termcolor",
@@ -567,6 +568,15 @@ dependencies = [
  "lunc_diag",
  "lunc_utils",
  "thiserror",
+]
+
+[[package]]
+name = "lunc_scir"
+version = "0.1.0"
+dependencies = [
+ "lunc_diag",
+ "lunc_dsir",
+ "lunc_utils",
 ]
 
 [[package]]
