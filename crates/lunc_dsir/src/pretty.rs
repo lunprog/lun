@@ -310,9 +310,9 @@ impl PrettyDump for DsBlock {
 
         let last = LastExpr(&self.last_expr);
 
-        ctx.pretty_list()
+        ctx.pretty_list(Some("Block".to_string()))
             .items(self.stmts.iter())
-            .items(last.0.iter())
+            .item(last)
             .finish()?;
 
         ctx.print_loc(&self.loc)?;

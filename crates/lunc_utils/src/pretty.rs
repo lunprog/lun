@@ -191,8 +191,11 @@ impl PrettyCtxt {
     }
 
     /// create a new helper for list-like tree nodes dump
-    pub fn pretty_list<'ctx>(&'ctx mut self) -> ListDump<'ctx> {
+    pub fn pretty_list<'ctx>(&'ctx mut self, name: Option<String>) -> ListDump<'ctx> {
         let res = (|| {
+            if let Some(name) = name {
+                write!(self.out, "{name} ")?;
+            }
             write!(self.out, "[")?;
             self.indent();
             Ok(())
@@ -242,7 +245,7 @@ impl<T: PrettyDump, const N: usize> PrettyDump for [T; N] {
 
 impl<T: PrettyDump> PrettyDump for &[T] {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        ctx.pretty_list().items(self.iter()).finish()?;
+        ctx.pretty_list(None).items(self.iter()).finish()?;
 
         Ok(())
     }

@@ -8,7 +8,7 @@
     value: FunDefinition {
       args: [];
       rettypexpr: none;
-      body: [
+      body: Block [
         VariableDef {
           name: res @ 99..102 (fid = 0);
           mutable: false;
@@ -44,6 +44,8 @@
             path: res;
           } @ 125..128 (fid = 0);
         } @ 121..128 (fid = 0) @ 121..128 (fid = 0),
+
+        @last_expr: none,
       ] @ 93..131 (fid = 0);
     } @ 87..131 (fid = 0);
     sym: Symbol {
@@ -98,8 +100,8 @@
         which: 0;
         path: ∅;
       } @ 163..166 (fid = 0);
-      body: [
-        Binary {
+      body: Block [
+        @last_expr: Binary {
           lhs: Symbol {
             kind: argument;
             name: a @ 144..145 (fid = 0);
@@ -135,7 +137,9 @@
     value: FunDefinition {
       args: [];
       rettypexpr: none;
-      body: [] @ 33..35 (fid = 0);
+      body: Block [
+        @last_expr: none,
+      ] @ 33..35 (fid = 0);
     } @ 27..35 (fid = 0);
     sym: Symbol {
       kind: function;
@@ -219,7 +223,7 @@
     value: FunDefinition {
       args: [];
       rettypexpr: none;
-      body: [
+      body: Block [
         Binary {
           lhs: Underscore @ 54..55 (fid = 0);
           op: Assignment;
@@ -375,7 +379,7 @@
           cond: boolean true @ 542..546 (fid = 0);
           then_br: Block {
             label: none;
-            block: [
+            block: Block [
               FunCall {
                 callee: Symbol {
                   kind: function;
@@ -385,11 +389,13 @@
                 } @ 557..561 (fid = 0);
                 args: [];
               } @ 557..563 (fid = 0) @ 557..563 (fid = 0),
+
+              @last_expr: none,
             ] @ 547..570 (fid = 0);
           } @ 539..599 (fid = 0);
           else_br: Block {
             label: none;
-            block: [
+            block: Block [
               FunCall {
                 callee: Symbol {
                   kind: function;
@@ -399,6 +405,8 @@
                 } @ 586..590 (fid = 0);
                 args: [];
               } @ 586..592 (fid = 0) @ 586..592 (fid = 0),
+
+              @last_expr: none,
             ] @ 576..599 (fid = 0);
           } @ 576..599 (fid = 0);
         } @ 539..599 (fid = 0) @ 539..599 (fid = 0),
@@ -419,7 +427,7 @@
 
         Block {
           label: none;
-          block: [
+          block: Block [
             Binary {
               lhs: Underscore @ 690..691 (fid = 0);
               op: Assignment;
@@ -439,16 +447,20 @@
                 args: [];
               } @ 709..715 (fid = 0);
             } @ 705..715 (fid = 0) @ 705..715 (fid = 0),
+
+            @last_expr: none,
           ] @ 680..722 (fid = 0);
         } @ 680..722 (fid = 0) @ 680..722 (fid = 0),
 
         Loop {
           label: none;
-          body: [
+          body: Block [
             Break {
               label: none;
               expr: none;
             } @ 780..785 (fid = 0) @ 780..785 (fid = 0),
+
+            @last_expr: none,
           ] @ 754..792 (fid = 0);
         } @ 749..792 (fid = 0) @ 749..792 (fid = 0),
 
@@ -571,6 +583,8 @@
             } @ 1103..1106 (fid = 0);
           } @ 1089..1106 (fid = 0);
         } @ 1085..1106 (fid = 0) @ 1085..1106 (fid = 0),
+
+        @last_expr: none,
       ] @ 25..1109 (fid = 0);
     } @ 19..1109 (fid = 0);
     sym: Symbol {
@@ -588,7 +602,9 @@
     value: FunDefinition {
       args: [];
       rettypexpr: none;
-      body: [] @ 1180..1182 (fid = 0);
+      body: Block [
+        @last_expr: none,
+      ] @ 1180..1182 (fid = 0);
     } @ 1174..1182 (fid = 0);
     sym: Symbol {
       kind: function;
@@ -628,7 +644,9 @@
         value: FunDefinition {
           args: [];
           rettypexpr: none;
-          body: [] @ 33..35 (fid = 1);
+          body: Block [
+            @last_expr: none,
+          ] @ 33..35 (fid = 1);
         } @ 27..35 (fid = 1);
         sym: Symbol {
           kind: function;
@@ -737,8 +755,8 @@
                 which: 0;
                 path: ∅;
               } @ 95..98 (fid = 2);
-              body: [
-                Binary {
+              body: Block [
+                @last_expr: Binary {
                   lhs: Symbol {
                     kind: argument;
                     name: a @ 76..77 (fid = 2);
@@ -794,7 +812,9 @@
     value: FunDefinition {
       args: [];
       rettypexpr: none;
-      body: [] @ 155..157 (fid = 0);
+      body: Block [
+        @last_expr: none,
+      ] @ 155..157 (fid = 0);
     } @ 149..157 (fid = 0);
     sym: Symbol {
       kind: function;
@@ -811,7 +831,7 @@
     value: FunDefinition {
       args: [];
       rettypexpr: none;
-      body: [
+      body: Block [
         VariableDef {
           name: i @ 179..180 (fid = 0);
           mutable: true;
@@ -827,7 +847,7 @@
 
         Loop {
           label: none;
-          body: [
+          body: Block [
             If {
               cond: Unary {
                 op: Not;
@@ -851,7 +871,7 @@
 
             Block {
               label: none;
-              block: [
+              block: Block [
                 FunCall {
                   callee: Symbol {
                     kind: function;
@@ -870,8 +890,12 @@
                     } @ 233..234 (fid = 0),
                   ];
                 } @ 215..235 (fid = 0) @ 215..235 (fid = 0),
+
+                @last_expr: none,
               ] @ 205..242 (fid = 0);
             } @ none @ none,
+
+            @last_expr: none,
           ] @ none;
         } @ 192..242 (fid = 0) @ 192..242 (fid = 0),
 
@@ -888,9 +912,9 @@
           };
         } @ 248..254 (fid = 0),
 
-        Loop {
+        @last_expr: Loop {
           label: label;
-          body: [
+          body: Block [
             If {
               cond: Unary {
                 op: Not;
@@ -927,7 +951,7 @@
 
             Block {
               label: none;
-              block: [
+              block: Block [
                 FunCall {
                   callee: Symbol {
                     kind: function;
@@ -946,8 +970,12 @@
                     } @ 319..320 (fid = 0),
                   ];
                 } @ 301..321 (fid = 0) @ 301..321 (fid = 0),
+
+                @last_expr: none,
               ] @ 291..328 (fid = 0);
             } @ none @ none,
+
+            @last_expr: none,
           ] @ none;
         } @ 261..328 (fid = 0),
       ] @ 173..330 (fid = 0);
@@ -1668,8 +1696,8 @@
                 which: 0;
                 path: ∅;
               } @ 22..25 (fid = 2);
-              body: [
-                If {
+              body: Block [
+                @last_expr: If {
                   cond: Binary {
                     lhs: Symbol {
                       kind: argument;
@@ -1682,8 +1710,8 @@
                   } @ 35..41 (fid = 2);
                   then_br: Block {
                     label: none;
-                    block: [
-                      Symbol {
+                    block: Block [
+                      @last_expr: Symbol {
                         kind: argument;
                         name: n @ 11..12 (fid = 2);
                         which: 0;
@@ -1693,8 +1721,8 @@
                   } @ 32..104 (fid = 2);
                   else_br: Block {
                     label: none;
-                    block: [
-                      Binary {
+                    block: Block [
+                      @last_expr: Binary {
                         lhs: FunCall {
                           callee: Symbol {
                             kind: function;
@@ -1784,7 +1812,7 @@
             } @ 67..76 (fid = 1),
           ];
           rettypexpr: none;
-          body: [
+          body: Block [
             Binary {
               lhs: Underscore @ 84..85 (fid = 1);
               op: Assignment;
@@ -1795,6 +1823,8 @@
                 path: msg;
               } @ 88..91 (fid = 1);
             } @ 84..91 (fid = 1) @ 84..91 (fid = 1),
+
+            @last_expr: none,
           ] @ 78..122 (fid = 1);
         } @ 63..122 (fid = 1);
         sym: Symbol {
@@ -1812,7 +1842,7 @@
         value: FunDefinition {
           args: [];
           rettypexpr: none;
-          body: [
+          body: Block [
             VariableDef {
               name: half @ 156..160 (fid = 1);
               mutable: false;
@@ -1837,6 +1867,8 @@
                 path: half;
               };
             } @ 156..178 (fid = 1),
+
+            @last_expr: none,
           ] @ 150..181 (fid = 1);
         } @ 144..181 (fid = 1);
         sym: Symbol {
@@ -1867,7 +1899,7 @@
     value: FunDefinition {
       args: [];
       rettypexpr: none;
-      body: [
+      body: Block [
         FunCall {
           callee: QualifiedPath {
             path: orb.dbg.puts @ 77..89 (fid = 0);
@@ -1912,6 +1944,8 @@
             integer 12 @ 152..154 (fid = 0),
           ];
         } @ 141..155 (fid = 0) @ 141..155 (fid = 0),
+
+        @last_expr: none,
       ] @ 71..158 (fid = 0);
     } @ 64..158 (fid = 0);
     sym: Symbol {
@@ -1966,8 +2000,8 @@
         which: 0;
         path: ∅;
       } @ 197..200 (fid = 0);
-      body: [
-        Binary {
+      body: Block [
+        @last_expr: Binary {
           lhs: Symbol {
             kind: argument;
             name: lhs @ 174..177 (fid = 0);
@@ -2038,7 +2072,7 @@
     value: FunDefinition {
       args: [];
       rettypexpr: none;
-      body: [
+      body: Block [
         Binary {
           lhs: ident _ @ 54..55 (fid = 0);
           op: Assignment;
@@ -2169,17 +2203,21 @@
 
         If {
           cond: boolean true @ 514..518 (fid = 0);
-          body: [
+          body: Block [
             FunCall {
               callee: ident main @ 529..533 (fid = 0);
               args: [];
             } @ 529..535 (fid = 0) @ 529..535 (fid = 0),
+
+            @last_expr: none,
           ] @ 519..542 (fid = 0);
-          else_br: [
+          else_br: Block [
             FunCall {
               callee: ident main @ 558..562 (fid = 0);
               args: [];
             } @ 558..564 (fid = 0) @ 558..564 (fid = 0),
+
+            @last_expr: none,
           ] @ 548..571 (fid = 0);
         } @ 511..571 (fid = 0) @ 511..571 (fid = 0) @ 511..571 (fid = 0),
 
@@ -2197,7 +2235,7 @@
           } @ 601..632 (fid = 0);
         } @ 597..632 (fid = 0) @ 597..632 (fid = 0),
 
-        Block [
+        Block Block [
           Binary {
             lhs: ident _ @ 662..663 (fid = 0);
             op: Assignment;
@@ -2212,15 +2250,19 @@
               args: [];
             } @ 681..687 (fid = 0);
           } @ 677..687 (fid = 0) @ 677..687 (fid = 0),
+
+          @last_expr: none,
         ] @ 652..694 (fid = 0) @ 652..694 (fid = 0) @ 652..694 (fid = 0),
 
         BlockWithLabel {
           label: label_block;
-          block: [
+          block: Block [
             Break {
               label: label_block;
               expr: none;
             } @ 729..730 (fid = 0) @ 729..730 (fid = 0),
+
+            @last_expr: none,
           ] @ 713..748 (fid = 0);
         } @ 700..748 (fid = 0) @ 700..748 (fid = 0),
 
@@ -2230,20 +2272,22 @@
             callee: ident predicate @ 782..791 (fid = 0);
             args: [];
           } @ 782..793 (fid = 0);
-          body: [
+          body: Block [
             FunCall {
               callee: ident println @ 804..811 (fid = 0);
               args: [
                 string "Hello!" @ 812..820 (fid = 0),
               ];
             } @ 804..821 (fid = 0) @ 804..821 (fid = 0),
+
+            @last_expr: none,
           ] @ 794..828 (fid = 0);
         } @ 776..828 (fid = 0) @ 776..828 (fid = 0),
 
         PredicateLoop {
           label: label;
           cond: ident condition @ 847..856 (fid = 0);
-          body: [
+          body: Block [
             FunCall {
               callee: ident println @ 867..874 (fid = 0);
               args: [
@@ -2254,6 +2298,8 @@
             Continue {
               label: label;
             } @ 914..924 (fid = 0) @ 914..924 (fid = 0),
+
+            @last_expr: none,
           ] @ 857..936 (fid = 0);
         } @ 834..936 (fid = 0) @ 834..936 (fid = 0),
 
@@ -2268,7 +2314,9 @@
               integer 12 @ 981..983 (fid = 0),
             ];
           } @ 972..984 (fid = 0);
-          body: [] @ 985..1008 (fid = 0);
+          body: Block [
+            @last_expr: none,
+          ] @ 985..1008 (fid = 0);
         } @ 963..1008 (fid = 0) @ 963..1008 (fid = 0),
 
         IteratorLoop {
@@ -2282,22 +2330,28 @@
               integer 16 @ 1041..1043 (fid = 0),
             ];
           } @ 1031..1044 (fid = 0);
-          body: [] @ 1045..1068 (fid = 0);
+          body: Block [
+            @last_expr: none,
+          ] @ 1045..1068 (fid = 0);
         } @ 1014..1068 (fid = 0) @ 1014..1068 (fid = 0),
 
         InfiniteLoop {
           label: none;
-          body: [
+          body: Block [
             Break {
               label: none;
               expr: none;
             } @ 1126..1131 (fid = 0) @ 1126..1131 (fid = 0),
+
+            @last_expr: none,
           ] @ 1100..1138 (fid = 0);
         } @ 1095..1138 (fid = 0) @ 1095..1138 (fid = 0),
 
         InfiniteLoop {
           label: label3;
-          body: [] @ 1157..1180 (fid = 0);
+          body: Block [
+            @last_expr: none,
+          ] @ 1157..1180 (fid = 0);
         } @ 1144..1180 (fid = 0) @ 1144..1180 (fid = 0),
 
         Return {
@@ -2406,6 +2460,8 @@
             ret: ident usz @ 1563..1566 (fid = 0);
           } @ 1549..1566 (fid = 0);
         } @ 1545..1566 (fid = 0) @ 1545..1566 (fid = 0),
+
+        @last_expr: none,
       ] @ 25..1569 (fid = 0);
     } @ 19..1569 (fid = 0);
   } @ 11..1569 (fid = 0),
@@ -2420,7 +2476,9 @@
     value: FunDefinition {
       args: [];
       rettypexpr: none;
-      body: [] @ 33..35 (fid = 0);
+      body: Block [
+        @last_expr: none,
+      ] @ 33..35 (fid = 0);
     } @ 27..35 (fid = 0);
   } @ 19..35 (fid = 0),
 
@@ -2455,7 +2513,7 @@
     value: FunDefinition {
       args: [];
       rettypexpr: none;
-      body: [
+      body: Block [
         VariableDef {
           name: a @ 48..49 (fid = 0);
           mutable: false;
@@ -2485,13 +2543,17 @@
         } @ 120..127 (fid = 0),
 
         Defer {
-          expr: Block [] @ 163..165 (fid = 0) @ 163..165 (fid = 0);
+          expr: Block Block [
+            @last_expr: none,
+          ] @ 163..165 (fid = 0) @ 163..165 (fid = 0);
         } @ 157..165 (fid = 0),
 
         FunCall {
           callee: ident hello_world @ 199..210 (fid = 0);
           args: [];
         } @ 199..212 (fid = 0) @ 199..212 (fid = 0),
+
+        @last_expr: none,
       ] @ 14..215 (fid = 0);
     } @ 8..215 (fid = 0);
   } @ 0..215 (fid = 0),
