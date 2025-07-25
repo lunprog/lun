@@ -5,7 +5,7 @@ use std::io;
 use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 use crate::{
-    directive::{EffectivePath, ItemDirective, QualifiedPath},
+    directive::{ItemDirective, QualifiedPath},
     expr::{Arg, BinOp, Else, Expr, Expression, IfExpression, UnaryOp},
     item::{Item, Module},
     stmt::{Block, Statement, Stmt},
@@ -383,12 +383,6 @@ impl PrettyDump for ItemDirective {
                 Ok(())
             }
         }
-    }
-}
-
-impl PrettyDump for EffectivePath {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        write!(ctx.out, "{self}")
     }
 }
 

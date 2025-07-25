@@ -1,6 +1,6 @@
 //! Parsing of lun's directives.
 
-use std::fmt::Display;
+use lunc_utils::symbol::EffectivePath;
 
 use crate::item::Item;
 
@@ -61,100 +61,6 @@ pub fn parse_use_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
         alias,
         loc: Span::from_ends(lo, hi),
     }))
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct EffectivePath(Vec<String>);
-
-impl EffectivePath {
-    /// Creates a new empty effective path
-    pub const fn new() -> EffectivePath {
-        EffectivePath(Vec::new())
-    }
-
-    /// Creates a new effective path with just a single member
-    pub fn with_root_member(root_member: impl ToString) -> EffectivePath {
-        EffectivePath(vec![root_member.to_string()])
-    }
-
-    /// Creates a new effective path from a vector
-    pub fn from_vec(vec: Vec<String>) -> EffectivePath {
-        assert!(!vec.is_empty());
-        EffectivePath(vec)
-    }
-
-    /// Returns the amount of members in the path eg:
-    ///
-    /// `orb`             -> 1
-    /// `orb.main`        -> 2
-    /// `std.panic.Panic` -> 3
-    /// etc..
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    /// Is the path empty?
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    /// Returns a slice of the underlying path
-    pub fn as_slice(&self) -> &[String] {
-        &self.0
-    }
-
-    /// Returns a mutable reference to the last member of the effective path
-    ///
-    /// # Example
-    ///
-    /// `orb`        -> mut ref to `orb`
-    /// `orb.driver` -> mut ref to `driver`
-    /// *etc..*
-    pub fn last_mut(&mut self) -> Option<&mut String> {
-        self.0.last_mut()
-    }
-
-    /// Returns a reference to the last member of the effective path
-    pub fn last(&self) -> Option<&String> {
-        self.0.last()
-    }
-
-    /// Push a new member to the path
-    pub fn push(&mut self, member: String) {
-        self.0.push(member)
-    }
-
-    /// Pops the last member of the path and returns it
-    pub fn pop(&mut self) -> Option<String> {
-        self.0.pop()
-    }
-
-    pub fn is_root(&self) -> bool {
-        self.0 == ["orb"]
-    }
-}
-
-impl<S: ToString> FromIterator<S> for EffectivePath {
-    /// Creates a new effective path from an iterator
-    fn from_iter<T: IntoIterator<Item = S>>(iter: T) -> Self {
-        EffectivePath(iter.into_iter().map(|m| m.to_string()).collect())
-    }
-}
-
-impl Default for EffectivePath {
-    fn default() -> Self {
-        EffectivePath::new()
-    }
-}
-
-impl Display for EffectivePath {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if !self.is_empty() {
-            write!(f, "{}", self.as_slice().join("."))
-        } else {
-            write!(f, "∅")
-        }
-    }
 }
 
 /// ident { "." ident }

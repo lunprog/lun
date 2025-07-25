@@ -19,6 +19,7 @@
               name: add @ 133..136 (fid = 0);
               which: 0;
               path: orb.add;
+              typ: none;
             } @ 106..109 (fid = 0);
             args: [
               integer 1 @ 110..111 (fid = 0),
@@ -31,6 +32,7 @@
             name: res @ 99..102 (fid = 0);
             which: 0;
             path: res;
+            typ: none;
           };
         } @ 99..115 (fid = 0),
 
@@ -42,6 +44,7 @@
             name: res @ 99..102 (fid = 0);
             which: 0;
             path: res;
+            typ: none;
           } @ 125..128 (fid = 0);
         } @ 121..128 (fid = 0) @ 121..128 (fid = 0),
 
@@ -53,6 +56,7 @@
       name: main @ 79..83 (fid = 0);
       which: 0;
       path: orb.main;
+      typ: none;
     };
   } @ 79..131 (fid = 0),
 
@@ -69,12 +73,14 @@
             name: isz @ none;
             which: 0;
             path: ∅;
+            typ: none;
           } @ 147..150 (fid = 0);
           sym: Symbol {
             kind: argument;
             name: a @ 144..145 (fid = 0);
             which: 0;
             path: a;
+            typ: none;
           };
         } @ 144..150 (fid = 0),
 
@@ -85,12 +91,14 @@
             name: isz @ none;
             which: 0;
             path: ∅;
+            typ: none;
           } @ 155..158 (fid = 0);
           sym: Symbol {
             kind: argument;
             name: b @ 152..153 (fid = 0);
             which: 0;
             path: b;
+            typ: none;
           };
         } @ 152..158 (fid = 0),
       ];
@@ -99,6 +107,7 @@
         name: isz @ none;
         which: 0;
         path: ∅;
+        typ: none;
       } @ 163..166 (fid = 0);
       body: Block [
         @last_expr: Binary {
@@ -107,6 +116,7 @@
             name: a @ 144..145 (fid = 0);
             which: 0;
             path: a;
+            typ: none;
           } @ 173..174 (fid = 0);
           op: Add;
           rhs: Symbol {
@@ -114,6 +124,7 @@
             name: b @ 152..153 (fid = 0);
             which: 0;
             path: b;
+            typ: none;
           } @ 177..178 (fid = 0);
         } @ 173..178 (fid = 0),
       ] @ 167..180 (fid = 0);
@@ -123,6 +134,7 @@
       name: add @ 133..136 (fid = 0);
       which: 0;
       path: orb.add;
+      typ: none;
     };
   } @ 133..180 (fid = 0),
 ]
@@ -147,6 +159,7 @@
       name: main @ 19..23 (fid = 0);
       which: 0;
       path: orb.main;
+      typ: none;
     };
   } @ 19..35 (fid = 0),
 
@@ -158,6 +171,7 @@
       name: f64 @ none;
       which: 0;
       path: ∅;
+      typ: none;
     } @ 47..50 (fid = 0);
     value: float 602199999999999960000000 @ 53..61 (fid = 0);
     sym: Symbol {
@@ -165,6 +179,7 @@
       name: avogadro @ 36..44 (fid = 0);
       which: 0;
       path: orb.avogadro;
+      typ: none;
     };
   } @ 36..62 (fid = 0),
 
@@ -178,6 +193,7 @@
         name: str @ none;
         which: 0;
         path: ∅;
+        typ: none;
       } @ 87..90 (fid = 0);
     } @ 86..90 (fid = 0);
     value: string "Hello" @ 93..100 (fid = 0);
@@ -186,6 +202,7 @@
       name: hello @ 78..83 (fid = 0);
       which: 0;
       path: orb.hello;
+      typ: none;
     };
   } @ 78..101 (fid = 0),
 
@@ -199,6 +216,7 @@
       name: globFloat @ 102..111 (fid = 0);
       which: 0;
       path: orb.globFloat;
+      typ: none;
     };
   } @ 102..120 (fid = 0),
 
@@ -210,6 +228,7 @@
       name: nested @ 179..191 (fid = 0);
       which: 0;
       path: orb.nested;
+      typ: none;
     };
   },
 ]
@@ -280,6 +299,7 @@
             name: main @ 11..15 (fid = 0);
             which: 0;
             path: orb.main;
+            typ: none;
           } @ 328..332 (fid = 0);
         } @ 324..332 (fid = 0) @ 324..332 (fid = 0),
 
@@ -320,6 +340,7 @@
               name: some_fun @ 1162..1170 (fid = 0);
               which: 0;
               path: orb.some_fun;
+              typ: none;
             } @ 442..450 (fid = 0);
             args: [];
           } @ 442..452 (fid = 0);
@@ -334,6 +355,7 @@
               name: some_fun @ 1162..1170 (fid = 0);
               which: 0;
               path: orb.some_fun;
+              typ: none;
             } @ 462..470 (fid = 0);
             args: [
               integer 1 @ 471..472 (fid = 0),
@@ -350,6 +372,7 @@
               name: some_fun @ 1162..1170 (fid = 0);
               which: 0;
               path: orb.some_fun;
+              typ: none;
             } @ 483..491 (fid = 0);
             args: [
               integer 1 @ 492..493 (fid = 0),
@@ -368,6 +391,7 @@
               name: some_fun @ 1162..1170 (fid = 0);
               which: 0;
               path: orb.some_fun;
+              typ: none;
             } @ 507..515 (fid = 0);
             args: [
               integer 1 @ 516..517 (fid = 0),
@@ -388,6 +412,7 @@
                   name: main @ 11..15 (fid = 0);
                   which: 0;
                   path: orb.main;
+                  typ: none;
                 } @ 557..561 (fid = 0);
                 args: [];
               } @ 557..563 (fid = 0) @ 557..563 (fid = 0),
@@ -404,6 +429,7 @@
                   name: main @ 11..15 (fid = 0);
                   which: 0;
                   path: orb.main;
+                  typ: none;
                 } @ 586..590 (fid = 0);
                 args: [];
               } @ 586..592 (fid = 0) @ 586..592 (fid = 0),
@@ -445,6 +471,7 @@
                   name: main @ 11..15 (fid = 0);
                   which: 0;
                   path: orb.main;
+                  typ: none;
                 } @ 709..713 (fid = 0);
                 args: [];
               } @ 709..715 (fid = 0);
@@ -496,6 +523,7 @@
               name: some_pointer @ 1183..1195 (fid = 0);
               which: 0;
               path: orb.some_pointer;
+              typ: none;
             } @ 919..931 (fid = 0);
           } @ 919..933 (fid = 0);
         } @ 915..933 (fid = 0) @ 915..933 (fid = 0),
@@ -510,6 +538,7 @@
               name: u32 @ none;
               which: 0;
               path: ∅;
+              typ: none;
             } @ 980..983 (fid = 0);
           } @ 979..983 (fid = 0);
         } @ 975..983 (fid = 0) @ 975..983 (fid = 0),
@@ -524,6 +553,7 @@
               name: u32 @ none;
               which: 0;
               path: ∅;
+              typ: none;
             } @ 998..1001 (fid = 0);
           } @ 993..1001 (fid = 0);
         } @ 989..1001 (fid = 0) @ 989..1001 (fid = 0),
@@ -547,6 +577,7 @@
                 name: usz @ none;
                 which: 0;
                 path: ∅;
+                typ: none;
               } @ 1062..1065 (fid = 0),
 
               Symbol {
@@ -554,6 +585,7 @@
                 name: bool @ none;
                 which: 0;
                 path: ∅;
+                typ: none;
               } @ 1067..1071 (fid = 0),
             ];
             ret: Symbol {
@@ -561,6 +593,7 @@
               name: usz @ none;
               which: 0;
               path: ∅;
+              typ: none;
             } @ 1076..1079 (fid = 0);
           } @ 1057..1079 (fid = 0);
         } @ 1053..1079 (fid = 0) @ 1053..1079 (fid = 0),
@@ -575,6 +608,7 @@
                 name: usz @ none;
                 which: 0;
                 path: ∅;
+                typ: none;
               } @ 1094..1097 (fid = 0),
             ];
             ret: Symbol {
@@ -582,6 +616,7 @@
               name: usz @ none;
               which: 0;
               path: ∅;
+              typ: none;
             } @ 1103..1106 (fid = 0);
           } @ 1089..1106 (fid = 0);
         } @ 1085..1106 (fid = 0) @ 1085..1106 (fid = 0),
@@ -594,6 +629,7 @@
       name: main @ 11..15 (fid = 0);
       which: 0;
       path: orb.main;
+      typ: none;
     };
   } @ 11..1109 (fid = 0),
 
@@ -613,6 +649,7 @@
       name: some_fun @ 1162..1170 (fid = 0);
       which: 0;
       path: orb.some_fun;
+      typ: none;
     };
   } @ 1162..1182 (fid = 0),
 
@@ -629,6 +666,7 @@
       name: some_pointer @ 1183..1195 (fid = 0);
       which: 0;
       path: orb.some_pointer;
+      typ: none;
     };
   } @ 1183..1203 (fid = 0),
 ]
@@ -656,6 +694,7 @@
           name: main @ 19..23 (fid = 1);
           which: 0;
           path: orb.global_def.main;
+          typ: none;
         };
       } @ 19..35 (fid = 1),
 
@@ -667,6 +706,7 @@
           name: f64 @ none;
           which: 0;
           path: ∅;
+          typ: none;
         } @ 47..50 (fid = 1);
         value: float 602199999999999960000000 @ 53..61 (fid = 1);
         sym: Symbol {
@@ -674,6 +714,7 @@
           name: avogadro @ 36..44 (fid = 1);
           which: 0;
           path: orb.global_def.avogadro;
+          typ: none;
         };
       } @ 36..62 (fid = 1),
 
@@ -687,6 +728,7 @@
             name: str @ none;
             which: 0;
             path: ∅;
+            typ: none;
           } @ 87..90 (fid = 1);
         } @ 86..90 (fid = 1);
         value: string "Hello" @ 93..100 (fid = 1);
@@ -695,6 +737,7 @@
           name: hello @ 78..83 (fid = 1);
           which: 0;
           path: orb.global_def.hello;
+          typ: none;
         };
       } @ 78..101 (fid = 1),
 
@@ -708,6 +751,7 @@
           name: globFloat @ 102..111 (fid = 1);
           which: 0;
           path: orb.global_def.globFloat;
+          typ: none;
         };
       } @ 102..120 (fid = 1),
 
@@ -727,12 +771,14 @@
                     name: usz @ none;
                     which: 0;
                     path: ∅;
+                    typ: none;
                   } @ 79..82 (fid = 2);
                   sym: Symbol {
                     kind: argument;
                     name: a @ 76..77 (fid = 2);
                     which: 0;
                     path: a;
+                    typ: none;
                   };
                 } @ 76..82 (fid = 2),
 
@@ -743,12 +789,14 @@
                     name: usz @ none;
                     which: 0;
                     path: ∅;
+                    typ: none;
                   } @ 87..90 (fid = 2);
                   sym: Symbol {
                     kind: argument;
                     name: b @ 84..85 (fid = 2);
                     which: 0;
                     path: b;
+                    typ: none;
                   };
                 } @ 84..90 (fid = 2),
               ];
@@ -757,6 +805,7 @@
                 name: usz @ none;
                 which: 0;
                 path: ∅;
+                typ: none;
               } @ 95..98 (fid = 2);
               body: Block [
                 @last_expr: Binary {
@@ -765,6 +814,7 @@
                     name: a @ 76..77 (fid = 2);
                     which: 0;
                     path: a;
+                    typ: none;
                   } @ 105..106 (fid = 2);
                   op: Add;
                   rhs: Symbol {
@@ -772,6 +822,7 @@
                     name: b @ 84..85 (fid = 2);
                     which: 0;
                     path: b;
+                    typ: none;
                   } @ 109..110 (fid = 2);
                 } @ 105..110 (fid = 2),
               ] @ 99..112 (fid = 2);
@@ -781,6 +832,7 @@
               name: add @ 65..68 (fid = 2);
               which: 0;
               path: orb.global_def.nested.add;
+              typ: none;
             };
           } @ 65..112 (fid = 2),
         ];
@@ -789,6 +841,7 @@
           name: nested @ 179..191 (fid = 1);
           which: 0;
           path: orb.global_def.nested;
+          typ: none;
         };
       },
     ];
@@ -797,6 +850,7 @@
       name: global_def @ 61..77 (fid = 0);
       which: 0;
       path: orb.global_def;
+      typ: none;
     };
   },
 ]
@@ -826,6 +880,7 @@
       name: println @ 138..145 (fid = 0);
       which: 0;
       path: orb.println;
+      typ: none;
     };
   } @ 138..157 (fid = 0),
 
@@ -847,6 +902,7 @@
             name: i @ 179..180 (fid = 0);
             which: 0;
             path: i;
+            typ: none;
           };
         } @ 179..185 (fid = 0),
 
@@ -862,6 +918,7 @@
                     name: i @ 179..180 (fid = 0);
                     which: 0;
                     path: i;
+                    typ: none;
                   } @ 198..199 (fid = 0);
                   op: CompLT;
                   rhs: integer 10 @ 202..204 (fid = 0);
@@ -883,6 +940,7 @@
                     name: println @ 138..145 (fid = 0);
                     which: 0;
                     path: orb.println;
+                    typ: none;
                   } @ 215..222 (fid = 0);
                   args: [
                     string "i = {}" @ 223..231 (fid = 0),
@@ -892,6 +950,7 @@
                       name: i @ 179..180 (fid = 0);
                       which: 0;
                       path: i;
+                      typ: none;
                     } @ 233..234 (fid = 0),
                   ];
                 } @ 215..235 (fid = 0) @ 215..235 (fid = 0),
@@ -914,6 +973,7 @@
             name: j @ 248..249 (fid = 0);
             which: 1;
             path: j;
+            typ: none;
           };
         } @ 248..254 (fid = 0),
 
@@ -930,6 +990,7 @@
                       name: j @ 248..249 (fid = 0);
                       which: 1;
                       path: j;
+                      typ: none;
                     } @ 274..275 (fid = 0);
                     op: CompLT;
                     rhs: integer 10 @ 278..280 (fid = 0);
@@ -941,6 +1002,7 @@
                       name: j @ 248..249 (fid = 0);
                       which: 1;
                       path: j;
+                      typ: none;
                     } @ 285..286 (fid = 0);
                     op: CompGT;
                     rhs: integer 2 @ 289..290 (fid = 0);
@@ -963,6 +1025,7 @@
                     name: println @ 138..145 (fid = 0);
                     which: 0;
                     path: orb.println;
+                    typ: none;
                   } @ 301..308 (fid = 0);
                   args: [
                     string "j = {}" @ 309..317 (fid = 0),
@@ -972,6 +1035,7 @@
                       name: j @ 248..249 (fid = 0);
                       which: 1;
                       path: j;
+                      typ: none;
                     } @ 319..320 (fid = 0),
                   ];
                 } @ 301..321 (fid = 0) @ 301..321 (fid = 0),
@@ -990,6 +1054,7 @@
       name: main @ 159..163 (fid = 0);
       which: 0;
       path: orb.main;
+      typ: none;
     };
   } @ 159..330 (fid = 0),
 ]
@@ -1679,28 +1744,31 @@
                   Arg {
                     name: n @ 11..12 (fid = 2);
                     typexpr: Expression {
-                      expr: UNCHECKED: Symbol {
+                      expr: Symbol {
                         kind: global;
                         name: usz @ none;
                         which: 0;
                         path: ∅;
+                        typ: none;
                       };
                       typ: none;
                     } @ 14..17 (fid = 2);
-                    sym: UNCHECKED: Symbol {
+                    sym: Symbol {
                       kind: argument;
                       name: n @ 11..12 (fid = 2);
                       which: 0;
                       path: n;
+                      typ: none;
                     };
                   } @ 11..17 (fid = 2),
                 ];
                 rettypexpr: Expression {
-                  expr: UNCHECKED: Symbol {
+                  expr: Symbol {
                     kind: global;
                     name: usz @ none;
                     which: 0;
                     path: ∅;
+                    typ: none;
                   };
                   typ: none;
                 } @ 22..25 (fid = 2);
@@ -1711,11 +1779,12 @@
                       cond: Expression {
                         expr: Binary {
                           lhs: Expression {
-                            expr: UNCHECKED: Symbol {
+                            expr: Symbol {
                               kind: argument;
                               name: n @ 11..12 (fid = 2);
                               which: 0;
                               path: n;
+                              typ: none;
                             };
                             typ: none;
                           } @ 35..36 (fid = 2);
@@ -1733,11 +1802,12 @@
                           block: Block {
                             stmts: [];
                             last_expr: Expression {
-                              expr: UNCHECKED: Symbol {
+                              expr: Symbol {
                                 kind: argument;
                                 name: n @ 11..12 (fid = 2);
                                 which: 0;
                                 path: n;
+                                typ: none;
                               };
                               typ: none;
                             } @ 52..53 (fid = 2);
@@ -1756,11 +1826,12 @@
                                 lhs: Expression {
                                   expr: FunCall {
                                     callee: Expression {
-                                      expr: UNCHECKED: Symbol {
+                                      expr: Symbol {
                                         kind: function;
                                         name: fib @ 0..3 (fid = 2);
                                         which: 0;
                                         path: orb.dbg.nested.fib;
+                                        typ: none;
                                       };
                                       typ: none;
                                     } @ 75..78 (fid = 2);
@@ -1768,11 +1839,12 @@
                                       Expression {
                                         expr: Binary {
                                           lhs: Expression {
-                                            expr: UNCHECKED: Symbol {
+                                            expr: Symbol {
                                               kind: argument;
                                               name: n @ 11..12 (fid = 2);
                                               which: 0;
                                               path: n;
+                                              typ: none;
                                             };
                                             typ: none;
                                           } @ 79..80 (fid = 2);
@@ -1792,11 +1864,12 @@
                                 rhs: Expression {
                                   expr: FunCall {
                                     callee: Expression {
-                                      expr: UNCHECKED: Symbol {
+                                      expr: Symbol {
                                         kind: function;
                                         name: fib @ 0..3 (fid = 2);
                                         which: 0;
                                         path: orb.dbg.nested.fib;
+                                        typ: none;
                                       };
                                       typ: none;
                                     } @ 88..91 (fid = 2);
@@ -1804,11 +1877,12 @@
                                       Expression {
                                         expr: Binary {
                                           lhs: Expression {
-                                            expr: UNCHECKED: Symbol {
+                                            expr: Symbol {
                                               kind: argument;
                                               name: n @ 11..12 (fid = 2);
                                               which: 0;
                                               path: n;
+                                              typ: none;
                                             };
                                             typ: none;
                                           } @ 92..93 (fid = 2);
@@ -1840,19 +1914,21 @@
               };
               typ: none;
             } @ 7..106 (fid = 2);
-            sym: UNCHECKED: Symbol {
+            sym: Symbol {
               kind: function;
               name: fib @ 0..3 (fid = 2);
               which: 0;
               path: orb.dbg.nested.fib;
+              typ: none;
             };
           } @ 0..106 (fid = 2),
         ];
-        sym: UNCHECKED: Symbol {
+        sym: Symbol {
           kind: module;
           name: nested @ 18..30 (fid = 1);
           which: 0;
           path: orb.dbg.nested;
+          typ: none;
         };
       } @ 18..30 (fid = 1),
 
@@ -1869,22 +1945,24 @@
                   expr: PointerType {
                     mutable: false;
                     typexpr: Expression {
-                      expr: UNCHECKED: Symbol {
+                      expr: Symbol {
                         kind: global;
                         name: str @ none;
                         which: 0;
                         path: ∅;
+                        typ: none;
                       };
                       typ: none;
                     } @ 73..76 (fid = 1);
                   };
                   typ: none;
                 } @ 72..76 (fid = 1);
-                sym: UNCHECKED: Symbol {
+                sym: Symbol {
                   kind: argument;
                   name: msg @ 67..70 (fid = 1);
                   which: 0;
                   path: msg;
+                  typ: none;
                 };
               } @ 67..76 (fid = 1),
             ];
@@ -1899,11 +1977,12 @@
                     } @ 84..85 (fid = 1);
                     op: Assignment;
                     rhs: Expression {
-                      expr: UNCHECKED: Symbol {
+                      expr: Symbol {
                         kind: argument;
                         name: msg @ 67..70 (fid = 1);
                         which: 0;
                         path: msg;
+                        typ: none;
                       };
                       typ: none;
                     } @ 88..91 (fid = 1);
@@ -1917,11 +1996,12 @@
           };
           typ: none;
         } @ 63..122 (fid = 1);
-        sym: UNCHECKED: Symbol {
+        sym: Symbol {
           kind: function;
           name: puts @ 55..59 (fid = 1);
           which: 0;
           path: orb.dbg.puts;
+          typ: none;
         };
       } @ 55..122 (fid = 1),
 
@@ -1942,11 +2022,12 @@
                   value: Expression {
                     expr: FunCall {
                       callee: Expression {
-                        expr: UNCHECKED: Symbol {
+                        expr: Symbol {
                           kind: function;
                           name: divide @ 160..166 (fid = 0);
                           which: 0;
                           path: orb.divide;
+                          typ: none;
                         };
                         typ: none;
                       } @ 164..170 (fid = 1);
@@ -1964,11 +2045,12 @@
                     };
                     typ: none;
                   } @ 164..178 (fid = 1);
-                  sym: UNCHECKED: Symbol {
+                  sym: Symbol {
                     kind: local;
                     name: half @ 156..160 (fid = 1);
                     which: 0;
                     path: half;
+                    typ: none;
                   };
                 } @ 156..178 (fid = 1),
               ];
@@ -1978,19 +2060,21 @@
           };
           typ: none;
         } @ 144..181 (fid = 1);
-        sym: UNCHECKED: Symbol {
+        sym: Symbol {
           kind: function;
           name: some_other_thing @ 124..140 (fid = 1);
           which: 0;
           path: orb.dbg.some_other_thing;
+          typ: none;
         };
       } @ 124..181 (fid = 1),
     ];
-    sym: UNCHECKED: Symbol {
+    sym: Symbol {
       kind: module;
       name: dbg @ 24..33 (fid = 0);
       which: 0;
       path: orb.dbg;
+      typ: none;
     };
   } @ 24..33 (fid = 0),
 
@@ -2009,11 +2093,12 @@
                 callee: Expression {
                   expr: QualifiedPath {
                     path: orb.dbg.puts @ 77..89 (fid = 0);
-                    sym: UNCHECKED: Symbol {
+                    sym: Symbol {
                       kind: function;
                       name: puts @ 55..59 (fid = 1);
                       which: 0;
                       path: orb.dbg.puts;
+                      typ: none;
                     };
                   };
                   typ: none;
@@ -2033,11 +2118,12 @@
                 callee: Expression {
                   expr: QualifiedPath {
                     path: dbg.puts @ 111..119 (fid = 0);
-                    sym: UNCHECKED: Symbol {
+                    sym: Symbol {
                       kind: function;
                       name: puts @ 55..59 (fid = 1);
                       which: 0;
                       path: orb.dbg.puts;
+                      typ: none;
                     };
                   };
                   typ: none;
@@ -2057,11 +2143,12 @@
                 callee: Expression {
                   expr: QualifiedPath {
                     path: nested.fib @ 141..151 (fid = 0);
-                    sym: UNCHECKED: Symbol {
+                    sym: Symbol {
                       kind: function;
                       name: fib @ 0..3 (fid = 2);
                       which: 0;
                       path: orb.dbg.nested.fib;
+                      typ: none;
                     };
                   };
                   typ: none;
@@ -2082,11 +2169,12 @@
       };
       typ: none;
     } @ 64..158 (fid = 0);
-    sym: UNCHECKED: Symbol {
+    sym: Symbol {
       kind: function;
       name: run @ 57..60 (fid = 0);
       which: 0;
       path: orb.run;
+      typ: none;
     };
   } @ 57..158 (fid = 0),
 
@@ -2100,47 +2188,52 @@
           Arg {
             name: lhs @ 174..177 (fid = 0);
             typexpr: Expression {
-              expr: UNCHECKED: Symbol {
+              expr: Symbol {
                 kind: global;
                 name: f16 @ none;
                 which: 0;
                 path: ∅;
+                typ: none;
               };
               typ: none;
             } @ 179..182 (fid = 0);
-            sym: UNCHECKED: Symbol {
+            sym: Symbol {
               kind: argument;
               name: lhs @ 174..177 (fid = 0);
               which: 0;
               path: lhs;
+              typ: none;
             };
           } @ 174..182 (fid = 0),
 
           Arg {
             name: rhs @ 184..187 (fid = 0);
             typexpr: Expression {
-              expr: UNCHECKED: Symbol {
+              expr: Symbol {
                 kind: global;
                 name: f16 @ none;
                 which: 0;
                 path: ∅;
+                typ: none;
               };
               typ: none;
             } @ 189..192 (fid = 0);
-            sym: UNCHECKED: Symbol {
+            sym: Symbol {
               kind: argument;
               name: rhs @ 184..187 (fid = 0);
               which: 0;
               path: rhs;
+              typ: none;
             };
           } @ 184..192 (fid = 0),
         ];
         rettypexpr: Expression {
-          expr: UNCHECKED: Symbol {
+          expr: Symbol {
             kind: global;
             name: f16 @ none;
             which: 0;
             path: ∅;
+            typ: none;
           };
           typ: none;
         } @ 197..200 (fid = 0);
@@ -2149,21 +2242,23 @@
           last_expr: Expression {
             expr: Binary {
               lhs: Expression {
-                expr: UNCHECKED: Symbol {
+                expr: Symbol {
                   kind: argument;
                   name: lhs @ 174..177 (fid = 0);
                   which: 0;
                   path: lhs;
+                  typ: none;
                 };
                 typ: none;
               } @ 207..210 (fid = 0);
               op: Div;
               rhs: Expression {
-                expr: UNCHECKED: Symbol {
+                expr: Symbol {
                   kind: argument;
                   name: rhs @ 184..187 (fid = 0);
                   which: 0;
                   path: rhs;
+                  typ: none;
                 };
                 typ: none;
               } @ 213..216 (fid = 0);
@@ -2175,11 +2270,12 @@
       };
       typ: none;
     } @ 170..218 (fid = 0);
-    sym: UNCHECKED: Symbol {
+    sym: Symbol {
       kind: function;
       name: divide @ 160..166 (fid = 0);
       which: 0;
       path: orb.divide;
+      typ: none;
     };
   } @ 160..218 (fid = 0),
 
@@ -2191,11 +2287,12 @@
       expr: integer 1234;
       typ: none;
     } @ 239..243 (fid = 0);
-    sym: UNCHECKED: Symbol {
+    sym: Symbol {
       kind: global;
       name: MY_LIL_CONSTANT @ 220..235 (fid = 0);
       which: 0;
       path: orb.MY_LIL_CONSTANT;
+      typ: none;
     };
   } @ 220..244 (fid = 0),
 ]

@@ -3,10 +3,7 @@ use std::io;
 
 use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
-use crate::{
-    ScArg, ScBlock, ScExpr, ScExpression, ScItem, ScLazySym, ScModule, ScStatement, ScStmt,
-    ScSymRef, ScSymbol, Type,
-};
+use crate::{ScArg, ScBlock, ScExpr, ScExpression, ScItem, ScModule, ScStatement, ScStmt};
 
 impl PrettyDump for ScModule {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
@@ -69,12 +66,6 @@ impl PrettyDump for ScExpression {
 
         ctx.print_loc(loc)?;
         Ok(())
-    }
-}
-
-impl PrettyDump for Type {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        write!(ctx.out, "Type")
     }
 }
 
@@ -219,42 +210,6 @@ impl PrettyDump for ScExpr {
                 Ok(())
             }
         }
-    }
-}
-
-impl PrettyDump for ScLazySym {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        match self {
-            ScLazySym::UnCk(unck) => {
-                write!(ctx.out, "UNCHECKED: ")?;
-
-                unck.try_dump(ctx)
-            }
-            ScLazySym::Sym(sym) => sym.try_dump(ctx),
-        }
-    }
-}
-
-impl PrettyDump for ScSymRef {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        let ScSymbol {
-            kind,
-            name,
-            which,
-            path,
-            typ,
-            loc,
-        } = &*self.read().unwrap();
-
-        ctx.pretty_struct("Symbol")
-            .field("kind", kind)
-            .field("name", (name, loc))
-            .field("which", which)
-            .field("path", path)
-            .field("typ", typ)
-            .finish()?;
-
-        Ok(())
     }
 }
 

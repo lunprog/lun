@@ -1,14 +1,6 @@
 //! Desugared Intermediate Representation of Lun.
 
-use std::{
-    collections::HashMap,
-    fmt::{Debug, Display},
-    fs,
-    hint::unreachable_unchecked,
-    ops::Deref,
-    path::PathBuf,
-    sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, fmt::Debug, fs, hint::unreachable_unchecked, path::PathBuf};
 
 use diags::{
     ModuleFileDoesnotExist, NameDefinedMultipleTimes, NotFoundInScope, UnderscoreInExpression,
@@ -23,10 +15,13 @@ use lunc_parser::{
     item::{Item, Module},
     stmt::{Block, Statement, Stmt},
 };
-use lunc_utils::{FromHigher, lower};
+use lunc_utils::{
+    FromHigher, lower,
+    symbol::{EffectivePath, LazySymbol, SymKind, Symbol, SymbolRef},
+};
 
 pub use lunc_parser::{
-    directive::{EffectivePath, QualifiedPath},
+    directive::QualifiedPath,
     expr::{BinOp, UnaryOp},
 };
 
@@ -41,157 +36,6 @@ pub mod pretty;
 /// It's fine to unwrap because if we need to get the loc of a node it's to emit
 /// a diagnostic and the desugaring should never make errors.
 pub type Span = Option<lunc_utils::Span>;
-
-/// A maybe not yet evaluated Symbol
-#[derive(Debug, Clone)]
-pub enum LazySymbol {
-    Name(String),
-    Sym(SymbolRef),
-}
-
-impl LazySymbol {
-    pub fn as_sym(&self) -> SymbolRef {
-        match self {
-            Self::Name(_) => panic!("called 'as_sym' on a Name variant"),
-            Self::Sym(symref) => symref.clone(),
-        }
-    }
-}
-
-impl From<String> for LazySymbol {
-    fn from(value: String) -> Self {
-        LazySymbol::Name(value)
-    }
-}
-
-impl From<SymbolRef> for LazySymbol {
-    fn from(value: SymbolRef) -> Self {
-        LazySymbol::Sym(value)
-    }
-}
-
-/// A reference to a symbol, used to mutate symbols during resolution,
-/// everywhere both in SymbolTable and in the DSIR
-///
-/// # Note
-///
-/// This type is a wrapper of Arc so a clone of this type is very cheap.
-#[repr(transparent)]
-#[derive(Debug, Clone)]
-pub struct SymbolRef(Arc<RwLock<Symbol>>);
-
-impl SymbolRef {
-    pub fn new(
-        kind: SymKind,
-        name: String,
-        which: usize,
-        path: EffectivePath,
-        loc: Span,
-    ) -> SymbolRef {
-        SymbolRef(Arc::new(RwLock::new(Symbol {
-            kind,
-            name,
-            which,
-            path,
-            loc,
-        })))
-    }
-
-    pub fn local(mutable: bool, name: String, which: usize, loc: Span) -> SymbolRef {
-        SymbolRef::new(
-            SymKind::Local { mutable },
-            name.clone(),
-            which,
-            EffectivePath::with_root_member(name),
-            loc,
-        )
-    }
-
-    pub fn arg(name: String, which: usize, loc: Span) -> SymbolRef {
-        SymbolRef::new(
-            SymKind::Arg,
-            name.clone(),
-            which,
-            EffectivePath::with_root_member(name),
-            loc,
-        )
-    }
-
-    pub fn global(mutable: bool, name: String, path: EffectivePath, loc: Span) -> SymbolRef {
-        SymbolRef::new(SymKind::Global { mutable }, name, 0, path, loc)
-    }
-
-    pub fn function(name: String, path: EffectivePath, loc: Span) -> SymbolRef {
-        SymbolRef::new(SymKind::Function, name, 0, path, loc)
-    }
-
-    pub fn module(name: String, path: EffectivePath, loc: Span) -> SymbolRef {
-        SymbolRef::new(SymKind::Module, name, 0, path, loc)
-    }
-}
-
-impl Deref for SymbolRef {
-    type Target = Arc<RwLock<Symbol>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-/// A symbol
-#[derive(Debug, Clone)]
-pub struct Symbol {
-    /// kind of symbol
-    pub kind: SymKind,
-    /// name when defined, it's not the full path
-    pub name: String,
-    /// (can't be explained easily)
-    ///
-    /// eg:
-    /// - for a function the `which` of the first argument is 0, the second is 1
-    /// - for a variable the `which` is set to 0 for the first variable, 1 for the
-    ///   second etc..
-    /// - for a global and a function this field is not really relevant, but is
-    ///   still populated
-    pub which: usize,
-    /// the absolute path to the symbol
-    pub path: EffectivePath,
-    /// location of the identifier defining this symbol
-    pub loc: Span,
-}
-
-/// The kind of symbol
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SymKind {
-    /// Local variable
-    Local { mutable: bool },
-    /// Argument
-    Arg,
-    /// Global
-    Global { mutable: bool },
-    /// Function
-    Function,
-    /// Module
-    Module,
-}
-
-impl SymKind {
-    pub fn is_global_def(&self) -> bool {
-        matches!(self, Self::Global { .. } | Self::Function | Self::Module)
-    }
-}
-
-impl Display for SymKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SymKind::Local { .. } => f.write_str("local"),
-            SymKind::Arg => f.write_str("argument"),
-            SymKind::Global { .. } => f.write_str("global"),
-            SymKind::Function => f.write_str("function"),
-            SymKind::Module => f.write_str("module"),
-        }
-    }
-}
 
 /// A desugared module, see the sweet version [`Module`]
 ///
@@ -1774,7 +1618,7 @@ impl SymbolTable {
         self.tabs.pop();
     }
 
-    /// Bind a name to a symbol in the current scope, will panick if name == `_`
+    /// Bind a name to a symbol in the current scope, returns a diagnostic if name == `_`
     pub fn bind(&mut self, name: String, symref: SymbolRef) -> Result<(), Diagnostic> {
         let sym = symref.read().unwrap();
 

@@ -1,82 +1,18 @@
 //! Typed High-level Intermediate Representation of Lun.
 
-use std::{
-    ops::Deref,
-    sync::{Arc, RwLock},
-};
+use std::fmt::Debug;
 
 use lunc_diag::{DiagnosticSink, FileId};
 use lunc_dsir::{
     BinOp, DsArg, DsBlock, DsExpr, DsExpression, DsItem, DsItemDirective, DsModule, DsStatement,
-    DsStmt, EffectivePath, QualifiedPath, Span, SymKind, SymbolRef, UnaryOp,
+    DsStmt, QualifiedPath, Span, UnaryOp,
 };
-use lunc_utils::{FromHigher, lower};
+use lunc_utils::{
+    FromHigher, lower,
+    symbol::{SymbolRef, Type},
+};
 
 pub mod pretty;
-
-/// The underlying type of an expression
-#[derive(Debug, Clone)]
-pub enum Type {}
-
-/// A maybe not yet evaluated Symbol
-#[derive(Debug, Clone)]
-pub enum ScLazySym {
-    /// unchecked symbol
-    UnCk(SymbolRef),
-    /// semantic checked symbol
-    Sym(ScSymRef),
-}
-
-impl ScLazySym {
-    pub fn as_sym(&self) -> ScSymRef {
-        match self {
-            Self::UnCk(_) => panic!("called 'as_sym' on a UnCk variant"),
-            Self::Sym(symref) => symref.clone(),
-        }
-    }
-}
-
-/// A reference to a semantic checked symbol, used to mutate symbols during
-/// semantic checking, everywhere both in SymbolTable and in the DSIR.
-///
-/// # Note
-///
-/// This type is a wrapper of Arc so a clone of this type is very cheap.
-#[repr(transparent)]
-#[derive(Debug, Clone)]
-pub struct ScSymRef(Arc<RwLock<ScSymbol>>);
-
-impl Deref for ScSymRef {
-    type Target = Arc<RwLock<ScSymbol>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-/// A semantic checked symbol
-#[derive(Debug, Clone)]
-pub struct ScSymbol {
-    /// kind of symbol
-    pub kind: SymKind,
-    /// name when defined, it's not the full path
-    pub name: String,
-    /// (can't be explained easily)
-    ///
-    /// eg:
-    /// - for a function the `which` of the first argument is 0, the second is 1
-    /// - for a variable the `which` is set to 0 for the first variable, 1 for the
-    ///   second etc..
-    /// - for a global and a function this field is not really relevant, but is
-    ///   still populated
-    pub which: usize,
-    /// the absolute path to the symbol
-    pub path: EffectivePath,
-    /// the type of the symbol
-    pub typ: Option<Type>,
-    /// location of the identifier defining this symbol
-    pub loc: Span,
-}
 
 /// A semantic checked module, see the dsir version [`DsModule`]
 ///
@@ -128,7 +64,7 @@ pub enum ScItem {
         value: Box<ScExpression>,
         loc: Span,
         /// corresponding symbol of this definition
-        sym: ScLazySym,
+        sym: SymbolRef,
     },
     /// See [`DsItem::Module`]
     ///
@@ -141,7 +77,7 @@ pub enum ScItem {
         /// location of the directive that defined this module.
         loc: Span,
         /// corresponding symbol of this definition
-        sym: ScLazySym,
+        sym: SymbolRef,
     },
 }
 
@@ -157,7 +93,7 @@ impl FromHigher for ScItem {
                 typexpr,
                 value,
                 loc,
-                sym,
+                sym: lazy,
             } => ScItem::GlobalDef {
                 name,
                 name_loc,
@@ -165,7 +101,7 @@ impl FromHigher for ScItem {
                 typexpr: lower(typexpr),
                 value: lower(value),
                 loc,
-                sym: ScLazySym::UnCk(sym.as_sym()),
+                sym: lazy.as_sym(),
             },
             DsItem::Module {
                 name,
@@ -176,7 +112,7 @@ impl FromHigher for ScItem {
                 name,
                 module: lower(module),
                 loc,
-                sym: ScLazySym::UnCk(lazy.as_sym()),
+                sym: lazy.as_sym(),
             },
             DsItem::Directive(DsItemDirective::Use { .. } | DsItemDirective::Mod { .. }) => {
                 unreachable!()
@@ -205,7 +141,7 @@ impl FromHigher for ScExpression {
             DsExpr::StringLit(str) => ScExpr::StringLit(str),
             DsExpr::CharLit(c) => ScExpr::CharLit(c),
             DsExpr::FloatLit(f) => ScExpr::FloatLit(f),
-            DsExpr::Ident(lazy) => ScExpr::Ident(ScLazySym::UnCk(lazy.as_sym())),
+            DsExpr::Ident(lazy) => ScExpr::Ident(lazy.as_sym()),
             DsExpr::Binary { lhs, op, rhs } => ScExpr::Binary {
                 lhs: lower(lhs),
                 op,
@@ -253,7 +189,7 @@ impl FromHigher for ScExpression {
             },
             DsExpr::QualifiedPath { path, sym: lazy } => ScExpr::QualifiedPath {
                 path,
-                sym: ScLazySym::UnCk(lazy.as_sym()),
+                sym: lazy.as_sym(),
             },
             DsExpr::Underscore => ScExpr::Underscore,
             DsExpr::FunDefinition {
@@ -311,7 +247,7 @@ pub enum ScExpr {
     /// See [`DsExpr::Ident`]
     ///
     /// [`DsExpr::Ident`]: lunc_dsir::DsExpr::Ident
-    Ident(ScLazySym),
+    Ident(SymbolRef),
     /// See [`DsExpr::Binary`]
     ///
     /// [`DsExpr::Binary`]: lunc_dsir::DsExpr::Binary
@@ -399,7 +335,7 @@ pub enum ScExpr {
         /// path to the symbol
         path: QualifiedPath,
         /// the symbol we are referring to
-        sym: ScLazySym,
+        sym: SymbolRef,
     },
     /// Constructed from the lazy ident `_`, but only in certain cases, like
     /// when it's part of an assignment like so: `_ = expr`
@@ -437,7 +373,7 @@ pub struct ScArg {
     pub name_loc: Span,
     pub typexpr: ScExpression,
     pub loc: Span,
-    pub sym: ScLazySym,
+    pub sym: SymbolRef,
 }
 
 impl FromHigher for ScArg {
@@ -457,7 +393,7 @@ impl FromHigher for ScArg {
             name_loc,
             typexpr: lower(typexpr),
             loc,
-            sym: ScLazySym::UnCk(lazy.as_sym()),
+            sym: lazy.as_sym(),
         }
     }
 }
@@ -519,7 +455,7 @@ impl FromHigher for ScStatement {
                 mutable,
                 typexpr: lower(typexpr),
                 value: lower(value),
-                sym: ScLazySym::UnCk(lazy.as_sym()),
+                sym: lazy.as_sym(),
             },
             DsStmt::Defer { expr } => ScStmt::Defer { expr: lower(expr) },
             DsStmt::Expression(expr) => ScStmt::Expression(lower(expr)),
@@ -543,7 +479,7 @@ pub enum ScStmt {
         mutable: bool,
         typexpr: Option<ScExpression>,
         value: Box<ScExpression>,
-        sym: ScLazySym,
+        sym: SymbolRef,
     },
     /// See [`DsStmt::Defer`]
     ///

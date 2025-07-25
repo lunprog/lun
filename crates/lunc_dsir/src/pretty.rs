@@ -6,7 +6,6 @@ use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 use crate::{
     DsArg, DsBlock, DsExpr, DsExpression, DsItem, DsItemDirective, DsModule, DsStatement, DsStmt,
-    LazySymbol, SymKind, Symbol, SymbolRef,
 };
 
 impl PrettyDump for DsModule {
@@ -232,42 +231,6 @@ impl PrettyDump for DsExpr {
                 Ok(())
             }
         }
-    }
-}
-
-impl PrettyDump for LazySymbol {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        match self {
-            LazySymbol::Name(id) => write!(ctx.out, "lazy {id}"),
-            LazySymbol::Sym(sym) => sym.try_dump(ctx),
-        }
-    }
-}
-
-impl PrettyDump for SymbolRef {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        let Symbol {
-            kind,
-            name,
-            which,
-            path,
-            loc,
-        } = &*self.read().unwrap();
-
-        ctx.pretty_struct("Symbol")
-            .field("kind", kind)
-            .field("name", (name, loc))
-            .field("which", which)
-            .field("path", path)
-            .finish()?;
-
-        Ok(())
-    }
-}
-
-impl PrettyDump for SymKind {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        write!(ctx.out, "{self}")
     }
 }
 
