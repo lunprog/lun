@@ -125,7 +125,8 @@
       path: orb.add;
     };
   } @ 133..180 (fid = 0),
-]",
+]
+",
         expected_test_out: "",
     ),
     "desugaring/global_def": (
@@ -211,7 +212,8 @@
       path: orb.nested;
     };
   },
-]"#,
+]
+"#,
         expected_test_out: "",
     ),
     "desugaring/lower_expr": (
@@ -629,7 +631,8 @@
       path: orb.some_pointer;
     };
   } @ 1183..1203 (fid = 0),
-]"#,
+]
+"#,
         expected_test_out: "",
     ),
     "desugaring/my_module": (
@@ -796,11 +799,13 @@
       path: orb.global_def;
     };
   },
-]"#,
+]
+"#,
         expected_test_out: "",
     ),
     "desugaring/nested": (
-        expected_compiler_out: "dsir = []",
+        expected_compiler_out: "dsir = []
+",
         expected_test_out: "",
     ),
     "desugaring/predicate_loop": (
@@ -987,7 +992,8 @@
       path: orb.main;
     };
   } @ 159..330 (fid = 0),
-]"#,
+]
+"#,
         expected_test_out: "",
     ),
     "lexer/char_literal": (
@@ -2192,7 +2198,8 @@
       path: orb.MY_LIL_CONSTANT;
     };
   } @ 220..244 (fid = 0),
-]"#,
+]
+"#,
         expected_test_out: "",
     ),
     "parser/directive": (
@@ -2215,7 +2222,8 @@
     path: std.rc.Rc @ 87..96 (fid = 0);
     alias: ReferenceCountedPtr;
   } @ 82..120 (fid = 0),
-]",
+]
+",
         expected_test_out: "",
     ),
     "parser/expression": (
@@ -2619,7 +2627,8 @@
       ] @ 25..1569 (fid = 0);
     } @ 19..1569 (fid = 0);
   } @ 11..1569 (fid = 0),
-]"#,
+]
+"#,
         expected_test_out: "",
     ),
     "parser/item": (
@@ -2656,7 +2665,8 @@
     typexpr: none;
     value: float 12 @ 115..119 (fid = 0);
   } @ 102..120 (fid = 0),
-]"#,
+]
+"#,
         expected_test_out: "",
     ),
     "parser/statement": (
@@ -2711,7 +2721,8 @@
       ] @ 14..215 (fid = 0);
     } @ 8..215 (fid = 0);
   } @ 0..215 (fid = 0),
-]",
+]
+",
         expected_test_out: "",
     ),
 }

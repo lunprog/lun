@@ -463,6 +463,7 @@ pub fn run() -> Result<()> {
     if argv.debug_print_at(DebugPrint::Ast) {
         eprint!("ast = ");
         ast.dump();
+        eprintln!();
     }
     if argv.debug_halt_at(DebugHalt::Parser) {
         return Ok(());
@@ -476,6 +477,7 @@ pub fn run() -> Result<()> {
     if argv.debug_print_at(DebugPrint::DsirTree) {
         eprint!("dsir = ");
         dsir.dump();
+        eprintln!();
     }
     if argv.debug_halt_at(DebugHalt::Dsir) {
         return Ok(());
@@ -489,6 +491,7 @@ pub fn run() -> Result<()> {
     if argv.debug_print_at(DebugPrint::ScirTree) {
         eprint!("scir = ");
         scir.dump();
+        eprintln!();
     }
     if argv.debug_halt_at(DebugHalt::Scir) {
         return Ok(());
