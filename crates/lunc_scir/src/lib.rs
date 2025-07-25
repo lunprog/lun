@@ -251,7 +251,6 @@ impl FromHigher for ScExpression {
                 expr: lower(expr),
                 member,
             },
-            DsExpr::Orb => ScExpr::Orb,
             DsExpr::QualifiedPath { path, sym: lazy } => ScExpr::QualifiedPath {
                 path,
                 sym: ScLazySym::UnCk(lazy.as_sym()),
@@ -392,10 +391,6 @@ pub enum ScExpr {
         expr: Box<ScExpression>,
         member: String,
     },
-    /// See [`DsExpr::Orb`]
-    ///
-    /// [`DsExpr::Orb`]: lunc_dsir::DsExpr::Orb
-    Orb,
     /// Constructed from member access, eg:
     ///
     /// `orb.driver.run` are member accesses and it refers to a function "run",

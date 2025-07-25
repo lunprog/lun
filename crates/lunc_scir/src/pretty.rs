@@ -180,9 +180,6 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::Orb => {
-                write!(ctx.out, "Orb")
-            }
             ScExpr::QualifiedPath { path, sym } => {
                 ctx.pretty_struct("QualifiedPath")
                     .field("path", path)

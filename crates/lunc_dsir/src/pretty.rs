@@ -193,9 +193,6 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Orb => {
-                write!(ctx.out, "Orb")
-            }
             DsExpr::QualifiedPath { path, sym } => {
                 ctx.pretty_struct("QualifiedPath")
                     .field("path", path)

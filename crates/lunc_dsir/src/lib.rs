@@ -433,7 +433,7 @@ impl FromHigher for DsExpression {
                 expr: lower(expr),
                 member,
             },
-            Expr::Orb => DsExpr::Orb,
+            Expr::Orb => DsExpr::Ident(LazySymbol::Name("orb".to_string())),
             Expr::FunDefinition {
                 args,
                 rettypexpr,
@@ -591,10 +591,6 @@ pub enum DsExpr {
         expr: Box<DsExpression>,
         member: String,
     },
-    /// See [`Expr::Orb`]
-    ///
-    /// [`Expr::Orb`]: lunc_parser::expr::Expr::Orb
-    Orb,
     /// Constructed from member access, eg:
     ///
     /// `orb.driver.run` are member accesses and it refers to a function "run",
@@ -810,14 +806,6 @@ pub fn expr_member_access(expr: DsExpression, member: impl ToString) -> DsExpres
             expr: Box::new(expr),
             member: member.to_string(),
         },
-        loc: None,
-    }
-}
-
-/// Creates an orb expression without location.
-pub fn expr_orb() -> DsExpression {
-    DsExpression {
-        expr: DsExpr::Orb,
         loc: None,
     }
 }
@@ -1313,7 +1301,7 @@ impl Desugarrer {
 
                 Ok(())
             }
-            DsExpr::Continue { label: _ } | DsExpr::Null | DsExpr::Orb => Ok(()),
+            DsExpr::Continue { label: _ } | DsExpr::Null => Ok(()),
             DsExpr::PointerType {
                 mutable: _,
                 typexpr,
@@ -1468,9 +1456,6 @@ impl Desugarrer {
         match &current.expr {
             DsExpr::Ident(LazySymbol::Name(member)) => {
                 path.push(member);
-            }
-            DsExpr::Orb => {
-                path.push("orb");
             }
             _ => return None,
         }
