@@ -136,7 +136,25 @@ where
     if num == I::from(1u8) { "" } else { "s" }
 }
 
+/// It's [`list_fmt_with_word`] where word = "or"
 pub fn list_fmt(list: &[impl Display]) -> String {
+    list_fmt_with_word(list, "or")
+}
+
+/// format the list of things with a specified word at the end.
+///
+/// # Examples
+///
+/// ```
+/// # use lunc_utils::list_fmt_with_word;
+/// #
+/// assert_eq!(list_fmt_with_word(&[1], ""), "1".to_string());
+/// assert_eq!(list_fmt_with_word(&['a', 'b'], "or"), "a or b".to_string());
+/// assert_eq!(list_fmt_with_word(&['a', 'b'], "and"), "a and b".to_string());
+/// assert_eq!(list_fmt_with_word(&['a', 'b', 'c', 'd', 'e'], "or"), "a, b, c, d or e".to_string());
+/// assert_eq!(list_fmt_with_word(&['a', 'b', 'c', 'd', 'e'], "and"), "a, b, c, d and e".to_string());
+/// ```
+pub fn list_fmt_with_word(list: &[impl Display], word: &str) -> String {
     if list.len() == 1 {
         return list[0].to_string();
     }
@@ -146,7 +164,7 @@ pub fn list_fmt(list: &[impl Display]) -> String {
         if idx == list.len() - 2 {
             write!(res, "{token} ")
         } else if idx == list.len() - 1 {
-            write!(res, "or {token}")
+            write!(res, "{word} {token}")
         } else {
             write!(res, "{token}, ")
         }

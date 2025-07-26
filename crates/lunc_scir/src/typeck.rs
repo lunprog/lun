@@ -1,0 +1,773 @@
+//! Typechecking of the SCIR
+
+use std::{hint::unreachable_unchecked, iter::zip};
+
+use lunc_diag::{ToDiagnostic, feature_todo};
+use lunc_utils::symbol::Signedness;
+
+use crate::diags::{
+    ArityDoesntMatch, CantResolveComptimeValue, ExpectedPlaceExpression, ExpectedTypeFoundExpr,
+    MismatchedTypes, TypeAnnotationsNeeded,
+};
+
+use super::*;
+
+impl SemaChecker {
+    pub fn typeck_mod(&mut self, module: &mut ScModule) {
+        for item in &mut module.items {
+            match self.typeck_item(item) {
+                Ok(()) => {}
+                Err(d) => self.sink.push(d),
+            }
+        }
+    }
+
+    /// Recursively pre check modules, it is used to add types and everything
+    /// to global definitions and functions, but does not type check the body
+    /// of functions
+    pub fn pre_ck_module(&mut self, module: &mut ScModule) {
+        for item in &mut module.items {
+            match item {
+                ScItem::GlobalDef { .. } => match self.pre_ck_global_def(item) {
+                    Ok(()) => {}
+                    Err(d) => self.sink.push(d),
+                },
+                ScItem::Module { module, .. } => self.pre_ck_module(module),
+            }
+        }
+    }
+
+    /// # Safety
+    ///
+    /// This function must be called with a GlobalDef ScItem.
+    fn pre_ck_global_def(&mut self, global_def: &mut ScItem) -> Result<(), Diagnostic> {
+        let ScItem::GlobalDef {
+            name: _,
+            name_loc: _,
+            mutable: _,
+            typexpr,
+            value,
+            loc: _,
+            sym: symref,
+        } = global_def
+        else {
+            unsafe { unreachable_unchecked() }
+        };
+
+        match &mut value.expr {
+            ScExpr::FunDefinition {
+                args,
+                rettypexpr,
+                body: _,
+            } => {
+                // function pre ck
+
+                // we typecheck the type expression
+                if let Some(typexpr) = &mut **typexpr {
+                    self.typeck_expr(typexpr, Some(Type::Type))?;
+
+                    if typexpr.typ != Type::Type {
+                        self.sink.push(ExpectedTypeFoundExpr {
+                            loc: typexpr.loc.clone().unwrap(),
+                        })
+                    }
+                }
+
+                // we evaluate the type expression
+                let typexpr_as_type = if let Some(typexpr) = &mut **typexpr {
+                    let value = self
+                        .evaluate_expr(typexpr, Some(Type::Type))
+                        .map_err(|loc| {
+                            CantResolveComptimeValue {
+                                loc_expr: typexpr.loc.clone().unwrap(),
+                                loc,
+                            }
+                            .into_diag()
+                        })?;
+
+                    Some(value.as_type().unwrap_or(Type::Void))
+                } else {
+                    None
+                };
+
+                // collect the arguments types
+                let mut args_typ = Vec::new();
+
+                for ScArg {
+                    typexpr: typexpr_arg,
+                    sym: symref,
+                    ..
+                } in args
+                {
+                    match self.typeck_expr(typexpr_arg, Some(Type::Type)) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.push(d),
+                    }
+
+                    let value_typ_arg = match self.evaluate_expr(typexpr_arg, Some(Type::Type)) {
+                        Ok(typ) => typ,
+                        Err(loc) => {
+                            self.sink.push(CantResolveComptimeValue {
+                                loc_expr: typexpr_arg.loc.clone().unwrap(),
+                                loc: loc.clone(),
+                            });
+
+                            ValueExpr::Type(Type::Void)
+                        }
+                    };
+
+                    let arg_typ = match value_typ_arg.as_type() {
+                        Some(typ) => typ,
+                        None => {
+                            self.sink.push(ExpectedTypeFoundExpr {
+                                loc: typexpr_arg.loc.clone().unwrap(),
+                            });
+                            Type::Void
+                        }
+                    };
+
+                    args_typ.push(arg_typ.clone());
+
+                    {
+                        let mut sym = symref.write().unwrap();
+                        sym.typ = arg_typ;
+                    }
+                }
+
+                // evaluate the return type expression
+                let ret_typ = if let Some(ret_typexpr) = rettypexpr {
+                    match self.typeck_expr(ret_typexpr, Some(Type::Type)) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.push(d),
+                    }
+
+                    let value_typ_ret = match self.evaluate_expr(ret_typexpr, Some(Type::Type)) {
+                        Ok(typ) => typ,
+                        Err(loc) => {
+                            self.sink.push(CantResolveComptimeValue {
+                                loc_expr: ret_typexpr.loc.clone().unwrap(),
+                                loc: loc.clone(),
+                            });
+
+                            ValueExpr::Type(Type::Void)
+                        }
+                    };
+
+                    match value_typ_ret.as_type() {
+                        Some(typ) => typ,
+                        None => {
+                            self.sink.push(ExpectedTypeFoundExpr {
+                                loc: ret_typexpr.loc.clone().unwrap(),
+                            });
+                            Type::Void
+                        }
+                    }
+                } else {
+                    Type::Void
+                };
+
+                let typ = if let Some(ref typ) = typexpr_as_type {
+                    typ.clone()
+                } else {
+                    Type::FunPtr {
+                        args: args_typ,
+                        ret: Box::new(ret_typ),
+                    }
+                };
+
+                // we finally update the type of the symbol.
+                {
+                    let mut sym = symref.write().unwrap();
+
+                    sym.typ = typ;
+                }
+            }
+            _ => {
+                // global def pre ck
+
+                // we typecheck the type expression
+                if let Some(typexpr) = &mut **typexpr {
+                    self.typeck_expr(typexpr, Some(Type::Type))?;
+
+                    if typexpr.typ != Type::Type {
+                        self.sink.push(ExpectedTypeFoundExpr {
+                            loc: typexpr.loc.clone().unwrap(),
+                        })
+                    }
+                }
+
+                // we evaluate the type expression
+                let typexpr_as_type = if let Some(typexpr) = &mut **typexpr {
+                    let value = self
+                        .evaluate_expr(typexpr, Some(Type::Type))
+                        .map_err(|loc| {
+                            CantResolveComptimeValue {
+                                loc_expr: typexpr.loc.clone().unwrap(),
+                                loc,
+                            }
+                            .into_diag()
+                        })?;
+
+                    Some(value.as_type().unwrap_or(Type::Void))
+                } else {
+                    None
+                };
+
+                let typ = if let Some(ref typ) = typexpr_as_type {
+                    typ.clone()
+                } else {
+                    Type::Unknown
+                };
+
+                // we finally update the type of the symbol.
+                {
+                    let mut sym = symref.write().unwrap();
+
+                    sym.typ = typ;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn typeck_item(&mut self, item: &mut ScItem) -> Result<(), Diagnostic> {
+        match item {
+            ScItem::GlobalDef {
+                name: _,
+                name_loc: _,
+                mutable: _,
+                typexpr,
+                value,
+                loc: _,
+                sym: symref,
+            } => {
+                match &mut value.expr {
+                    ScExpr::FunDefinition {
+                        args: _,
+                        rettypexpr: _,
+                        body,
+                    } => {
+                        self.typeck_block(body, None)?;
+
+                        Ok(())
+                    }
+                    _ => {
+                        let typ = {
+                            let sym = symref.read().unwrap();
+                            sym.typ.clone().as_option()
+                        };
+
+                        // we check the value of the definition
+                        self.typeck_expr(value, typ.clone())?;
+
+                        // we check the type of the value
+                        if value.typ == Type::Unknown {
+                            self.sink.push(TypeAnnotationsNeeded {
+                                loc: value.loc.clone().unwrap(),
+                            });
+                        } else if let Some(typ) = &typ
+                            && &value.typ != typ
+                        {
+                            self.sink.push(MismatchedTypes {
+                                expected: vec![typ],
+                                found: value.typ.clone(),
+                                due_to: typexpr.clone().unwrap().loc,
+                                note: None,
+                                loc: value.loc.clone().unwrap(),
+                            });
+                        } else if typ.is_none() {
+                            // we set the type of the symbol to the type of the value as a fallback
+                            // let mut
+                            let mut sym = symref.write().unwrap();
+                            sym.typ = value.typ.clone();
+                        }
+
+                        // we evaluate the value of the global def
+                        let value_expr = {
+                            let sym = symref.read().unwrap();
+                            self.evaluate_expr(value, Some(sym.typ.clone()))
+                                .map_err(|loc| {
+                                    CantResolveComptimeValue {
+                                        loc_expr: value.loc.clone().unwrap(),
+                                        loc,
+                                    }
+                                    .into_diag()
+                                })?
+                        };
+
+                        {
+                            let mut sym = symref.write().unwrap();
+
+                            sym.value = Some(value_expr);
+                        }
+
+                        Ok(())
+                    }
+                }
+            }
+            ScItem::Module { module, .. } => {
+                self.typeck_mod(module);
+
+                Ok(())
+            }
+        }
+    }
+
+    pub fn typeck_expr(
+        &mut self,
+        expr: &mut ScExpression,
+        mut coerce_to: Option<Type>,
+    ) -> Result<(), Diagnostic> {
+        if let Some(Type::Unknown) = coerce_to {
+            coerce_to = None;
+        }
+
+        match &mut expr.expr {
+            ScExpr::IntLit(_) => {
+                if let Some(coercion) = coerce_to
+                    && coercion.is_int()
+                {
+                    expr.typ = coercion;
+                } else {
+                    expr.typ = Type::I32;
+                }
+            }
+            ScExpr::BoolLit(_) => {
+                expr.typ = Type::Bool;
+            }
+            ScExpr::StringLit(_) => {
+                expr.typ = Type::Str;
+            }
+            ScExpr::CharLit(_) => {
+                expr.typ = Type::Char;
+            }
+            ScExpr::FloatLit(_) => {
+                if let Some(coercion) = coerce_to
+                    && coercion.is_float()
+                {
+                    expr.typ = coercion;
+                } else {
+                    expr.typ = Type::F32;
+                }
+            }
+            ScExpr::Ident(symref) => {
+                let sym = symref.read().unwrap();
+
+                expr.typ = sym.typ.clone();
+            }
+            ScExpr::Binary {
+                lhs,
+                op: BinOp::Assignment,
+                rhs,
+            } if lhs.is_underscore() => {
+                self.typeck_expr(rhs, Some(lhs.typ.clone()))?;
+
+                expr.typ = Type::Void;
+            }
+            ScExpr::Binary {
+                lhs,
+                op: BinOp::Assignment,
+                rhs,
+            } => {
+                self.typeck_expr(lhs, None)?;
+                self.typeck_expr(rhs, Some(lhs.typ.clone()))?;
+
+                if !lhs.is_place() {
+                    self.sink.push(ExpectedPlaceExpression {
+                        loc: lhs.loc.clone().unwrap(),
+                        lhs_assign: true,
+                    });
+                }
+
+                expr.typ = Type::Void;
+            }
+            ScExpr::Binary { lhs, op, rhs } => {
+                self.typeck_expr(lhs, coerce_to)?;
+                self.typeck_expr(rhs, Some(lhs.typ.clone()))?;
+
+                expr.typ = if op.is_relational() || op.is_logical() {
+                    Type::Bool
+                } else if let Type::Unknown = lhs.typ {
+                    rhs.typ.clone()
+                } else {
+                    lhs.typ.clone()
+                };
+            }
+            ScExpr::Unary { op, expr: exp } => match op {
+                UnaryOp::Negation => {
+                    self.typeck_expr(exp, coerce_to)?;
+
+                    match (exp.typ.is_int(), exp.typ.signedness(), exp.typ.is_float()) {
+                        (true, Some(Signedness::Unsigned), _) => {
+                            self.sink.push(MismatchedTypes {
+                                expected: vec!["float", "integer"],
+                                found: exp.typ.clone(),
+                                due_to: None,
+                                note: Some(format!(
+                                    "can't perform a negation on an unsigned type like '{}'",
+                                    exp.typ
+                                )),
+                                loc: exp.loc.clone().unwrap(),
+                            });
+                        }
+                        (true, Some(Signedness::Signed), _) => {
+                            expr.typ = exp.typ.clone();
+                        }
+                        (false, _, true) => {
+                            expr.typ = exp.typ.clone();
+                        }
+                        _ => self.sink.push(MismatchedTypes {
+                            expected: vec!["float", "integer"],
+                            found: exp.typ.clone(),
+                            due_to: None,
+                            note: None,
+                            loc: exp.loc.clone().unwrap(),
+                        }),
+                    }
+                }
+                UnaryOp::Not => {
+                    self.typeck_expr(exp, Some(Type::Bool))?;
+
+                    if exp.typ != Type::Bool {
+                        self.sink.push(MismatchedTypes {
+                            expected: vec![Type::Bool],
+                            found: exp.typ.clone(),
+                            due_to: None,
+                            note: None,
+                            loc: exp.loc.clone().unwrap(),
+                        });
+                    }
+                }
+                UnaryOp::Dereference => {
+                    // NOTE: here we tell the type checker `we if you have no idea try to coerce the expression to *T`.
+                    self.typeck_expr(
+                        exp,
+                        coerce_to.map(|t| Type::Ptr {
+                            mutable: false,
+                            typ: Box::new(t),
+                        }),
+                    )?;
+
+                    expr.typ = if let Type::Ptr { mutable: _, typ } = &exp.typ {
+                        *typ.clone()
+                    } else {
+                        return Err(MismatchedTypes {
+                            expected: vec![Type::Bool],
+                            found: exp.typ.clone(),
+                            due_to: None,
+                            note: Some(format!("type '{}' cannot be dereferenced.", exp.typ)),
+                            loc: exp.loc.clone().unwrap(),
+                        }
+                        .into_diag());
+                    };
+                }
+            },
+            ScExpr::AddressOf {
+                mutable: _,
+                expr: exp,
+            } => {
+                let real_coerce = if let Some(Type::Ptr { mutable: _, typ }) = &coerce_to {
+                    Some((**typ).clone())
+                } else {
+                    None
+                };
+
+                self.typeck_expr(exp, real_coerce)?;
+            }
+            ScExpr::FunCall { callee, args } => {
+                self.typeck_expr(callee, None)?;
+
+                let Type::FunPtr {
+                    args: args_ty,
+                    ret: ret_ty,
+                } = &callee.typ
+                else {
+                    return Err(MismatchedTypes {
+                        expected: vec![Type::Bool],
+                        found: callee.typ.clone(),
+                        due_to: None,
+                        note: Some(format!("'{}' is not a function", callee.typ)),
+                        loc: callee.loc.clone().unwrap(),
+                    }
+                    .into_diag());
+                };
+
+                if args_ty.len() != args.len() {
+                    self.sink.push(ArityDoesntMatch {
+                        expected: args_ty.len(),
+                        got: args.len(),
+                        loc: callee.loc.clone().unwrap(),
+                    });
+                }
+
+                for (arg, aty) in zip(args, args_ty) {
+                    self.typeck_expr(arg, Some(aty.clone()))?;
+
+                    if arg.typ != *aty {
+                        self.sink.push(MismatchedTypes {
+                            expected: vec![aty],
+                            found: arg.typ.clone(),
+                            due_to: None,
+                            note: None,
+                            loc: arg.loc.clone().unwrap(),
+                        });
+                    }
+                }
+
+                expr.typ = (**ret_ty).clone();
+            }
+            ScExpr::If {
+                cond,
+                then_br,
+                else_br,
+            } => {
+                self.typeck_expr(cond, Some(Type::Bool))?;
+
+                if cond.typ != Type::Bool {
+                    self.sink.push(MismatchedTypes {
+                        expected: vec![Type::Bool],
+                        found: cond.typ.clone(),
+                        due_to: None,
+                        note: None,
+                        loc: cond.loc.clone().unwrap(),
+                    });
+                }
+
+                self.typeck_expr(then_br, coerce_to)?;
+
+                if let Some(else_br) = else_br {
+                    self.typeck_expr(else_br, Some(then_br.typ.clone()))?;
+
+                    if else_br.typ != then_br.typ {
+                        self.sink.push(MismatchedTypes {
+                            expected: vec![then_br.typ.clone()],
+                            found: else_br.typ.clone(),
+                            due_to: then_br.loc.clone(),
+                            note: None,
+                            loc: else_br.loc.clone().unwrap(),
+                        });
+                    }
+                }
+
+                expr.typ = then_br.typ.clone();
+            }
+            ScExpr::Block { label: _, block } => {
+                self.typeck_block(block, coerce_to)?;
+
+                expr.typ = block.typ.clone();
+            }
+            ScExpr::Loop { label: _, body } => {
+                self.typeck_block(body, None)?;
+
+                expr.typ = Type::Void;
+            }
+            ScExpr::Return { expr: exp } => {
+                if let Some(exp) = exp {
+                    self.typeck_expr(exp, None)?;
+                }
+
+                expr.typ = Type::Noreturn;
+            }
+            ScExpr::Break {
+                label: _,
+                expr: exp,
+            } => {
+                if let Some(exp) = exp {
+                    self.typeck_expr(exp, None)?;
+                }
+
+                expr.typ = Type::Noreturn;
+            }
+            ScExpr::Continue { label: _ } => {
+                expr.typ = Type::Noreturn;
+            }
+            ScExpr::Null => {
+                self.sink.push(feature_todo! {
+                    feature: "optional types are not yet implemented",
+                    label: "'null' represent not having a value",
+                    loc: expr.loc.clone().unwrap()
+                });
+            }
+            ScExpr::MemberAccess { expr: _, member: _ } => {
+                self.sink.push(feature_todo! {
+                    feature: "field access",
+                    label: "field access, struct type definition are not yet implemented",
+                    loc: expr.loc.clone().unwrap()
+                });
+            }
+            ScExpr::QualifiedPath {
+                path: _,
+                sym: symref,
+            } => {
+                let sym = symref.read().unwrap();
+
+                expr.typ = sym.typ.clone();
+            }
+            ScExpr::Underscore => {
+                // NOTE: we keep the typ unknown because the underscore
+                // expression is only valid in lhs of assignment and we
+                // have a special case for it.
+            }
+            ScExpr::FunDefinition { .. } => {
+                self.sink.push(feature_todo! {
+                    feature: "inner function definition",
+                    label: "function definition inside of a statement is not yet supported",
+                    loc: expr.loc.clone().unwrap()
+                });
+            }
+            ScExpr::PointerType {
+                mutable: _,
+                typexpr,
+            } => {
+                match self.typeck_expr(typexpr, Some(Type::Type)) {
+                    Ok(()) => {}
+                    Err(d) => self.sink.push(d),
+                }
+
+                if typexpr.typ != Type::Type {
+                    self.sink.push(ExpectedTypeFoundExpr {
+                        loc: typexpr.loc.clone().unwrap(),
+                    });
+                }
+
+                expr.typ = Type::Type;
+            }
+            ScExpr::FunPtrType { args, ret } => {
+                for arg in args {
+                    match self.typeck_expr(arg, Some(Type::Type)) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.push(d),
+                    }
+
+                    if arg.typ != Type::Type {
+                        self.sink.push(ExpectedTypeFoundExpr {
+                            loc: arg.loc.clone().unwrap(),
+                        });
+                    }
+                }
+
+                if let Some(ret) = ret {
+                    match self.typeck_expr(ret, Some(Type::Type)) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.push(d),
+                    }
+
+                    if ret.typ != Type::Type {
+                        self.sink.push(ExpectedTypeFoundExpr {
+                            loc: ret.loc.clone().unwrap(),
+                        });
+                    }
+                }
+
+                expr.typ = Type::Type;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn typeck_block(
+        &mut self,
+        block: &mut ScBlock,
+        coerce_to: Option<Type>,
+    ) -> Result<(), Diagnostic> {
+        // check the statements
+        for stmt in &mut block.stmts {
+            match self.typeck_stmt(stmt) {
+                Ok(()) => {}
+                Err(d) => self.sink.push(d),
+            }
+        }
+
+        // check the last expression
+        block.typ = if let Some(expr) = &mut block.last_expr {
+            self.typeck_expr(expr, coerce_to)?;
+
+            expr.typ.clone()
+        } else {
+            Type::Void
+        };
+
+        Ok(())
+    }
+
+    pub fn typeck_stmt(&mut self, stmt: &mut ScStatement) -> Result<(), Diagnostic> {
+        match &mut stmt.stmt {
+            ScStmt::VariableDef {
+                name: _,
+                name_loc: _,
+                mutable: _,
+                typexpr,
+                value,
+                sym: symref,
+            } => {
+                // we typecheck the type expression
+                if let Some(typexpr) = typexpr {
+                    self.typeck_expr(typexpr, Some(Type::Type))?;
+
+                    if typexpr.typ != Type::Type {
+                        self.sink.push(ExpectedTypeFoundExpr {
+                            loc: typexpr.loc.clone().unwrap(),
+                        })
+                    }
+                }
+
+                // we evaluate the type expression
+                let typexpr_as_type = if let Some(typexpr) = typexpr {
+                    let value = self
+                        .evaluate_expr(typexpr, Some(Type::Type))
+                        .map_err(|loc| {
+                            CantResolveComptimeValue {
+                                loc_expr: typexpr.loc.clone().unwrap(),
+                                loc,
+                            }
+                            .into_diag()
+                        })?;
+
+                    Some(value.as_type().unwrap_or(Type::Void))
+                } else {
+                    None
+                };
+
+                // we check the value of the definition
+                self.typeck_expr(value, typexpr_as_type.clone())?;
+
+                // we check the type of the value
+                if value.typ == Type::Unknown {
+                    self.sink.push(TypeAnnotationsNeeded {
+                        loc: value.loc.clone().unwrap(),
+                    });
+                } else if let Some(typ) = &typexpr_as_type
+                    && &value.typ != typ
+                {
+                    self.sink.push(MismatchedTypes {
+                        expected: vec![typ],
+                        found: value.typ.clone(),
+                        due_to: typexpr.as_ref().unwrap().loc.clone(),
+                        note: None,
+                        loc: value.loc.clone().unwrap(),
+                    });
+                }
+
+                let typ = if let Some(ref typ) = typexpr_as_type {
+                    typ.clone()
+                } else {
+                    value.typ.clone()
+                };
+
+                // we finally update the type of the symbol.
+                {
+                    let mut sym = symref.write().unwrap();
+
+                    sym.typ = typ;
+                }
+            }
+            ScStmt::Defer { expr } | ScStmt::Expression(expr) => {
+                self.typeck_expr(expr, None)?;
+            }
+        }
+
+        Ok(())
+    }
+}

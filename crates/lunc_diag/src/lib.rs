@@ -92,12 +92,14 @@ impl DiagnosticSink {
         inner.is_empty()
     }
 
+    // TODO(URGENT): rename this method to `dump_with`
     /// Print all diagnostics to the given writer, with default config.
     pub fn emit(&self, writer: &mut StandardStream) -> Result<(), files::Error> {
         let inner = self.0.read().unwrap();
         inner.emit(writer)
     }
 
+    // TODO(URGENT): rename this method to `dump`
     /// Emit all the diagnostics to stderr.
     pub fn emit_to_stderr(&self) {
         let inner = self.0.read().unwrap();
@@ -111,6 +113,8 @@ impl DiagnosticSink {
         inner.summary(orb_name)
     }
 
+    // TODO(URGENT): rename this method `emit`.
+    /// Emit a diagnostic
     pub fn push(&mut self, diag: impl ToDiagnostic) {
         let mut inner = self.0.write().unwrap();
         inner.push(diag);
@@ -415,6 +419,19 @@ pub enum ErrorCode {
     InvalidUnicodeEscape = 25,
     /// file for module does not exist
     ModuleFileDoesnotExist = 26,
+    /// expected the expression to be a place expression.
+    ///
+    /// # Definition
+    ///
+    /// A place expression, is an expression that represents a memory location,
+    /// like a local / global variable / definition that is mutable, a
+    /// dereference expression.
+    ExpectedPlaceExpression = 27,
+    /// the amount of arguments passed to a function call does not match the
+    /// amount the function was defined with.
+    ArityDoesntMatch = 28,
+    /// cannot resolve the provided expression at compile time.
+    CantResolveComptimeValue = 29,
 }
 
 impl Display for ErrorCode {
@@ -468,13 +485,13 @@ impl ToDiagnostic for FeatureNotImplemented {
 #[macro_export]
 macro_rules! feature_todo {
     {feature: $name:tt, label: $label:tt, loc: $loc:expr $( , )?} => {
-        $crate::FeatureNotImplemented {
+        lunc_diag::ToDiagnostic::into_diag($crate::FeatureNotImplemented {
             feature_name: ($name).to_string(),
             label_text: ($label).to_string(),
             loc: $loc,
             compiler_file: ::std::file!().to_string(),
             compiler_line: ::std::line!(),
-        }.into_diag()
+        })
     };
 }
 

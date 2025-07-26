@@ -2,17 +2,20 @@
 
 use std::fmt::Debug;
 
-use lunc_diag::{DiagnosticSink, FileId};
+use diags::{CantResolveComptimeValue, ExpectedTypeFoundExpr};
+use lunc_diag::{Diagnostic, DiagnosticSink, FileId, feature_todo};
 use lunc_dsir::{
     BinOp, DsArg, DsBlock, DsExpr, DsExpression, DsItem, DsItemDirective, DsModule, DsStatement,
-    DsStmt, QualifiedPath, Span, UnaryOp,
+    DsStmt, OSpan, QualifiedPath, UnaryOp,
 };
 use lunc_utils::{
-    FromHigher, lower,
-    symbol::{SymbolRef, Type},
+    FromHigher, Span, lower,
+    symbol::{SymbolRef, Type, ValueExpr},
 };
 
+pub mod diags;
 pub mod pretty;
+pub mod typeck;
 
 /// A semantic checked module, see the dsir version [`DsModule`]
 ///
@@ -58,11 +61,11 @@ pub enum ScItem {
     /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
     GlobalDef {
         name: String,
-        name_loc: Span,
+        name_loc: OSpan,
         mutable: bool,
-        typexpr: Option<ScExpression>,
+        typexpr: Box<Option<ScExpression>>,
         value: Box<ScExpression>,
-        loc: Span,
+        loc: OSpan,
         /// corresponding symbol of this definition
         sym: SymbolRef,
     },
@@ -75,7 +78,7 @@ pub enum ScItem {
         /// the items of the module
         module: ScModule,
         /// location of the directive that defined this module.
-        loc: Span,
+        loc: OSpan,
         /// corresponding symbol of this definition
         sym: SymbolRef,
     },
@@ -98,7 +101,7 @@ impl FromHigher for ScItem {
                 name,
                 name_loc,
                 mutable,
-                typexpr: lower(typexpr),
+                typexpr: Box::new(lower(typexpr)),
                 value: lower(value),
                 loc,
                 sym: lazy.as_sym(),
@@ -127,8 +130,32 @@ impl FromHigher for ScItem {
 #[derive(Debug, Clone)]
 pub struct ScExpression {
     pub expr: ScExpr,
-    pub typ: Option<Type>,
-    pub loc: Span,
+    pub typ: Type,
+    pub loc: OSpan,
+}
+
+impl ScExpression {
+    /// Is the expression a place expression kind?
+    ///
+    /// # Definition
+    ///
+    /// A place expression, is an expression that represents a memory location,
+    /// like a local / global variable / definition that is mutable, a
+    /// dereference expression.
+    pub fn is_place(&self) -> bool {
+        match &self.expr {
+            ScExpr::Ident(sym) if sym.is_place() => true,
+            ScExpr::Unary {
+                op: UnaryOp::Dereference,
+                expr: _,
+            } => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_underscore(&self) -> bool {
+        matches!(self.expr, ScExpr::Underscore)
+    }
 }
 
 impl FromHigher for ScExpression {
@@ -213,7 +240,7 @@ impl FromHigher for ScExpression {
 
         ScExpression {
             expr,
-            typ: None,
+            typ: Type::default(),
             loc: node.loc,
         }
     }
@@ -277,10 +304,9 @@ pub enum ScExpr {
         callee: Box<ScExpression>,
         args: Vec<ScExpression>,
     },
-    /// See [`DsExpr::If`] and [`DsExpr::IfThenElse`]
+    /// See [`DsExpr::If`]
     ///
     /// [`DsExpr::If`]: lunc_dsir::DsExpr::If
-    /// [`DsExpr::IfThenElse`]: lunc_dsir::DsExpr::IfThenElse
     If {
         cond: Box<ScExpression>,
         then_br: Box<ScExpression>,
@@ -322,7 +348,9 @@ pub enum ScExpr {
     /// See [`DsExpr::MemberAccess`]
     ///
     /// After the name resolution, member access of modules are converted to [`EffectivePath`]
+    ///
     /// [`DsExpr::MemberAccess`]: lunc_dsir::DsExpr::MemberAccess
+    /// [`EffectivePath`]: lunc_utils::symbol::EffectivePath
     MemberAccess {
         expr: Box<ScExpression>,
         member: String,
@@ -370,9 +398,9 @@ pub enum ScExpr {
 #[derive(Debug, Clone)]
 pub struct ScArg {
     pub name: String,
-    pub name_loc: Span,
+    pub name_loc: OSpan,
     pub typexpr: ScExpression,
-    pub loc: Span,
+    pub loc: OSpan,
     pub sym: SymbolRef,
 }
 
@@ -405,8 +433,8 @@ impl FromHigher for ScArg {
 pub struct ScBlock {
     pub stmts: Vec<ScStatement>,
     pub last_expr: Option<Box<ScExpression>>,
-    pub loc: Span,
-    pub typ: Option<Type>,
+    pub loc: OSpan,
+    pub typ: Type,
 }
 
 impl FromHigher for ScBlock {
@@ -423,7 +451,7 @@ impl FromHigher for ScBlock {
             stmts: lower(stmts),
             last_expr: lower(last_expr),
             loc,
-            typ: None,
+            typ: Type::Unknown,
         }
     }
 }
@@ -434,7 +462,7 @@ impl FromHigher for ScBlock {
 #[derive(Debug, Clone)]
 pub struct ScStatement {
     pub stmt: ScStmt,
-    pub loc: Span,
+    pub loc: OSpan,
 }
 
 impl FromHigher for ScStatement {
@@ -475,7 +503,7 @@ pub enum ScStmt {
     /// [`DsStmt::VariableDef`]: lunc_dsir::DsStmt::VariableDef
     VariableDef {
         name: String,
-        name_loc: Span,
+        name_loc: OSpan,
         mutable: bool,
         typexpr: Option<ScExpression>,
         value: Box<ScExpression>,
@@ -502,10 +530,139 @@ impl SemaChecker {
     }
 
     pub fn produce(&mut self, dsir: DsModule) -> Option<ScModule> {
-        let module = lower(dsir);
+        let mut root = lower(dsir);
 
-        _ = self.sink;
+        self.pre_ck_module(&mut root);
+        self.typeck_mod(&mut root);
 
-        Some(module)
+        if self.sink.failed() {
+            return None;
+        }
+
+        Some(root)
+    }
+
+    /// Tries to evaluate the expression given as argument, if it can't, it
+    /// returns Err with the location of the expression that fails to evaluate
+    /// at compile time.
+    pub fn evaluate_expr(
+        &mut self,
+        expr: &ScExpression,
+        typ: Option<Type>,
+    ) -> Result<ValueExpr, Span> {
+        match &expr.expr {
+            ScExpr::IntLit(i) => match typ {
+                Some(Type::I8) => Ok(ValueExpr::I8(*i as i8)),
+                Some(Type::I16) => Ok(ValueExpr::I16(*i as i16)),
+                Some(Type::I32) => Ok(ValueExpr::I32(*i as i32)),
+                Some(Type::I64) => Ok(ValueExpr::I64(*i as i64)),
+                Some(Type::I128) => Ok(ValueExpr::I128(*i as i128)),
+                Some(Type::Isz) => Ok(ValueExpr::Isz(*i as isize)),
+                Some(Type::U8) => Ok(ValueExpr::U8(*i as u8)),
+                Some(Type::U16) => Ok(ValueExpr::U16(*i as u16)),
+                Some(Type::U32) => Ok(ValueExpr::U32(*i as u32)),
+                Some(Type::U64) => Ok(ValueExpr::U64(*i as u64)),
+                Some(Type::U128) => Ok(ValueExpr::U128(*i /* as u128 */)),
+                Some(Type::Usz) => Ok(ValueExpr::Usz(*i as usize)),
+                _ => Ok(ValueExpr::I32(*i as i32)),
+            },
+            ScExpr::BoolLit(b) => Ok(ValueExpr::Boolean(*b)),
+            ScExpr::StringLit(str) => Ok(ValueExpr::Str(str.clone())),
+            ScExpr::CharLit(c) => Ok(ValueExpr::Char(*c)),
+            ScExpr::FloatLit(f) => match typ {
+                Some(Type::F16 | Type::F128) => {
+                    self.sink.push(feature_todo! {
+                        feature: "f16 / f128 compile-time evaluation",
+                        label: "",
+                        loc: expr.loc.clone().unwrap(),
+                    });
+                    Ok(ValueExpr::F32(*f as f32))
+                }
+                Some(Type::F32) => Ok(ValueExpr::F32(*f as f32)),
+                Some(Type::F64) => Ok(ValueExpr::F64(*f /* as f64 */)),
+                _ => Ok(ValueExpr::F32(*f as f32)),
+            },
+            ScExpr::Ident(symref) if symref.is_comptime_known() => {
+                let sym = symref.read().unwrap();
+
+                sym.value.clone().ok_or(expr.loc.clone().unwrap())
+            }
+            ScExpr::PointerType { mutable, typexpr } => {
+                let typ = self
+                    .evaluate_expr(typexpr, Some(Type::Type))?
+                    .as_type()
+                    .unwrap_or(Type::Void);
+                // NOTE: we do not emit a diagnostic because we already did in
+                // the type checking
+
+                Ok(ValueExpr::Type(Type::Ptr {
+                    mutable: *mutable,
+                    typ: Box::new(typ),
+                }))
+            }
+            ScExpr::FunPtrType { args, ret } => {
+                // collect the arguments types
+                let mut args_typ = Vec::new();
+
+                for arg in args {
+                    let value_typ_arg = match self.evaluate_expr(arg, Some(Type::Type)) {
+                        Ok(typ) => typ,
+                        Err(loc) => {
+                            self.sink.push(CantResolveComptimeValue {
+                                loc_expr: arg.loc.clone().unwrap(),
+                                loc: loc.clone(),
+                            });
+
+                            ValueExpr::Type(Type::Void)
+                        }
+                    };
+
+                    let arg_typ = match value_typ_arg.as_type() {
+                        Some(typ) => typ,
+                        None => {
+                            self.sink.push(ExpectedTypeFoundExpr {
+                                loc: arg.loc.clone().unwrap(),
+                            });
+                            Type::Void
+                        }
+                    };
+
+                    args_typ.push(arg_typ.clone());
+                }
+
+                // evaluate the return type expression
+                let ret_typ = if let Some(ret_typexpr) = ret {
+                    let value_typ_ret = match self.evaluate_expr(ret_typexpr, Some(Type::Type)) {
+                        Ok(typ) => typ,
+                        Err(loc) => {
+                            self.sink.push(CantResolveComptimeValue {
+                                loc_expr: ret_typexpr.loc.clone().unwrap(),
+                                loc: loc.clone(),
+                            });
+
+                            ValueExpr::Type(Type::Void)
+                        }
+                    };
+
+                    match value_typ_ret.as_type() {
+                        Some(typ) => typ,
+                        None => {
+                            self.sink.push(ExpectedTypeFoundExpr {
+                                loc: ret_typexpr.loc.clone().unwrap(),
+                            });
+                            Type::Void
+                        }
+                    }
+                } else {
+                    Type::Void
+                };
+
+                Ok(ValueExpr::Type(Type::FunPtr {
+                    args: args_typ,
+                    ret: Box::new(ret_typ),
+                }))
+            }
+            _ => Err(expr.loc.clone().unwrap()),
+        }
     }
 }

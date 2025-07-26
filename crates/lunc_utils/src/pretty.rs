@@ -267,21 +267,9 @@ impl<'ctx> PrettyDump for ListDump<'ctx> {
     }
 }
 
-impl PrettyDump for &str {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        write!(ctx.out, "{self}")
-    }
-}
-
 impl PrettyDump for String {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         self.as_str().try_dump(ctx)
-    }
-}
-
-impl PrettyDump for Span {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        write!(ctx.out, "{self}")
     }
 }
 
@@ -323,20 +311,48 @@ impl<T: PrettyDump> PrettyDump for (T, &Option<Span>) {
     }
 }
 
-impl PrettyDump for bool {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        write!(ctx.out, "{self}")
-    }
-}
-
 impl<T: PrettyDump> PrettyDump for Box<T> {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         T::try_dump(self, ctx)
     }
 }
 
-impl PrettyDump for usize {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        write!(ctx.out, "{self}")
+/// A macro to implement pretty dump for a type that implements display
+macro_rules! impl_pretty_dump_for_display {
+    ($T:ty) => {
+        impl PrettyDump for $T {
+            fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+                write!(ctx.out, "{self}")
+            }
+        }
+    };
+    ( $T:ty $(, $U:ty )* $( , )? ) => {
+        impl_pretty_dump_for_display!($T);
+        $(
+            impl_pretty_dump_for_display!($U);
+        )*
     }
+}
+
+impl_pretty_dump_for_display! {
+    Span,
+    bool,
+    char,
+    &str,
+    u8,
+    u16,
+    u32,
+    u64,
+    u128,
+    usize,
+    i8,
+    i16,
+    i32,
+    i64,
+    i128,
+    isize,
+    // f16,
+    f32,
+    f64,
+    // f128,
 }

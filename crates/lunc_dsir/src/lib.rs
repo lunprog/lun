@@ -17,7 +17,7 @@ use lunc_parser::{
 };
 use lunc_utils::{
     FromHigher, lower,
-    symbol::{EffectivePath, LazySymbol, SymKind, Symbol, SymbolRef},
+    symbol::{EffectivePath, LazySymbol, SymKind, Symbol, SymbolRef, Type},
 };
 
 pub use lunc_parser::{
@@ -35,7 +35,7 @@ pub mod pretty;
 ///
 /// It's fine to unwrap because if we need to get the loc of a node it's to emit
 /// a diagnostic and the desugaring should never make errors.
-pub type Span = Option<lunc_utils::Span>;
+pub type OSpan = Option<lunc_utils::Span>;
 
 /// A desugared module, see the sweet version [`Module`]
 ///
@@ -70,11 +70,11 @@ pub enum DsItem {
     /// [`GlobalConst`]: lunc_parser::item::Item::GlobalConst
     GlobalDef {
         name: String,
-        name_loc: Span,
+        name_loc: OSpan,
         mutable: bool,
         typexpr: Option<DsExpression>,
         value: Box<DsExpression>,
-        loc: Span,
+        loc: OSpan,
         /// corresponding symbol of this definition
         sym: LazySymbol,
     },
@@ -88,7 +88,7 @@ pub enum DsItem {
         /// the items of the module
         module: DsModule,
         /// location of the directive that defined this module.
-        loc: Span,
+        loc: OSpan,
         /// corresponding symbol of this definition
         sym: LazySymbol,
     },
@@ -106,10 +106,10 @@ pub enum DsItemDirective {
     Use {
         path: QualifiedPath,
         alias: Option<String>,
-        loc: Span,
+        loc: OSpan,
     },
     /// NOTE: This directive will not be here after we pass the lowered DSIR to the desugarrer
-    Mod { name: String, loc: Span },
+    Mod { name: String, loc: OSpan },
 }
 
 impl FromHigher for DsItemDirective {
@@ -176,7 +176,7 @@ impl FromHigher for DsItem {
 #[derive(Debug, Clone)]
 pub struct DsExpression {
     pub expr: DsExpr,
-    pub loc: Span,
+    pub loc: OSpan,
 }
 
 impl FromHigher for DsExpression {
@@ -702,7 +702,7 @@ pub fn expr_fun_ptr_type(
 pub struct DsBlock {
     pub stmts: Vec<DsStatement>,
     pub last_expr: Option<Box<DsExpression>>,
-    pub loc: Span,
+    pub loc: OSpan,
 }
 
 /// Creates a new block without a location
@@ -738,7 +738,7 @@ impl FromHigher for DsBlock {
 #[derive(Debug, Clone)]
 pub struct DsStatement {
     pub stmt: DsStmt,
-    pub loc: Span,
+    pub loc: OSpan,
 }
 
 impl FromHigher for DsStatement {
@@ -778,7 +778,7 @@ pub enum DsStmt {
     /// [`Stmt::VariableDef`]: lunc_parser::stmt::Stmt::VariableDef
     VariableDef {
         name: String,
-        name_loc: Span,
+        name_loc: OSpan,
         mutable: bool,
         typexpr: Option<DsExpression>,
         value: Box<DsExpression>,
@@ -808,9 +808,9 @@ pub fn stmt_expr(expr: DsExpression) -> DsStatement {
 #[derive(Debug, Clone)]
 pub struct DsArg {
     pub name: String,
-    pub name_loc: Span,
+    pub name_loc: OSpan,
     pub typexpr: DsExpression,
-    pub loc: Span,
+    pub loc: OSpan,
     pub sym: LazySymbol,
 }
 
@@ -1477,78 +1477,32 @@ impl SymbolMap {
     }
 
     pub fn first_scope() -> SymbolMap {
-        const PATH: EffectivePath = EffectivePath::new();
-
         SymbolMap {
             map: HashMap::from([
-                (
-                    "isz".to_string(),
-                    SymbolRef::global(false, "isz".to_string(), PATH, None),
-                ),
-                (
-                    "i64".to_string(),
-                    SymbolRef::global(false, "i64".to_string(), PATH, None),
-                ),
-                (
-                    "i32".to_string(),
-                    SymbolRef::global(false, "i32".to_string(), PATH, None),
-                ),
-                (
-                    "i16".to_string(),
-                    SymbolRef::global(false, "i16".to_string(), PATH, None),
-                ),
-                (
-                    "i8".to_string(),
-                    SymbolRef::global(false, "i8".to_string(), PATH, None),
-                ),
-                (
-                    "usz".to_string(),
-                    SymbolRef::global(false, "usz".to_string(), PATH, None),
-                ),
-                (
-                    "u64".to_string(),
-                    SymbolRef::global(false, "u64".to_string(), PATH, None),
-                ),
-                (
-                    "u32".to_string(),
-                    SymbolRef::global(false, "u32".to_string(), PATH, None),
-                ),
-                (
-                    "u16".to_string(),
-                    SymbolRef::global(false, "u16".to_string(), PATH, None),
-                ),
-                (
-                    "u8".to_string(),
-                    SymbolRef::global(false, "u8".to_string(), PATH, None),
-                ),
-                (
-                    "f16".to_string(),
-                    SymbolRef::global(false, "f16".to_string(), PATH, None),
-                ),
-                (
-                    "f32".to_string(),
-                    SymbolRef::global(false, "f32".to_string(), PATH, None),
-                ),
-                (
-                    "f64".to_string(),
-                    SymbolRef::global(false, "f64".to_string(), PATH, None),
-                ),
-                (
-                    "bool".to_string(),
-                    SymbolRef::global(false, "bool".to_string(), PATH, None),
-                ),
-                (
-                    "str".to_string(),
-                    SymbolRef::global(false, "str".to_string(), PATH, None),
-                ),
+                ("isz".to_string(), SymbolRef::typ("isz", Type::Isz)),
+                ("i128".to_string(), SymbolRef::typ("i128", Type::I128)),
+                ("i64".to_string(), SymbolRef::typ("i64", Type::I64)),
+                ("i32".to_string(), SymbolRef::typ("i32", Type::I32)),
+                ("i16".to_string(), SymbolRef::typ("i16", Type::I16)),
+                ("i8".to_string(), SymbolRef::typ("i8", Type::I8)),
+                ("usz".to_string(), SymbolRef::typ("usz", Type::Usz)),
+                ("u128".to_string(), SymbolRef::typ("u128", Type::U128)),
+                ("u64".to_string(), SymbolRef::typ("u64", Type::U64)),
+                ("u32".to_string(), SymbolRef::typ("u32", Type::U32)),
+                ("u16".to_string(), SymbolRef::typ("u16", Type::U16)),
+                ("u8".to_string(), SymbolRef::typ("u8", Type::U8)),
+                ("f16".to_string(), SymbolRef::typ("f16", Type::F16)),
+                ("f32".to_string(), SymbolRef::typ("f32", Type::F32)),
+                ("f64".to_string(), SymbolRef::typ("f64", Type::F64)),
+                ("f128".to_string(), SymbolRef::typ("f128", Type::F128)),
+                ("bool".to_string(), SymbolRef::typ("bool", Type::Bool)),
+                ("str".to_string(), SymbolRef::typ("str", Type::Str)),
+                ("char".to_string(), SymbolRef::typ("char", Type::Char)),
                 (
                     "noreturn".to_string(),
-                    SymbolRef::global(false, "noreturn".to_string(), PATH, None),
+                    SymbolRef::typ("usz", Type::Noreturn),
                 ),
-                (
-                    "void".to_string(),
-                    SymbolRef::global(false, "void".to_string(), PATH, None),
-                ),
+                ("void".to_string(), SymbolRef::typ("usz", Type::Void)),
                 (
                     "orb".to_string(),
                     // NOTE: here we can set the loc to be 0..0 into the root
@@ -1691,15 +1645,6 @@ impl SymbolTable {
         }
 
         None
-    }
-
-    /// Edit a symbol in the scope `which` with the name `name`, will panick if
-    /// the scope or the symbol doesn't exist
-    pub fn edit(&mut self, which: usize, name: impl AsRef<str>, new_symbol: Symbol) {
-        let symref = self.tabs[which].map.get_mut(name.as_ref()).unwrap().clone();
-        let mut lock = symref.write().unwrap();
-
-        *lock = new_symbol;
     }
 
     /// Returns the Var count of the last symbol map
