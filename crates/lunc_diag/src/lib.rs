@@ -92,16 +92,14 @@ impl DiagnosticSink {
         inner.is_empty()
     }
 
-    // TODO(URGENT): rename this method to `dump_with`
     /// Print all diagnostics to the given writer, with default config.
-    pub fn emit(&self, writer: &mut StandardStream) -> Result<(), files::Error> {
+    pub fn dump_with(&self, writer: &mut StandardStream) -> Result<(), files::Error> {
         let inner = self.0.read().unwrap();
         inner.emit(writer)
     }
 
-    // TODO(URGENT): rename this method to `dump`
     /// Emit all the diagnostics to stderr.
-    pub fn emit_to_stderr(&self) {
+    pub fn dump(&self) {
         let inner = self.0.read().unwrap();
         inner.emit_to_stderr();
     }
@@ -113,9 +111,8 @@ impl DiagnosticSink {
         inner.summary(orb_name)
     }
 
-    // TODO(URGENT): rename this method `emit`.
     /// Emit a diagnostic
-    pub fn push(&mut self, diag: impl ToDiagnostic) {
+    pub fn emit(&mut self, diag: impl ToDiagnostic) {
         let mut inner = self.0.write().unwrap();
         inner.push(diag);
     }

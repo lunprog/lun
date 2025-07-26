@@ -12,7 +12,7 @@ fn main() -> ExitCode {
     match lunc::run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(CompilerDiagnostics { mut sink, orb_name }) => {
-            sink.push(
+            sink.emit(
                 if sink.failed() {
                     Diagnostic::error()
                 } else {
@@ -21,7 +21,7 @@ fn main() -> ExitCode {
                 .with_message(sink.summary(&orb_name).unwrap()),
             );
 
-            sink.emit_to_stderr();
+            sink.dump();
 
             if sink.failed() {
                 lunc::exit_code_compilation_failed()

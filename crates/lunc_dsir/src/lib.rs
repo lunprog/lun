@@ -17,7 +17,7 @@ use lunc_parser::{
 };
 use lunc_utils::{
     FromHigher, lower,
-    symbol::{EffectivePath, LazySymbol, SymKind, Symbol, SymbolRef, Type},
+    symbol::{EffectivePath, LazySymbol, SymKind, SymbolRef, Type},
 };
 
 pub use lunc_parser::{
@@ -916,7 +916,7 @@ impl Desugarrer {
                 };
 
                 if !submodule_path.exists() {
-                    self.sink.push(ModuleFileDoesnotExist {
+                    self.sink.emit(ModuleFileDoesnotExist {
                         name: name.clone(),
                         expected_path: submodule_path,
                         loc: loc.clone().unwrap(),
@@ -984,7 +984,7 @@ impl Desugarrer {
         for item in &mut module.items {
             match self.resolve_item(item) {
                 Ok(()) => {}
-                Err(d) => self.sink.push(d),
+                Err(d) => self.sink.emit(d),
             }
         }
 
@@ -1030,14 +1030,14 @@ impl Desugarrer {
         for stmt in &mut block.stmts {
             match self.resolve_stmt(stmt) {
                 Ok(()) => {}
-                Err(d) => self.sink.push(d),
+                Err(d) => self.sink.emit(d),
             }
         }
 
         if let Some(expr) = &mut block.last_expr {
             match self.resolve_expr(expr) {
                 Ok(()) => {}
-                Err(d) => self.sink.push(d),
+                Err(d) => self.sink.emit(d),
             }
         }
 
@@ -1064,7 +1064,7 @@ impl Desugarrer {
                     Ok(())
                 })() {
                     Ok(()) => {}
-                    Err(d) => self.sink.push(d),
+                    Err(d) => self.sink.emit(d),
                 }
 
                 let symref = SymbolRef::local(
@@ -1264,7 +1264,7 @@ impl Desugarrer {
                 {
                     match self.resolve_expr(typexpr) {
                         Ok(()) => {}
-                        Err(d) => self.sink.push(d),
+                        Err(d) => self.sink.emit(d),
                     }
 
                     let symref =
@@ -1321,7 +1321,7 @@ impl Desugarrer {
             match self.bind_global_def(item, resolve_path.clone()) {
                 Ok(()) => {}
                 Err(d) => {
-                    self.sink.push(d);
+                    self.sink.emit(d);
                 }
             }
         }
@@ -1356,7 +1356,7 @@ impl Desugarrer {
 
                 match self.table.bind(name.clone(), symref) {
                     Ok(()) => {}
-                    Err(d) => self.sink.push(d),
+                    Err(d) => self.sink.emit(d),
                 }
 
                 Ok(())
@@ -1384,7 +1384,7 @@ impl Desugarrer {
 
                 match self.table.bind(name.clone(), symref) {
                     Ok(()) => {}
-                    Err(d) => self.sink.push(d),
+                    Err(d) => self.sink.emit(d),
                 }
 
                 Ok(())
@@ -1410,7 +1410,7 @@ impl Desugarrer {
                 if self.current_path == resolve_path {
                     match self.table.bind(name.clone(), symref) {
                         Ok(()) => {}
-                        Err(d) => self.sink.push(d),
+                        Err(d) => self.sink.emit(d),
                     }
                 }
 

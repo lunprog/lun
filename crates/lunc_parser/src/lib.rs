@@ -93,7 +93,7 @@ impl Parser {
         let module = match Module::parse(self) {
             Ok(ast) => ast,
             Err(diag) => {
-                self.sink.push(diag);
+                self.sink.emit(diag);
                 return None;
             }
         };

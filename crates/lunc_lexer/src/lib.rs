@@ -54,7 +54,7 @@ impl Lexer {
                 Ok(t) => t,
                 Err(diag) => {
                     // irrecoverable error diagnostic
-                    self.sink.push(diag);
+                    self.sink.emit(diag);
                     break;
                 }
             };
@@ -259,7 +259,7 @@ impl Lexer {
             }
             Some(c) => {
                 self.pop();
-                self.sink.push(UnknownToken { c, loc: self.loc() });
+                self.sink.emit(UnknownToken { c, loc: self.loc() });
                 return Ok(TokenType::__NotAToken__);
             }
             None => EOF,
@@ -279,7 +279,7 @@ impl Lexer {
                     Ok(TokenType::StringLit(s)) => s,
                     Ok(_) => unreachable!(),
                     Err(d) => {
-                        self.sink.push(d);
+                        self.sink.emit(d);
                         String::default()
                     }
                 };
@@ -294,7 +294,7 @@ impl Lexer {
                     Ok(TokenType::CharLit(c)) => c,
                     Ok(_) => unreachable!(),
                     Err(d) => {
-                        self.sink.push(d);
+                        self.sink.emit(d);
                         char::default()
                     }
                 };
@@ -449,7 +449,7 @@ impl Lexer {
                 let int_part = match self.parse_u128(&int_str, 16) {
                     Ok(h) => h,
                     Err(d) => {
-                        self.sink.push(d);
+                        self.sink.emit(d);
                         0
                     }
                 };
@@ -465,7 +465,7 @@ impl Lexer {
                                 match self.parse_u128_with_digit_count(&frac_str, 16) {
                                     Ok((f, n)) => (f, n as i32),
                                     Err(d) => {
-                                        self.sink.push(d);
+                                        self.sink.emit(d);
                                         (0, 0)
                                     }
                                 }
@@ -488,7 +488,7 @@ impl Lexer {
 
                                     Some('_' | '0'..='9') => 1,
                                     Some(c) => {
-                                        self.sink.push(InvalidDigitInNumber {
+                                        self.sink.emit(InvalidDigitInNumber {
                                             c,
                                             loc_c: self.loc_current_char(),
                                             loc_i: self.loc(),
@@ -496,7 +496,7 @@ impl Lexer {
                                         1
                                     }
                                     _ => {
-                                        self.sink.push(ReachedEOF { loc: self.loc() });
+                                        self.sink.emit(ReachedEOF { loc: self.loc() });
                                         1
                                     }
                                 };
@@ -506,7 +506,7 @@ impl Lexer {
                                 let exp = match self.parse_u128(&exp_str, 10) {
                                     Ok(e) => e as i32,
                                     Err(d) => {
-                                        self.sink.push(d);
+                                        self.sink.emit(d);
                                         0
                                     }
                                 };
@@ -514,7 +514,7 @@ impl Lexer {
                                 sign * exp
                             }
                             Some(found) => {
-                                self.sink.push(ExpectedExponentPart {
+                                self.sink.emit(ExpectedExponentPart {
                                     found,
                                     loc_c: self.loc_current_char(),
                                     loc_float: self.loc(),
@@ -522,7 +522,7 @@ impl Lexer {
                                 0
                             }
                             None => {
-                                self.sink.push(ReachedEOF { loc: self.loc() });
+                                self.sink.emit(ReachedEOF { loc: self.loc() });
                                 0
                             }
                         };
@@ -550,7 +550,7 @@ impl Lexer {
 
                             Some('_' | '0'..='9') => 1,
                             Some(c) => {
-                                self.sink.push(InvalidDigitInNumber {
+                                self.sink.emit(InvalidDigitInNumber {
                                     c,
                                     loc_c: self.loc_current_char(),
                                     loc_i: self.loc(),
@@ -558,7 +558,7 @@ impl Lexer {
                                 1
                             }
                             _ => {
-                                self.sink.push(ReachedEOF { loc: self.loc() });
+                                self.sink.emit(ReachedEOF { loc: self.loc() });
                                 1
                             }
                         };
@@ -569,7 +569,7 @@ impl Lexer {
                             * match self.parse_u128(&exp_str, 10) {
                                 Ok(e) => e as i32,
                                 Err(d) => {
-                                    self.sink.push(d);
+                                    self.sink.emit(d);
                                     0
                                 }
                             };
@@ -581,7 +581,7 @@ impl Lexer {
                     }
                     _ => {
                         if int_str.is_empty() {
-                            self.sink.push(NoDigitsInANonDecimal { loc: self.loc() });
+                            self.sink.emit(NoDigitsInANonDecimal { loc: self.loc() });
                         }
                         return Ok(TokenType::IntLit(int_part));
                     }
@@ -592,7 +592,7 @@ impl Lexer {
         let int_str = self.lex_word();
 
         if int_str.is_empty() {
-            self.sink.push(NoDigitsInANonDecimal { loc: self.loc() });
+            self.sink.emit(NoDigitsInANonDecimal { loc: self.loc() });
         }
 
         let int_part = self.parse_u128(&int_str, radix)?;
@@ -617,7 +617,7 @@ impl Lexer {
                             Err(d) => {
                                 // NOTE: we are not using ? to propagate the diag, we just use
                                 // a poisoned value
-                                self.sink.push(d);
+                                self.sink.emit(d);
                                 (0, 0)
                             }
                         }
@@ -639,7 +639,7 @@ impl Lexer {
                             }
                             Some('_' | '0'..='9') => 1,
                             Some(c) => {
-                                self.sink.push(InvalidDigitInNumber {
+                                self.sink.emit(InvalidDigitInNumber {
                                     c,
                                     loc_c: self.loc_current_char(),
                                     loc_i: self.loc(),
@@ -647,7 +647,7 @@ impl Lexer {
                                 1
                             }
                             _ => {
-                                self.sink.push(ReachedEOF { loc: self.loc() });
+                                self.sink.emit(ReachedEOF { loc: self.loc() });
                                 1
                             }
                         };
@@ -657,7 +657,7 @@ impl Lexer {
                         let exp = match self.parse_u128(&exp_str, 10) {
                             Ok(e) => e as i32,
                             Err(d) => {
-                                self.sink.push(d);
+                                self.sink.emit(d);
                                 0
                             }
                         };
@@ -717,7 +717,7 @@ impl Lexer {
                             str.push(c);
                         }
                         Err(d) => {
-                            self.sink.push(d);
+                            self.sink.emit(d);
                         }
                     }
                 }
@@ -727,7 +727,7 @@ impl Lexer {
                 }
                 _ => {
                     self.sink
-                        .push(UnterminatedStringLiteral { loc: self.loc() });
+                        .emit(UnterminatedStringLiteral { loc: self.loc() });
                     break;
                 }
             }
@@ -747,7 +747,7 @@ impl Lexer {
                 let es = match self.pop() {
                     Some(es) => es,
                     None => {
-                        self.sink.push(ReachedEOF { loc: self.loc() });
+                        self.sink.emit(ReachedEOF { loc: self.loc() });
                         char::default()
                     }
                 };
@@ -758,7 +758,7 @@ impl Lexer {
                     match self.lex_escape_sequence(es, false) {
                         Ok(es) => es,
                         Err(d) => {
-                            self.sink.push(d);
+                            self.sink.emit(d);
                             char::default()
                         }
                     }
@@ -766,7 +766,7 @@ impl Lexer {
             }
             Some('\'') => {
                 self.pop();
-                self.sink.push(EmptyCharLiteral { loc: self.loc() });
+                self.sink.emit(EmptyCharLiteral { loc: self.loc() });
                 empty_char = true;
                 char::default()
             }
@@ -775,7 +775,7 @@ impl Lexer {
                 c
             }
             None => {
-                self.sink.push(ReachedEOF { loc: self.loc() });
+                self.sink.emit(ReachedEOF { loc: self.loc() });
                 char::default()
             }
         };
@@ -789,10 +789,10 @@ impl Lexer {
                     self.lex_until('\'');
                     self.pop(); // '
                     self.sink
-                        .push(TooManyCodepointsInCharLiteral { loc: self.loc() });
+                        .emit(TooManyCodepointsInCharLiteral { loc: self.loc() });
                 }
                 None => {
-                    self.sink.push(ReachedEOF { loc: self.loc() });
+                    self.sink.emit(ReachedEOF { loc: self.loc() });
                 }
             }
         }
@@ -825,7 +825,7 @@ impl Lexer {
                     Some('{') => {
                         self.pop();
                     }
-                    _ => self.sink.push(InvalidUnicodeEscape {
+                    _ => self.sink.emit(InvalidUnicodeEscape {
                         note: InvalidUnicodeNote::ExpectedOpeningBrace,
                         loc: self.loc_current_char(),
                     }),
@@ -833,7 +833,7 @@ impl Lexer {
                 let hex_str = self.lex_hexadecimal();
 
                 if hex_str.is_empty() {
-                    self.sink.push(InvalidUnicodeEscape {
+                    self.sink.emit(InvalidUnicodeEscape {
                         note: InvalidUnicodeNote::EmptyUnicode,
                         loc: self.loc() + self.loc_current_char(),
                     });
@@ -842,7 +842,7 @@ impl Lexer {
                 let hex: u32 = match self.parse_u128(&hex_str, 16)?.try_into() {
                     Ok(h) => h,
                     Err(_) => {
-                        self.sink.push(InvalidUnicodeEscape {
+                        self.sink.emit(InvalidUnicodeEscape {
                             note: InvalidUnicodeNote::TooBig,
                             loc: self.loc(),
                         });
@@ -855,7 +855,7 @@ impl Lexer {
                     Some('}') => {
                         self.pop();
                     }
-                    _ => self.sink.push(InvalidUnicodeEscape {
+                    _ => self.sink.emit(InvalidUnicodeEscape {
                         note: InvalidUnicodeNote::ExpectedClosingBrace,
                         loc: self.loc_current_char(),
                     }),
@@ -864,7 +864,7 @@ impl Lexer {
                 if let Some(c) = char::from_u32(hex) {
                     c
                 } else {
-                    self.sink.push(InvalidUnicodeEscape {
+                    self.sink.emit(InvalidUnicodeEscape {
                         note: InvalidUnicodeNote::MustNotBeASurrogate,
                         loc: self.loc(),
                     });
@@ -873,7 +873,7 @@ impl Lexer {
                 }
             }
             _ => {
-                self.sink.push(UnknownCharacterEscape {
+                self.sink.emit(UnknownCharacterEscape {
                     es,
                     loc: self.loc(),
                 });
@@ -891,13 +891,13 @@ impl Lexer {
         for _ in 0..2 {
             str.push(match self.peek() {
                 Some('\'') if !string => {
-                    self.sink.push(NotEnoughHexDigits {
+                    self.sink.emit(NotEnoughHexDigits {
                         loc: span(self.head.prev_bytes(), self.head.cur_bytes() + 1, self.fid),
                     });
                     break;
                 }
                 Some('"') if string => {
-                    self.sink.push(NotEnoughHexDigits {
+                    self.sink.emit(NotEnoughHexDigits {
                         loc: span(self.head.prev_bytes(), self.head.cur_bytes() + 1, self.fid),
                     });
                     break;
@@ -906,7 +906,7 @@ impl Lexer {
                 None => {
                     self.pop();
                     self.sink
-                        .push(UnterminatedStringLiteral { loc: self.loc() });
+                        .emit(UnterminatedStringLiteral { loc: self.loc() });
                     // it's the poisoned value.
                     str.push_str("00");
                     break;
@@ -1070,7 +1070,7 @@ impl Lexer {
                 _ => {
                     had_invalid_digit = true;
                     let pos = options.base_bytes + i;
-                    self.sink.push(InvalidDigitInNumber {
+                    self.sink.emit(InvalidDigitInNumber {
                         c,
                         loc_c: span(pos, pos + 1, self.fid),
                         loc_i: options.int_loc.clone().unwrap_or_else(|| self.loc()),
@@ -1084,7 +1084,7 @@ impl Lexer {
             if digit >= radix.into() {
                 had_invalid_digit = true;
                 let pos = options.base_bytes + i;
-                self.sink.push(InvalidDigitInNumber {
+                self.sink.emit(InvalidDigitInNumber {
                     c,
                     loc_c: span(pos, pos + 1, self.fid),
                     loc_i: options.int_loc.clone().unwrap_or_else(|| self.loc()),
@@ -1107,7 +1107,7 @@ impl Lexer {
         }
 
         if overflowed && !had_invalid_digit {
-            self.sink.push(TooLargeIntegerLiteral { loc: self.loc() })
+            self.sink.emit(TooLargeIntegerLiteral { loc: self.loc() })
         }
 
         Ok((result, digit_count))

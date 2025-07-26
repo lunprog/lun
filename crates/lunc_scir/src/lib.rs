@@ -571,7 +571,7 @@ impl SemaChecker {
             ScExpr::CharLit(c) => Ok(ValueExpr::Char(*c)),
             ScExpr::FloatLit(f) => match typ {
                 Some(Type::F16 | Type::F128) => {
-                    self.sink.push(feature_todo! {
+                    self.sink.emit(feature_todo! {
                         feature: "f16 / f128 compile-time evaluation",
                         label: "",
                         loc: expr.loc.clone().unwrap(),
@@ -608,7 +608,7 @@ impl SemaChecker {
                     let value_typ_arg = match self.evaluate_expr(arg, Some(Type::Type)) {
                         Ok(typ) => typ,
                         Err(loc) => {
-                            self.sink.push(CantResolveComptimeValue {
+                            self.sink.emit(CantResolveComptimeValue {
                                 loc_expr: arg.loc.clone().unwrap(),
                                 loc: loc.clone(),
                             });
@@ -620,7 +620,7 @@ impl SemaChecker {
                     let arg_typ = match value_typ_arg.as_type() {
                         Some(typ) => typ,
                         None => {
-                            self.sink.push(ExpectedTypeFoundExpr {
+                            self.sink.emit(ExpectedTypeFoundExpr {
                                 loc: arg.loc.clone().unwrap(),
                             });
                             Type::Void
@@ -635,7 +635,7 @@ impl SemaChecker {
                     let value_typ_ret = match self.evaluate_expr(ret_typexpr, Some(Type::Type)) {
                         Ok(typ) => typ,
                         Err(loc) => {
-                            self.sink.push(CantResolveComptimeValue {
+                            self.sink.emit(CantResolveComptimeValue {
                                 loc_expr: ret_typexpr.loc.clone().unwrap(),
                                 loc: loc.clone(),
                             });
@@ -647,7 +647,7 @@ impl SemaChecker {
                     match value_typ_ret.as_type() {
                         Some(typ) => typ,
                         None => {
-                            self.sink.push(ExpectedTypeFoundExpr {
+                            self.sink.emit(ExpectedTypeFoundExpr {
                                 loc: ret_typexpr.loc.clone().unwrap(),
                             });
                             Type::Void
