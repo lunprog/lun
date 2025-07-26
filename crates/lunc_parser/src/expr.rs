@@ -1,6 +1,8 @@
 //! Parsing of lun's expressions.
 
-use std::{fmt::Display, hint::unreachable_unchecked};
+use std::fmt::Display;
+
+use lunc_utils::opt_unrecheable;
 
 use crate::stmt::Block;
 
@@ -251,7 +253,7 @@ pub fn parse_expr_precedence(
             Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
             // SAFETY: we checked in the if of the match arm that it can only
             // be a keyword and one of loop, while or for
-            _ => unsafe { unreachable_unchecked() },
+            _ => opt_unrecheable!(),
         },
         Some(Ident(_)) => parse!(@fn parser => parse_ident_expr),
         Some(Kw(Keyword::Fun)) => parse!(@fn parser => parse_fundef_expr),
@@ -956,7 +958,7 @@ pub fn parse_block_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     if let Some(Ident(id)) = parser.peek_tt() {
         let label = id.clone();
         let Some(Token { tt: _, loc: lo }) = parser.pop() else {
-            unsafe { unreachable_unchecked() }
+            opt_unrecheable!()
         };
 
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
@@ -984,7 +986,7 @@ pub fn parse_predicate_loop_expr(parser: &mut Parser) -> Result<Expression, Diag
     let label = if let Some(Ident(id)) = parser.peek_tt() {
         let label = id.clone();
         let Some(Token { tt: _, loc }) = parser.pop() else {
-            unsafe { unreachable_unchecked() }
+            opt_unrecheable!()
         };
 
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
@@ -1017,7 +1019,7 @@ pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
     let label = if let Some(Ident(id)) = parser.peek_tt() {
         let label = id.clone();
         let Some(Token { tt: _, loc }) = parser.pop() else {
-            unsafe { unreachable_unchecked() }
+            opt_unrecheable!()
         };
 
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
@@ -1056,7 +1058,7 @@ pub fn parse_infinite_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
     let label = if let Some(Ident(id)) = parser.peek_tt() {
         let label = id.clone();
         let Some(Token { tt: _, loc }) = parser.pop() else {
-            unsafe { unreachable_unchecked() }
+            opt_unrecheable!()
         };
 
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
@@ -1109,7 +1111,7 @@ pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let label = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
         let Some(Token { loc, .. }) = parser.pop() else {
             // SAFETY: we already checked that the next token is here.
-            unsafe { unreachable_unchecked() }
+            opt_unrecheable!()
         };
 
         let label = expect_token!(noloc: parser => [Ident(id), id.clone()], Ident(String::new()));
@@ -1147,7 +1149,7 @@ pub fn parse_continue_expr(parser: &mut Parser) -> Result<Expression, Diagnostic
     let label = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
         let Some(Token { loc, .. }) = parser.pop() else {
             // SAFETY: we already checked that the next token is here.
-            unsafe { unreachable_unchecked() }
+            opt_unrecheable!()
         };
 
         let label = expect_token!(noloc: parser => [Ident(id), id.clone()], Ident(String::new()));

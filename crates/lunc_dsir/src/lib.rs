@@ -1,6 +1,6 @@
 //! Desugared Intermediate Representation of Lun.
 
-use std::{collections::HashMap, fmt::Debug, fs, hint::unreachable_unchecked, path::PathBuf};
+use std::{collections::HashMap, fmt::Debug, fs, path::PathBuf};
 
 use diags::{
     ModuleFileDoesnotExist, NameDefinedMultipleTimes, NotFoundInScope, UnderscoreInExpression,
@@ -16,7 +16,7 @@ use lunc_parser::{
     stmt::{Block, Statement, Stmt},
 };
 use lunc_utils::{
-    FromHigher, lower,
+    FromHigher, lower, opt_unrecheable,
     symbol::{EffectivePath, LazySymbol, SymKind, SymbolRef, Type},
 };
 
@@ -1193,7 +1193,7 @@ impl Desugarrer {
             DsExpr::QualifiedPath { path, sym } => {
                 let LazySymbol::Name(sym_name) = sym else {
                     // SAFETY: we already matched just above, it can only be that
-                    unsafe { unreachable_unchecked() };
+                    opt_unrecheable!()
                 };
                 let mut mod_path = path.path.clone();
 
@@ -1241,7 +1241,7 @@ impl Desugarrer {
                     else {
                         // SAFETY: we already matched this expression we know
                         // it is a member access for sure
-                        unsafe { unreachable_unchecked() }
+                        opt_unrecheable!()
                     };
 
                     self.resolve_expr(&mut *exp)?;

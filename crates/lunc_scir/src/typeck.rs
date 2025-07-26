@@ -1,9 +1,9 @@
 //! Typechecking of the SCIR
 
-use std::{hint::unreachable_unchecked, iter::zip};
+use std::iter::zip;
 
 use lunc_diag::{ToDiagnostic, feature_todo};
-use lunc_utils::symbol::Signedness;
+use lunc_utils::{opt_unrecheable, symbol::Signedness};
 
 use crate::diags::{
     ArityDoesntMatch, CantResolveComptimeValue, ExpectedPlaceExpression, ExpectedTypeFoundExpr,
@@ -51,7 +51,7 @@ impl SemaChecker {
             sym: symref,
         } = global_def
         else {
-            unsafe { unreachable_unchecked() }
+            opt_unrecheable!()
         };
 
         match &mut value.expr {

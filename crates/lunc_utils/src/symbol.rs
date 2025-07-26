@@ -265,8 +265,14 @@ impl From<SymbolRef> for LazySymbol {
 ///
 /// This type is a wrapper of Arc so a clone of this type is very cheap.
 #[repr(transparent)]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SymbolRef(Arc<RwLock<Symbol>>);
+
+impl Clone for SymbolRef {
+    fn clone(&self) -> Self {
+        SymbolRef(Arc::clone(&self.0))
+    }
+}
 
 impl SymbolRef {
     /// Create a new symbol ref
