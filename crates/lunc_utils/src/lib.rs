@@ -341,12 +341,15 @@ pub fn lower<T: FromHigher>(node: T::Higher) -> T {
     T::lower(node)
 }
 
-/// This macro expands to [`unrecheable_unchecked`] in release mode, or in the
-/// [`unrecheable!`] macro in debug mode
+/// This macro expands to [`unreachable_unchecked`] in release mode, or in the
+/// [`unreachable`] macro in debug mode.
 ///
 /// # Safety
 ///
 /// This function is not safer than [`unreachable_unchecked`].
+///
+/// [`unreachable_unchecked`]: std::hint::unreachable_unchecked
+/// [`unreachable`]: std::unreachable
 #[macro_export]
 macro_rules! opt_unrecheable {
     ( $( $tt:tt )* ) => {

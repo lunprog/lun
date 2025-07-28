@@ -382,6 +382,11 @@ impl SymbolRef {
                 | SymKind::Function
         )
     }
+
+    /// Returns the number of strong references
+    pub fn strong_count(&self) -> usize {
+        Arc::strong_count(&self.0)
+    }
 }
 
 impl Deref for SymbolRef {

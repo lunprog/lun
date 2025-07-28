@@ -51,6 +51,8 @@ impl SemaChecker {
             sym: symref,
         } = global_def
         else {
+            // SAFETY: it is the caller's responsability to call this function
+            // with a global definition
             opt_unrecheable!()
         };
 
@@ -453,7 +455,7 @@ impl SemaChecker {
                         *typ.clone()
                     } else {
                         return Err(MismatchedTypes {
-                            expected: vec![Type::Bool],
+                            expected: vec!["pointer"],
                             found: exp.typ.clone(),
                             due_to: None,
                             note: Some(format!("type '{}' cannot be dereferenced.", exp.typ)),
@@ -484,7 +486,7 @@ impl SemaChecker {
                 } = &callee.typ
                 else {
                     return Err(MismatchedTypes {
-                        expected: vec![Type::Bool],
+                        expected: vec!["function pointer"],
                         found: callee.typ.clone(),
                         due_to: None,
                         note: Some(format!("'{}' is not a function", callee.typ)),

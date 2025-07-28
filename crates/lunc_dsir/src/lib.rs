@@ -1639,8 +1639,7 @@ impl SymbolTable {
 
         for tab in self.tabs.iter().rev() {
             if let Some(symref) = tab.map.get(name) {
-                let symref = symref.clone();
-                return Some(symref);
+                return Some(symref.clone());
             }
         }
 
