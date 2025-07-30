@@ -130,10 +130,7 @@ impl SemaChecker {
 
                     args_typ.push(arg_typ.clone());
 
-                    {
-                        let mut sym = symref.write().unwrap();
-                        sym.typ = arg_typ;
-                    }
+                    symref.set_typ(arg_typ);
                 }
 
                 // evaluate the return type expression
@@ -178,11 +175,7 @@ impl SemaChecker {
                 };
 
                 // we finally update the type of the symbol.
-                {
-                    let mut sym = symref.write().unwrap();
-
-                    sym.typ = typ;
-                }
+                symref.set_typ(typ);
             }
             _ => {
                 // global def pre ck
@@ -222,11 +215,7 @@ impl SemaChecker {
                 };
 
                 // we finally update the type of the symbol.
-                {
-                    let mut sym = symref.write().unwrap();
-
-                    sym.typ = typ;
-                }
+                symref.set_typ(typ);
             }
         }
 
@@ -255,10 +244,7 @@ impl SemaChecker {
                         Ok(())
                     }
                     _ => {
-                        let typ = {
-                            let sym = symref.read().unwrap();
-                            sym.typ.clone().as_option()
-                        };
+                        let typ = symref.typ().as_option();
 
                         // we check the value of the definition
                         self.typeck_expr(value, typ.clone())?;
@@ -281,14 +267,12 @@ impl SemaChecker {
                         } else if typ.is_none() {
                             // we set the type of the symbol to the type of the value as a fallback
                             // let mut
-                            let mut sym = symref.write().unwrap();
-                            sym.typ = value.typ.clone();
+                            symref.set_typ(value.typ.clone());
                         }
 
                         // we evaluate the value of the global def
                         let value_expr = {
-                            let sym = symref.read().unwrap();
-                            self.evaluate_expr(value, Some(sym.typ.clone()))
+                            self.evaluate_expr(value, Some(symref.typ()))
                                 .map_err(|loc| {
                                     CantResolveComptimeValue {
                                         loc_expr: value.loc.clone().unwrap(),
@@ -298,11 +282,7 @@ impl SemaChecker {
                                 })?
                         };
 
-                        {
-                            let mut sym = symref.write().unwrap();
-
-                            sym.value = Some(value_expr);
-                        }
+                        symref.set_value(value_expr);
 
                         Ok(())
                     }
@@ -339,7 +319,12 @@ impl SemaChecker {
                 expr.typ = Type::Bool;
             }
             ScExpr::StringLit(_) => {
-                expr.typ = Type::Str;
+                // NOTE: string literals have a `*str` type.
+
+                expr.typ = Type::Ptr {
+                    mutable: false,
+                    typ: Box::new(Type::Str),
+                };
             }
             ScExpr::CharLit(_) => {
                 expr.typ = Type::Char;
@@ -354,9 +339,7 @@ impl SemaChecker {
                 }
             }
             ScExpr::Ident(symref) => {
-                let sym = symref.read().unwrap();
-
-                expr.typ = sym.typ.clone();
+                expr.typ = symref.typ();
             }
             ScExpr::Binary {
                 lhs,
@@ -465,10 +448,7 @@ impl SemaChecker {
                     };
                 }
             },
-            ScExpr::AddressOf {
-                mutable: _,
-                expr: exp,
-            } => {
+            ScExpr::AddressOf { mutable, expr: exp } => {
                 let real_coerce = if let Some(Type::Ptr { mutable: _, typ }) = &coerce_to {
                     Some((**typ).clone())
                 } else {
@@ -476,6 +456,11 @@ impl SemaChecker {
                 };
 
                 self.typeck_expr(exp, real_coerce)?;
+
+                expr.typ = Type::Ptr {
+                    mutable: *mutable,
+                    typ: Box::new(exp.typ.clone()),
+                };
             }
             ScExpr::FunCall { callee, args } => {
                 self.typeck_expr(callee, None)?;
@@ -602,9 +587,7 @@ impl SemaChecker {
                 path: _,
                 sym: symref,
             } => {
-                let sym = symref.read().unwrap();
-
-                expr.typ = sym.typ.clone();
+                expr.typ = symref.typ();
             }
             ScExpr::Underscore => {
                 // NOTE: we keep the typ unknown because the underscore
@@ -759,11 +742,7 @@ impl SemaChecker {
                 };
 
                 // we finally update the type of the symbol.
-                {
-                    let mut sym = symref.write().unwrap();
-
-                    sym.typ = typ;
-                }
+                symref.set_typ(typ);
             }
             ScStmt::Defer { expr } | ScStmt::Expression(expr) => {
                 self.typeck_expr(expr, None)?;

@@ -17,7 +17,7 @@ use lunc_parser::{
 };
 use lunc_utils::{
     FromHigher, lower, opt_unrecheable,
-    symbol::{EffectivePath, LazySymbol, SymKind, SymbolRef, Type},
+    symbol::{EffectivePath, LazySymbol, SymKind, Symbol, Type},
 };
 
 pub use lunc_parser::{
@@ -1067,7 +1067,7 @@ impl Desugarrer {
                     Err(d) => self.sink.emit(d),
                 }
 
-                let symref = SymbolRef::local(
+                let symref = Symbol::local(
                     *mutable,
                     name.clone(),
                     self.table.local_count(),
@@ -1169,14 +1169,17 @@ impl Desugarrer {
                     }
                     .into_diag());
                 };
-                let sym = symref.read().unwrap();
 
-                if sym.name == "_" {
-                    return Err(UnderscoreInExpression {
-                        loc: expr.loc.clone().unwrap(),
+                symref.inspect(|sym| {
+                    if sym.name == "_" {
+                        return Err(UnderscoreInExpression {
+                            loc: expr.loc.clone().unwrap(),
+                        }
+                        .into_diag());
                     }
-                    .into_diag());
-                }
+
+                    Ok(())
+                })?;
 
                 expr.expr = DsExpr::Ident(LazySymbol::Sym(symref.clone()));
 
@@ -1199,6 +1202,9 @@ impl Desugarrer {
 
                 mod_path.pop();
 
+                let mut search_path = self.current_path.clone();
+                search_path.append(mod_path.clone());
+
                 if let Some(module) = self.orb.goto(&mod_path)
                     && let Some(symref) = module.def_or_mod(&sym_name)
                 {
@@ -1206,10 +1212,31 @@ impl Desugarrer {
                     *sym = LazySymbol::Sym(symref);
 
                     Ok(())
-                } else if let Some(symref) = self.table.lookup(sym_name) {
+                } else if let Some(module) = self.orb.goto(&search_path)
+                    && let Some(symref) = module.def_or_mod(&sym_name)
+                {
+                    // looked up in orb tree for relative paths (in general)
+                    *sym = LazySymbol::Sym(symref);
+
+                    Ok(())
+                } else if let Some(symref) = self.table.lookup(&sym_name) {
                     // looked up in scope for local module or imports (in general)
                     *sym = LazySymbol::Sym(symref);
 
+                    Ok(())
+                } else if let Some(search_path) = self
+                    .table
+                    .lookup(mod_path.first().unwrap())
+                    .map(|sym| sym.path())
+                    && let Some(module) = self.orb.goto(&search_path)
+                    && let Some(symref) = module.def_or_mod(&sym_name)
+                {
+                    // looked up in orb tree for relative paths
+                    //
+                    // a relative path is a path that does not start with `orb`,
+                    // and the first member is a refers to a module
+
+                    *sym = LazySymbol::Sym(symref);
                     Ok(())
                 } else {
                     Err(NotFoundInScope {
@@ -1268,7 +1295,7 @@ impl Desugarrer {
                     }
 
                     let symref =
-                        SymbolRef::arg(name.clone(), self.table.local_count(), name_loc.clone());
+                        Symbol::arg(name.clone(), self.table.local_count(), name_loc.clone());
 
                     *sym = LazySymbol::Sym(symref.clone());
 
@@ -1307,7 +1334,7 @@ impl Desugarrer {
         path.reverse();
 
         if let Some(sym) = self.table.lookup(path.first().unwrap())
-            && sym.read().unwrap().kind == SymKind::Module
+            && sym.kind() == SymKind::Module
         {
             Some(EffectivePath::from_iter(path.iter()))
         } else {
@@ -1345,7 +1372,9 @@ impl Desugarrer {
                 let mut path = self.current_path.clone();
                 path.push(name.clone());
 
-                let symref = SymbolRef::function(name.clone(), path, name_loc.clone());
+                let symref =
+                    sym.symbol()
+                        .unwrap_or(Symbol::function(name.clone(), path, name_loc.clone()));
 
                 self.orb
                     .goto_mut(&self.current_path)
@@ -1354,9 +1383,11 @@ impl Desugarrer {
 
                 *sym = LazySymbol::Sym(symref.clone());
 
-                match self.table.bind(name.clone(), symref) {
-                    Ok(()) => {}
-                    Err(d) => self.sink.emit(d),
+                if self.current_path == resolve_path {
+                    match self.table.bind(name.clone(), symref) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.emit(d),
+                    }
                 }
 
                 Ok(())
@@ -1373,7 +1404,12 @@ impl Desugarrer {
                 let mut path = self.current_path.clone();
                 path.push(name.clone());
 
-                let symref = SymbolRef::global(*mutable, name.clone(), path, name_loc.clone());
+                let symref = sym.symbol().unwrap_or(Symbol::global(
+                    *mutable,
+                    name.clone(),
+                    path,
+                    name_loc.clone(),
+                ));
 
                 self.orb
                     .goto_mut(&self.current_path)
@@ -1398,7 +1434,9 @@ impl Desugarrer {
                 let mut path = self.current_path.clone();
                 path.push(name.clone());
 
-                let symref = SymbolRef::module(name.clone(), path, loc.clone());
+                let symref =
+                    sym.symbol()
+                        .unwrap_or(Symbol::module(name.clone(), path, loc.clone()));
 
                 *sym = LazySymbol::Sym(symref.clone());
 
@@ -1449,14 +1487,14 @@ impl Desugarrer {
                     .into_diag())
                 }
             }
-            _ => Ok(()),
+            DsItem::Directive(DsItemDirective::Mod { .. }) => Ok(()),
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct SymbolMap {
-    map: HashMap<String, SymbolRef>,
+    map: HashMap<String, Symbol>,
     fun_count: usize,
     global_count: usize,
     local_count: usize,
@@ -1479,36 +1517,36 @@ impl SymbolMap {
     pub fn first_scope() -> SymbolMap {
         SymbolMap {
             map: HashMap::from([
-                ("isz".to_string(), SymbolRef::typ("isz", Type::Isz)),
-                ("i128".to_string(), SymbolRef::typ("i128", Type::I128)),
-                ("i64".to_string(), SymbolRef::typ("i64", Type::I64)),
-                ("i32".to_string(), SymbolRef::typ("i32", Type::I32)),
-                ("i16".to_string(), SymbolRef::typ("i16", Type::I16)),
-                ("i8".to_string(), SymbolRef::typ("i8", Type::I8)),
-                ("usz".to_string(), SymbolRef::typ("usz", Type::Usz)),
-                ("u128".to_string(), SymbolRef::typ("u128", Type::U128)),
-                ("u64".to_string(), SymbolRef::typ("u64", Type::U64)),
-                ("u32".to_string(), SymbolRef::typ("u32", Type::U32)),
-                ("u16".to_string(), SymbolRef::typ("u16", Type::U16)),
-                ("u8".to_string(), SymbolRef::typ("u8", Type::U8)),
-                ("f16".to_string(), SymbolRef::typ("f16", Type::F16)),
-                ("f32".to_string(), SymbolRef::typ("f32", Type::F32)),
-                ("f64".to_string(), SymbolRef::typ("f64", Type::F64)),
-                ("f128".to_string(), SymbolRef::typ("f128", Type::F128)),
-                ("bool".to_string(), SymbolRef::typ("bool", Type::Bool)),
-                ("str".to_string(), SymbolRef::typ("str", Type::Str)),
-                ("char".to_string(), SymbolRef::typ("char", Type::Char)),
+                ("isz".to_string(), Symbol::new_typ("isz", Type::Isz)),
+                ("i128".to_string(), Symbol::new_typ("i128", Type::I128)),
+                ("i64".to_string(), Symbol::new_typ("i64", Type::I64)),
+                ("i32".to_string(), Symbol::new_typ("i32", Type::I32)),
+                ("i16".to_string(), Symbol::new_typ("i16", Type::I16)),
+                ("i8".to_string(), Symbol::new_typ("i8", Type::I8)),
+                ("usz".to_string(), Symbol::new_typ("usz", Type::Usz)),
+                ("u128".to_string(), Symbol::new_typ("u128", Type::U128)),
+                ("u64".to_string(), Symbol::new_typ("u64", Type::U64)),
+                ("u32".to_string(), Symbol::new_typ("u32", Type::U32)),
+                ("u16".to_string(), Symbol::new_typ("u16", Type::U16)),
+                ("u8".to_string(), Symbol::new_typ("u8", Type::U8)),
+                ("f16".to_string(), Symbol::new_typ("f16", Type::F16)),
+                ("f32".to_string(), Symbol::new_typ("f32", Type::F32)),
+                ("f64".to_string(), Symbol::new_typ("f64", Type::F64)),
+                ("f128".to_string(), Symbol::new_typ("f128", Type::F128)),
+                ("bool".to_string(), Symbol::new_typ("bool", Type::Bool)),
+                ("str".to_string(), Symbol::new_typ("str", Type::Str)),
+                ("char".to_string(), Symbol::new_typ("char", Type::Char)),
                 (
                     "noreturn".to_string(),
-                    SymbolRef::typ("usz", Type::Noreturn),
+                    Symbol::new_typ("usz", Type::Noreturn),
                 ),
-                ("void".to_string(), SymbolRef::typ("usz", Type::Void)),
+                ("void".to_string(), Symbol::new_typ("usz", Type::Void)),
                 (
                     "orb".to_string(),
                     // NOTE: here we can set the loc to be 0..0 into the root
                     // file, its fine ig, a span from the first character to eof
                     // would be better but this works
-                    SymbolRef::module(
+                    Symbol::module(
                         "orb".to_string(),
                         EffectivePath::with_root_member("orb"),
                         Some(lunc_utils::Span::ZERO),
@@ -1573,10 +1611,10 @@ impl SymbolTable {
     }
 
     /// Bind a name to a symbol in the current scope, returns a diagnostic if name == `_`
-    pub fn bind(&mut self, name: String, symref: SymbolRef) -> Result<(), Diagnostic> {
-        let sym = symref.read().unwrap();
+    pub fn bind(&mut self, name: String, sym: Symbol) -> Result<(), Diagnostic> {
+        let sym_kind = sym.kind();
 
-        match sym.kind {
+        match sym_kind {
             SymKind::Local { .. } => {
                 self.last_map_mut().local_count += 1;
             }
@@ -1587,14 +1625,14 @@ impl SymbolTable {
                 self.last_map_mut().global_count += 1;
             }
             SymKind::Function => {
-                if let Some(previous_symref) = self.lookup(&name) {
-                    let previous_sym = previous_symref.read().unwrap();
+                if let Some(previous_sym) = self.lookup(&name) {
+                    let previous_sym_kind = previous_sym.kind();
 
-                    if let SymKind::Function = previous_sym.kind {
+                    if let SymKind::Function = previous_sym_kind {
                         return Err(NameDefinedMultipleTimes {
                             name: &name,
-                            loc_previous: previous_sym.loc.clone().unwrap(),
-                            loc: sym.loc.clone().unwrap(),
+                            loc_previous: previous_sym.loc().unwrap(),
+                            loc: sym.loc().unwrap(),
                         }
                         .into_diag());
                     }
@@ -1608,14 +1646,13 @@ impl SymbolTable {
         }
 
         if name.as_str() == "_" {
-            let sym = symref.read().unwrap();
             return Err(UnderscoreReservedIdent {
-                loc: sym.loc.as_ref().unwrap().clone(),
+                loc: sym.loc().unwrap(),
             }
             .into_diag());
         }
 
-        self.last_map_mut().map.insert(name, symref.clone());
+        self.last_map_mut().map.insert(name, sym.clone());
 
         Ok(())
     }
@@ -1627,14 +1664,14 @@ impl SymbolTable {
 
     /// Lookup for the symbol in the current scope, returns None if there is no
     /// symbol with this name in the current scope
-    pub fn lookup_current(&self, name: impl AsRef<str>) -> Option<SymbolRef> {
+    pub fn lookup_current(&self, name: impl AsRef<str>) -> Option<Symbol> {
         self.last_map().map.get(name.as_ref()).cloned()
     }
 
     /// Lookup for a symbol with the given name, starting at the current scope
     /// ending at the global scope, returns None if there is no symbol in any
     /// scopes
-    pub fn lookup(&mut self, name: impl AsRef<str>) -> Option<SymbolRef> {
+    pub fn lookup(&mut self, name: impl AsRef<str>) -> Option<Symbol> {
         let name = name.as_ref();
 
         for tab in self.tabs.iter().rev() {
@@ -1687,7 +1724,7 @@ pub struct ModuleTree {
     /// definitions in this module tree, a definition can only be one of:
     /// - global
     /// - function
-    defs: HashMap<String, SymbolRef>,
+    defs: HashMap<String, Symbol>,
     /// is this module tree the root module?
     root_name: Option<String>,
     /// symbol of the module
@@ -1717,18 +1754,17 @@ impl ModuleTree {
     }
 
     /// Define a new symbol inside the current module tree
-    pub fn define(&mut self, name: String, symref: SymbolRef) {
-        let sym = symref.read().unwrap();
+    pub fn define(&mut self, name: String, sym: Symbol) {
         assert!(matches!(
-            sym.kind,
+            sym.kind(),
             SymKind::Global { .. } | SymKind::Function
         ));
 
-        self.defs.insert(name, symref.clone());
+        self.defs.insert(name, sym.clone());
     }
 
     /// Define a new module in the current module tree
-    pub fn define_mod(&mut self, name: String, symref: SymbolRef) {
+    pub fn define_mod(&mut self, name: String, symref: Symbol) {
         self.submodules
             .insert(name.clone(), ModuleTree::new(None, LazySymbol::Sym(symref)));
     }
@@ -1780,13 +1816,13 @@ impl ModuleTree {
     }
 
     /// Get a definition in the current module tree
-    pub fn def(&self, name: impl AsRef<str>) -> Option<SymbolRef> {
+    pub fn def(&self, name: impl AsRef<str>) -> Option<Symbol> {
         self.defs.get(name.as_ref()).cloned()
     }
 
     /// Returns the symbol of the definition or the module with this name
-    pub fn def_or_mod(&self, name: impl AsRef<str>) -> Option<SymbolRef> {
+    pub fn def_or_mod(&self, name: impl AsRef<str>) -> Option<Symbol> {
         self.def(&name)
-            .or(self.submod(&name).map(|submod| submod.sym.as_sym()))
+            .or(self.submod(&name).map(|submod| submod.sym.unwrap_sym()))
     }
 }

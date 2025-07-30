@@ -10,7 +10,7 @@ use lunc_dsir::{
 };
 use lunc_utils::{
     FromHigher, Span, lower,
-    symbol::{SymbolRef, Type, ValueExpr},
+    symbol::{Symbol, Type, ValueExpr},
 };
 
 pub mod diags;
@@ -67,7 +67,7 @@ pub enum ScItem {
         value: Box<ScExpression>,
         loc: OSpan,
         /// corresponding symbol of this definition
-        sym: SymbolRef,
+        sym: Symbol,
     },
     /// See [`DsItem::Module`]
     ///
@@ -80,7 +80,7 @@ pub enum ScItem {
         /// location of the directive that defined this module.
         loc: OSpan,
         /// corresponding symbol of this definition
-        sym: SymbolRef,
+        sym: Symbol,
     },
 }
 
@@ -104,7 +104,7 @@ impl FromHigher for ScItem {
                 typexpr: Box::new(lower(typexpr)),
                 value: lower(value),
                 loc,
-                sym: lazy.as_sym(),
+                sym: lazy.unwrap_sym(),
             },
             DsItem::Module {
                 name,
@@ -115,7 +115,7 @@ impl FromHigher for ScItem {
                 name,
                 module: lower(module),
                 loc,
-                sym: lazy.as_sym(),
+                sym: lazy.unwrap_sym(),
             },
             DsItem::Directive(DsItemDirective::Use { .. } | DsItemDirective::Mod { .. }) => {
                 unreachable!()
@@ -168,7 +168,7 @@ impl FromHigher for ScExpression {
             DsExpr::StringLit(str) => ScExpr::StringLit(str),
             DsExpr::CharLit(c) => ScExpr::CharLit(c),
             DsExpr::FloatLit(f) => ScExpr::FloatLit(f),
-            DsExpr::Ident(lazy) => ScExpr::Ident(lazy.as_sym()),
+            DsExpr::Ident(lazy) => ScExpr::Ident(lazy.unwrap_sym()),
             DsExpr::Binary { lhs, op, rhs } => ScExpr::Binary {
                 lhs: lower(lhs),
                 op,
@@ -216,7 +216,7 @@ impl FromHigher for ScExpression {
             },
             DsExpr::QualifiedPath { path, sym: lazy } => ScExpr::QualifiedPath {
                 path,
-                sym: lazy.as_sym(),
+                sym: lazy.unwrap_sym(),
             },
             DsExpr::Underscore => ScExpr::Underscore,
             DsExpr::FunDefinition {
@@ -274,7 +274,7 @@ pub enum ScExpr {
     /// See [`DsExpr::Ident`]
     ///
     /// [`DsExpr::Ident`]: lunc_dsir::DsExpr::Ident
-    Ident(SymbolRef),
+    Ident(Symbol),
     /// See [`DsExpr::Binary`]
     ///
     /// [`DsExpr::Binary`]: lunc_dsir::DsExpr::Binary
@@ -363,7 +363,7 @@ pub enum ScExpr {
         /// path to the symbol
         path: QualifiedPath,
         /// the symbol we are referring to
-        sym: SymbolRef,
+        sym: Symbol,
     },
     /// Constructed from the lazy ident `_`, but only in certain cases, like
     /// when it's part of an assignment like so: `_ = expr`
@@ -401,7 +401,7 @@ pub struct ScArg {
     pub name_loc: OSpan,
     pub typexpr: ScExpression,
     pub loc: OSpan,
-    pub sym: SymbolRef,
+    pub sym: Symbol,
 }
 
 impl FromHigher for ScArg {
@@ -421,7 +421,7 @@ impl FromHigher for ScArg {
             name_loc,
             typexpr: lower(typexpr),
             loc,
-            sym: lazy.as_sym(),
+            sym: lazy.unwrap_sym(),
         }
     }
 }
@@ -483,7 +483,7 @@ impl FromHigher for ScStatement {
                 mutable,
                 typexpr: lower(typexpr),
                 value: lower(value),
-                sym: lazy.as_sym(),
+                sym: lazy.unwrap_sym(),
             },
             DsStmt::Defer { expr } => ScStmt::Defer { expr: lower(expr) },
             DsStmt::Expression(expr) => ScStmt::Expression(lower(expr)),
@@ -507,7 +507,7 @@ pub enum ScStmt {
         mutable: bool,
         typexpr: Option<ScExpression>,
         value: Box<ScExpression>,
-        sym: SymbolRef,
+        sym: Symbol,
     },
     /// See [`DsStmt::Defer`]
     ///
@@ -582,10 +582,8 @@ impl SemaChecker {
                 Some(Type::F64) => Ok(ValueExpr::F64(*f /* as f64 */)),
                 _ => Ok(ValueExpr::F32(*f as f32)),
             },
-            ScExpr::Ident(symref) if symref.is_comptime_known() => {
-                let sym = symref.read().unwrap();
-
-                sym.value.clone().ok_or(expr.loc.clone().unwrap())
+            ScExpr::Ident(sym) if sym.is_comptime_known() => {
+                sym.value().ok_or(expr.loc.clone().unwrap())
             }
             ScExpr::PointerType { mutable, typexpr } => {
                 let typ = self

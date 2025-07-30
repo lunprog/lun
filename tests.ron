@@ -1826,7 +1826,7 @@
         expected_test_out: "",
     ),
     "multifile/lib": (
-        expected_compiler_out: "scir = [
+        expected_compiler_out: r#"scir = [
   Module {
     name: dbg;
     module: [
@@ -2144,7 +2144,7 @@
                       callee: Expression {
                         expr: Symbol {
                           kind: function;
-                          name: divide @ 169..175 (fid = 0);
+                          name: divide @ 160..166 (fid = 0);
                           which: 0;
                           path: orb.divide;
                           typ: *fun (f16, f16) -> f16;
@@ -2211,13 +2211,91 @@
         args: [];
         rettypexpr: none;
         body: Block {
-          stmts: [];
+          stmts: [
+            Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: QualifiedPath {
+                    path: orb.dbg.puts @ 77..89 (fid = 0);
+                    sym: Symbol {
+                      kind: function;
+                      name: puts @ 55..59 (fid = 1);
+                      which: 0;
+                      path: orb.dbg.puts;
+                      typ: *fun (* str) -> void;
+                      value: none;
+                    };
+                  };
+                  typ: *fun (* str) -> void;
+                } @ 77..89 (fid = 0);
+                args: [
+                  Expression {
+                    expr: string "Hello world!";
+                    typ: * str;
+                  } @ 90..104 (fid = 0),
+                ];
+              };
+              typ: void;
+            } @ 77..105 (fid = 0) @ 77..105 (fid = 0),
+
+            Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: QualifiedPath {
+                    path: dbg.puts @ 111..119 (fid = 0);
+                    sym: Symbol {
+                      kind: function;
+                      name: puts @ 55..59 (fid = 1);
+                      which: 0;
+                      path: orb.dbg.puts;
+                      typ: *fun (* str) -> void;
+                      value: none;
+                    };
+                  };
+                  typ: *fun (* str) -> void;
+                } @ 111..119 (fid = 0);
+                args: [
+                  Expression {
+                    expr: string "Hello world!";
+                    typ: * str;
+                  } @ 120..134 (fid = 0),
+                ];
+              };
+              typ: void;
+            } @ 111..135 (fid = 0) @ 111..135 (fid = 0),
+
+            Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: QualifiedPath {
+                    path: nested.fib @ 141..151 (fid = 0);
+                    sym: Symbol {
+                      kind: function;
+                      name: fib @ 0..3 (fid = 2);
+                      which: 0;
+                      path: orb.dbg.nested.fib;
+                      typ: *fun (usz) -> usz;
+                      value: none;
+                    };
+                  };
+                  typ: *fun (usz) -> usz;
+                } @ 141..151 (fid = 0);
+                args: [
+                  Expression {
+                    expr: integer 12;
+                    typ: usz;
+                  } @ 152..154 (fid = 0),
+                ];
+              };
+              typ: usz;
+            } @ 141..155 (fid = 0) @ 141..155 (fid = 0),
+          ];
           last_expr: none;
           typ: void;
-        } @ 71..167 (fid = 0);
+        } @ 71..158 (fid = 0);
       };
       typ: unknown;
-    } @ 64..167 (fid = 0);
+    } @ 64..158 (fid = 0);
     sym: Symbol {
       kind: function;
       name: run @ 57..60 (fid = 0);
@@ -2226,17 +2304,17 @@
       typ: *fun () -> void;
       value: none;
     };
-  } @ 57..167 (fid = 0),
+  } @ 57..158 (fid = 0),
 
   GlobalDef {
-    name: divide @ 169..175 (fid = 0);
+    name: divide @ 160..166 (fid = 0);
     mutable: false;
     typexpr: none;
     value: Expression {
       expr: FunDefinition {
         args: [
           Arg {
-            name: lhs @ 183..186 (fid = 0);
+            name: lhs @ 174..177 (fid = 0);
             typexpr: Expression {
               expr: Symbol {
                 kind: global;
@@ -2249,19 +2327,19 @@
                 };
               };
               typ: type;
-            } @ 188..191 (fid = 0);
+            } @ 179..182 (fid = 0);
             sym: Symbol {
               kind: argument;
-              name: lhs @ 183..186 (fid = 0);
+              name: lhs @ 174..177 (fid = 0);
               which: 0;
               path: lhs;
               typ: f16;
               value: none;
             };
-          } @ 183..191 (fid = 0),
+          } @ 174..182 (fid = 0),
 
           Arg {
-            name: rhs @ 193..196 (fid = 0);
+            name: rhs @ 184..187 (fid = 0);
             typexpr: Expression {
               expr: Symbol {
                 kind: global;
@@ -2274,16 +2352,16 @@
                 };
               };
               typ: type;
-            } @ 198..201 (fid = 0);
+            } @ 189..192 (fid = 0);
             sym: Symbol {
               kind: argument;
-              name: rhs @ 193..196 (fid = 0);
+              name: rhs @ 184..187 (fid = 0);
               which: 0;
               path: rhs;
               typ: f16;
               value: none;
             };
-          } @ 193..201 (fid = 0),
+          } @ 184..192 (fid = 0),
         ];
         rettypexpr: Expression {
           expr: Symbol {
@@ -2297,7 +2375,7 @@
             };
           };
           typ: type;
-        } @ 206..209 (fid = 0);
+        } @ 197..200 (fid = 0);
         body: Block {
           stmts: [];
           last_expr: Expression {
@@ -2305,55 +2383,55 @@
               lhs: Expression {
                 expr: Symbol {
                   kind: argument;
-                  name: lhs @ 183..186 (fid = 0);
+                  name: lhs @ 174..177 (fid = 0);
                   which: 0;
                   path: lhs;
                   typ: f16;
                   value: none;
                 };
                 typ: f16;
-              } @ 216..219 (fid = 0);
+              } @ 207..210 (fid = 0);
               op: Div;
               rhs: Expression {
                 expr: Symbol {
                   kind: argument;
-                  name: rhs @ 193..196 (fid = 0);
+                  name: rhs @ 184..187 (fid = 0);
                   which: 0;
                   path: rhs;
                   typ: f16;
                   value: none;
                 };
                 typ: f16;
-              } @ 222..225 (fid = 0);
+              } @ 213..216 (fid = 0);
             };
             typ: f16;
-          } @ 216..225 (fid = 0);
+          } @ 207..216 (fid = 0);
           typ: f16;
-        } @ 210..227 (fid = 0);
+        } @ 201..218 (fid = 0);
       };
       typ: unknown;
-    } @ 179..227 (fid = 0);
+    } @ 170..218 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: divide @ 169..175 (fid = 0);
+      name: divide @ 160..166 (fid = 0);
       which: 0;
       path: orb.divide;
       typ: *fun (f16, f16) -> f16;
       value: none;
     };
-  } @ 169..227 (fid = 0),
+  } @ 160..218 (fid = 0),
 
   GlobalDef {
-    name: MY_LIL_CONSTANT @ 229..244 (fid = 0);
+    name: MY_LIL_CONSTANT @ 220..235 (fid = 0);
     mutable: false;
     typexpr: none;
     value: Expression {
       expr: integer 1234;
       typ: i32;
-    } @ 248..252 (fid = 0);
+    } @ 239..243 (fid = 0);
     sym: Symbol {
       kind: global;
-      name: MY_LIL_CONSTANT @ 229..244 (fid = 0);
+      name: MY_LIL_CONSTANT @ 220..235 (fid = 0);
       which: 0;
       path: orb.MY_LIL_CONSTANT;
       typ: i32;
@@ -2361,9 +2439,9 @@
         val: 1234;
       };
     };
-  } @ 229..253 (fid = 0),
+  } @ 220..244 (fid = 0),
 ]
-",
+"#,
         expected_test_out: "",
     ),
     "parser/directive": (
