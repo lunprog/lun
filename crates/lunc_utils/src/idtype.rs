@@ -438,7 +438,7 @@ macro_rules! internal_idtype {
                 /// Note that the return type of this function is
                 /// [`NonZeroUsize`], this permits Rust to optimize out
                 #[doc = concat!("[`Option<", stringify!($name), ">`]")]
-                /// to have have **the same size and alignement** as
+                /// to have have **the same size and alignment** as
                 #[doc = concat!("[`", stringify!($name), "`].")]
                 ///
                 /// [`NonZeroUsize`]: std::num::NonZeroUsize
@@ -483,7 +483,7 @@ macro_rules! internal_idtype {
                 pub fn alive(&self) -> usize {
                     let db = Self::database().lock();
 
-                    db.alive(self.0).unwrap() as usize
+                    db.alive(self.0).unwrap_or_default() as usize
                 }
             }
 
@@ -580,7 +580,7 @@ impl<T> Database<T> {
     pub fn register(&mut self, value: T) -> NonZeroUsize {
         let id = self.last_id;
 
-        // SAFETY: we are adding to a usize, this is guarranted to never return 0
+        // SAFETY: we are adding to a usize, this is guaranteed to never return 0
         self.last_id = unsafe { NonZeroUsize::new_unchecked(self.last_id.get() + 1) };
 
         self.data.insert(
@@ -604,6 +604,7 @@ impl<T> Database<T> {
     /// # Panic
     ///
     /// It panics if the id is not valid
+    #[track_caller]
     pub fn get(&self, id: NonZeroUsize) -> &RwLock<T> {
         self.try_get(id).expect("invalid id")
     }
@@ -613,6 +614,7 @@ impl<T> Database<T> {
     /// # Panic
     ///
     /// It panics if the id is not valid
+    #[track_caller]
     pub fn get_entry(&self, id: NonZeroUsize) -> &Entry<T> {
         self.data.get(&id).expect("invalid id")
     }
@@ -667,6 +669,19 @@ impl<T> Database<T> {
         {
             self.data.remove(&id);
         }
+    }
+
+    /// Clears the database removing all the underlying values of the object.
+    ///
+    /// # Safety
+    ///
+    /// This is unsafe because if you call this function and there is still
+    /// instances of objects alive, when they will try to access the memory
+    /// after the clear they will panic because the underlying objects no longer
+    /// exist but the handles do.
+    pub unsafe fn clear(&mut self) {
+        self.last_id = NonZeroUsize::new(1).unwrap();
+        self.data.clear();
     }
 }
 
@@ -726,4 +741,341 @@ impl<T> Default for DatabaseLock<T> {
 /// Trait to be able to have the struct syntax, it should not be implemented manually
 pub trait InternalType {
     type Internal;
+}
+
+#[cfg(test)]
+pub mod tests {
+    // NOTE: this module is marked as public so that the functions we do not use
+    // do no emit the `dead_code` lint
+
+    use std::{
+        collections::HashSet,
+        error::Error,
+        hash::{Hash, Hasher},
+        panic::catch_unwind,
+        ptr,
+        sync::Mutex,
+    };
+
+    use super::*;
+
+    idtype! {
+        /// A simple test ID with a string.
+        pub type TestId(&'static str);
+
+        impl clone_methods for TestId;
+
+        impl PartialEq for TestId;
+
+        impl Eq for TestId;
+
+        impl Hash for TestId;
+
+        /// A second ID type, should not share the database with `TestId`.
+        pub type AnotherId(&'static str);
+
+        /// A no-type ID.
+        pub type UnitId;
+    }
+
+    /// This functions is used to clear the database of `TestId`. To make each
+    /// test independent.
+    fn clear_test_id_db() {
+        // SAFETY: it should be fine because every handle should be dropped at
+        // the end of each test.
+        unsafe {
+            TestId::database().lock_mut().clear();
+        }
+    }
+
+    /// see docs of `clear_test_id_db`
+    fn clear_another_id_db() {
+        // SAFETY: it should be fine because every handle should be dropped at
+        // the end of each test.
+        unsafe {
+            AnotherId::database().lock_mut().clear();
+        }
+    }
+
+    /// see docs of `clear_test_id_db`
+    fn clear_unit_id_db() {
+        // SAFETY: it should be fine because every handle should be dropped at
+        // the end of each test.
+        unsafe {
+            UnitId::database().lock_mut().clear();
+        }
+    }
+
+    /// We are using a lock in the tests of idtype because it makes those test
+    /// "single-threaded", by default test are run in parallel in Rust and
+    /// idtype does not support being used across multiple tests, and even
+    /// if they do, those tests must run independently so we use a lock to
+    /// ensure that the tests run sequantially, (we don't know the order but
+    /// whatever..).
+    static LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+
+    type TestRes = Result<(), Box<dyn Error>>;
+
+    #[test]
+    fn test_basic_creation_and_inspect() -> TestRes {
+        let _lock = LOCK.lock()?;
+        clear_test_id_db();
+
+        let a = TestId::new("hello");
+        assert_eq!(a.alive(), 1);
+
+        a.inspect(|v| {
+            assert_eq!(&v, &&"hello");
+        });
+
+        assert_eq!(a.alive(), 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_clone_and_alive_count() -> TestRes {
+        let _lock = LOCK.lock()?;
+        clear_test_id_db();
+
+        let a = TestId::new("value");
+        let b = a.clone();
+
+        assert!(a.object_eq(&b));
+        assert_eq!(a.alive(), 2);
+
+        drop(a);
+        assert_eq!(b.alive(), 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_drop_and_alive_cleanup() -> TestRes {
+        let _lock = LOCK.lock()?;
+        clear_test_id_db();
+
+        let a = TestId::new("temp");
+        let id = a.id();
+        drop(a);
+
+        let db = TestId::database().lock();
+        assert_eq!(db.alive(id), None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_mutation() -> TestRes {
+        let _lock = LOCK.lock()?;
+        clear_test_id_db();
+
+        let a = TestId::new("hello");
+
+        a.inspect_mut(|v| {
+            *v = "world";
+        });
+
+        a.inspect(|v| {
+            assert_eq!(v, &"world");
+        });
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_try_clone_value_and_clone_val() -> TestRes {
+        let _lock = LOCK.lock()?;
+        clear_test_id_db();
+
+        let a = TestId::new("abc");
+
+        assert_eq!(a.try_clone_value(), Some("abc"));
+        assert_eq!(a.clone_val(), "abc");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiple_id_types_independence() -> TestRes {
+        let _lock = LOCK.lock()?;
+        clear_test_id_db();
+        clear_another_id_db();
+
+        let a = TestId::new("a");
+        let b = AnotherId::new("b");
+
+        assert!(!ptr::eq(TestId::database(), AnotherId::database()));
+
+        a.inspect(|v| assert_eq!(v, &"a"));
+        b.inspect(|v| assert_eq!(v, &"b"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unit_idtype_creation() -> TestRes {
+        let _lock = LOCK.lock()?;
+        clear_unit_id_db();
+
+        let a = UnitId::new(());
+
+        assert_eq!(a.alive(), 1);
+
+        let b = a.clone();
+        assert_eq!(a.alive(), 2);
+
+        assert!(a.object_eq(&b));
+
+        Ok(())
+    }
+
+    #[test]
+    fn partial_eq_vs_object_eq() -> TestRes {
+        let _lock = LOCK.lock()?;
+        clear_test_id_db();
+
+        let a = TestId::new("same");
+        let b = TestId::new("same");
+
+        // object_eq compares identity
+        assert!(!a.object_eq(&b));
+        // PartialEq compares underlying data
+        assert_eq!(a, b);
+
+        Ok(())
+    }
+
+    #[test]
+    fn hash_and_hashset_behavior() -> TestRes {
+        let _lock = LOCK.lock()?;
+
+        clear_test_id_db();
+
+        let a = TestId::new("foo");
+        let b = TestId::new("foo");
+
+        // They should hash the same
+        let hash_a = {
+            let mut h = std::collections::hash_map::DefaultHasher::new();
+            a.hash(&mut h);
+            h.finish()
+        };
+
+        let hash_b = {
+            let mut h = std::collections::hash_map::DefaultHasher::new();
+            b.hash(&mut h);
+            h.finish()
+        };
+        assert_eq!(hash_a, hash_b);
+
+        // Inserting both into a HashSet yields length 1
+        let mut set = HashSet::new();
+        set.insert(a);
+        set.insert(b);
+        assert_eq!(set.len(), 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn debug_output_contains_fields() -> TestRes {
+        let _lock = LOCK.lock()?;
+        clear_test_id_db();
+
+        let x = TestId::new("dbg");
+        let s = format!("{x:?}");
+        assert!(s.contains("TestId"));
+        assert!(s.contains("dbg"));
+        assert!(s.contains("alive: 1"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn unsafe_from_raw_does_not_increment_count_but_drop_decrements() -> TestRes {
+        let _lock = LOCK.lock()?;
+        clear_test_id_db();
+
+        let a = TestId::new("raw");
+        let id = a.id();
+        let before = a.alive();
+        // from_raw doesn’t bump the count
+        let b = unsafe { TestId::from_raw(id) };
+
+        assert!(a.object_eq(&b));
+        assert_eq!(b.alive(), before);
+
+        // dropping b decrements the count
+        drop(b);
+        assert_eq!(a.alive(), before.saturating_sub(1));
+
+        Ok(())
+    }
+
+    #[test]
+    fn unit_id_clone_and_drop_sequence() -> TestRes {
+        let _lock = LOCK.lock()?;
+        clear_unit_id_db();
+
+        let u1 = UnitId::new(());
+        assert_eq!(u1.alive(), 1);
+
+        let u2 = u1.clone();
+        let u3 = u2.clone();
+        assert_eq!(u1.alive(), 3);
+
+        drop(u2);
+        assert_eq!(u1.alive(), 2);
+
+        drop(u3);
+        let u1_id = u1.id();
+        drop(u1);
+
+        // After all drops, the object should be removed from the DB
+        let db = UnitId::database().lock();
+        assert_eq!(db.alive(u1_id), None);
+
+        Ok(())
+    }
+
+    // NOTE: we don't need the lock here because we are not using any of the
+    // global databases the we can run these tests in parallel
+
+    #[test]
+    fn database_direct_api_register_and_drop() {
+        let mut db: Database<u32> = Database::new();
+        assert!(db.data.is_empty());
+
+        let id1 = db.register(10);
+        assert_eq!(id1, NonZeroUsize::new(1).unwrap());
+        assert_eq!(*db.get(id1).read().unwrap(), 10);
+        assert_eq!(db.alive(id1), Some(1));
+
+        // Unsafe increment and decrement
+        unsafe { db.increment_count(id1) };
+        assert_eq!(db.alive(id1), Some(2));
+        unsafe { db.decrement_count(id1) };
+        assert_eq!(db.alive(id1), Some(1));
+
+        // drop_instance removes it when count hits zero
+        db.drop_instance(id1);
+        assert_eq!(db.alive(id1), None);
+    }
+
+    #[test]
+    fn try_get_and_get_entry_panics_on_invalid_id() {
+        let mut db: Database<i32> = Database::new();
+        let id = db.register(5);
+
+        // try_get should return Some
+        assert!(db.try_get(id).is_some());
+
+        // get_entry with a bad id panics
+        let bad_id = NonZeroUsize::new(id.get() + 100).unwrap();
+        let result = catch_unwind(|| {
+            let _ = db.get_entry(bad_id);
+        });
+        assert!(result.is_err());
+    }
 }
