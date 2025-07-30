@@ -1,5 +1,5 @@
 //! Id types, are types that have the size of a [`usize`], and so benefit from
-//! a super lightwight [`Clone`] and are even [`Copy`], while being global. They
+//! a super lightweight [`Clone`] and are even [`Copy`], while being global. They
 //! have the same advantages (and performance maybe) as a smart pointer like
 //! `Arc<Mutex<T>>`.
 //!
@@ -152,7 +152,7 @@ macro_rules! idtype {
             #[doc = concat!("Equality of two [`", stringify!($name), "`].")]
             ///
             /// They are equal, only if their internal values are equal, even if
-            /// they are not refering to the same object.
+            /// they are not referring to the same object.
             ///
             /// If you want to know if two instances refer to the same object
             /// see
@@ -294,7 +294,7 @@ macro_rules! internal_idtype {
                 /// # Safety
                 ///
                 /// This is not safe, because using an object that is not
-                /// instanciated can lead to panics, or if the id's object is
+                /// instantiated can lead to panics, or if the id's object is
                 /// initialized, it can lead to use of an object that will die
                 /// before this typeid. **TLDR: use it if you know what you
                 /// do.**
@@ -405,11 +405,11 @@ macro_rules! internal_idtype {
                 ///
                 /// You cannot rely on the `id` this function will return
                 /// you, it's a bad idea to write a test that verifies if the
-                /// `id` of an instance is equal to something. The `id` is
-                /// not guaranteed to be persistent in any fashion, accross
-                /// versions, accross runs, etc.. You can just rely on the `id`
-                /// to be the same accross to instances of the same object like
-                /// in the following example.
+                /// `id` of an instance is equal to something. The `id` is not
+                /// guaranteed to be persistent in any fashion, across versions,
+                /// across runs, etc.. You can just rely on the `id` to be the
+                /// same across to instances of the same object like in the
+                /// following example.
                 ///
                 /// # Example
                 ///
@@ -432,7 +432,7 @@ macro_rules! internal_idtype {
                     self.0
                 }
 
-                /// Are these instances refering to the same object?
+                /// Are these instances referring to the same object?
                 ///
                 /// # Example
                 ///
@@ -650,6 +650,12 @@ impl<T> Database<T> {
     }
 }
 
+impl<T> Default for Database<T> {
+    fn default() -> Self {
+        Database::new()
+    }
+}
+
 /// Lock of [`Database`] used in [`idtype!`] macro, to be able to make it static
 #[derive(Debug)]
 pub struct DatabaseLock<T> {
@@ -683,11 +689,17 @@ impl<T> DatabaseLock<T> {
     ///
     /// # Note
     ///
-    /// If you only read, it is preffered to use [`lock`]
+    /// If you only read, it is preferred to use [`lock`]
     ///
     /// [`lock`]: DatabaseLock<T>::lock
     pub fn lock_mut(&self) -> RwLockWriteGuard<'_, Database<T>> {
         self.inner.write().unwrap()
+    }
+}
+
+impl<T> Default for DatabaseLock<T> {
+    fn default() -> Self {
+        DatabaseLock::new()
     }
 }
 

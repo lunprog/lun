@@ -51,7 +51,7 @@ impl SemaChecker {
             sym: symref,
         } = global_def
         else {
-            // SAFETY: it is the caller's responsability to call this function
+            // SAFETY: it is the caller's responsibility to call this function
             // with a global definition
             opt_unrecheable!()
         };
