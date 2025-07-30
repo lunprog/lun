@@ -8,3 +8,4 @@ edition = "2024"
 [dependencies]
 thiserror = { workspace = true }
 serde = { workspace = true }
+concat-idents = "1.1.5"

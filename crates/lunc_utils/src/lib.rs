@@ -5,6 +5,7 @@ use std::{
     ops::{Add, Range},
 };
 
+pub mod idtype;
 pub mod pretty;
 pub mod symbol;
 pub mod target;
@@ -126,8 +127,9 @@ impl FileId {
 ///
 /// use it like that:
 /// ```
+/// # use lunc_utils::pluralize;
 /// let number = 123; // let's imagine `number` is the result of a function
-/// let idk = format!("you have {number} dollar{}", lunc_utils::pluralize(number));
+/// let idk = format!("you have {number} dollar{}", pluralize(number));
 /// ```
 pub fn pluralize<I>(num: I) -> &'static str
 where
