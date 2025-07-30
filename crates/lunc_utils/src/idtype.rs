@@ -59,6 +59,7 @@
 
 use std::{
     collections::HashMap,
+    num::NonZeroUsize,
     sync::{LazyLock, RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
 
@@ -254,8 +255,11 @@ macro_rules! internal_idtype {
     (attr = [ $( $attr:meta , )* ], vis = $vis:vis, name = $name:ident, T = $T:ty,) => {
         $crate::idtype::concat_idents!(database_name = DATABASE_, $name {
             $( #[$attr] )*
-            $vis struct $name(usize);
-            // TODO(URGENT): change from `usize` to `NonZeroUsize`, so that `Option<Idtype>` is still the size of `usize`
+            $vis struct $name(std::num::NonZeroUsize);
+            // NOTE: this maybe overkill because on a 64 bit machine you can
+            // have up to 18_446_744_073_709_551_615 objects, and it can be more
+            // than what we need, so it may be a good idea to change this to
+            // use `NonZeroU32`.
 
             #[allow(non_upper_case_globals)]
             pub(crate) static database_name: $crate::idtype::DatabaseLock<$T> = $crate::idtype::DatabaseLock::new();
@@ -298,7 +302,7 @@ macro_rules! internal_idtype {
                 /// initialized, it can lead to use of an object that will die
                 /// before this typeid. **TLDR: use it if you know what you
                 /// do.**
-                pub const unsafe fn from_raw(id: usize) -> Self {
+                pub const unsafe fn from_raw(id: std::num::NonZeroUsize) -> Self {
                     Self(id)
                 }
 
@@ -428,7 +432,17 @@ macro_rules! internal_idtype {
                 ///
                 /// assert!(a.object_eq(&b));
                 /// ```
-                pub fn id(&self) -> usize {
+                ///
+                /// # Design decision
+                ///
+                /// Note that the return type of this function is
+                /// [`NonZeroUsize`], this permits Rust to optimize out
+                #[doc = concat!("[`Option<", stringify!($name), ">`]")]
+                /// to have have **the same size and alignement** as
+                #[doc = concat!("[`", stringify!($name), "`].")]
+                ///
+                /// [`NonZeroUsize`]: std::num::NonZeroUsize
+                pub fn id(&self) -> std::num::NonZeroUsize {
                     self.0
                 }
 
@@ -541,15 +555,16 @@ pub struct Entry<T> {
     #[doc(hidden)]
     pub value: RwLock<T>,
     /// count of how many alive instances there is currently.
-    // TODO: it is maybe possible to use NonZeroU32 here.
+    // NOTE: just like NonZeroUsize is overkill for the id, because there is way too
+    // much, i think u16 should be fine here but idk maybe u32 is fine
     pub count: u32,
 }
 
 /// Database of idtype, for type `T`.
 #[derive(Debug)]
 pub struct Database<T> {
-    data: HashMap<usize, Entry<T>>,
-    last_id: usize,
+    data: HashMap<NonZeroUsize, Entry<T>>,
+    last_id: NonZeroUsize,
 }
 
 impl<T> Database<T> {
@@ -557,14 +572,16 @@ impl<T> Database<T> {
     pub fn new() -> Database<T> {
         Database {
             data: HashMap::new(),
-            last_id: 0,
+            last_id: NonZeroUsize::new(1).unwrap(),
         }
     }
 
     /// Register a new object of this type and returns it's id.
-    pub fn register(&mut self, value: T) -> usize {
+    pub fn register(&mut self, value: T) -> NonZeroUsize {
         let id = self.last_id;
-        self.last_id += 1;
+
+        // SAFETY: we are adding to a usize, this is guarranted to never return 0
+        self.last_id = unsafe { NonZeroUsize::new_unchecked(self.last_id.get() + 1) };
 
         self.data.insert(
             id,
@@ -578,7 +595,7 @@ impl<T> Database<T> {
     }
 
     /// Tries to get the underlying value
-    pub fn try_get(&self, id: usize) -> Option<&RwLock<T>> {
+    pub fn try_get(&self, id: NonZeroUsize) -> Option<&RwLock<T>> {
         self.data.get(&id).map(|entry| &entry.value)
     }
 
@@ -587,7 +604,7 @@ impl<T> Database<T> {
     /// # Panic
     ///
     /// It panics if the id is not valid
-    pub fn get(&self, id: usize) -> &RwLock<T> {
+    pub fn get(&self, id: NonZeroUsize) -> &RwLock<T> {
         self.try_get(id).expect("invalid id")
     }
 
@@ -596,7 +613,7 @@ impl<T> Database<T> {
     /// # Panic
     ///
     /// It panics if the id is not valid
-    pub fn get_entry(&self, id: usize) -> &Entry<T> {
+    pub fn get_entry(&self, id: NonZeroUsize) -> &Entry<T> {
         self.data.get(&id).expect("invalid id")
     }
 
@@ -607,12 +624,15 @@ impl<T> Database<T> {
     ///
     /// If you call this function but the typeid was not cloned, it can lead to the
     /// object not being dropped, if the database is static
-    pub unsafe fn increment_count(&mut self, id: usize) {
+    pub unsafe fn increment_count(&mut self, id: NonZeroUsize) {
         let Some(entry) = self.data.get_mut(&id) else {
             return;
         };
 
-        entry.count += 1;
+        entry.count = entry
+            .count
+            .checked_add(1)
+            .expect("You cannot have more than 4_294_967_295 instances of an object");
     }
 
     /// Tries to decrements the count of currently alive instance of the object
@@ -622,7 +642,7 @@ impl<T> Database<T> {
     ///
     /// If you call this function and there is still an instance of the object
     /// alive, the usage of the instance could lead to panics.
-    pub unsafe fn decrement_count(&mut self, id: usize) {
+    pub unsafe fn decrement_count(&mut self, id: NonZeroUsize) {
         let Some(entry) = self.data.get_mut(&id) else {
             return;
         };
@@ -631,12 +651,12 @@ impl<T> Database<T> {
     }
 
     /// Tries to return the count of how many instances are alive
-    pub fn alive(&self, id: usize) -> Option<u32> {
+    pub fn alive(&self, id: NonZeroUsize) -> Option<u32> {
         Some(self.data.get(&id)?.count)
     }
 
     /// Decrements the count and drop the value of the object if count reaches zero
-    pub fn drop_instance(&mut self, id: usize) {
+    pub fn drop_instance(&mut self, id: NonZeroUsize) {
         // SAFETY: we are dropping one instance of the object so this is fine
         unsafe {
             self.decrement_count(id);
