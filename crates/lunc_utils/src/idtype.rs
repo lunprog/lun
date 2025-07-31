@@ -255,11 +255,22 @@ macro_rules! internal_idtype {
     (attr = [ $( $attr:meta , )* ], vis = $vis:vis, name = $name:ident, T = $T:ty,) => {
         $crate::idtype::concat_idents!(database_name = DATABASE_, $name {
             $( #[$attr] )*
+            #[repr(transparent)]
             $vis struct $name(std::num::NonZeroUsize);
             // NOTE: this maybe overkill because on a 64 bit machine you can
             // have up to 18_446_744_073_709_551_615 objects, and it can be more
             // than what we need, so it may be a good idea to change this to
             // use `NonZeroU32`.
+
+            $crate::idtype::concat_idents!(test_name = test_idtype_, $name, _as_correct_sizes {
+                #[allow(non_snake_case)]
+                #[cfg(test)]
+                #[test]
+                fn test_name(){
+                    assert_eq!(std::mem::size_of::<$name>(), std::mem::size_of::<Option<$name>>());
+                    assert_eq!(std::mem::size_of::<$name>(), std::mem::size_of::<usize>());
+                }
+            });
 
             #[allow(non_upper_case_globals)]
             pub(crate) static database_name: $crate::idtype::DatabaseLock<$T> = $crate::idtype::DatabaseLock::new();
