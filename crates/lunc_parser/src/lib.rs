@@ -85,7 +85,7 @@ impl Parser {
     pub fn is_stmt_end(&self) -> bool {
         matches!(
             self.peek_tt(),
-            Some(Kw(Keyword::Else) | Punct(Punctuation::Semicolon))
+            Some(Kw(Keyword::Else) | Punct(Punctuation::Semicolon | Punctuation::RBrace))
         )
     }
 
