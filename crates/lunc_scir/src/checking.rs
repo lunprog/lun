@@ -1,4 +1,4 @@
-//! Checkings for the SCIR like typechecking, safety checkings etc
+//! Checks for the SCIR like typechecking, safety checks etc
 
 use std::iter::zip;
 
