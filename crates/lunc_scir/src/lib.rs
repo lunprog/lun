@@ -13,9 +13,9 @@ use lunc_utils::{
     symbol::{Symbol, Type, ValueExpr},
 };
 
+pub mod checking;
 pub mod diags;
 pub mod pretty;
-pub mod typeck;
 
 /// A semantic checked module, see the dsir version [`DsModule`]
 ///
@@ -533,7 +533,7 @@ impl SemaChecker {
         let mut root = lower(dsir);
 
         self.pre_ck_module(&mut root);
-        self.typeck_mod(&mut root);
+        self.ck_mod(&mut root);
 
         if self.sink.failed() {
             return None;
