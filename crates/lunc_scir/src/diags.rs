@@ -93,7 +93,7 @@ impl ToDiagnostic for ArityDoesntMatch {
         Diagnostic::error()
             .with_code(ErrorCode::ArityDoesntMatch)
             .with_message(format!(
-                "this function takes {} arguments but only {} were provided",
+                "this function takes {} arguments but {} were provided",
                 self.expected, self.got
             ))
             .with_label(Label::primary(self.loc.fid, self.loc))
@@ -132,5 +132,23 @@ impl ToDiagnostic for TypeAnnotationsNeeded {
             .with_code(ErrorCode::TypeAnnotationsNeeded)
             .with_message("type annotations needed")
             .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CallRequiresFuncType {
+    pub found: Type,
+    pub loc: Span,
+}
+
+impl ToDiagnostic for CallRequiresFuncType {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::CallRequiresFuncType)
+            .with_message("function call requires function type")
+            .with_label(
+                Label::primary(self.loc.fid, self.loc)
+                    .with_message(format!("instead found '{}'", self.found)),
+            )
     }
 }

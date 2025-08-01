@@ -6,8 +6,8 @@ use lunc_diag::{ToDiagnostic, feature_todo};
 use lunc_utils::{opt_unrecheable, symbol::Signedness};
 
 use crate::diags::{
-    ArityDoesntMatch, CantResolveComptimeValue, ExpectedPlaceExpression, ExpectedTypeFoundExpr,
-    MismatchedTypes, TypeAnnotationsNeeded,
+    ArityDoesntMatch, CallRequiresFuncType, CantResolveComptimeValue, ExpectedPlaceExpression,
+    ExpectedTypeFoundExpr, MismatchedTypes, TypeAnnotationsNeeded,
 };
 
 use super::*;
@@ -396,8 +396,26 @@ impl SemaChecker {
                 expr.typ = Type::Void;
             }
             ScExpr::Binary { lhs, op, rhs } => {
-                self.ck_expr(lhs, coerce_to)?;
-                self.ck_expr(rhs, Some(lhs.typ.clone()))?;
+                self.ck_expr(lhs, coerce_to.clone())?;
+                self.ck_expr(rhs, coerce_to)?;
+
+                if lhs.typ != Type::Unknown && lhs.typ != rhs.typ {
+                    self.sink.emit(MismatchedTypes {
+                        expected: vec![lhs.typ.clone()],
+                        found: rhs.typ.clone(),
+                        due_to: None,
+                        note: None,
+                        loc: rhs.loc.clone().unwrap(),
+                    });
+                } else if lhs.typ != rhs.typ {
+                    self.sink.emit(MismatchedTypes {
+                        expected: vec![rhs.typ.clone()],
+                        found: lhs.typ.clone(),
+                        due_to: None,
+                        note: None,
+                        loc: lhs.loc.clone().unwrap(),
+                    });
+                }
 
                 expr.typ = if op.is_relational() || op.is_logical() {
                     Type::Bool
@@ -498,11 +516,8 @@ impl SemaChecker {
                     ret: ret_ty,
                 } = &callee.typ
                 else {
-                    return Err(MismatchedTypes {
-                        expected: vec!["function pointer"],
+                    return Err(CallRequiresFuncType {
                         found: callee.typ.clone(),
-                        due_to: None,
-                        note: Some(format!("'{}' is not a function", callee.typ)),
                         loc: callee.loc.clone().unwrap(),
                     }
                     .into_diag());
