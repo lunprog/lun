@@ -267,6 +267,8 @@ impl SemaChecker {
                             });
                         }
 
+                        value.typ = symref.typ();
+
                         Ok(())
                     }
                     _ => {
