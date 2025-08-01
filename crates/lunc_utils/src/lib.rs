@@ -352,14 +352,28 @@ pub fn lower<T: FromHigher>(node: T::Higher) -> T {
 ///
 /// [`unreachable_unchecked`]: std::hint::unreachable_unchecked
 /// [`unreachable`]: std::unreachable
+#[cfg(debug_assertions)]
 #[macro_export]
 macro_rules! opt_unrecheable {
     ( $( $tt:tt )* ) => {
-        if cfg!(debug_assertions) {
-            std::unreachable!( $( $tt )* )
-        } else {
-            unsafe { std::hint::unreachable_unchecked() }
-        }
+        std::unreachable!( $( $tt )* )
+    };
+}
+
+/// This macro expands to [`unreachable_unchecked`] in release mode, or in the
+/// [`unreachable`] macro in debug mode.
+///
+/// # Safety
+///
+/// This function is not safer than [`unreachable_unchecked`].
+///
+/// [`unreachable_unchecked`]: std::hint::unreachable_unchecked
+/// [`unreachable`]: std::unreachable
+#[cfg(not(debug_assertions))]
+#[macro_export]
+macro_rules! opt_unrecheable {
+    ( $( $tt:tt )* ) => {
+        unsafe { std::hint::unreachable_unchecked() }
     };
 }
 

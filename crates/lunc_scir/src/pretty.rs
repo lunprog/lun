@@ -126,18 +126,24 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::Block { label, block } => {
+            ScExpr::Block {
+                label,
+                block,
+                index,
+            } => {
                 ctx.pretty_struct("Block")
                     .field("label", label)
                     .field("block", block)
+                    .field("index", index)
                     .finish()?;
 
                 Ok(())
             }
-            ScExpr::Loop { label, body } => {
+            ScExpr::Loop { label, body, index } => {
                 ctx.pretty_struct("Loop")
                     .field("label", label)
                     .field("body", body)
+                    .field("index", index)
                     .finish()?;
 
                 Ok(())
@@ -146,19 +152,22 @@ impl PrettyDump for ScExpr {
                 ctx.pretty_struct("Return").field("expr", expr).finish()?;
                 Ok(())
             }
-            ScExpr::Break { label, expr } => {
+            ScExpr::Break { label, expr, index } => {
                 ctx.pretty_struct("Break")
                     .field("label", label)
                     .field("expr", expr)
+                    .field("index", index)
                     .finish()?;
+
                 Ok(())
             }
-            ScExpr::Continue { label } => {
-                if label.is_some() {
-                    ctx.pretty_struct("Continue").field("label", label).finish()
-                } else {
-                    write!(ctx.out, "Continue")
-                }
+            ScExpr::Continue { label, index } => {
+                ctx.pretty_struct("Continue")
+                    .field("label", label)
+                    .field("index", index)
+                    .finish()?;
+
+                Ok(())
             }
             ScExpr::Null => {
                 write!(ctx.out, "Null")

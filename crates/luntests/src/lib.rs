@@ -275,6 +275,7 @@ pub enum TestStage {
     Lexer,
     Parser,
     Dsir,
+    Scir,
     Multifile,
 }
 
@@ -285,6 +286,7 @@ impl TestStage {
             TestStage::Lexer => &["-Dhalt-at=lexer", "-Dprint=tokenstream"],
             TestStage::Parser => &["-Dhalt-at=parser", "-Dprint=ast"],
             TestStage::Dsir => &["-Dhalt-at=dsir", "-Dprint=dsir-tree"],
+            TestStage::Scir => &["-Dhalt-at=scir", "-Dprint=scir-tree"],
             // NOTE: we print the dsir tree but we do not halt like the Dsir
             // stage does.
             TestStage::Multifile => &["-Dprint=scir-tree", "-orb-name", "multifile"],
@@ -302,6 +304,8 @@ impl FromStr for TestStage {
             Ok(TestStage::Parser)
         } else if s.starts_with("desugaring/") {
             Ok(TestStage::Dsir)
+        } else if s.starts_with("scir/") {
+            Ok(TestStage::Scir)
         } else {
             Ok(TestStage::None)
         }

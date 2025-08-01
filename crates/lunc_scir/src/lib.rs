@@ -198,17 +198,20 @@ impl FromHigher for ScExpression {
             DsExpr::Block { label, block } => ScExpr::Block {
                 label,
                 block: lower(block),
+                index: None,
             },
             DsExpr::Loop { label, body } => ScExpr::Loop {
                 label,
                 body: lower(body),
+                index: None,
             },
             DsExpr::Return { expr } => ScExpr::Return { expr: lower(expr) },
             DsExpr::Break { label, expr } => ScExpr::Break {
                 label,
                 expr: lower(expr),
+                index: None,
             },
-            DsExpr::Continue { label } => ScExpr::Continue { label },
+            DsExpr::Continue { label } => ScExpr::Continue { label, index: None },
             DsExpr::Null => ScExpr::Null,
             DsExpr::MemberAccess { expr, member } => ScExpr::MemberAccess {
                 expr: lower(expr),
@@ -318,6 +321,8 @@ pub enum ScExpr {
     Block {
         label: Option<String>,
         block: ScBlock,
+        /// label index after checking MUST be `Some(..)`
+        index: Option<usize>,
     },
     /// See [`DsExpr::Loop`]
     ///
@@ -325,6 +330,8 @@ pub enum ScExpr {
     Loop {
         label: Option<String>,
         body: ScBlock,
+        /// label index after checking MUST be `Some(..)`
+        index: Option<usize>,
     },
     /// See [`DsExpr::Return`]
     ///
@@ -336,11 +343,17 @@ pub enum ScExpr {
     Break {
         label: Option<String>,
         expr: Option<Box<ScExpression>>,
+        /// label index after checking MUST be `Some(..)`
+        index: Option<usize>,
     },
     /// See [`DsExpr::Continue`]
     ///
     /// [`DsExpr::Continue`]: lunc_dsir::DsExpr::Continue
-    Continue { label: Option<String> },
+    Continue {
+        label: Option<String>,
+        /// label index after checking MUST be `Some(..)`
+        index: Option<usize>,
+    },
     /// See [`DsExpr::Null`]
     ///
     /// [`DsExpr::Null`]: lunc_dsir::DsExpr::Null
@@ -519,6 +532,8 @@ pub enum ScStmt {
     Expression(ScExpression),
 }
 
+/// The semantic checker, it turn **DSIR** into **SCIR** and along the way it
+/// performs all the checks to ensure the program is semantically valid.
 #[derive(Debug, Clone)]
 pub struct SemaChecker {
     /// the diagnostic sink to report diagnostics
@@ -527,6 +542,8 @@ pub struct SemaChecker {
     fun_retty: Type,
     /// location where the return type was defined
     fun_retty_loc: OSpan,
+    /// it is used to check the types and correctness of label using expression
+    label_stack: LabelStack,
 }
 
 impl SemaChecker {
@@ -535,6 +552,7 @@ impl SemaChecker {
             sink,
             fun_retty: Type::Unknown,
             fun_retty_loc: None,
+            label_stack: LabelStack::new(),
         }
     }
 
@@ -671,5 +689,101 @@ impl SemaChecker {
             }
             _ => Err(expr.loc.clone().unwrap()),
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct LabelInfo {
+    /// name of the label, `:label` in continue / break and `label:` in
+    /// block and loops expression
+    pub name: Option<String>,
+    /// index of the loop
+    pub index: usize,
+    /// expected type of the loop
+    pub typ: Type,
+    /// is the label info referring to a loop?
+    pub is_loop: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct LabelStack {
+    labels: Vec<LabelInfo>,
+    last: usize,
+}
+
+impl LabelStack {
+    /// Create a new label stack
+    pub fn new() -> LabelStack {
+        LabelStack {
+            labels: Vec::new(),
+            last: 0,
+        }
+    }
+
+    /// Defines a new label
+    pub fn define_label(&mut self, name: Option<String>, is_loop: bool) -> usize {
+        let index = self.last;
+        self.last += 1;
+
+        self.labels.push(LabelInfo {
+            name,
+            index,
+            typ: Type::Unknown,
+            is_loop,
+        });
+
+        index
+    }
+
+    /// Return the last label of the loop
+    pub fn last(&self) -> Option<&LabelInfo> {
+        self.labels.last()
+    }
+
+    /// Reset the content of the label stack to it's defaults
+    pub fn reset(&mut self) {
+        *self = Default::default();
+    }
+
+    /// Get the label info by index
+    pub fn get_by_idx(&self, needle: usize) -> Option<&LabelInfo> {
+        self.labels.iter().find(|&info| info.index == needle)
+    }
+
+    /// Get a mutable ref to the label info by index
+    pub fn get_mut_by_idx(&mut self, needle: usize) -> Option<&mut LabelInfo> {
+        self.labels.iter_mut().find(|info| info.index == needle)
+    }
+
+    /// Get the label info by name
+    pub fn get_by_name(&self, needle: impl AsRef<str>) -> Option<&LabelInfo> {
+        for info in &self.labels {
+            if let Some(name) = &info.name
+                && name == needle.as_ref()
+            {
+                return Some(info);
+            }
+        }
+
+        None
+    }
+
+    /// Get a mutable reference to the label info by name
+    pub fn get_mut_by_name(&mut self, needle: impl AsRef<str>) -> Option<&mut LabelInfo> {
+        for info in &mut self.labels {
+            if let Some(name) = &info.name
+                && name == needle.as_ref()
+            {
+                return Some(info);
+            }
+        }
+
+        None
+    }
+}
+
+impl Default for LabelStack {
+    fn default() -> Self {
+        Self::new()
     }
 }

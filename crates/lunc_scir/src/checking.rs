@@ -6,8 +6,9 @@ use lunc_diag::{ToDiagnostic, feature_todo};
 use lunc_utils::{opt_unrecheable, symbol::Signedness};
 
 use crate::diags::{
-    ArityDoesntMatch, CallRequiresFuncType, CantResolveComptimeValue, ExpectedPlaceExpression,
-    ExpectedTypeFoundExpr, MismatchedTypes, TypeAnnotationsNeeded,
+    ArityDoesntMatch, BreakFromLoopWithValue, BreakUseAnImplicitLabelInBlock, CallRequiresFuncType,
+    CantContinueABlock, CantResolveComptimeValue, ExpectedPlaceExpression, ExpectedTypeFoundExpr,
+    LabelKwOutsideLoopOrBlock, MismatchedTypes, TypeAnnotationsNeeded, UseOfUndefinedLabel,
 };
 
 use super::*;
@@ -239,19 +240,23 @@ impl SemaChecker {
                         rettypexpr,
                         body,
                     } => {
+                        // reset the label stack
+                        self.label_stack.reset();
+
+                        // set the function return type
                         self.fun_retty = symref
                             .typ()
                             .as_fun_ptr()
                             .expect("type should be a function pointer in a function definition")
                             .1;
 
-                        self.fun_retty_loc = rettypexpr
-                            .as_ref()
-                            .map(|typexpr| typexpr.loc.clone())
-                            .flatten();
+                        self.fun_retty_loc =
+                            rettypexpr.as_ref().and_then(|typexpr| typexpr.loc.clone());
 
+                        // check the body of the function
                         self.ck_block(body, Some(self.fun_retty.clone()))?;
 
+                        // check the type of the block of the function
                         if body.typ != self.fun_retty {
                             self.sink.emit(MismatchedTypes {
                                 expected: vec![self.fun_retty.clone()],
@@ -267,6 +272,7 @@ impl SemaChecker {
                             });
                         }
 
+                        // assign the type of the function
                         value.typ = symref.typ();
 
                         Ok(())
@@ -469,6 +475,8 @@ impl SemaChecker {
                             loc: exp.loc.clone().unwrap(),
                         });
                     }
+
+                    expr.typ = Type::Bool;
                 }
                 UnaryOp::Dereference => {
                     // NOTE: here we tell the type checker `we if you have no idea try to coerce the expression to *T`.
@@ -582,13 +590,44 @@ impl SemaChecker {
 
                 expr.typ = then_br.typ.clone();
             }
-            ScExpr::Block { label: _, block } => {
+            ScExpr::Block {
+                label,
+                block,
+                index,
+            } => {
+                *index = Some(self.label_stack.define_label(label.clone(), false));
+
                 self.ck_block(block, coerce_to)?;
 
-                expr.typ = block.typ.clone();
+                expr.typ = if let Some(LabelInfo { typ, .. }) =
+                    self.label_stack.get_by_idx(index.unwrap())
+                {
+                    typ.clone().as_option().unwrap_or(block.typ.clone())
+                } else {
+                    block.typ.clone()
+                };
             }
-            ScExpr::Loop { label: _, body } => {
+            ScExpr::Loop { label, body, index } => {
+                // define label info
+                *index = Some(self.label_stack.define_label(label.clone(), true));
+
+                // check the body
                 self.ck_block(body, None)?;
+
+                if body.typ != Type::Void {
+                    self.sink.emit(MismatchedTypes {
+                        expected: vec![self.fun_retty.clone()],
+                        found: body.typ.clone(),
+                        due_to: self.fun_retty_loc.clone(),
+                        note: None,
+                        loc: body
+                            .last_expr
+                            .as_ref()
+                            .map(|expr| expr.loc.clone())
+                            .unwrap_or(body.loc.clone())
+                            .unwrap(),
+                    });
+                }
 
                 expr.typ = Type::Void;
             }
@@ -618,16 +657,166 @@ impl SemaChecker {
                 expr.typ = Type::Noreturn;
             }
             ScExpr::Break {
-                label: _,
+                label,
                 expr: exp,
+                index,
             } => {
+                // assign loop index
+                let (typ, is_loop) = if let Some(label) = label {
+                    let Some(LabelInfo {
+                        index: idx,
+                        typ,
+                        is_loop,
+                        ..
+                    }) = self.label_stack.get_by_name(&label)
+                    else {
+                        return Err(UseOfUndefinedLabel {
+                            name: label.clone(),
+                            // TODO: add location of the label name
+                            loc: expr.loc.clone().unwrap(),
+                        }
+                        .into_diag());
+                    };
+
+                    *index = Some(*idx);
+
+                    (typ.clone(), *is_loop)
+                } else {
+                    let Some(LabelInfo {
+                        index: idx,
+                        typ,
+                        is_loop,
+                        ..
+                    }) = self.label_stack.last()
+                    else {
+                        return Err(LabelKwOutsideLoopOrBlock {
+                            kw: "break",
+                            loc: expr.loc.clone().unwrap(),
+                        }
+                        .into_diag());
+                    };
+
+                    if !is_loop {
+                        return Err(BreakUseAnImplicitLabelInBlock {
+                            loc: expr.loc.clone().unwrap(),
+                        }
+                        .into_diag());
+                    }
+
+                    *index = Some(*idx);
+
+                    (typ.clone(), *is_loop)
+                };
+
                 if let Some(exp) = exp {
                     self.ck_expr(exp, None)?;
+
+                    if is_loop {
+                        self.sink.emit(BreakFromLoopWithValue {
+                            loc: expr.loc.clone().unwrap(),
+                        });
+                    } else if typ == Type::Unknown {
+                        let info = self
+                            .label_stack
+                            .get_mut_by_idx(index.unwrap())
+                            .expect("should've get a label info");
+
+                        info.typ = exp.typ.clone();
+                    } else {
+                        let info = self
+                            .label_stack
+                            .get_by_idx(index.unwrap())
+                            .expect("should've get a label info");
+
+                        if info.typ != exp.typ {
+                            self.sink.emit(MismatchedTypes {
+                                expected: vec![info.typ.clone()],
+                                found: exp.typ.clone(),
+                                due_to: None,
+                                note: None,
+                                loc: exp.loc.clone().unwrap(),
+                            });
+                        }
+                    }
+                } else if typ == Type::Unknown {
+                    let info = self
+                        .label_stack
+                        .get_mut_by_idx(index.unwrap())
+                        .expect("should've get a label info");
+
+                    info.typ = Type::Void;
+                } else {
+                    let info = self
+                        .label_stack
+                        .get_by_idx(index.unwrap())
+                        .expect("should've get a label info");
+
+                    self.sink.emit(MismatchedTypes {
+                        expected: vec![info.typ.clone()],
+                        found: Type::Void,
+                        due_to: None,
+                        note: None,
+                        loc: expr.loc.clone().unwrap(),
+                    });
                 }
 
                 expr.typ = Type::Noreturn;
             }
-            ScExpr::Continue { label: _ } => {
+            ScExpr::Continue { label, index } => {
+                // define the label index
+                'blk: {
+                    if let Some(label) = label {
+                        let Some(LabelInfo {
+                            index: idx,
+                            is_loop,
+                            ..
+                        }) = self.label_stack.get_by_name(&label)
+                        else {
+                            self.sink.emit(UseOfUndefinedLabel {
+                                name: label.clone(),
+                                // TODO: add location of the label name
+                                loc: expr.loc.clone().unwrap(),
+                            });
+
+                            break 'blk;
+                        };
+
+                        if !is_loop {
+                            self.sink.emit(CantContinueABlock {
+                                loc: expr.loc.clone().unwrap(),
+                            });
+
+                            break 'blk;
+                        }
+
+                        *index = Some(*idx);
+                    } else {
+                        let Some(LabelInfo {
+                            index: idx,
+                            is_loop,
+                            ..
+                        }) = self.label_stack.last()
+                        else {
+                            self.sink.emit(LabelKwOutsideLoopOrBlock {
+                                kw: "continue",
+                                loc: expr.loc.clone().unwrap(),
+                            });
+
+                            break 'blk;
+                        };
+
+                        if !is_loop {
+                            self.sink.emit(CantContinueABlock {
+                                loc: expr.loc.clone().unwrap(),
+                            });
+
+                            break 'blk;
+                        }
+
+                        *index = Some(*idx);
+                    }
+                }
+
                 expr.typ = Type::Noreturn;
             }
             ScExpr::Null => {

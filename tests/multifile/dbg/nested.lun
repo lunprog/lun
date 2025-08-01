@@ -1,4 +1,4 @@
-fib :: fun(n: usz) -> usz {
+fib :: fun(n: i32) -> i32 {
     if n <= 1 {
         n
     } else {

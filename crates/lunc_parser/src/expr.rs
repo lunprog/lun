@@ -1106,23 +1106,24 @@ pub fn parse_return_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
 /// parses break expression
 pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (_, lo_break) = expect_token!(parser => [Kw(Keyword::Break), ()], Kw(Keyword::Break));
+    let (_, lo) = expect_token!(parser => [Kw(Keyword::Break), ()], Kw(Keyword::Break));
+
+    let mut hi = lo.clone();
 
     let label = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
-        let Some(Token { loc, .. }) = parser.pop() else {
+        let Some(_) = parser.pop() else {
             // SAFETY: we already checked that the next token is here.
             opt_unrecheable!()
         };
 
-        let label = expect_token!(noloc: parser => [Ident(id), id.clone()], Ident(String::new()));
+        let (label, loc) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
-        Some((label, loc))
+        hi = loc;
+
+        Some(label)
     } else {
         None
     };
-
-    let lo = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo_break);
-    let mut hi = lo.clone();
 
     let expr = if parser.is_stmt_end() {
         None
@@ -1134,10 +1135,7 @@ pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     };
 
     Ok(Expression {
-        expr: Expr::Break {
-            label: label.map(|l| l.0),
-            expr,
-        },
+        expr: Expr::Break { label, expr },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1145,26 +1143,24 @@ pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
 /// parses continue expression
 pub fn parse_continue_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Continue), ()], Kw(Keyword::Continue));
+    let mut hi = lo.clone();
 
     let label = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
-        let Some(Token { loc, .. }) = parser.pop() else {
+        let Some(_) = parser.pop() else {
             // SAFETY: we already checked that the next token is here.
             opt_unrecheable!()
         };
 
-        let label = expect_token!(noloc: parser => [Ident(id), id.clone()], Ident(String::new()));
+        let (label, loc) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+        hi = loc;
 
-        Some((label, loc))
+        Some(label)
     } else {
         None
     };
 
-    let hi = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo.clone());
-
     Ok(Expression {
-        expr: Expr::Continue {
-            label: label.map(|l| l.0),
-        },
+        expr: Expr::Continue { label },
         loc: Span::from_ends(lo, hi),
     })
 }

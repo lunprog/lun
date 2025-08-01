@@ -394,8 +394,8 @@ pub enum ErrorCode {
     UnderscoreInExpression = 14,
     /// feature not implemented
     FeatureNotImplemented = 15,
-    /// loop keyword (`break` or `continue`) outside a loop.
-    LoopKwOutsideLoop = 16,
+    /// label keywords (`break` or `continue`) outside of a loop or block.
+    LabelKwOutsideLoopOrBlock = 16,
     /// unknown type
     UnknownType = 17,
     /// mutation of immutable
@@ -429,6 +429,14 @@ pub enum ErrorCode {
     ArityDoesntMatch = 28,
     /// cannot resolve the provided expression at compile time.
     CantResolveComptimeValue = 29,
+    /// use of an undefined label.
+    UseOfUndefinedLabel = 30,
+    /// a break inside of a labeled block without a label.
+    BreakUseAnImplicitLabelInBlock = 31,
+    /// a block cannot be continued.
+    CantContinueABlock = 32,
+    /// break from a loop with a value, it is only supported inside a labeled block.
+    BreakFromLoopWithValue = 33,
 }
 
 impl Display for ErrorCode {
