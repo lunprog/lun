@@ -521,12 +521,21 @@ pub enum ScStmt {
 
 #[derive(Debug, Clone)]
 pub struct SemaChecker {
+    /// the diagnostic sink to report diagnostics
     sink: DiagnosticSink,
+    /// the return type of the function we are currently checking
+    fun_retty: Type,
+    /// location where the return type was defined
+    fun_retty_loc: OSpan,
 }
 
 impl SemaChecker {
     pub fn new(sink: DiagnosticSink) -> SemaChecker {
-        SemaChecker { sink }
+        SemaChecker {
+            sink,
+            fun_retty: Type::Unknown,
+            fun_retty_loc: None,
+        }
     }
 
     pub fn produce(&mut self, dsir: DsModule) -> Option<ScModule> {

@@ -137,6 +137,14 @@ impl Type {
             _ => Some(self),
         }
     }
+
+    /// Tries to convert a type to a function ptr, returns None if it is not a function pointer
+    pub fn as_fun_ptr(self) -> Option<(Vec<Type>, Type)> {
+        match self {
+            Type::FunPtr { args, ret } => Some((args, *ret)),
+            _ => None,
+        }
+    }
 }
 
 impl PrettyDump for Type {
@@ -268,18 +276,14 @@ impl From<Symbol> for LazySymbol {
     }
 }
 
-// /// A reference to a symbol, used to mutate symbols during resolution,
-// /// everywhere both in SymbolTable and in the DSIR
-// ///
-// /// # Note
-// ///
-// /// This type is a wrapper of Arc so a clone of this type is very cheap.
-// #[repr(transparent)]
-// #[derive(Debug)]
-// pub struct Symbol(Arc<RwLock<InternalSymbol__>>);
-
 idtype! {
     /// A symbol
+    ///
+    /// # Design decision
+    ///
+    /// Symbol is an idtype because in the dsir and the scir, we want to mutate
+    /// every reference of a symbol and using idtype's is fast, memory efficient
+    /// and easier than `Arc<RwLock<InternalSymbol>>` everywhere.
     pub struct Symbol [ Clone, PartialEq ] {
         /// kind of symbol
         pub kind: SymKind,

@@ -53,6 +53,7 @@ fn record_tests(tctx: &mut TestContext) -> Result<(), TestError> {
 
 fn run_tests(tctx: &mut TestContext, out: &mut StandardStream) -> Result<(), ()> {
     let res = tctx.run_tests(out);
+
     match res {
         Ok(()) => Ok(()),
         Err(TestError::Failed) => Err(()),

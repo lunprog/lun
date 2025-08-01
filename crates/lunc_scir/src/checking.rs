@@ -236,10 +236,36 @@ impl SemaChecker {
                 match &mut value.expr {
                     ScExpr::FunDefinition {
                         args: _,
-                        rettypexpr: _,
+                        rettypexpr,
                         body,
                     } => {
-                        self.ck_block(body, None)?;
+                        self.fun_retty = symref
+                            .typ()
+                            .as_fun_ptr()
+                            .expect("type should be a function pointer in a function definition")
+                            .1;
+
+                        self.fun_retty_loc = rettypexpr
+                            .as_ref()
+                            .map(|typexpr| typexpr.loc.clone())
+                            .flatten();
+
+                        self.ck_block(body, Some(self.fun_retty.clone()))?;
+
+                        if body.typ != self.fun_retty {
+                            self.sink.emit(MismatchedTypes {
+                                expected: vec![self.fun_retty.clone()],
+                                found: body.typ.clone(),
+                                due_to: self.fun_retty_loc.clone(),
+                                note: None,
+                                loc: body
+                                    .last_expr
+                                    .as_ref()
+                                    .map(|expr| expr.loc.clone())
+                                    .unwrap_or(body.loc.clone())
+                                    .unwrap(),
+                            });
+                        }
 
                         Ok(())
                     }
@@ -551,7 +577,25 @@ impl SemaChecker {
             }
             ScExpr::Return { expr: exp } => {
                 if let Some(exp) = exp {
-                    self.ck_expr(exp, None)?;
+                    self.ck_expr(exp, Some(self.fun_retty.clone()))?;
+
+                    if exp.typ != self.fun_retty {
+                        self.sink.emit(MismatchedTypes {
+                            expected: vec![self.fun_retty.clone()],
+                            found: exp.typ.clone(),
+                            due_to: self.fun_retty_loc.clone(),
+                            note: None,
+                            loc: exp.loc.clone().unwrap(),
+                        });
+                    }
+                } else if self.fun_retty != Type::Void {
+                    self.sink.emit(MismatchedTypes {
+                        expected: vec![self.fun_retty.clone()],
+                        found: Type::Void,
+                        due_to: self.fun_retty_loc.clone(),
+                        note: None,
+                        loc: expr.loc.clone().unwrap(),
+                    });
                 }
 
                 expr.typ = Type::Noreturn;
