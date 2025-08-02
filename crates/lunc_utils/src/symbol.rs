@@ -518,6 +518,11 @@ impl SymKind {
     pub fn is_global_def(&self) -> bool {
         matches!(self, Self::Global { .. } | Self::Function | Self::Module)
     }
+
+    /// Can this kind of symbol allow shadowing?
+    pub fn can_shadow(&self) -> bool {
+        matches!(self, SymKind::Local { .. } | SymKind::Arg)
+    }
 }
 
 impl Display for SymKind {

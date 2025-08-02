@@ -273,7 +273,7 @@ impl CliArgs {
         let mut target = TargetInput::default();
         let mut orb_name = None;
         let mut version = false;
-        let mut verbose = true;
+        let mut verbose = false;
 
         while let Some(arg) = args.next() {
             if arg == "-h" || arg == "-help" {
@@ -397,6 +397,7 @@ pub fn run() -> Result<()> {
             eprintln!("rustc-version: {}", build::RUST_VERSION);
             eprintln!("rustc-toolchain: {}", build::RUST_CHANNEL);
         }
+
         return Ok(());
     }
 

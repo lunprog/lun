@@ -1614,6 +1614,17 @@ impl SymbolTable {
     pub fn bind(&mut self, name: String, sym: Symbol) -> Result<(), Diagnostic> {
         let sym_kind = sym.kind();
 
+        if let Some(previous_sym) = self.lookup(&name)
+            && !previous_sym.kind().can_shadow()
+        {
+            return Err(NameDefinedMultipleTimes {
+                name: &name,
+                loc_previous: previous_sym.loc().unwrap(),
+                loc: sym.loc().unwrap(),
+            }
+            .into_diag());
+        }
+
         match sym_kind {
             SymKind::Local { .. } => {
                 self.last_map_mut().local_count += 1;
@@ -1625,19 +1636,6 @@ impl SymbolTable {
                 self.last_map_mut().global_count += 1;
             }
             SymKind::Function => {
-                if let Some(previous_sym) = self.lookup(&name) {
-                    let previous_sym_kind = previous_sym.kind();
-
-                    if let SymKind::Function = previous_sym_kind {
-                        return Err(NameDefinedMultipleTimes {
-                            name: &name,
-                            loc_previous: previous_sym.loc().unwrap(),
-                            loc: sym.loc().unwrap(),
-                        }
-                        .into_diag());
-                    }
-                }
-
                 self.last_map_mut().fun_count += 1;
             }
             SymKind::Module => {
