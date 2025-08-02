@@ -224,6 +224,9 @@ impl SemaChecker {
     }
 
     pub fn ck_item(&mut self, item: &mut ScItem) -> Result<(), Diagnostic> {
+        // reset the label stack
+        self.label_stack.reset();
+
         match item {
             ScItem::GlobalDef {
                 name: _,
@@ -240,9 +243,6 @@ impl SemaChecker {
                         rettypexpr,
                         body,
                     } => {
-                        // reset the label stack
-                        self.label_stack.reset();
-
                         // set the function return type
                         self.fun_retty = symref
                             .typ()

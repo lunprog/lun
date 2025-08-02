@@ -2969,6 +2969,370 @@
 ",
         expected_test_out: "",
     ),
+    "scir/fun_ret_ty": (
+        expected_compiler_out: r#"scir = [
+  GlobalDef {
+    name: i32_return @ 0..10 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: i32 @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            value: Type {
+              type: i32;
+            };
+          };
+          typ: type;
+        } @ 23..26 (fid = 0);
+        body: Block {
+          stmts: [
+            Expression {
+              expr: If {
+                cond: Expression {
+                  expr: boolean false;
+                  typ: bool;
+                } @ 36..41 (fid = 0);
+                then_br: Expression {
+                  expr: Block {
+                    label: none;
+                    block: Block {
+                      stmts: [
+                        Expression {
+                          expr: Return {
+                            expr: Expression {
+                              expr: integer 21;
+                              typ: i32;
+                            } @ 59..61 (fid = 0);
+                          };
+                          typ: noreturn;
+                        } @ 52..61 (fid = 0) @ 52..61 (fid = 0),
+                      ];
+                      last_expr: none;
+                      typ: void;
+                    } @ 42..68 (fid = 0);
+                    index: 0;
+                  };
+                  typ: void;
+                } @ 33..68 (fid = 0);
+                else_br: none;
+              };
+              typ: void;
+            } @ 33..68 (fid = 0) @ 33..68 (fid = 0),
+          ];
+          last_expr: Expression {
+            expr: integer 120;
+            typ: i32;
+          } @ 74..77 (fid = 0);
+          typ: i32;
+        } @ 27..79 (fid = 0);
+      };
+      typ: *fun () -> i32;
+    } @ 14..79 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: i32_return @ 0..10 (fid = 0);
+      which: 0;
+      path: orb.i32_return;
+      typ: *fun () -> i32;
+      value: none;
+    };
+  } @ 0..79 (fid = 0),
+
+  GlobalDef {
+    name: f32_return @ 81..91 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: f32 @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            value: Type {
+              type: f32;
+            };
+          };
+          typ: type;
+        } @ 104..107 (fid = 0);
+        body: Block {
+          stmts: [
+            Expression {
+              expr: If {
+                cond: Expression {
+                  expr: boolean false;
+                  typ: bool;
+                } @ 117..122 (fid = 0);
+                then_br: Expression {
+                  expr: Block {
+                    label: none;
+                    block: Block {
+                      stmts: [
+                        Expression {
+                          expr: Return {
+                            expr: Expression {
+                              expr: float 2.1;
+                              typ: f32;
+                            } @ 140..143 (fid = 0);
+                          };
+                          typ: noreturn;
+                        } @ 133..143 (fid = 0) @ 133..143 (fid = 0),
+                      ];
+                      last_expr: none;
+                      typ: void;
+                    } @ 123..150 (fid = 0);
+                    index: 0;
+                  };
+                  typ: void;
+                } @ 114..150 (fid = 0);
+                else_br: none;
+              };
+              typ: void;
+            } @ 114..150 (fid = 0) @ 114..150 (fid = 0),
+          ];
+          last_expr: Expression {
+            expr: float 1.2;
+            typ: f32;
+          } @ 156..160 (fid = 0);
+          typ: f32;
+        } @ 108..162 (fid = 0);
+      };
+      typ: *fun () -> f32;
+    } @ 95..162 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: f32_return @ 81..91 (fid = 0);
+      which: 0;
+      path: orb.f32_return;
+      typ: *fun () -> f32;
+      value: none;
+    };
+  } @ 81..162 (fid = 0),
+
+  GlobalDef {
+    name: char_return @ 164..175 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: char @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            value: Type {
+              type: char;
+            };
+          };
+          typ: type;
+        } @ 188..192 (fid = 0);
+        body: Block {
+          stmts: [
+            Expression {
+              expr: If {
+                cond: Expression {
+                  expr: boolean false;
+                  typ: bool;
+                } @ 202..207 (fid = 0);
+                then_br: Expression {
+                  expr: Block {
+                    label: none;
+                    block: Block {
+                      stmts: [];
+                      last_expr: Expression {
+                        expr: Return {
+                          expr: Expression {
+                            expr: character 'B';
+                            typ: char;
+                          } @ 225..228 (fid = 0);
+                        };
+                        typ: noreturn;
+                      } @ 218..228 (fid = 0);
+                      typ: noreturn;
+                    } @ 208..234 (fid = 0);
+                    index: 0;
+                  };
+                  typ: noreturn;
+                } @ 199..234 (fid = 0);
+                else_br: none;
+              };
+              typ: noreturn;
+            } @ 199..234 (fid = 0) @ 199..234 (fid = 0),
+          ];
+          last_expr: Expression {
+            expr: character 'A';
+            typ: char;
+          } @ 240..243 (fid = 0);
+          typ: char;
+        } @ 193..245 (fid = 0);
+      };
+      typ: *fun () -> char;
+    } @ 179..245 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: char_return @ 164..175 (fid = 0);
+      which: 0;
+      path: orb.char_return;
+      typ: *fun () -> char;
+      value: none;
+    };
+  } @ 164..245 (fid = 0),
+
+  GlobalDef {
+    name: string_return @ 247..260 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: PointerType {
+            mutable: false;
+            typexpr: Expression {
+              expr: Symbol {
+                kind: global;
+                name: str @ none;
+                which: 0;
+                path: ∅;
+                typ: type;
+                value: Type {
+                  type: str;
+                };
+              };
+              typ: type;
+            } @ 274..277 (fid = 0);
+          };
+          typ: type;
+        } @ 273..277 (fid = 0);
+        body: Block {
+          stmts: [
+            Expression {
+              expr: If {
+                cond: Expression {
+                  expr: boolean false;
+                  typ: bool;
+                } @ 287..292 (fid = 0);
+                then_br: Expression {
+                  expr: Block {
+                    label: none;
+                    block: Block {
+                      stmts: [];
+                      last_expr: Expression {
+                        expr: Return {
+                          expr: Expression {
+                            expr: string "!World Hello";
+                            typ: * str;
+                          } @ 310..324 (fid = 0);
+                        };
+                        typ: noreturn;
+                      } @ 303..324 (fid = 0);
+                      typ: noreturn;
+                    } @ 293..330 (fid = 0);
+                    index: 0;
+                  };
+                  typ: noreturn;
+                } @ 284..330 (fid = 0);
+                else_br: none;
+              };
+              typ: noreturn;
+            } @ 284..330 (fid = 0) @ 284..330 (fid = 0),
+          ];
+          last_expr: Expression {
+            expr: string "Hello World";
+            typ: * str;
+          } @ 336..349 (fid = 0);
+          typ: * str;
+        } @ 278..351 (fid = 0);
+      };
+      typ: *fun () -> * str;
+    } @ 264..351 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: string_return @ 247..260 (fid = 0);
+      which: 0;
+      path: orb.string_return;
+      typ: *fun () -> * str;
+      value: none;
+    };
+  } @ 247..351 (fid = 0),
+
+  GlobalDef {
+    name: void_return @ 353..364 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: none;
+        body: Block {
+          stmts: [
+            Expression {
+              expr: If {
+                cond: Expression {
+                  expr: boolean false;
+                  typ: bool;
+                } @ 383..388 (fid = 0);
+                then_br: Expression {
+                  expr: Block {
+                    label: none;
+                    block: Block {
+                      stmts: [];
+                      last_expr: Expression {
+                        expr: Return {
+                          expr: none;
+                        };
+                        typ: noreturn;
+                      } @ 399..405 (fid = 0);
+                      typ: noreturn;
+                    } @ 389..411 (fid = 0);
+                    index: 0;
+                  };
+                  typ: noreturn;
+                } @ 380..411 (fid = 0);
+                else_br: none;
+              };
+              typ: noreturn;
+            } @ 380..411 (fid = 0) @ 380..411 (fid = 0),
+
+            Expression {
+              expr: Return {
+                expr: none;
+              };
+              typ: noreturn;
+            } @ 417..423 (fid = 0) @ 417..423 (fid = 0),
+          ];
+          last_expr: none;
+          typ: void;
+        } @ 374..426 (fid = 0);
+      };
+      typ: *fun () -> void;
+    } @ 368..426 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: void_return @ 353..364 (fid = 0);
+      which: 0;
+      path: orb.void_return;
+      typ: *fun () -> void;
+      value: none;
+    };
+  } @ 353..426 (fid = 0),
+]
+"#,
+        expected_test_out: "",
+    ),
     "scir/label_kw_expr": (
         expected_compiler_out: "scir = [
   GlobalDef {
