@@ -3117,14 +3117,14 @@
                 } @ 33..68 (fid = 0);
                 else_br: none;
               };
-              typ: noreturn;
+              typ: void;
             } @ 33..68 (fid = 0) @ 33..68 (fid = 0),
           ];
           last_expr: Expression {
             expr: integer 120;
             typ: i32;
           } @ 74..77 (fid = 0);
-          typ: noreturn;
+          typ: i32;
         } @ 27..79 (fid = 0);
       };
       typ: *fun () -> i32;
@@ -3193,14 +3193,14 @@
                 } @ 114..150 (fid = 0);
                 else_br: none;
               };
-              typ: noreturn;
+              typ: void;
             } @ 114..150 (fid = 0) @ 114..150 (fid = 0),
           ];
           last_expr: Expression {
             expr: float 1.2;
             typ: f32;
           } @ 156..160 (fid = 0);
-          typ: noreturn;
+          typ: f32;
         } @ 108..162 (fid = 0);
       };
       typ: *fun () -> f32;
@@ -3267,14 +3267,14 @@
                 } @ 199..234 (fid = 0);
                 else_br: none;
               };
-              typ: noreturn;
+              typ: void;
             } @ 199..234 (fid = 0) @ 199..234 (fid = 0),
           ];
           last_expr: Expression {
             expr: character 'A';
             typ: char;
           } @ 240..243 (fid = 0);
-          typ: noreturn;
+          typ: char;
         } @ 193..245 (fid = 0);
       };
       typ: *fun () -> char;
@@ -3347,14 +3347,14 @@
                 } @ 284..330 (fid = 0);
                 else_br: none;
               };
-              typ: noreturn;
+              typ: void;
             } @ 284..330 (fid = 0) @ 284..330 (fid = 0),
           ];
           last_expr: Expression {
             expr: string "Hello World";
             typ: * str;
           } @ 336..349 (fid = 0);
-          typ: noreturn;
+          typ: * str;
         } @ 278..351 (fid = 0);
       };
       typ: *fun () -> * str;
@@ -3405,7 +3405,7 @@
                 } @ 380..411 (fid = 0);
                 else_br: none;
               };
-              typ: noreturn;
+              typ: void;
             } @ 380..411 (fid = 0) @ 380..411 (fid = 0),
 
             Expression {
@@ -3432,63 +3432,6 @@
     };
   } @ 353..426 (fid = 0),
 ]
-warning[W002]: unreachable code
-  ┌─ ./tests/scir/fun_ret_ty.lun:6:5
-  │  
-2 │ ╭     if false {
-3 │ │         return 21;
-4 │ │     }
-  │ ╰─────' any code following this statement is unreachable
-5 │   
-6 │       120
-  │       ^^^ the unreachable code
-
-warning[W002]: unreachable code
-   ┌─ ./tests/scir/fun_ret_ty.lun:14:5
-   │  
-10 │ ╭     if false {
-11 │ │         return 2.1;
-12 │ │     }
-   │ ╰─────' any code following this statement is unreachable
-13 │   
-14 │       1.20
-   │       ^^^^ the unreachable code
-
-warning[W002]: unreachable code
-   ┌─ ./tests/scir/fun_ret_ty.lun:22:5
-   │  
-18 │ ╭     if false {
-19 │ │         return 'B'
-20 │ │     }
-   │ ╰─────' any code following this statement is unreachable
-21 │   
-22 │       'A'
-   │       ^^^ the unreachable code
-
-warning[W002]: unreachable code
-   ┌─ ./tests/scir/fun_ret_ty.lun:30:5
-   │  
-26 │ ╭     if false {
-27 │ │         return "!World Hello"
-28 │ │     }
-   │ ╰─────' any code following this statement is unreachable
-29 │   
-30 │       "Hello World"
-   │       ^^^^^^^^^^^^^ the unreachable code
-
-warning[W002]: unreachable code
-   ┌─ ./tests/scir/fun_ret_ty.lun:38:5
-   │  
-34 │ ╭     if false {
-35 │ │         return
-36 │ │     }
-   │ ╰─────' any code following this statement is unreachable
-37 │   
-38 │       return;
-   │       ^^^^^^ the unreachable code
-
-warning: compilation of `./tests/scir/fun_ret_ty` succeeded but 5 warnings emitted.
-
 "#,
         expected_test_out: "",
     ),
