@@ -39,19 +39,31 @@ impl Expression {
     }
 }
 
-/// parses a type expression with a precedence of Or
+/// parses a type expression with a precedence of logical or and cannot be a
+/// labelled expression.
 ///
-/// a "type expression" is just an expression that resolves to the atomic type
-/// `comptime type`
+/// # Why?
+///
+/// - We parse only to the precedence equal to logical or, because in binding
+///   definition like `a : u32 = 12;` gets parsed as `a : (u32 = 12);` (instead
+///   of `a : (u32) = 12;`) if we dont lower the precedence.
+///
+/// - We don't allow labelled expression because a binding definition like `a
+///   : u32 : loop {};` gets parsed as `a : (u32: loop {});` (instead of `a :
+///   (u32) : loop {};`) so it is disallowed.
+///
+/// **BUT** those expression can still be written if wrapped in parenthesis:
+/// - `a : (a = u32) = 12;` and
+/// - `a : (a: loop {}) : 12;`
 pub fn parse_typexpr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    parse_expr_precedence(parser, Precedence::LogicalOr)
+    parse_expr_precedence(parser, Precedence::LogicalOr, true)
 }
 
 impl AstNode for Expression {
     #[inline]
     #[track_caller]
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
-        parse_expr_precedence(parser, HIGHEST_PRECEDENCE)
+        parse_expr_precedence(parser, HIGHEST_PRECEDENCE, false)
     }
 }
 
@@ -232,9 +244,13 @@ pub struct Arg {
 }
 
 /// Parses an expression given the following precedence.
+///
+/// `typexpr` when set to true, it will parse with some constraints described in
+/// [`parse_typexpr`].
 pub fn parse_expr_precedence(
     parser: &mut Parser,
     precedence: Precedence,
+    typexpr: bool,
 ) -> Result<Expression, Diagnostic> {
     // TODO: parsing of range expressions, `expr..<expr` and `expr..=expr`, and
     // maybe `..<expr`, `..=expr` and maybe `expr..`
@@ -246,7 +262,7 @@ pub fn parse_expr_precedence(
         Some(FloatLit(_)) => parse!(@fn parser => parse_floatlit_expr),
         Some(Punct(Punctuation::LParen)) => parse!(@fn parser => parse_grouping_expr),
         Some(Punct(Punctuation::Ampsand)) => parse!(@fn parser => parse_deref_expr),
-        Some(Ident(_)) if parser.is_labeled_expr() => match parser.nth_tt(2) {
+        Some(Ident(_)) if !typexpr && parser.is_labeled_expr() => match parser.nth_tt(2) {
             Some(Kw(Keyword::Loop)) => parse!(@fn parser => parse_infinite_loop_expr),
             Some(Kw(Keyword::While)) => parse!(@fn parser => parse_predicate_loop_expr),
             Some(Kw(Keyword::For)) => parse!(@fn parser => parse_iterator_loop_expr),
@@ -685,7 +701,7 @@ pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> Result<Express
         pr = pr.next();
     }
 
-    let rhs = parse!(@fn parser => parse_expr_precedence, pr);
+    let rhs = parse!(@fn parser => parse_expr_precedence, pr, false);
     let loc = Span::from_ends(lhs.loc.clone(), rhs.loc.clone());
 
     Ok(Expression {
@@ -765,7 +781,7 @@ pub fn parse_unary_left_expr(parser: &mut Parser) -> Result<Expression, Diagnost
         return Err(parser.eof_diag());
     };
 
-    let expr = parse!(box: @fn parser => parse_expr_precedence, Precedence::Unary);
+    let expr = parse!(box: @fn parser => parse_expr_precedence, Precedence::Unary, false);
 
     Ok(Expression {
         loc: Span::from_ends(lo, expr.loc.clone()),
