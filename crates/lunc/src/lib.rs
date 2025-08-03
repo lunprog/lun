@@ -438,9 +438,11 @@ pub fn run() -> Result<()> {
     let root_fid = sink.register_file(input_str, source_code.clone());
     assert_eq!(root_fid, FileId::ROOT_MODULE);
 
+    let orb_name = argv.orb_name.clone();
+
     let compil_diags = || CliError::CompilerDiagnostics {
         sink: sink.clone(),
-        orb_name: argv.orb_name.clone(),
+        orb_name: orb_name.clone(),
     };
 
     // 3. lexing, text => token stream
@@ -453,7 +455,11 @@ pub fn run() -> Result<()> {
         tokenstream.fmt(&mut stderr(), &source_code).unwrap();
     }
     if argv.debug_halt_at(DebugHalt::Lexer) {
-        return Ok(());
+        if sink.is_empty() {
+            return Ok(());
+        } else {
+            return Err(CliError::CompilerDiagnostics { sink, orb_name });
+        }
     }
 
     // 4. parsing, token stream => AST
@@ -467,7 +473,11 @@ pub fn run() -> Result<()> {
         eprintln!();
     }
     if argv.debug_halt_at(DebugHalt::Parser) {
-        return Ok(());
+        if sink.is_empty() {
+            return Ok(());
+        } else {
+            return Err(CliError::CompilerDiagnostics { sink, orb_name });
+        }
     }
 
     // 5. desugarring, AST => DSIR
@@ -481,7 +491,11 @@ pub fn run() -> Result<()> {
         eprintln!();
     }
     if argv.debug_halt_at(DebugHalt::Dsir) {
-        return Ok(());
+        if sink.is_empty() {
+            return Ok(());
+        } else {
+            return Err(CliError::CompilerDiagnostics { sink, orb_name });
+        }
     }
 
     // 6. type-checking and all the semantic analysis, DSIR => SCIR
@@ -495,11 +509,19 @@ pub fn run() -> Result<()> {
         eprintln!();
     }
     if argv.debug_halt_at(DebugHalt::Scir) {
-        return Ok(());
+        if sink.is_empty() {
+            return Ok(());
+        } else {
+            return Err(CliError::CompilerDiagnostics { sink, orb_name });
+        }
     }
 
     // use output to remove the warning
     _ = argv.output;
 
-    Ok(())
+    if sink.is_empty() {
+        Ok(())
+    } else {
+        Err(CliError::CompilerDiagnostics { sink, orb_name })
+    }
 }

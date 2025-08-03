@@ -145,6 +145,38 @@ impl Type {
             _ => None,
         }
     }
+
+    /// Can the type (self) can coerce to type (other) ?
+    pub fn can_coerce(&self, other: &Type) -> bool {
+        match self {
+            Type::Unknown => panic!("cannot call this function with 'Unknown'."),
+            Type::I8
+            | Type::I16
+            | Type::I32
+            | Type::I64
+            | Type::I128
+            | Type::Isz
+            | Type::U8
+            | Type::U16
+            | Type::U32
+            | Type::U64
+            | Type::U128
+            | Type::Usz => other.is_int(),
+            Type::F16 | Type::F32 | Type::F64 | Type::F128 => other.is_float(),
+            Type::Bool => other.is_int(),
+            Type::Void | Type::FunPtr { .. } => false,
+            Type::Ptr { mutable, typ } => matches!(
+                other,
+                Type::Ptr {
+                    mutable: other_mut,
+                    typ: other_ty
+                } if other_mut == mutable && typ.can_coerce(other_ty)
+            ),
+            // NOTE: noreturn can coerce to everything.
+            Type::Noreturn => true,
+            Type::Str | Type::Char | Type::Type => false,
+        }
+    }
 }
 
 impl PrettyDump for Type {
@@ -308,6 +340,8 @@ idtype! {
         /// semantic checking this will be populated, the only exception is
         /// primitive types that havge type [`Type::Type`].
         pub typ: Type,
+        /// the typeness of the `typ`.
+        pub typeness: Typeness,
         /// the value of a global symbol
         ///
         /// ### Type
@@ -344,6 +378,7 @@ impl Symbol {
         name: String,
         which: usize,
         path: EffectivePath,
+        typeness: Typeness,
         loc: Option<Span>,
     ) -> Symbol {
         Symbol::new(InternalSymbol {
@@ -352,18 +387,26 @@ impl Symbol {
             which,
             path,
             typ: Type::Unknown,
+            typeness,
             value: None,
             loc,
         })
     }
 
     /// Create a new symbol with kind local and no type.
-    pub fn local(mutable: bool, name: String, which: usize, loc: Option<Span>) -> Symbol {
+    pub fn local(
+        mutable: bool,
+        name: String,
+        which: usize,
+        typeness: Typeness,
+        loc: Option<Span>,
+    ) -> Symbol {
         Symbol::with(
             SymKind::Local { mutable },
             name.clone(),
             which,
             EffectivePath::with_root_member(name),
+            typeness,
             loc,
         )
     }
@@ -375,13 +418,20 @@ impl Symbol {
             name.clone(),
             which,
             EffectivePath::with_root_member(name),
+            Typeness::Explicit,
             loc,
         )
     }
 
     /// Create a new symbol with kind global and no type.
-    pub fn global(mutable: bool, name: String, path: EffectivePath, loc: Option<Span>) -> Symbol {
-        Symbol::with(SymKind::Global { mutable }, name, 0, path, loc)
+    pub fn global(
+        mutable: bool,
+        name: String,
+        path: EffectivePath,
+        typeness: Typeness,
+        loc: Option<Span>,
+    ) -> Symbol {
+        Symbol::with(SymKind::Global { mutable }, name, 0, path, typeness, loc)
     }
 
     /// Create a new type, global, only used in `first_scope` on SymbolMap in
@@ -398,6 +448,7 @@ impl Symbol {
             which: 0,
             path: EffectivePath::new(),
             typ: Type::Type,
+            typeness: Typeness::Explicit,
             value: Some(ValueExpr::Type(typ)),
             loc: None,
         })
@@ -405,12 +456,12 @@ impl Symbol {
 
     /// Create a new symbol with kind function and no type.
     pub fn function(name: String, path: EffectivePath, loc: Option<Span>) -> Symbol {
-        Symbol::with(SymKind::Function, name, 0, path, loc)
+        Symbol::with(SymKind::Function, name, 0, path, Typeness::Explicit, loc)
     }
 
     /// Create a new symbol with kind module and no type.
     pub fn module(name: String, path: EffectivePath, loc: Option<Span>) -> Symbol {
-        Symbol::with(SymKind::Module, name, 0, path, loc)
+        Symbol::with(SymKind::Module, name, 0, path, Typeness::Explicit, loc)
     }
 
     /// See documentation of `is_place` on `ScExpression`
@@ -464,6 +515,13 @@ impl Symbol {
         db.get(self.0).read().unwrap().typ.clone()
     }
 
+    /// Get the typeness of the symbol
+    pub fn typeness(&self) -> Typeness {
+        let db = Self::database().lock();
+
+        db.get(self.0).read().unwrap().typeness.clone()
+    }
+
     /// Get the path of the symbol
     pub fn path(&self) -> EffectivePath {
         let db = Self::database().lock();
@@ -481,6 +539,7 @@ impl PrettyDump for Symbol {
                 which,
                 path,
                 typ,
+                typeness,
                 value,
                 loc,
             } = &sym;
@@ -491,11 +550,38 @@ impl PrettyDump for Symbol {
                 .field("which", which)
                 .field("path", path)
                 .field("typ", typ)
+                .field("typeness", typeness)
                 .field("value", value)
                 .finish()?;
 
             Ok(())
         })
+    }
+}
+
+/// How the type of the symbol has been computed
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Typeness {
+    /// The type was inferred from an expression and can be coerced to another
+    /// type.
+    Implicit,
+    /// The type was explicitly written in the source code, and tho the type
+    /// cannot be coerced to another type.
+    Explicit,
+}
+
+impl Display for Typeness {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Typeness::Implicit => write!(f, "implicit"),
+            Typeness::Explicit => write!(f, "explicit"),
+        }
+    }
+}
+
+impl PrettyDump for Typeness {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        write!(ctx.out, "{self}")
     }
 }
 

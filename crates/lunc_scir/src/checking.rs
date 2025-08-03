@@ -3,15 +3,32 @@
 use std::iter::zip;
 
 use lunc_diag::{ToDiagnostic, feature_todo};
-use lunc_utils::{opt_unrecheable, symbol::Signedness};
+use lunc_utils::{
+    opt_unrecheable,
+    symbol::{Signedness, Typeness},
+};
 
 use crate::diags::{
     ArityDoesntMatch, BreakFromLoopWithValue, BreakUseAnImplicitLabelInBlock, CallRequiresFuncType,
     CantContinueABlock, CantResolveComptimeValue, ExpectedPlaceExpression, ExpectedTypeFoundExpr,
     LabelKwOutsideLoopOrBlock, MismatchedTypes, TypeAnnotationsNeeded, UseOfUndefinedLabel,
+    WUnreachableCode,
 };
 
 use super::*;
+
+/// Used to emit the `unreachable_code` warning in block.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NoreturnPos {
+    /// The noreturn was in the statements of the block
+    Statements {
+        /// the position of the following statement that follows the first
+        /// 'noreturn' statement
+        pos: usize,
+    },
+    /// The noreturn is the last expression
+    LastExpr,
+}
 
 impl SemaChecker {
     pub fn ck_mod(&mut self, module: &mut ScModule) {
@@ -223,6 +240,120 @@ impl SemaChecker {
         Ok(())
     }
 
+    /// Block type checking
+    pub fn block_typeck(
+        &mut self,
+        expected: &Type,
+        found: &mut ScBlock,
+        due_to: impl Into<OSpan>,
+        note: impl Into<Option<String>>,
+        other_loc: impl Into<OSpan>,
+    ) {
+        if *expected != found.typ {
+            if found.typ.can_coerce(expected) {
+                // NOTE: here unlike `expr_typeck` we don't need to apply the type.
+                return;
+            }
+
+            self.sink.emit(MismatchedTypes {
+                expected: vec![expected.clone()],
+                found: found.typ.clone(),
+                due_to: due_to.into(),
+                note: note.into(),
+                loc: other_loc.into().unwrap_or(found.loc.clone().unwrap()),
+            });
+        }
+    }
+
+    /// Expression type checking
+    pub fn expr_typeck(
+        &mut self,
+        expected: &Type,
+        found: &mut ScExpression,
+        due_to: impl Into<Option<Span>>,
+        note: impl Into<Option<String>>,
+    ) {
+        if *expected != found.typ {
+            if found.typ.can_coerce(expected)
+                && Self::apply_typ_on_expr(found, expected.clone()).is_some()
+            {
+                return;
+            }
+
+            self.sink.emit(MismatchedTypes {
+                expected: vec![expected.clone()],
+                found: found.typ.clone(),
+                due_to: due_to.into(),
+                note: note.into(),
+                loc: found.loc.clone().unwrap(),
+            });
+        }
+    }
+
+    /// Tries to apply a new type to the `expr`, does not check that the
+    /// expression can have this type.
+    #[must_use]
+    pub fn apply_typ_on_expr(expr: &mut ScExpression, typ: Type) -> Option<()> {
+        match &mut expr.expr {
+            ScExpr::Ident(symref) if symref.typeness() == Typeness::Implicit => {
+                symref.inspect_mut(|sym| {
+                    sym.typ = typ.clone();
+                    sym.typeness = Typeness::Explicit;
+                });
+            }
+            ScExpr::Binary { lhs, op: _, rhs } => {
+                Self::apply_typ_on_expr(lhs, typ.clone())?;
+                Self::apply_typ_on_expr(rhs, typ.clone())?;
+            }
+            ScExpr::Unary { op: _, expr } | ScExpr::AddressOf { mutable: _, expr } => {
+                Self::apply_typ_on_expr(expr, typ.clone())?;
+            }
+            ScExpr::If {
+                cond: _,
+                then_br,
+                else_br,
+            } => {
+                Self::apply_typ_on_expr(then_br, typ.clone())?;
+
+                if let Some(else_br) = else_br {
+                    Self::apply_typ_on_expr(else_br, typ.clone())?;
+                }
+            }
+            ScExpr::Block {
+                block,
+                label: _,
+                index,
+            } => {
+                for stmt in &mut block.stmts {
+                    match &mut stmt.stmt {
+                        ScStmt::Expression(ScExpression {
+                            expr:
+                                ScExpr::Break {
+                                    label: _,
+                                    expr: Some(expr),
+                                    index: index_break,
+                                },
+                            typ: _,
+                            loc: _,
+                        }) if index_break == index => {
+                            Self::apply_typ_on_expr(expr, typ.clone())?;
+                        }
+                        _ => {}
+                    }
+                }
+
+                if let Some(last) = &mut block.last_expr {
+                    Self::apply_typ_on_expr(last, typ.clone())?;
+                }
+            }
+            _ => (),
+        }
+
+        expr.typ = typ;
+
+        Some(())
+    }
+
     pub fn ck_item(&mut self, item: &mut ScItem) -> Result<(), Diagnostic> {
         // reset the label stack
         self.label_stack.reset();
@@ -257,20 +388,17 @@ impl SemaChecker {
                         self.ck_block(body, Some(self.fun_retty.clone()))?;
 
                         // check the type of the block of the function
-                        if body.typ != self.fun_retty {
-                            self.sink.emit(MismatchedTypes {
-                                expected: vec![self.fun_retty.clone()],
-                                found: body.typ.clone(),
-                                due_to: self.fun_retty_loc.clone(),
-                                note: None,
-                                loc: body
-                                    .last_expr
-                                    .as_ref()
-                                    .map(|expr| expr.loc.clone())
-                                    .unwrap_or(body.loc.clone())
-                                    .unwrap(),
-                            });
-                        }
+                        self.block_typeck(
+                            &self.fun_retty.clone(),
+                            body,
+                            self.fun_retty_loc.clone(),
+                            None,
+                            body.last_expr
+                                .as_ref()
+                                .map(|expr| expr.loc.clone())
+                                .unwrap_or(body.loc.clone())
+                                .unwrap(),
+                        );
 
                         // assign the type of the function
                         value.typ = symref.typ();
@@ -291,13 +419,14 @@ impl SemaChecker {
                         } else if let Some(typ) = &typ
                             && &value.typ != typ
                         {
-                            self.sink.emit(MismatchedTypes {
-                                expected: vec![typ],
-                                found: value.typ.clone(),
-                                due_to: typexpr.clone().unwrap().loc,
-                                note: None,
-                                loc: value.loc.clone().unwrap(),
-                            });
+                            self.expr_typeck(
+                                typ,
+                                value,
+                                (**typexpr)
+                                    .as_ref()
+                                    .map(|exp| exp.loc.as_ref().unwrap().clone()),
+                                None,
+                            );
                         } else if typ.is_none() {
                             // we set the type of the symbol to the type of the value as a fallback
                             // let mut
@@ -406,21 +535,9 @@ impl SemaChecker {
                 self.ck_expr(rhs, coerce_to)?;
 
                 if lhs.typ != Type::Unknown && lhs.typ != rhs.typ {
-                    self.sink.emit(MismatchedTypes {
-                        expected: vec![lhs.typ.clone()],
-                        found: rhs.typ.clone(),
-                        due_to: None,
-                        note: None,
-                        loc: rhs.loc.clone().unwrap(),
-                    });
+                    self.expr_typeck(&lhs.typ, rhs, None, None);
                 } else if lhs.typ != rhs.typ {
-                    self.sink.emit(MismatchedTypes {
-                        expected: vec![rhs.typ.clone()],
-                        found: lhs.typ.clone(),
-                        due_to: None,
-                        note: None,
-                        loc: lhs.loc.clone().unwrap(),
-                    });
+                    self.expr_typeck(&rhs.typ, lhs, None, None);
                 }
 
                 expr.typ = if op.is_relational() || op.is_logical() {
@@ -438,7 +555,7 @@ impl SemaChecker {
                     match (exp.typ.is_int(), exp.typ.signedness(), exp.typ.is_float()) {
                         (true, Some(Signedness::Unsigned), _) => {
                             self.sink.emit(MismatchedTypes {
-                                expected: vec!["float", "integer"],
+                                expected: vec!["float", "signed integer"],
                                 found: exp.typ.clone(),
                                 due_to: None,
                                 note: Some(format!(
@@ -455,7 +572,7 @@ impl SemaChecker {
                             expr.typ = exp.typ.clone();
                         }
                         _ => self.sink.emit(MismatchedTypes {
-                            expected: vec!["float", "integer"],
+                            expected: vec!["float", "signed integer"],
                             found: exp.typ.clone(),
                             due_to: None,
                             note: None,
@@ -466,15 +583,7 @@ impl SemaChecker {
                 UnaryOp::Not => {
                     self.ck_expr(exp, Some(Type::Bool))?;
 
-                    if exp.typ != Type::Bool {
-                        self.sink.emit(MismatchedTypes {
-                            expected: vec![Type::Bool],
-                            found: exp.typ.clone(),
-                            due_to: None,
-                            note: None,
-                            loc: exp.loc.clone().unwrap(),
-                        });
-                    }
+                    self.expr_typeck(&Type::Bool, exp, None, None);
 
                     expr.typ = Type::Bool;
                 }
@@ -542,15 +651,7 @@ impl SemaChecker {
                 for (arg, aty) in zip(args, args_ty) {
                     self.ck_expr(arg, Some(aty.clone()))?;
 
-                    if arg.typ != *aty {
-                        self.sink.emit(MismatchedTypes {
-                            expected: vec![aty],
-                            found: arg.typ.clone(),
-                            due_to: None,
-                            note: None,
-                            loc: arg.loc.clone().unwrap(),
-                        });
-                    }
+                    self.expr_typeck(aty, arg, None, None);
                 }
 
                 expr.typ = (**ret_ty).clone();
@@ -562,30 +663,14 @@ impl SemaChecker {
             } => {
                 self.ck_expr(cond, Some(Type::Bool))?;
 
-                if cond.typ != Type::Bool {
-                    self.sink.emit(MismatchedTypes {
-                        expected: vec![Type::Bool],
-                        found: cond.typ.clone(),
-                        due_to: None,
-                        note: None,
-                        loc: cond.loc.clone().unwrap(),
-                    });
-                }
+                self.expr_typeck(&Type::Bool, cond, None, None);
 
                 self.ck_expr(then_br, coerce_to)?;
 
                 if let Some(else_br) = else_br {
                     self.ck_expr(else_br, Some(then_br.typ.clone()))?;
 
-                    if else_br.typ != then_br.typ {
-                        self.sink.emit(MismatchedTypes {
-                            expected: vec![then_br.typ.clone()],
-                            found: else_br.typ.clone(),
-                            due_to: then_br.loc.clone(),
-                            note: None,
-                            loc: else_br.loc.clone().unwrap(),
-                        });
-                    }
+                    self.expr_typeck(&then_br.typ, else_br, None, None);
                 }
 
                 expr.typ = then_br.typ.clone();
@@ -614,20 +699,7 @@ impl SemaChecker {
                 // check the body
                 self.ck_block(body, None)?;
 
-                if body.typ != Type::Void {
-                    self.sink.emit(MismatchedTypes {
-                        expected: vec![self.fun_retty.clone()],
-                        found: body.typ.clone(),
-                        due_to: self.fun_retty_loc.clone(),
-                        note: None,
-                        loc: body
-                            .last_expr
-                            .as_ref()
-                            .map(|expr| expr.loc.clone())
-                            .unwrap_or(body.loc.clone())
-                            .unwrap(),
-                    });
-                }
+                self.block_typeck(&Type::Void, body, None, None, None);
 
                 expr.typ = Type::Void;
             }
@@ -635,16 +707,14 @@ impl SemaChecker {
                 if let Some(exp) = exp {
                     self.ck_expr(exp, Some(self.fun_retty.clone()))?;
 
-                    if exp.typ != self.fun_retty {
-                        self.sink.emit(MismatchedTypes {
-                            expected: vec![self.fun_retty.clone()],
-                            found: exp.typ.clone(),
-                            due_to: self.fun_retty_loc.clone(),
-                            note: None,
-                            loc: exp.loc.clone().unwrap(),
-                        });
-                    }
+                    self.expr_typeck(
+                        &self.fun_retty.clone(),
+                        exp,
+                        self.fun_retty_loc.clone(),
+                        None,
+                    );
                 } else if self.fun_retty != Type::Void {
+                    // NOTE: we cannot use 'expr_typeck' here
                     self.sink.emit(MismatchedTypes {
                         expected: vec![self.fun_retty.clone()],
                         found: Type::Void,
@@ -728,15 +798,7 @@ impl SemaChecker {
                             .get_by_idx(index.unwrap())
                             .expect("should've get a label info");
 
-                        if info.typ != exp.typ {
-                            self.sink.emit(MismatchedTypes {
-                                expected: vec![info.typ.clone()],
-                                found: exp.typ.clone(),
-                                due_to: None,
-                                note: None,
-                                loc: exp.loc.clone().unwrap(),
-                            });
-                        }
+                        self.expr_typeck(&info.typ.clone(), exp, None, None);
                     }
                 } else if typ == Type::Unknown {
                     let info = self
@@ -751,6 +813,7 @@ impl SemaChecker {
                         .get_by_idx(index.unwrap())
                         .expect("should've get a label info");
 
+                    // NOTE: we cannot use 'expr_typeck' here
                     self.sink.emit(MismatchedTypes {
                         expected: vec![info.typ.clone()],
                         found: Type::Void,
@@ -916,9 +979,46 @@ impl SemaChecker {
         }
 
         // check the last expression
-        block.typ = if let Some(expr) = &mut block.last_expr {
+        if let Some(expr) = &mut block.last_expr {
             self.ck_expr(expr, coerce_to)?;
+        }
 
+        // compute if one of the statements or the last expression has
+        // `noreturn` type.
+        let is_noreturn = block
+            .stmts
+            .iter()
+            .position(|stmt| match &stmt.stmt {
+                ScStmt::VariableDef { value, .. } if value.typ == Type::Noreturn => true,
+                ScStmt::Expression(expr) if expr.typ == Type::Noreturn => true,
+                _ => false,
+            })
+            .map(|pos| NoreturnPos::Statements { pos })
+            .map(|noret_pos| match block.last_expr.as_ref() {
+                Some(expr) if expr.typ == Type::Unknown => NoreturnPos::LastExpr,
+                _ => noret_pos,
+            });
+
+        block.typ = if let Some(noret_pos) = is_noreturn {
+            if let NoreturnPos::Statements { pos } = noret_pos
+                && pos + 1 < block.stmts.len()
+            {
+                let noret_loc = block.stmts.get(pos).unwrap().loc.clone().unwrap();
+                let loc = block.stmts.get(pos + 1).unwrap().loc.clone().unwrap();
+
+                self.sink.emit(WUnreachableCode { noret_loc, loc });
+            } else if let NoreturnPos::Statements { pos } = noret_pos
+                && let Some(last) = &block.last_expr
+            {
+                if let Some(noret_loc) = block.stmts.get(pos).unwrap().loc.clone() {
+                    let loc = last.loc.clone().unwrap();
+
+                    self.sink.emit(WUnreachableCode { noret_loc, loc });
+                }
+            }
+
+            Type::Noreturn
+        } else if let Some(expr) = &mut block.last_expr {
             expr.typ.clone()
         } else {
             Type::Void
@@ -973,16 +1073,8 @@ impl SemaChecker {
                     self.sink.emit(TypeAnnotationsNeeded {
                         loc: value.loc.clone().unwrap(),
                     });
-                } else if let Some(typ) = &typexpr_as_type
-                    && &value.typ != typ
-                {
-                    self.sink.emit(MismatchedTypes {
-                        expected: vec![typ],
-                        found: value.typ.clone(),
-                        due_to: typexpr.as_ref().unwrap().loc.clone(),
-                        note: None,
-                        loc: value.loc.clone().unwrap(),
-                    });
+                } else if let Some(typ) = &typexpr_as_type {
+                    self.expr_typeck(typ, value, typexpr.as_ref().unwrap().loc.clone(), None);
                 }
 
                 let typ = if let Some(ref typ) = typexpr_as_type {

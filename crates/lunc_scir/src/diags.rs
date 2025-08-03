@@ -2,7 +2,7 @@
 
 use std::fmt::Display;
 
-use lunc_diag::{ErrorCode, Label, ToDiagnostic};
+use lunc_diag::{ErrorCode, Label, ToDiagnostic, WarnCode};
 use lunc_utils::{Span, list_fmt};
 
 use super::*;
@@ -230,6 +230,27 @@ impl ToDiagnostic for BreakFromLoopWithValue {
             .with_label(
                 Label::primary(self.loc.fid, self.loc)
                     .with_message("can only 'break' with a value from a labeled block"),
+            )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct WUnreachableCode {
+    /// location of the statement that does not return
+    pub noret_loc: Span,
+    /// location of the following statement or expression that is unreachable
+    pub loc: Span,
+}
+
+impl ToDiagnostic for WUnreachableCode {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::warning()
+            .with_code(WarnCode::UnreachableCode)
+            .with_message("unreachable code")
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message("the unreachable code"))
+            .with_label(
+                Label::secondary(self.noret_loc.fid, self.noret_loc)
+                    .with_message("any code following this statement is unreachable"),
             )
     }
 }

@@ -1,0 +1,16 @@
+cant_reach :: 1;
+
+main :: fun() -> usz {
+    a : usz : blk: {
+        // test of unreachable last expression of a block
+        cant_reach;
+
+        break :blk 12;
+
+        cant_reach
+    };
+
+    // test of unreachable in statements
+    return 12;
+    cant_reach;
+}

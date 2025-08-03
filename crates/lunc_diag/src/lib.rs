@@ -449,6 +449,8 @@ impl Display for ErrorCode {
 pub enum WarnCode {
     /// A symbol is never used
     NeverUsedSymbol = 1,
+    /// Unreachable code
+    UnreachableCode = 2,
 }
 
 impl Display for WarnCode {

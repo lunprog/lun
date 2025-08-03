@@ -20,6 +20,7 @@
               which: 0;
               path: orb.add;
               typ: unknown;
+              typeness: explicit;
               value: none;
             } @ 106..109 (fid = 0);
             args: [
@@ -34,6 +35,7 @@
             which: 0;
             path: res;
             typ: unknown;
+            typeness: implicit;
             value: none;
           };
         } @ 99..115 (fid = 0),
@@ -47,6 +49,7 @@
             which: 0;
             path: res;
             typ: unknown;
+            typeness: implicit;
             value: none;
           } @ 125..128 (fid = 0);
         } @ 121..128 (fid = 0) @ 121..128 (fid = 0),
@@ -60,6 +63,7 @@
       which: 0;
       path: orb.main;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   } @ 79..131 (fid = 0),
@@ -78,6 +82,7 @@
             which: 0;
             path: ∅;
             typ: type;
+            typeness: explicit;
             value: Type {
               type: isz;
             };
@@ -88,6 +93,7 @@
             which: 0;
             path: a;
             typ: unknown;
+            typeness: explicit;
             value: none;
           };
         } @ 144..150 (fid = 0),
@@ -100,6 +106,7 @@
             which: 0;
             path: ∅;
             typ: type;
+            typeness: explicit;
             value: Type {
               type: isz;
             };
@@ -110,6 +117,7 @@
             which: 0;
             path: b;
             typ: unknown;
+            typeness: explicit;
             value: none;
           };
         } @ 152..158 (fid = 0),
@@ -120,6 +128,7 @@
         which: 0;
         path: ∅;
         typ: type;
+        typeness: explicit;
         value: Type {
           type: isz;
         };
@@ -132,6 +141,7 @@
             which: 0;
             path: a;
             typ: unknown;
+            typeness: explicit;
             value: none;
           } @ 173..174 (fid = 0);
           op: Add;
@@ -141,6 +151,7 @@
             which: 0;
             path: b;
             typ: unknown;
+            typeness: explicit;
             value: none;
           } @ 177..178 (fid = 0);
         } @ 173..178 (fid = 0),
@@ -152,6 +163,7 @@
       which: 0;
       path: orb.add;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   } @ 133..180 (fid = 0),
@@ -178,6 +190,7 @@
       which: 0;
       path: orb.main;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   } @ 19..35 (fid = 0),
@@ -191,6 +204,7 @@
       which: 0;
       path: ∅;
       typ: type;
+      typeness: explicit;
       value: Type {
         type: f64;
       };
@@ -202,6 +216,7 @@
       which: 0;
       path: orb.avogadro;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   } @ 36..62 (fid = 0),
@@ -217,6 +232,7 @@
         which: 0;
         path: ∅;
         typ: type;
+        typeness: explicit;
         value: Type {
           type: str;
         };
@@ -229,6 +245,7 @@
       which: 0;
       path: orb.hello;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   } @ 78..101 (fid = 0),
@@ -244,6 +261,7 @@
       which: 0;
       path: orb.globFloat;
       typ: unknown;
+      typeness: implicit;
       value: none;
     };
   } @ 102..120 (fid = 0),
@@ -257,6 +275,7 @@
       which: 0;
       path: orb.nested;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   },
@@ -329,6 +348,7 @@
             which: 0;
             path: orb.main;
             typ: unknown;
+            typeness: explicit;
             value: none;
           } @ 328..332 (fid = 0);
         } @ 324..332 (fid = 0) @ 324..332 (fid = 0),
@@ -371,6 +391,7 @@
               which: 0;
               path: orb.some_fun;
               typ: unknown;
+              typeness: explicit;
               value: none;
             } @ 442..450 (fid = 0);
             args: [];
@@ -387,6 +408,7 @@
               which: 0;
               path: orb.some_fun;
               typ: unknown;
+              typeness: explicit;
               value: none;
             } @ 462..470 (fid = 0);
             args: [
@@ -405,6 +427,7 @@
               which: 0;
               path: orb.some_fun;
               typ: unknown;
+              typeness: explicit;
               value: none;
             } @ 483..491 (fid = 0);
             args: [
@@ -425,6 +448,7 @@
               which: 0;
               path: orb.some_fun;
               typ: unknown;
+              typeness: explicit;
               value: none;
             } @ 507..515 (fid = 0);
             args: [
@@ -447,6 +471,7 @@
                   which: 0;
                   path: orb.main;
                   typ: unknown;
+                  typeness: explicit;
                   value: none;
                 } @ 557..561 (fid = 0);
                 args: [];
@@ -465,6 +490,7 @@
                   which: 0;
                   path: orb.main;
                   typ: unknown;
+                  typeness: explicit;
                   value: none;
                 } @ 586..590 (fid = 0);
                 args: [];
@@ -508,6 +534,7 @@
                   which: 0;
                   path: orb.main;
                   typ: unknown;
+                  typeness: explicit;
                   value: none;
                 } @ 709..713 (fid = 0);
                 args: [];
@@ -561,6 +588,7 @@
               which: 0;
               path: orb.some_pointer;
               typ: unknown;
+              typeness: implicit;
               value: none;
             } @ 919..931 (fid = 0);
           } @ 919..933 (fid = 0);
@@ -577,6 +605,7 @@
               which: 0;
               path: ∅;
               typ: type;
+              typeness: explicit;
               value: Type {
                 type: u32;
               };
@@ -595,6 +624,7 @@
               which: 0;
               path: ∅;
               typ: type;
+              typeness: explicit;
               value: Type {
                 type: u32;
               };
@@ -622,6 +652,7 @@
                 which: 0;
                 path: ∅;
                 typ: type;
+                typeness: explicit;
                 value: Type {
                   type: usz;
                 };
@@ -633,6 +664,7 @@
                 which: 0;
                 path: ∅;
                 typ: type;
+                typeness: explicit;
                 value: Type {
                   type: bool;
                 };
@@ -644,6 +676,7 @@
               which: 0;
               path: ∅;
               typ: type;
+              typeness: explicit;
               value: Type {
                 type: usz;
               };
@@ -662,6 +695,7 @@
                 which: 0;
                 path: ∅;
                 typ: type;
+                typeness: explicit;
                 value: Type {
                   type: usz;
                 };
@@ -673,6 +707,7 @@
               which: 0;
               path: ∅;
               typ: type;
+              typeness: explicit;
               value: Type {
                 type: usz;
               };
@@ -689,6 +724,7 @@
       which: 0;
       path: orb.main;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   } @ 11..1109 (fid = 0),
@@ -710,6 +746,7 @@
       which: 0;
       path: orb.some_fun;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   } @ 1162..1182 (fid = 0),
@@ -728,6 +765,7 @@
       which: 0;
       path: orb.some_pointer;
       typ: unknown;
+      typeness: implicit;
       value: none;
     };
   } @ 1183..1203 (fid = 0),
@@ -757,6 +795,7 @@
           which: 0;
           path: orb.global_def.main;
           typ: unknown;
+          typeness: explicit;
           value: none;
         };
       } @ 19..35 (fid = 1),
@@ -770,6 +809,7 @@
           which: 0;
           path: ∅;
           typ: type;
+          typeness: explicit;
           value: Type {
             type: f64;
           };
@@ -781,6 +821,7 @@
           which: 0;
           path: orb.global_def.avogadro;
           typ: unknown;
+          typeness: explicit;
           value: none;
         };
       } @ 36..62 (fid = 1),
@@ -796,6 +837,7 @@
             which: 0;
             path: ∅;
             typ: type;
+            typeness: explicit;
             value: Type {
               type: str;
             };
@@ -808,6 +850,7 @@
           which: 0;
           path: orb.global_def.hello;
           typ: unknown;
+          typeness: explicit;
           value: none;
         };
       } @ 78..101 (fid = 1),
@@ -823,6 +866,7 @@
           which: 0;
           path: orb.global_def.globFloat;
           typ: unknown;
+          typeness: implicit;
           value: none;
         };
       } @ 102..120 (fid = 1),
@@ -844,6 +888,7 @@
                     which: 0;
                     path: ∅;
                     typ: type;
+                    typeness: explicit;
                     value: Type {
                       type: usz;
                     };
@@ -854,6 +899,7 @@
                     which: 0;
                     path: a;
                     typ: unknown;
+                    typeness: explicit;
                     value: none;
                   };
                 } @ 76..82 (fid = 2),
@@ -866,6 +912,7 @@
                     which: 0;
                     path: ∅;
                     typ: type;
+                    typeness: explicit;
                     value: Type {
                       type: usz;
                     };
@@ -876,6 +923,7 @@
                     which: 0;
                     path: b;
                     typ: unknown;
+                    typeness: explicit;
                     value: none;
                   };
                 } @ 84..90 (fid = 2),
@@ -886,6 +934,7 @@
                 which: 0;
                 path: ∅;
                 typ: type;
+                typeness: explicit;
                 value: Type {
                   type: usz;
                 };
@@ -898,6 +947,7 @@
                     which: 0;
                     path: a;
                     typ: unknown;
+                    typeness: explicit;
                     value: none;
                   } @ 105..106 (fid = 2);
                   op: Add;
@@ -907,6 +957,7 @@
                     which: 0;
                     path: b;
                     typ: unknown;
+                    typeness: explicit;
                     value: none;
                   } @ 109..110 (fid = 2);
                 } @ 105..110 (fid = 2),
@@ -918,6 +969,7 @@
               which: 0;
               path: orb.global_def.nested.add;
               typ: unknown;
+              typeness: explicit;
               value: none;
             };
           } @ 65..112 (fid = 2),
@@ -928,6 +980,7 @@
           which: 0;
           path: orb.global_def.nested;
           typ: unknown;
+          typeness: explicit;
           value: none;
         };
       },
@@ -938,6 +991,7 @@
       which: 0;
       path: orb.global_def;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   },
@@ -969,6 +1023,7 @@
       which: 0;
       path: orb.println;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   } @ 138..157 (fid = 0),
@@ -992,6 +1047,7 @@
             which: 0;
             path: i;
             typ: unknown;
+            typeness: implicit;
             value: none;
           };
         } @ 179..185 (fid = 0),
@@ -1009,6 +1065,7 @@
                     which: 0;
                     path: i;
                     typ: unknown;
+                    typeness: implicit;
                     value: none;
                   } @ 198..199 (fid = 0);
                   op: CompLT;
@@ -1022,7 +1079,7 @@
               else_br: none;
             } @ none @ none,
 
-            Block {
+            @last_expr: Block {
               label: none;
               block: Block [
                 FunCall {
@@ -1032,6 +1089,7 @@
                     which: 0;
                     path: orb.println;
                     typ: unknown;
+                    typeness: explicit;
                     value: none;
                   } @ 215..222 (fid = 0);
                   args: [
@@ -1043,6 +1101,7 @@
                       which: 0;
                       path: i;
                       typ: unknown;
+                      typeness: implicit;
                       value: none;
                     } @ 233..234 (fid = 0),
                   ];
@@ -1050,10 +1109,8 @@
 
                 @last_expr: none,
               ] @ 205..242 (fid = 0);
-            } @ none @ none,
-
-            @last_expr: none,
-          ] @ none;
+            } @ none,
+          ] @ 205..242 (fid = 0);
         } @ 192..242 (fid = 0) @ 192..242 (fid = 0),
 
         VariableDef {
@@ -1067,6 +1124,7 @@
             which: 1;
             path: j;
             typ: unknown;
+            typeness: implicit;
             value: none;
           };
         } @ 248..254 (fid = 0),
@@ -1085,6 +1143,7 @@
                       which: 1;
                       path: j;
                       typ: unknown;
+                      typeness: implicit;
                       value: none;
                     } @ 274..275 (fid = 0);
                     op: CompLT;
@@ -1098,6 +1157,7 @@
                       which: 1;
                       path: j;
                       typ: unknown;
+                      typeness: implicit;
                       value: none;
                     } @ 285..286 (fid = 0);
                     op: CompGT;
@@ -1112,7 +1172,7 @@
               else_br: none;
             } @ none @ none,
 
-            Block {
+            @last_expr: Block {
               label: none;
               block: Block [
                 FunCall {
@@ -1122,6 +1182,7 @@
                     which: 0;
                     path: orb.println;
                     typ: unknown;
+                    typeness: explicit;
                     value: none;
                   } @ 301..308 (fid = 0);
                   args: [
@@ -1133,6 +1194,7 @@
                       which: 1;
                       path: j;
                       typ: unknown;
+                      typeness: implicit;
                       value: none;
                     } @ 319..320 (fid = 0),
                   ];
@@ -1140,10 +1202,8 @@
 
                 @last_expr: none,
               ] @ 291..328 (fid = 0);
-            } @ none @ none,
-
-            @last_expr: none,
-          ] @ none;
+            } @ none,
+          ] @ 291..328 (fid = 0);
         } @ 261..328 (fid = 0),
       ] @ 173..330 (fid = 0);
     } @ 167..330 (fid = 0);
@@ -1153,6 +1213,7 @@
       which: 0;
       path: orb.main;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   } @ 159..330 (fid = 0),
@@ -1849,6 +1910,7 @@
                         which: 0;
                         path: ∅;
                         typ: type;
+                        typeness: explicit;
                         value: Type {
                           type: i32;
                         };
@@ -1861,6 +1923,7 @@
                       which: 0;
                       path: n;
                       typ: i32;
+                      typeness: explicit;
                       value: none;
                     };
                   } @ 11..17 (fid = 2),
@@ -1872,6 +1935,7 @@
                     which: 0;
                     path: ∅;
                     typ: type;
+                    typeness: explicit;
                     value: Type {
                       type: i32;
                     };
@@ -1891,6 +1955,7 @@
                               which: 0;
                               path: n;
                               typ: i32;
+                              typeness: explicit;
                               value: none;
                             };
                             typ: i32;
@@ -1915,6 +1980,7 @@
                                 which: 0;
                                 path: n;
                                 typ: i32;
+                                typeness: explicit;
                                 value: none;
                               };
                               typ: i32;
@@ -1941,6 +2007,7 @@
                                         which: 0;
                                         path: orb.dbg.nested.fib;
                                         typ: *fun (i32) -> i32;
+                                        typeness: explicit;
                                         value: none;
                                       };
                                       typ: *fun (i32) -> i32;
@@ -1955,6 +2022,7 @@
                                               which: 0;
                                               path: n;
                                               typ: i32;
+                                              typeness: explicit;
                                               value: none;
                                             };
                                             typ: i32;
@@ -1981,6 +2049,7 @@
                                         which: 0;
                                         path: orb.dbg.nested.fib;
                                         typ: *fun (i32) -> i32;
+                                        typeness: explicit;
                                         value: none;
                                       };
                                       typ: *fun (i32) -> i32;
@@ -1995,6 +2064,7 @@
                                               which: 0;
                                               path: n;
                                               typ: i32;
+                                              typeness: explicit;
                                               value: none;
                                             };
                                             typ: i32;
@@ -2034,6 +2104,7 @@
               which: 0;
               path: orb.dbg.nested.fib;
               typ: *fun (i32) -> i32;
+              typeness: explicit;
               value: none;
             };
           } @ 0..106 (fid = 2),
@@ -2044,6 +2115,7 @@
           which: 0;
           path: orb.dbg.nested;
           typ: unknown;
+          typeness: explicit;
           value: none;
         };
       } @ 18..30 (fid = 1),
@@ -2067,6 +2139,7 @@
                         which: 0;
                         path: ∅;
                         typ: type;
+                        typeness: explicit;
                         value: Type {
                           type: str;
                         };
@@ -2082,6 +2155,7 @@
                   which: 0;
                   path: msg;
                   typ: * str;
+                  typeness: explicit;
                   value: none;
                 };
               } @ 67..76 (fid = 1),
@@ -2103,6 +2177,7 @@
                         which: 0;
                         path: msg;
                         typ: * str;
+                        typeness: explicit;
                         value: none;
                       };
                       typ: * str;
@@ -2123,6 +2198,7 @@
           which: 0;
           path: orb.dbg.puts;
           typ: *fun (* str) -> void;
+          typeness: explicit;
           value: none;
         };
       } @ 55..122 (fid = 1),
@@ -2150,6 +2226,7 @@
                           which: 0;
                           path: orb.divide;
                           typ: *fun (f16, f16) -> f16;
+                          typeness: explicit;
                           value: none;
                         };
                         typ: *fun (f16, f16) -> f16;
@@ -2174,6 +2251,7 @@
                     which: 0;
                     path: half;
                     typ: f16;
+                    typeness: implicit;
                     value: none;
                   };
                 } @ 156..178 (fid = 1),
@@ -2190,6 +2268,7 @@
           which: 0;
           path: orb.dbg.some_other_thing;
           typ: *fun () -> void;
+          typeness: explicit;
           value: none;
         };
       } @ 124..181 (fid = 1),
@@ -2200,6 +2279,7 @@
       which: 0;
       path: orb.dbg;
       typ: unknown;
+      typeness: explicit;
       value: none;
     };
   } @ 24..33 (fid = 0),
@@ -2225,6 +2305,7 @@
                       which: 0;
                       path: orb.dbg.puts;
                       typ: *fun (* str) -> void;
+                      typeness: explicit;
                       value: none;
                     };
                   };
@@ -2251,6 +2332,7 @@
                       which: 0;
                       path: orb.dbg.puts;
                       typ: *fun (* str) -> void;
+                      typeness: explicit;
                       value: none;
                     };
                   };
@@ -2277,6 +2359,7 @@
                       which: 0;
                       path: orb.dbg.nested.fib;
                       typ: *fun (i32) -> i32;
+                      typeness: explicit;
                       value: none;
                     };
                   };
@@ -2304,6 +2387,7 @@
       which: 0;
       path: orb.run;
       typ: *fun () -> void;
+      typeness: explicit;
       value: none;
     };
   } @ 57..158 (fid = 0),
@@ -2324,6 +2408,7 @@
                 which: 0;
                 path: ∅;
                 typ: type;
+                typeness: explicit;
                 value: Type {
                   type: f16;
                 };
@@ -2336,6 +2421,7 @@
               which: 0;
               path: lhs;
               typ: f16;
+              typeness: explicit;
               value: none;
             };
           } @ 174..182 (fid = 0),
@@ -2349,6 +2435,7 @@
                 which: 0;
                 path: ∅;
                 typ: type;
+                typeness: explicit;
                 value: Type {
                   type: f16;
                 };
@@ -2361,6 +2448,7 @@
               which: 0;
               path: rhs;
               typ: f16;
+              typeness: explicit;
               value: none;
             };
           } @ 184..192 (fid = 0),
@@ -2372,6 +2460,7 @@
             which: 0;
             path: ∅;
             typ: type;
+            typeness: explicit;
             value: Type {
               type: f16;
             };
@@ -2389,6 +2478,7 @@
                   which: 0;
                   path: lhs;
                   typ: f16;
+                  typeness: explicit;
                   value: none;
                 };
                 typ: f16;
@@ -2401,6 +2491,7 @@
                   which: 0;
                   path: rhs;
                   typ: f16;
+                  typeness: explicit;
                   value: none;
                 };
                 typ: f16;
@@ -2419,6 +2510,7 @@
       which: 0;
       path: orb.divide;
       typ: *fun (f16, f16) -> f16;
+      typeness: explicit;
       value: none;
     };
   } @ 160..218 (fid = 0),
@@ -2437,6 +2529,7 @@
       which: 0;
       path: orb.MY_LIL_CONSTANT;
       typ: i32;
+      typeness: implicit;
       value: I32 {
         val: 1234;
       };
@@ -2985,6 +3078,7 @@
             which: 0;
             path: ∅;
             typ: type;
+            typeness: explicit;
             value: Type {
               type: i32;
             };
@@ -3015,22 +3109,22 @@
                         } @ 52..61 (fid = 0) @ 52..61 (fid = 0),
                       ];
                       last_expr: none;
-                      typ: void;
+                      typ: noreturn;
                     } @ 42..68 (fid = 0);
                     index: 0;
                   };
-                  typ: void;
+                  typ: noreturn;
                 } @ 33..68 (fid = 0);
                 else_br: none;
               };
-              typ: void;
+              typ: noreturn;
             } @ 33..68 (fid = 0) @ 33..68 (fid = 0),
           ];
           last_expr: Expression {
             expr: integer 120;
             typ: i32;
           } @ 74..77 (fid = 0);
-          typ: i32;
+          typ: noreturn;
         } @ 27..79 (fid = 0);
       };
       typ: *fun () -> i32;
@@ -3041,6 +3135,7 @@
       which: 0;
       path: orb.i32_return;
       typ: *fun () -> i32;
+      typeness: explicit;
       value: none;
     };
   } @ 0..79 (fid = 0),
@@ -3059,6 +3154,7 @@
             which: 0;
             path: ∅;
             typ: type;
+            typeness: explicit;
             value: Type {
               type: f32;
             };
@@ -3089,22 +3185,22 @@
                         } @ 133..143 (fid = 0) @ 133..143 (fid = 0),
                       ];
                       last_expr: none;
-                      typ: void;
+                      typ: noreturn;
                     } @ 123..150 (fid = 0);
                     index: 0;
                   };
-                  typ: void;
+                  typ: noreturn;
                 } @ 114..150 (fid = 0);
                 else_br: none;
               };
-              typ: void;
+              typ: noreturn;
             } @ 114..150 (fid = 0) @ 114..150 (fid = 0),
           ];
           last_expr: Expression {
             expr: float 1.2;
             typ: f32;
           } @ 156..160 (fid = 0);
-          typ: f32;
+          typ: noreturn;
         } @ 108..162 (fid = 0);
       };
       typ: *fun () -> f32;
@@ -3115,6 +3211,7 @@
       which: 0;
       path: orb.f32_return;
       typ: *fun () -> f32;
+      typeness: explicit;
       value: none;
     };
   } @ 81..162 (fid = 0),
@@ -3133,6 +3230,7 @@
             which: 0;
             path: ∅;
             typ: type;
+            typeness: explicit;
             value: Type {
               type: char;
             };
@@ -3176,7 +3274,7 @@
             expr: character 'A';
             typ: char;
           } @ 240..243 (fid = 0);
-          typ: char;
+          typ: noreturn;
         } @ 193..245 (fid = 0);
       };
       typ: *fun () -> char;
@@ -3187,6 +3285,7 @@
       which: 0;
       path: orb.char_return;
       typ: *fun () -> char;
+      typeness: explicit;
       value: none;
     };
   } @ 164..245 (fid = 0),
@@ -3208,6 +3307,7 @@
                 which: 0;
                 path: ∅;
                 typ: type;
+                typeness: explicit;
                 value: Type {
                   type: str;
                 };
@@ -3254,7 +3354,7 @@
             expr: string "Hello World";
             typ: * str;
           } @ 336..349 (fid = 0);
-          typ: * str;
+          typ: noreturn;
         } @ 278..351 (fid = 0);
       };
       typ: *fun () -> * str;
@@ -3265,6 +3365,7 @@
       which: 0;
       path: orb.string_return;
       typ: *fun () -> * str;
+      typeness: explicit;
       value: none;
     };
   } @ 247..351 (fid = 0),
@@ -3315,7 +3416,7 @@
             } @ 417..423 (fid = 0) @ 417..423 (fid = 0),
           ];
           last_expr: none;
-          typ: void;
+          typ: noreturn;
         } @ 374..426 (fid = 0);
       };
       typ: *fun () -> void;
@@ -3326,10 +3427,68 @@
       which: 0;
       path: orb.void_return;
       typ: *fun () -> void;
+      typeness: explicit;
       value: none;
     };
   } @ 353..426 (fid = 0),
 ]
+[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
+  [0m[34m┌─[0m ./tests/scir/fun_ret_ty.lun:6:5
+  [0m[34m│[0m  
+[0m[34m2[0m [0m[34m│[0m [0m[34m╭[0m     if false {
+[0m[34m3[0m [0m[34m│[0m [0m[34m│[0m         return 21;
+[0m[34m4[0m [0m[34m│[0m [0m[34m│[0m     }
+  [0m[34m│[0m [0m[34m╰[0m[0m[34m─────' any code following this statement is unreachable[0m
+[0m[34m5[0m [0m[34m│[0m   
+[0m[34m6[0m [0m[34m│[0m       [0m[33m120[0m
+  [0m[34m│[0m       [0m[33m^^^[0m [0m[33mthe unreachable code[0m
+
+[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
+   [0m[34m┌─[0m ./tests/scir/fun_ret_ty.lun:14:5
+   [0m[34m│[0m  
+[0m[34m10[0m [0m[34m│[0m [0m[34m╭[0m     if false {
+[0m[34m11[0m [0m[34m│[0m [0m[34m│[0m         return 2.1;
+[0m[34m12[0m [0m[34m│[0m [0m[34m│[0m     }
+   [0m[34m│[0m [0m[34m╰[0m[0m[34m─────' any code following this statement is unreachable[0m
+[0m[34m13[0m [0m[34m│[0m   
+[0m[34m14[0m [0m[34m│[0m       [0m[33m1.20[0m
+   [0m[34m│[0m       [0m[33m^^^^[0m [0m[33mthe unreachable code[0m
+
+[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
+   [0m[34m┌─[0m ./tests/scir/fun_ret_ty.lun:22:5
+   [0m[34m│[0m  
+[0m[34m18[0m [0m[34m│[0m [0m[34m╭[0m     if false {
+[0m[34m19[0m [0m[34m│[0m [0m[34m│[0m         return 'B'
+[0m[34m20[0m [0m[34m│[0m [0m[34m│[0m     }
+   [0m[34m│[0m [0m[34m╰[0m[0m[34m─────' any code following this statement is unreachable[0m
+[0m[34m21[0m [0m[34m│[0m   
+[0m[34m22[0m [0m[34m│[0m       [0m[33m'A'[0m
+   [0m[34m│[0m       [0m[33m^^^[0m [0m[33mthe unreachable code[0m
+
+[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
+   [0m[34m┌─[0m ./tests/scir/fun_ret_ty.lun:30:5
+   [0m[34m│[0m  
+[0m[34m26[0m [0m[34m│[0m [0m[34m╭[0m     if false {
+[0m[34m27[0m [0m[34m│[0m [0m[34m│[0m         return "!World Hello"
+[0m[34m28[0m [0m[34m│[0m [0m[34m│[0m     }
+   [0m[34m│[0m [0m[34m╰[0m[0m[34m─────' any code following this statement is unreachable[0m
+[0m[34m29[0m [0m[34m│[0m   
+[0m[34m30[0m [0m[34m│[0m       [0m[33m"Hello World"[0m
+   [0m[34m│[0m       [0m[33m^^^^^^^^^^^^^[0m [0m[33mthe unreachable code[0m
+
+[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
+   [0m[34m┌─[0m ./tests/scir/fun_ret_ty.lun:38:5
+   [0m[34m│[0m  
+[0m[34m34[0m [0m[34m│[0m [0m[34m╭[0m     if false {
+[0m[34m35[0m [0m[34m│[0m [0m[34m│[0m         return
+[0m[34m36[0m [0m[34m│[0m [0m[34m│[0m     }
+   [0m[34m│[0m [0m[34m╰[0m[0m[34m─────' any code following this statement is unreachable[0m
+[0m[34m37[0m [0m[34m│[0m   
+[0m[34m38[0m [0m[34m│[0m       [0m[33mreturn[0m;
+   [0m[34m│[0m       [0m[33m^^^^^^[0m [0m[33mthe unreachable code[0m
+
+[0m[1m[38;5;11mwarning[0m[1m: compilation of `./tests/scir/fun_ret_ty` succeeded but 5 warnings emitted.[0m
+
 "#,
         expected_test_out: "",
     ),
@@ -3390,7 +3549,7 @@
                         } @ 132..145 (fid = 0) @ 132..145 (fid = 0),
                       ];
                       last_expr: none;
-                      typ: void;
+                      typ: noreturn;
                     } @ 53..156 (fid = 0);
                     index: 1;
                   };
@@ -3413,6 +3572,7 @@
       which: 0;
       path: orb.nested_loops;
       typ: *fun () -> void;
+      typeness: explicit;
       value: none;
     };
   } @ 0..164 (fid = 0),
@@ -3437,6 +3597,7 @@
                   which: 0;
                   path: ∅;
                   typ: type;
+                  typeness: explicit;
                   value: Type {
                     type: i32;
                   };
@@ -3464,7 +3625,7 @@
                       expr: integer 2;
                       typ: i32;
                     } @ 242..243 (fid = 0);
-                    typ: i32;
+                    typ: noreturn;
                   } @ 208..249 (fid = 0);
                   index: 0;
                 };
@@ -3476,6 +3637,7 @@
                 which: 0;
                 path: a;
                 typ: i32;
+                typeness: explicit;
                 value: none;
               };
             } @ 193..249 (fid = 0),
@@ -3492,10 +3654,220 @@
       which: 0;
       path: orb.block_label;
       typ: *fun () -> void;
+      typeness: explicit;
       value: none;
     };
   } @ 166..252 (fid = 0),
 ]
+[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
+  [0m[34m┌─[0m ./tests/scir/label_kw_expr.lun:5:13
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m             break;
+  [0m[34m│[0m             [0m[34m-----[0m [0m[34many code following this statement is unreachable[0m
+[0m[34m5[0m [0m[34m│[0m             [0m[33mbreak :lab[0m;
+  [0m[34m│[0m             [0m[33m^^^^^^^^^^[0m [0m[33mthe unreachable code[0m
+
+[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
+   [0m[34m┌─[0m ./tests/scir/label_kw_expr.lun:16:9
+   [0m[34m│[0m
+[0m[34m14[0m [0m[34m│[0m         break :blk 12;
+   [0m[34m│[0m         [0m[34m-------------[0m [0m[34many code following this statement is unreachable[0m
+[0m[34m15[0m [0m[34m│[0m 
+[0m[34m16[0m [0m[34m│[0m         [0m[33m2[0m
+   [0m[34m│[0m         [0m[33m^[0m [0m[33mthe unreachable code[0m
+
+[0m[1m[38;5;11mwarning[0m[1m: compilation of `./tests/scir/label_kw_expr` succeeded but 2 warnings emitted.[0m
+
+",
+        expected_test_out: "",
+    ),
+    "scir/noreturn_block": (
+        expected_compiler_out: "scir = [
+  GlobalDef {
+    name: cant_reach @ 0..10 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: integer 1;
+      typ: i32;
+    } @ 14..15 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: cant_reach @ 0..10 (fid = 0);
+      which: 0;
+      path: orb.cant_reach;
+      typ: usz;
+      typeness: explicit;
+      value: I32 {
+        val: 1;
+      };
+    };
+  } @ 0..16 (fid = 0),
+
+  GlobalDef {
+    name: main @ 18..22 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: usz @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: usz;
+            };
+          };
+          typ: type;
+        } @ 35..38 (fid = 0);
+        body: Block {
+          stmts: [
+            VariableDef {
+              name: a @ 45..46 (fid = 0);
+              mutable: false;
+              typexpr: Expression {
+                expr: Symbol {
+                  kind: global;
+                  name: usz @ none;
+                  which: 0;
+                  path: ∅;
+                  typ: type;
+                  typeness: explicit;
+                  value: Type {
+                    type: usz;
+                  };
+                };
+                typ: type;
+              } @ 49..52 (fid = 0);
+              value: Expression {
+                expr: Block {
+                  label: blk;
+                  block: Block {
+                    stmts: [
+                      Expression {
+                        expr: Symbol {
+                          kind: global;
+                          name: cant_reach @ 0..10 (fid = 0);
+                          which: 0;
+                          path: orb.cant_reach;
+                          typ: usz;
+                          typeness: explicit;
+                          value: I32 {
+                            val: 1;
+                          };
+                        };
+                        typ: i32;
+                      } @ 128..138 (fid = 0) @ 128..138 (fid = 0),
+
+                      Expression {
+                        expr: Break {
+                          label: blk;
+                          expr: Expression {
+                            expr: integer 12;
+                            typ: usz;
+                          } @ 160..162 (fid = 0);
+                          index: 0;
+                        };
+                        typ: noreturn;
+                      } @ 149..162 (fid = 0) @ 149..162 (fid = 0),
+                    ];
+                    last_expr: Expression {
+                      expr: Symbol {
+                        kind: global;
+                        name: cant_reach @ 0..10 (fid = 0);
+                        which: 0;
+                        path: orb.cant_reach;
+                        typ: usz;
+                        typeness: explicit;
+                        value: I32 {
+                          val: 1;
+                        };
+                      };
+                      typ: usz;
+                    } @ 173..183 (fid = 0);
+                    typ: noreturn;
+                  } @ 60..189 (fid = 0);
+                  index: 0;
+                };
+                typ: usz;
+              } @ 55..189 (fid = 0);
+              sym: Symbol {
+                kind: local;
+                name: a @ 45..46 (fid = 0);
+                which: 0;
+                path: a;
+                typ: usz;
+                typeness: explicit;
+                value: none;
+              };
+            } @ 45..189 (fid = 0),
+
+            Expression {
+              expr: Return {
+                expr: Expression {
+                  expr: integer 12;
+                  typ: usz;
+                } @ 244..246 (fid = 0);
+              };
+              typ: noreturn;
+            } @ 237..246 (fid = 0) @ 237..246 (fid = 0),
+
+            Expression {
+              expr: Symbol {
+                kind: global;
+                name: cant_reach @ 0..10 (fid = 0);
+                which: 0;
+                path: orb.cant_reach;
+                typ: usz;
+                typeness: explicit;
+                value: I32 {
+                  val: 1;
+                };
+              };
+              typ: usz;
+            } @ 252..262 (fid = 0) @ 252..262 (fid = 0),
+          ];
+          last_expr: none;
+          typ: noreturn;
+        } @ 39..265 (fid = 0);
+      };
+      typ: *fun () -> usz;
+    } @ 26..265 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: main @ 18..22 (fid = 0);
+      which: 0;
+      path: orb.main;
+      typ: *fun () -> usz;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 18..265 (fid = 0),
+]
+[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
+   [0m[34m┌─[0m ./tests/scir/noreturn_block.lun:10:9
+   [0m[34m│[0m
+[0m[34m 8[0m [0m[34m│[0m         break :blk 12;
+   [0m[34m│[0m         [0m[34m-------------[0m [0m[34many code following this statement is unreachable[0m
+[0m[34m 9[0m [0m[34m│[0m 
+[0m[34m10[0m [0m[34m│[0m         [0m[33mcant_reach[0m
+   [0m[34m│[0m         [0m[33m^^^^^^^^^^[0m [0m[33mthe unreachable code[0m
+
+[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
+   [0m[34m┌─[0m ./tests/scir/noreturn_block.lun:15:5
+   [0m[34m│[0m
+[0m[34m14[0m [0m[34m│[0m     return 12;
+   [0m[34m│[0m     [0m[34m---------[0m [0m[34many code following this statement is unreachable[0m
+[0m[34m15[0m [0m[34m│[0m     [0m[33mcant_reach[0m;
+   [0m[34m│[0m     [0m[33m^^^^^^^^^^[0m [0m[33mthe unreachable code[0m
+
+[0m[1m[38;5;11mwarning[0m[1m: compilation of `./tests/scir/noreturn_block` succeeded but 2 warnings emitted.[0m
+
 ",
         expected_test_out: "",
     ),

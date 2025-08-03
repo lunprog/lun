@@ -17,7 +17,7 @@ use lunc_parser::{
 };
 use lunc_utils::{
     FromHigher, lower, opt_unrecheable,
-    symbol::{EffectivePath, LazySymbol, SymKind, Symbol, Type},
+    symbol::{EffectivePath, LazySymbol, SymKind, Symbol, Type, Typeness},
 };
 
 pub use lunc_parser::{
@@ -250,15 +250,13 @@ impl FromHigher for DsExpression {
                 // }
                 label,
                 body: block(
-                    vec![
-                        stmt_expr(expr_if(
-                            expr_unary(UnaryOp::Not, lower(*cond)),
-                            expr_break(None, None),
-                            None,
-                        )),
-                        stmt_expr(expr_block(lower(body))),
-                    ],
-                    None,
+                    body.loc.clone(),
+                    vec![stmt_expr(expr_if(
+                        expr_unary(UnaryOp::Not, lower(*cond)),
+                        expr_break(None, None),
+                        None,
+                    ))],
+                    Some(Box::new(expr_block(lower(body)))),
                 ),
             },
             Expr::IteratorLoop { .. } => todo!("iterator loop"),
@@ -706,11 +704,15 @@ pub struct DsBlock {
 }
 
 /// Creates a new block without a location
-pub fn block(stmts: Vec<DsStatement>, last_expr: Option<Box<DsExpression>>) -> DsBlock {
+pub fn block(
+    loc: impl Into<OSpan>,
+    stmts: Vec<DsStatement>,
+    last_expr: Option<Box<DsExpression>>,
+) -> DsBlock {
     DsBlock {
         stmts,
         last_expr,
-        loc: None,
+        loc: loc.into(),
     }
 }
 
@@ -1071,6 +1073,11 @@ impl Desugarrer {
                     *mutable,
                     name.clone(),
                     self.table.local_count(),
+                    if typexpr.is_some() {
+                        Typeness::Explicit
+                    } else {
+                        Typeness::Implicit
+                    },
                     name_loc.clone(),
                 );
 
@@ -1396,7 +1403,7 @@ impl Desugarrer {
                 name,
                 name_loc,
                 mutable,
-                typexpr: _,
+                typexpr,
                 value: _,
                 loc: _,
                 sym,
@@ -1408,6 +1415,11 @@ impl Desugarrer {
                     *mutable,
                     name.clone(),
                     path,
+                    if typexpr.is_some() {
+                        Typeness::Explicit
+                    } else {
+                        Typeness::Implicit
+                    },
                     name_loc.clone(),
                 ));
 
