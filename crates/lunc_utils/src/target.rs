@@ -34,11 +34,14 @@ const _: () = {
 
 impl TargetTriplet {
     /// List of all supported targets of the compiler
-    pub const SUPPORTED_TARGETS: &[TargetTriplet] = &[TargetTriplet {
+    pub const SUPPORTED_TARGETS: &[TargetTriplet] = &[TargetTriplet::X86_64_LINUX_GNU];
+
+    /// `x86_64-linux-gnu` target
+    pub const X86_64_LINUX_GNU: TargetTriplet = TargetTriplet {
         arch: Arch::x86_64,
         sys: Sys::Linux,
         env: Env::Gnu,
-    }];
+    };
 
     /// Returns the target triplet
     pub const fn maybe_host_triplet() -> Option<TargetTriplet> {

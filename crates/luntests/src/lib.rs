@@ -153,6 +153,7 @@ impl TestContext {
             let extra_args = stage.to_compiler_args();
             cmd.args(extra_args);
 
+            cmd.args(["-color", "never"]);
             cmd.arg(path);
 
             write!(
@@ -216,6 +217,8 @@ impl TestContext {
 
             let extra_args = stage.to_compiler_args();
             cmd.args(extra_args);
+
+            cmd.args(["-color", "never"]);
 
             cmd.arg(path);
 

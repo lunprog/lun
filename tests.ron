@@ -3432,62 +3432,62 @@
     };
   } @ 353..426 (fid = 0),
 ]
-[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
-  [0m[34m┌─[0m ./tests/scir/fun_ret_ty.lun:6:5
-  [0m[34m│[0m  
-[0m[34m2[0m [0m[34m│[0m [0m[34m╭[0m     if false {
-[0m[34m3[0m [0m[34m│[0m [0m[34m│[0m         return 21;
-[0m[34m4[0m [0m[34m│[0m [0m[34m│[0m     }
-  [0m[34m│[0m [0m[34m╰[0m[0m[34m─────' any code following this statement is unreachable[0m
-[0m[34m5[0m [0m[34m│[0m   
-[0m[34m6[0m [0m[34m│[0m       [0m[33m120[0m
-  [0m[34m│[0m       [0m[33m^^^[0m [0m[33mthe unreachable code[0m
+warning[W002]: unreachable code
+  ┌─ ./tests/scir/fun_ret_ty.lun:6:5
+  │  
+2 │ ╭     if false {
+3 │ │         return 21;
+4 │ │     }
+  │ ╰─────' any code following this statement is unreachable
+5 │   
+6 │       120
+  │       ^^^ the unreachable code
 
-[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
-   [0m[34m┌─[0m ./tests/scir/fun_ret_ty.lun:14:5
-   [0m[34m│[0m  
-[0m[34m10[0m [0m[34m│[0m [0m[34m╭[0m     if false {
-[0m[34m11[0m [0m[34m│[0m [0m[34m│[0m         return 2.1;
-[0m[34m12[0m [0m[34m│[0m [0m[34m│[0m     }
-   [0m[34m│[0m [0m[34m╰[0m[0m[34m─────' any code following this statement is unreachable[0m
-[0m[34m13[0m [0m[34m│[0m   
-[0m[34m14[0m [0m[34m│[0m       [0m[33m1.20[0m
-   [0m[34m│[0m       [0m[33m^^^^[0m [0m[33mthe unreachable code[0m
+warning[W002]: unreachable code
+   ┌─ ./tests/scir/fun_ret_ty.lun:14:5
+   │  
+10 │ ╭     if false {
+11 │ │         return 2.1;
+12 │ │     }
+   │ ╰─────' any code following this statement is unreachable
+13 │   
+14 │       1.20
+   │       ^^^^ the unreachable code
 
-[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
-   [0m[34m┌─[0m ./tests/scir/fun_ret_ty.lun:22:5
-   [0m[34m│[0m  
-[0m[34m18[0m [0m[34m│[0m [0m[34m╭[0m     if false {
-[0m[34m19[0m [0m[34m│[0m [0m[34m│[0m         return 'B'
-[0m[34m20[0m [0m[34m│[0m [0m[34m│[0m     }
-   [0m[34m│[0m [0m[34m╰[0m[0m[34m─────' any code following this statement is unreachable[0m
-[0m[34m21[0m [0m[34m│[0m   
-[0m[34m22[0m [0m[34m│[0m       [0m[33m'A'[0m
-   [0m[34m│[0m       [0m[33m^^^[0m [0m[33mthe unreachable code[0m
+warning[W002]: unreachable code
+   ┌─ ./tests/scir/fun_ret_ty.lun:22:5
+   │  
+18 │ ╭     if false {
+19 │ │         return 'B'
+20 │ │     }
+   │ ╰─────' any code following this statement is unreachable
+21 │   
+22 │       'A'
+   │       ^^^ the unreachable code
 
-[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
-   [0m[34m┌─[0m ./tests/scir/fun_ret_ty.lun:30:5
-   [0m[34m│[0m  
-[0m[34m26[0m [0m[34m│[0m [0m[34m╭[0m     if false {
-[0m[34m27[0m [0m[34m│[0m [0m[34m│[0m         return "!World Hello"
-[0m[34m28[0m [0m[34m│[0m [0m[34m│[0m     }
-   [0m[34m│[0m [0m[34m╰[0m[0m[34m─────' any code following this statement is unreachable[0m
-[0m[34m29[0m [0m[34m│[0m   
-[0m[34m30[0m [0m[34m│[0m       [0m[33m"Hello World"[0m
-   [0m[34m│[0m       [0m[33m^^^^^^^^^^^^^[0m [0m[33mthe unreachable code[0m
+warning[W002]: unreachable code
+   ┌─ ./tests/scir/fun_ret_ty.lun:30:5
+   │  
+26 │ ╭     if false {
+27 │ │         return "!World Hello"
+28 │ │     }
+   │ ╰─────' any code following this statement is unreachable
+29 │   
+30 │       "Hello World"
+   │       ^^^^^^^^^^^^^ the unreachable code
 
-[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
-   [0m[34m┌─[0m ./tests/scir/fun_ret_ty.lun:38:5
-   [0m[34m│[0m  
-[0m[34m34[0m [0m[34m│[0m [0m[34m╭[0m     if false {
-[0m[34m35[0m [0m[34m│[0m [0m[34m│[0m         return
-[0m[34m36[0m [0m[34m│[0m [0m[34m│[0m     }
-   [0m[34m│[0m [0m[34m╰[0m[0m[34m─────' any code following this statement is unreachable[0m
-[0m[34m37[0m [0m[34m│[0m   
-[0m[34m38[0m [0m[34m│[0m       [0m[33mreturn[0m;
-   [0m[34m│[0m       [0m[33m^^^^^^[0m [0m[33mthe unreachable code[0m
+warning[W002]: unreachable code
+   ┌─ ./tests/scir/fun_ret_ty.lun:38:5
+   │  
+34 │ ╭     if false {
+35 │ │         return
+36 │ │     }
+   │ ╰─────' any code following this statement is unreachable
+37 │   
+38 │       return;
+   │       ^^^^^^ the unreachable code
 
-[0m[1m[38;5;11mwarning[0m[1m: compilation of `./tests/scir/fun_ret_ty` succeeded but 5 warnings emitted.[0m
+warning: compilation of `./tests/scir/fun_ret_ty` succeeded but 5 warnings emitted.
 
 "#,
         expected_test_out: "",
@@ -3659,24 +3659,24 @@
     };
   } @ 166..252 (fid = 0),
 ]
-[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
-  [0m[34m┌─[0m ./tests/scir/label_kw_expr.lun:5:13
-  [0m[34m│[0m
-[0m[34m4[0m [0m[34m│[0m             break;
-  [0m[34m│[0m             [0m[34m-----[0m [0m[34many code following this statement is unreachable[0m
-[0m[34m5[0m [0m[34m│[0m             [0m[33mbreak :lab[0m;
-  [0m[34m│[0m             [0m[33m^^^^^^^^^^[0m [0m[33mthe unreachable code[0m
+warning[W002]: unreachable code
+  ┌─ ./tests/scir/label_kw_expr.lun:5:13
+  │
+4 │             break;
+  │             ----- any code following this statement is unreachable
+5 │             break :lab;
+  │             ^^^^^^^^^^ the unreachable code
 
-[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
-   [0m[34m┌─[0m ./tests/scir/label_kw_expr.lun:16:9
-   [0m[34m│[0m
-[0m[34m14[0m [0m[34m│[0m         break :blk 12;
-   [0m[34m│[0m         [0m[34m-------------[0m [0m[34many code following this statement is unreachable[0m
-[0m[34m15[0m [0m[34m│[0m 
-[0m[34m16[0m [0m[34m│[0m         [0m[33m2[0m
-   [0m[34m│[0m         [0m[33m^[0m [0m[33mthe unreachable code[0m
+warning[W002]: unreachable code
+   ┌─ ./tests/scir/label_kw_expr.lun:16:9
+   │
+14 │         break :blk 12;
+   │         ------------- any code following this statement is unreachable
+15 │ 
+16 │         2
+   │         ^ the unreachable code
 
-[0m[1m[38;5;11mwarning[0m[1m: compilation of `./tests/scir/label_kw_expr` succeeded but 2 warnings emitted.[0m
+warning: compilation of `./tests/scir/label_kw_expr` succeeded but 2 warnings emitted.
 
 ",
         expected_test_out: "",
@@ -3849,24 +3849,24 @@
     };
   } @ 18..265 (fid = 0),
 ]
-[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
-   [0m[34m┌─[0m ./tests/scir/noreturn_block.lun:10:9
-   [0m[34m│[0m
-[0m[34m 8[0m [0m[34m│[0m         break :blk 12;
-   [0m[34m│[0m         [0m[34m-------------[0m [0m[34many code following this statement is unreachable[0m
-[0m[34m 9[0m [0m[34m│[0m 
-[0m[34m10[0m [0m[34m│[0m         [0m[33mcant_reach[0m
-   [0m[34m│[0m         [0m[33m^^^^^^^^^^[0m [0m[33mthe unreachable code[0m
+warning[W002]: unreachable code
+   ┌─ ./tests/scir/noreturn_block.lun:10:9
+   │
+ 8 │         break :blk 12;
+   │         ------------- any code following this statement is unreachable
+ 9 │ 
+10 │         cant_reach
+   │         ^^^^^^^^^^ the unreachable code
 
-[0m[1m[38;5;11mwarning[W002][0m[1m: unreachable code[0m
-   [0m[34m┌─[0m ./tests/scir/noreturn_block.lun:15:5
-   [0m[34m│[0m
-[0m[34m14[0m [0m[34m│[0m     return 12;
-   [0m[34m│[0m     [0m[34m---------[0m [0m[34many code following this statement is unreachable[0m
-[0m[34m15[0m [0m[34m│[0m     [0m[33mcant_reach[0m;
-   [0m[34m│[0m     [0m[33m^^^^^^^^^^[0m [0m[33mthe unreachable code[0m
+warning[W002]: unreachable code
+   ┌─ ./tests/scir/noreturn_block.lun:15:5
+   │
+14 │     return 12;
+   │     --------- any code following this statement is unreachable
+15 │     cant_reach;
+   │     ^^^^^^^^^^ the unreachable code
 
-[0m[1m[38;5;11mwarning[0m[1m: compilation of `./tests/scir/noreturn_block` succeeded but 2 warnings emitted.[0m
+warning: compilation of `./tests/scir/noreturn_block` succeeded but 2 warnings emitted.
 
 ",
         expected_test_out: "",

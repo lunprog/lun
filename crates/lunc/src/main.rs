@@ -1,29 +1,17 @@
 use std::io::Write;
 use std::process::ExitCode;
 
-use lunc_diag::Diagnostic;
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
 
-use lunc::CliError::CompilerDiagnostics;
+use lunc::CliError::BuildDiagnostics;
 
 fn main() -> ExitCode {
     let mut out = StandardStream::stderr(termcolor::ColorChoice::Auto);
 
     match lunc::run() {
         Ok(()) => ExitCode::SUCCESS,
-        Err(CompilerDiagnostics { mut sink, orb_name }) => {
-            sink.emit(
-                if sink.failed() {
-                    Diagnostic::error()
-                } else {
-                    Diagnostic::warning()
-                }
-                .with_message(sink.summary(&orb_name).unwrap()),
-            );
-
-            sink.dump();
-
-            if sink.failed() {
+        Err(BuildDiagnostics { failed }) => {
+            if failed {
                 lunc::exit_code_compilation_failed()
             } else {
                 ExitCode::SUCCESS

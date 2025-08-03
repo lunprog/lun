@@ -9,6 +9,8 @@ use std::{
     str::FromStr,
 };
 
+use lunc_diag::Diagnostic;
+use termcolor::{ColorChoice, StandardStream};
 use thiserror::Error;
 
 use crate::{
@@ -68,13 +70,10 @@ pub fn exit_code_compilation_failed() -> ExitCode {
 
 #[derive(Debug, Error)]
 pub enum CliError {
-    /// Diagnostics emitted in compilation, can contain only warnings, can
-    /// contain errors. It is guaranteed to contains at least one diag
-    #[error("Compiler diagnostics, {}", sink.summary(orb_name).unwrap())]
-    CompilerDiagnostics {
-        sink: DiagnosticSink,
-        orb_name: String,
-    },
+    /// Diagnostics emitted in compilation, can contain only warnings or errors.
+    /// It is guaranteed to contains at least one diag
+    #[error("build diagnostic(s)")]
+    BuildDiagnostics { failed: bool },
     #[error(
         "argument to '{name}' is missing, expected {expected} value{}",
         pluralize(*expected)
@@ -110,6 +109,8 @@ Options:
                              -target help` for details
         -orb-name <name>     Specify the name of the orb being built, defaults
                              to the input file name with the extension
+        -color <choice>      Coloring possible values: 'always', 'always-ansi',
+                             'never' and 'auto'
     -V, -version             Print version information
     -v, -verbose             Make the output verbose\
 ";
@@ -254,6 +255,8 @@ pub struct CliArgs {
     target: TargetInput,
     /// the name of the orb you are building
     orb_name: String,
+    /// color choice
+    color: ColorChoice,
     /// true if we want to print the version
     version: bool,
     /// verbosity
@@ -272,6 +275,7 @@ impl CliArgs {
         let mut debug = Vec::new();
         let mut target = TargetInput::default();
         let mut orb_name = None;
+        let mut color = ColorChoice::Auto;
         let mut version = false;
         let mut verbose = false;
 
@@ -307,6 +311,11 @@ impl CliArgs {
             } else if arg == "-orb-name" {
                 // TODO: check that the name can be a Lun identifier.
                 orb_name = Some(CliArgs::next_arg(&mut args)?);
+            } else if arg == "-color" {
+                let choice = CliArgs::next_arg(&mut args)?;
+
+                color = ColorChoice::from_str(&choice)
+                    .map_err(|_| CliError::UnreochizedOption { arg: choice })?;
             } else if arg == "-V" || arg == "-version" {
                 version = true;
             } else if arg == "-v" || arg == "-verbose" {
@@ -327,6 +336,7 @@ impl CliArgs {
                     debug,
                     target,
                     orb_name: Default::default(),
+                    color,
                     version,
                     verbose,
                 });
@@ -344,6 +354,7 @@ impl CliArgs {
             debug,
             target,
             orb_name,
+            color,
             version,
             verbose,
         })
@@ -369,6 +380,21 @@ impl CliArgs {
             name: String::from("-o"),
             expected: 1,
         })
+    }
+
+    pub fn dump_sink(&self, sink: &mut DiagnosticSink) {
+        sink.emit(
+            if sink.failed() {
+                Diagnostic::error()
+            } else {
+                Diagnostic::warning()
+            }
+            .with_message(sink.summary(&self.orb_name).unwrap()),
+        );
+        let mut stream = StandardStream::stderr(self.color);
+
+        sink.dump_with(&mut stream)
+            .expect("failed to emit the diagnostics");
     }
 }
 
@@ -438,16 +464,18 @@ pub fn run() -> Result<()> {
     let root_fid = sink.register_file(input_str, source_code.clone());
     assert_eq!(root_fid, FileId::ROOT_MODULE);
 
-    let orb_name = argv.orb_name.clone();
+    let builderr = || {
+        let mut sink = sink.clone();
+        argv.dump_sink(&mut sink);
 
-    let compil_diags = || CliError::CompilerDiagnostics {
-        sink: sink.clone(),
-        orb_name: orb_name.clone(),
+        CliError::BuildDiagnostics {
+            failed: sink.failed(),
+        }
     };
 
     // 3. lexing, text => token stream
     let mut lexer = Lexer::new(sink.clone(), source_code.clone(), root_fid);
-    let tokenstream = lexer.produce().ok_or_else(compil_diags)?;
+    let tokenstream = lexer.produce().ok_or_else(builderr)?;
 
     //    maybe print the token stream
     if argv.debug_print_at(DebugPrint::TokenStream) {
@@ -457,14 +485,14 @@ pub fn run() -> Result<()> {
     if argv.debug_halt_at(DebugHalt::Lexer) {
         if sink.is_empty() {
             return Ok(());
-        } else {
-            return Err(CliError::CompilerDiagnostics { sink, orb_name });
         }
+
+        Err(builderr())?;
     }
 
     // 4. parsing, token stream => AST
     let mut parser = Parser::new(tokenstream, sink.clone(), root_fid);
-    let ast = parser.produce().ok_or_else(compil_diags)?;
+    let ast = parser.produce().ok_or_else(builderr)?;
 
     //    maybe print the ast
     if argv.debug_print_at(DebugPrint::Ast) {
@@ -475,14 +503,14 @@ pub fn run() -> Result<()> {
     if argv.debug_halt_at(DebugHalt::Parser) {
         if sink.is_empty() {
             return Ok(());
-        } else {
-            return Err(CliError::CompilerDiagnostics { sink, orb_name });
         }
+
+        Err(builderr())?;
     }
 
     // 5. desugarring, AST => DSIR
     let mut desugarrer = Desugarrer::new(sink.clone(), argv.orb_name.clone());
-    let dsir = desugarrer.produce(ast).ok_or_else(compil_diags)?;
+    let dsir = desugarrer.produce(ast).ok_or_else(builderr)?;
 
     //    maybe print the DSIR
     if argv.debug_print_at(DebugPrint::DsirTree) {
@@ -493,14 +521,14 @@ pub fn run() -> Result<()> {
     if argv.debug_halt_at(DebugHalt::Dsir) {
         if sink.is_empty() {
             return Ok(());
-        } else {
-            return Err(CliError::CompilerDiagnostics { sink, orb_name });
         }
+
+        Err(builderr())?;
     }
 
     // 6. type-checking and all the semantic analysis, DSIR => SCIR
     let mut semacker = SemaChecker::new(sink.clone());
-    let scir = semacker.produce(dsir).ok_or_else(compil_diags)?;
+    let scir = semacker.produce(dsir).ok_or_else(builderr)?;
 
     //    maybe print the SCIR
     if argv.debug_print_at(DebugPrint::ScirTree) {
@@ -511,9 +539,9 @@ pub fn run() -> Result<()> {
     if argv.debug_halt_at(DebugHalt::Scir) {
         if sink.is_empty() {
             return Ok(());
-        } else {
-            return Err(CliError::CompilerDiagnostics { sink, orb_name });
         }
+
+        Err(builderr())?;
     }
 
     // use output to remove the warning
@@ -522,6 +550,6 @@ pub fn run() -> Result<()> {
     if sink.is_empty() {
         Ok(())
     } else {
-        Err(CliError::CompilerDiagnostics { sink, orb_name })
+        Err(builderr())
     }
 }
