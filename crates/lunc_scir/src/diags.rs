@@ -22,7 +22,7 @@ pub struct MismatchedTypes<E: Display> {
     /// //         types diagnostic
     /// ```
     pub due_to: OSpan,
-    pub note: Option<String>,
+    pub notes: Vec<String>,
     pub loc: Span,
 }
 
@@ -40,7 +40,7 @@ impl<E: Display> ToDiagnostic for MismatchedTypes<E> {
                 self.due_to
                     .map(|loc| Label::secondary(loc.fid, loc).with_message("expected due to this")),
             )
-            .with_notes_iter(self.note)
+            .with_notes(self.notes)
     }
 }
 

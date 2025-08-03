@@ -259,7 +259,7 @@ impl SemaChecker {
                 expected: vec![expected.clone()],
                 found: found.typ.clone(),
                 due_to: due_to.into(),
-                note: note.into(),
+                notes: note.into().as_slice().to_vec(),
                 loc: other_loc.into().unwrap_or(found.loc.clone().unwrap()),
             });
         }
@@ -280,11 +280,32 @@ impl SemaChecker {
                 return;
             }
 
+            let mut notes = note.into().as_slice().to_vec();
+
+            // special case for if, we add a note.
+            if matches!(
+                &found.expr,
+                ScExpr::If {
+                    cond: _,
+                    then_br: _,
+                    else_br: None
+                }
+            ) {
+                notes.push(
+                    "an if expression without an else branch evaluates to type 'void'".to_string(),
+                );
+
+                notes.push(format!(
+                    "consider adding an else branch that evaluates to type '{}'",
+                    expected
+                ));
+            }
+
             self.sink.emit(MismatchedTypes {
                 expected: vec![expected.clone()],
                 found: found.typ.clone(),
                 due_to: due_to.into(),
-                note: note.into(),
+                notes,
                 loc: found.loc.clone().unwrap(),
             });
         }
@@ -558,10 +579,10 @@ impl SemaChecker {
                                 expected: vec!["float", "signed integer"],
                                 found: exp.typ.clone(),
                                 due_to: None,
-                                note: Some(format!(
+                                notes: vec![format!(
                                     "can't perform a negation on an unsigned type like '{}'",
                                     exp.typ
-                                )),
+                                )],
                                 loc: exp.loc.clone().unwrap(),
                             });
                         }
@@ -575,7 +596,7 @@ impl SemaChecker {
                             expected: vec!["float", "signed integer"],
                             found: exp.typ.clone(),
                             due_to: None,
-                            note: None,
+                            notes: vec![],
                             loc: exp.loc.clone().unwrap(),
                         }),
                     }
@@ -604,7 +625,7 @@ impl SemaChecker {
                             expected: vec!["pointer"],
                             found: exp.typ.clone(),
                             due_to: None,
-                            note: Some(format!("type '{}' cannot be dereferenced.", exp.typ)),
+                            notes: vec![format!("type '{}' cannot be dereferenced.", exp.typ)],
                             loc: exp.loc.clone().unwrap(),
                         }
                         .into_diag());
@@ -671,9 +692,11 @@ impl SemaChecker {
                     self.ck_expr(else_br, Some(then_br.typ.clone()))?;
 
                     self.expr_typeck(&then_br.typ, else_br, None, None);
-                }
 
-                expr.typ = then_br.typ.clone();
+                    expr.typ = then_br.typ.clone();
+                } else {
+                    expr.typ = Type::Void;
+                }
             }
             ScExpr::Block {
                 label,
@@ -719,7 +742,7 @@ impl SemaChecker {
                         expected: vec![self.fun_retty.clone()],
                         found: Type::Void,
                         due_to: self.fun_retty_loc.clone(),
-                        note: None,
+                        notes: vec![],
                         loc: expr.loc.clone().unwrap(),
                     });
                 }
@@ -818,7 +841,7 @@ impl SemaChecker {
                         expected: vec![info.typ.clone()],
                         found: Type::Void,
                         due_to: None,
-                        note: None,
+                        notes: vec![],
                         loc: expr.loc.clone().unwrap(),
                     });
                 }
