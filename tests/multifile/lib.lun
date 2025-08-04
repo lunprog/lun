@@ -2,7 +2,7 @@
 
 #mod dbg;
 
-#use orb.dbg.nested;
+#import orb.dbg.nested;
 
 run :: fun () {
     orb.dbg.puts("Hello world!");

@@ -2111,24 +2111,24 @@
         ];
         sym: Symbol {
           kind: module;
-          name: nested @ 18..30 (fid = 1);
+          name: nested @ 21..33 (fid = 1);
           which: 0;
           path: orb.dbg.nested;
           typ: unknown;
           typeness: explicit;
           value: none;
         };
-      } @ 18..30 (fid = 1),
+      } @ 21..33 (fid = 1),
 
       GlobalDef {
-        name: puts @ 55..59 (fid = 1);
+        name: puts @ 58..62 (fid = 1);
         mutable: false;
         typexpr: none;
         value: Expression {
           expr: FunDefinition {
             args: [
               Arg {
-                name: msg @ 67..70 (fid = 1);
+                name: msg @ 70..73 (fid = 1);
                 typexpr: Expression {
                   expr: PointerType {
                     mutable: false;
@@ -2145,20 +2145,20 @@
                         };
                       };
                       typ: type;
-                    } @ 73..76 (fid = 1);
+                    } @ 76..79 (fid = 1);
                   };
                   typ: type;
-                } @ 72..76 (fid = 1);
+                } @ 75..79 (fid = 1);
                 sym: Symbol {
                   kind: argument;
-                  name: msg @ 67..70 (fid = 1);
+                  name: msg @ 70..73 (fid = 1);
                   which: 0;
                   path: msg;
                   typ: * str;
                   typeness: explicit;
                   value: none;
                 };
-              } @ 67..76 (fid = 1),
+              } @ 70..79 (fid = 1),
             ];
             rettypexpr: none;
             body: Block {
@@ -2168,12 +2168,12 @@
                     lhs: Expression {
                       expr: Underscore;
                       typ: unknown;
-                    } @ 84..85 (fid = 1);
+                    } @ 87..88 (fid = 1);
                     op: Assignment;
                     rhs: Expression {
                       expr: Symbol {
                         kind: argument;
-                        name: msg @ 67..70 (fid = 1);
+                        name: msg @ 70..73 (fid = 1);
                         which: 0;
                         path: msg;
                         typ: * str;
@@ -2181,30 +2181,30 @@
                         value: none;
                       };
                       typ: * str;
-                    } @ 88..91 (fid = 1);
+                    } @ 91..94 (fid = 1);
                   };
                   typ: void;
-                } @ 84..91 (fid = 1) @ 84..91 (fid = 1),
+                } @ 87..94 (fid = 1) @ 87..94 (fid = 1),
               ];
               last_expr: none;
               typ: void;
-            } @ 78..122 (fid = 1);
+            } @ 81..125 (fid = 1);
           };
           typ: *fun (* str) -> void;
-        } @ 63..122 (fid = 1);
+        } @ 66..125 (fid = 1);
         sym: Symbol {
           kind: function;
-          name: puts @ 55..59 (fid = 1);
+          name: puts @ 58..62 (fid = 1);
           which: 0;
           path: orb.dbg.puts;
           typ: *fun (* str) -> void;
           typeness: explicit;
           value: none;
         };
-      } @ 55..122 (fid = 1),
+      } @ 58..125 (fid = 1),
 
       GlobalDef {
-        name: some_other_thing @ 124..140 (fid = 1);
+        name: some_other_thing @ 127..143 (fid = 1);
         mutable: false;
         typexpr: none;
         value: Expression {
@@ -2214,7 +2214,7 @@
             body: Block {
               stmts: [
                 VariableDef {
-                  name: half @ 156..160 (fid = 1);
+                  name: half @ 159..163 (fid = 1);
                   mutable: false;
                   typexpr: none;
                   value: Expression {
@@ -2222,7 +2222,7 @@
                       callee: Expression {
                         expr: Symbol {
                           kind: function;
-                          name: divide @ 160..166 (fid = 0);
+                          name: divide @ 163..169 (fid = 0);
                           which: 0;
                           path: orb.divide;
                           typ: *fun (f32, f32) -> f32;
@@ -2230,48 +2230,48 @@
                           value: none;
                         };
                         typ: *fun (f32, f32) -> f32;
-                      } @ 164..170 (fid = 1);
+                      } @ 167..173 (fid = 1);
                       args: [
                         Expression {
                           expr: float 1;
                           typ: f32;
-                        } @ 171..173 (fid = 1),
+                        } @ 174..176 (fid = 1),
 
                         Expression {
                           expr: float 2;
                           typ: f32;
-                        } @ 175..177 (fid = 1),
+                        } @ 178..180 (fid = 1),
                       ];
                     };
                     typ: f32;
-                  } @ 164..178 (fid = 1);
+                  } @ 167..181 (fid = 1);
                   sym: Symbol {
                     kind: local;
-                    name: half @ 156..160 (fid = 1);
+                    name: half @ 159..163 (fid = 1);
                     which: 0;
                     path: half;
                     typ: f32;
                     typeness: implicit;
                     value: none;
                   };
-                } @ 156..178 (fid = 1),
+                } @ 159..181 (fid = 1),
               ];
               last_expr: none;
               typ: void;
-            } @ 150..181 (fid = 1);
+            } @ 153..184 (fid = 1);
           };
           typ: *fun () -> void;
-        } @ 144..181 (fid = 1);
+        } @ 147..184 (fid = 1);
         sym: Symbol {
           kind: function;
-          name: some_other_thing @ 124..140 (fid = 1);
+          name: some_other_thing @ 127..143 (fid = 1);
           which: 0;
           path: orb.dbg.some_other_thing;
           typ: *fun () -> void;
           typeness: explicit;
           value: none;
         };
-      } @ 124..181 (fid = 1),
+      } @ 127..184 (fid = 1),
     ];
     sym: Symbol {
       kind: module;
@@ -2285,7 +2285,7 @@
   } @ 24..33 (fid = 0),
 
   GlobalDef {
-    name: run @ 57..60 (fid = 0);
+    name: run @ 60..63 (fid = 0);
     mutable: false;
     typexpr: none;
     value: Expression {
@@ -2298,10 +2298,10 @@
               expr: FunCall {
                 callee: Expression {
                   expr: QualifiedPath {
-                    path: orb.dbg.puts @ 77..89 (fid = 0);
+                    path: orb.dbg.puts @ 80..92 (fid = 0);
                     sym: Symbol {
                       kind: function;
-                      name: puts @ 55..59 (fid = 1);
+                      name: puts @ 58..62 (fid = 1);
                       which: 0;
                       path: orb.dbg.puts;
                       typ: *fun (* str) -> void;
@@ -2310,25 +2310,25 @@
                     };
                   };
                   typ: *fun (* str) -> void;
-                } @ 77..89 (fid = 0);
+                } @ 80..92 (fid = 0);
                 args: [
                   Expression {
                     expr: string "Hello world!";
                     typ: * str;
-                  } @ 90..104 (fid = 0),
+                  } @ 93..107 (fid = 0),
                 ];
               };
               typ: void;
-            } @ 77..105 (fid = 0) @ 77..105 (fid = 0),
+            } @ 80..108 (fid = 0) @ 80..108 (fid = 0),
 
             Expression {
               expr: FunCall {
                 callee: Expression {
                   expr: QualifiedPath {
-                    path: dbg.puts @ 111..119 (fid = 0);
+                    path: dbg.puts @ 114..122 (fid = 0);
                     sym: Symbol {
                       kind: function;
-                      name: puts @ 55..59 (fid = 1);
+                      name: puts @ 58..62 (fid = 1);
                       which: 0;
                       path: orb.dbg.puts;
                       typ: *fun (* str) -> void;
@@ -2337,22 +2337,22 @@
                     };
                   };
                   typ: *fun (* str) -> void;
-                } @ 111..119 (fid = 0);
+                } @ 114..122 (fid = 0);
                 args: [
                   Expression {
                     expr: string "Hello world!";
                     typ: * str;
-                  } @ 120..134 (fid = 0),
+                  } @ 123..137 (fid = 0),
                 ];
               };
               typ: void;
-            } @ 111..135 (fid = 0) @ 111..135 (fid = 0),
+            } @ 114..138 (fid = 0) @ 114..138 (fid = 0),
 
             Expression {
               expr: FunCall {
                 callee: Expression {
                   expr: QualifiedPath {
-                    path: nested.fib @ 141..151 (fid = 0);
+                    path: nested.fib @ 144..154 (fid = 0);
                     sym: Symbol {
                       kind: function;
                       name: fib @ 0..3 (fid = 2);
@@ -2364,43 +2364,43 @@
                     };
                   };
                   typ: *fun (i32) -> i32;
-                } @ 141..151 (fid = 0);
+                } @ 144..154 (fid = 0);
                 args: [
                   Expression {
                     expr: integer 12;
                     typ: i32;
-                  } @ 152..154 (fid = 0),
+                  } @ 155..157 (fid = 0),
                 ];
               };
               typ: i32;
-            } @ 141..155 (fid = 0) @ 141..155 (fid = 0),
+            } @ 144..158 (fid = 0) @ 144..158 (fid = 0),
           ];
           last_expr: none;
           typ: void;
-        } @ 71..158 (fid = 0);
+        } @ 74..161 (fid = 0);
       };
       typ: *fun () -> void;
-    } @ 64..158 (fid = 0);
+    } @ 67..161 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: run @ 57..60 (fid = 0);
+      name: run @ 60..63 (fid = 0);
       which: 0;
       path: orb.run;
       typ: *fun () -> void;
       typeness: explicit;
       value: none;
     };
-  } @ 57..158 (fid = 0),
+  } @ 60..161 (fid = 0),
 
   GlobalDef {
-    name: divide @ 160..166 (fid = 0);
+    name: divide @ 163..169 (fid = 0);
     mutable: false;
     typexpr: none;
     value: Expression {
       expr: FunDefinition {
         args: [
           Arg {
-            name: lhs @ 174..177 (fid = 0);
+            name: lhs @ 177..180 (fid = 0);
             typexpr: Expression {
               expr: Symbol {
                 kind: global;
@@ -2414,20 +2414,20 @@
                 };
               };
               typ: type;
-            } @ 179..182 (fid = 0);
+            } @ 182..185 (fid = 0);
             sym: Symbol {
               kind: argument;
-              name: lhs @ 174..177 (fid = 0);
+              name: lhs @ 177..180 (fid = 0);
               which: 0;
               path: lhs;
               typ: f32;
               typeness: explicit;
               value: none;
             };
-          } @ 174..182 (fid = 0),
+          } @ 177..185 (fid = 0),
 
           Arg {
-            name: rhs @ 184..187 (fid = 0);
+            name: rhs @ 187..190 (fid = 0);
             typexpr: Expression {
               expr: Symbol {
                 kind: global;
@@ -2441,17 +2441,17 @@
                 };
               };
               typ: type;
-            } @ 189..192 (fid = 0);
+            } @ 192..195 (fid = 0);
             sym: Symbol {
               kind: argument;
-              name: rhs @ 184..187 (fid = 0);
+              name: rhs @ 187..190 (fid = 0);
               which: 0;
               path: rhs;
               typ: f32;
               typeness: explicit;
               value: none;
             };
-          } @ 184..192 (fid = 0),
+          } @ 187..195 (fid = 0),
         ];
         rettypexpr: Expression {
           expr: Symbol {
@@ -2466,7 +2466,7 @@
             };
           };
           typ: type;
-        } @ 197..200 (fid = 0);
+        } @ 200..203 (fid = 0);
         body: Block {
           stmts: [];
           last_expr: Expression {
@@ -2474,7 +2474,7 @@
               lhs: Expression {
                 expr: Symbol {
                   kind: argument;
-                  name: lhs @ 174..177 (fid = 0);
+                  name: lhs @ 177..180 (fid = 0);
                   which: 0;
                   path: lhs;
                   typ: f32;
@@ -2482,12 +2482,12 @@
                   value: none;
                 };
                 typ: f32;
-              } @ 207..210 (fid = 0);
+              } @ 210..213 (fid = 0);
               op: Div;
               rhs: Expression {
                 expr: Symbol {
                   kind: argument;
-                  name: rhs @ 184..187 (fid = 0);
+                  name: rhs @ 187..190 (fid = 0);
                   which: 0;
                   path: rhs;
                   typ: f32;
@@ -2495,37 +2495,37 @@
                   value: none;
                 };
                 typ: f32;
-              } @ 213..216 (fid = 0);
+              } @ 216..219 (fid = 0);
             };
             typ: f32;
-          } @ 207..216 (fid = 0);
+          } @ 210..219 (fid = 0);
           typ: f32;
-        } @ 201..218 (fid = 0);
+        } @ 204..221 (fid = 0);
       };
       typ: *fun (f32, f32) -> f32;
-    } @ 170..218 (fid = 0);
+    } @ 173..221 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: divide @ 160..166 (fid = 0);
+      name: divide @ 163..169 (fid = 0);
       which: 0;
       path: orb.divide;
       typ: *fun (f32, f32) -> f32;
       typeness: explicit;
       value: none;
     };
-  } @ 160..218 (fid = 0),
+  } @ 163..221 (fid = 0),
 
   GlobalDef {
-    name: MY_LIL_CONSTANT @ 220..235 (fid = 0);
+    name: MY_LIL_CONSTANT @ 223..238 (fid = 0);
     mutable: false;
     typexpr: none;
     value: Expression {
       expr: integer 1234;
       typ: i32;
-    } @ 239..243 (fid = 0);
+    } @ 242..246 (fid = 0);
     sym: Symbol {
       kind: global;
-      name: MY_LIL_CONSTANT @ 220..235 (fid = 0);
+      name: MY_LIL_CONSTANT @ 223..238 (fid = 0);
       which: 0;
       path: orb.MY_LIL_CONSTANT;
       typ: i32;
@@ -2534,7 +2534,7 @@
         val: 1234;
       };
     };
-  } @ 220..244 (fid = 0),
+  } @ 223..247 (fid = 0),
 ]
 "#,
         expected_test_out: "",
@@ -2546,19 +2546,19 @@
   } @ 20..32 (fid = 0),
 
   Import {
-    path: orb.driver.run @ 56..70 (fid = 0);
+    path: orb.driver.run @ 59..73 (fid = 0);
     alias: none;
-  } @ 51..71 (fid = 0),
+  } @ 51..74 (fid = 0),
 
   Import {
-    path: std @ 77..80 (fid = 0);
+    path: std @ 83..86 (fid = 0);
     alias: none;
-  } @ 72..81 (fid = 0),
+  } @ 75..87 (fid = 0),
 
   Import {
-    path: std.rc.Rc @ 87..96 (fid = 0);
+    path: std.rc.Rc @ 96..105 (fid = 0);
     alias: ReferenceCountedPtr;
-  } @ 82..120 (fid = 0),
+  } @ 88..129 (fid = 0),
 ]
 ",
         expected_test_out: "",

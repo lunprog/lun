@@ -343,6 +343,100 @@ pub fn lower<T: FromHigher>(node: T::Higher) -> T {
     T::lower(node)
 }
 
+/// Computes the Levenshtein distance between two strings `a` and `b`.
+///
+/// This distance is the minimum number of single-character edits
+/// (insertions, deletions, or substitutions) required to change `a` into `b`.
+///
+/// # Examples
+/// ```
+/// # use lunc_utils::levenshtein_distance;
+/// assert_eq!(levenshtein_distance("kitten", "sitting"), 3);
+/// assert_eq!(levenshtein_distance("apple", "aple"), 1);
+/// ```
+pub fn levenshtein_distance(a: &str, b: &str) -> usize {
+    if a == b {
+        // short circuiting - the strings are identical
+        return 0;
+    }
+
+    let (n, m) = (a.len(), b.len());
+
+    if n == 0 {
+        // short circuiting - string a is empty
+        return m;
+    }
+    if m == 0 {
+        // short circuiting - string b is empty
+        return n;
+    }
+
+    let a = a.as_bytes();
+    let b = b.as_bytes();
+
+    let mut dp = vec![vec![0; m + 1]; n + 1];
+
+    for (i, item) in dp.iter_mut().enumerate().take(n + 1) {
+        item[0] = i;
+    }
+    for j in 0..=m {
+        dp[0][j] = j;
+    }
+
+    for i in 1..=n {
+        for j in 1..=m {
+            let cost = if a[i - 1] == b[j - 1] { 0 } else { 1 };
+            let deletion = dp[i - 1][j] + 1;
+            let insertion = dp[i][j - 1] + 1;
+            let substitution = dp[i - 1][j - 1] + cost;
+
+            dp[i][j] = deletion.min(insertion).min(substitution);
+        }
+    }
+
+    dp[n][m]
+}
+
+/// Default distance allowed for suggestions, currently `3`
+pub const DEFAULT_MAX_LEVENSHTEIN_DISTANCE: usize = 2;
+
+/// Suggests the closest match from a dictionary to a given input word,
+/// using the Levenshtein distance. Returns `Some(suggestion)` if the
+/// closest word is within `max_dist` edits, or `None` otherwise.
+///
+/// # Arguments
+///
+/// * `word` - The input word to check for corrections.
+/// * `dictionary` - A list of known valid words.
+/// * `max_dist` - The maximum edit distance allowed for a suggestion.
+///
+/// # Examples
+/// ```
+/// # use lunc_utils::suggest;
+/// let fruits = ["apple", "banana"];
+/// assert_eq!(suggest("aple", &fruits, 2), Some("apple"));
+/// assert_eq!(suggest("zzzzz", &fruits, 2), None);
+/// ```
+pub fn suggest<'a>(word: &str, dictionary: &'a [&str], max_dist: usize) -> Option<&'a str> {
+    let word = word.to_lowercase();
+    let mut best_match = None;
+    let mut best_distance = max_dist + 1;
+
+    for &candidate in dictionary {
+        let dist = levenshtein_distance(&word, &candidate.to_lowercase());
+        if dist < best_distance {
+            best_distance = dist;
+            best_match = Some(candidate);
+        }
+    }
+
+    if best_distance <= max_dist {
+        best_match
+    } else {
+        None
+    }
+}
+
 /// This macro expands to [`unreachable_unchecked`] in release mode, or in the
 /// [`unreachable`] macro in debug mode.
 ///
@@ -456,5 +550,60 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn levenshtein_empty() {
+        assert_eq!(levenshtein_distance("", ""), 0);
+        assert_eq!(levenshtein_distance("", "abc"), 3);
+        assert_eq!(levenshtein_distance("abc", ""), 3);
+    }
+
+    #[test]
+    fn levenshtein_equal() {
+        assert_eq!(levenshtein_distance("rust", "rust"), 0);
+    }
+
+    #[test]
+    fn levenshtein_substitution() {
+        assert_eq!(levenshtein_distance("kitten", "sitten"), 1);
+        assert_eq!(levenshtein_distance("flaw", "lawn"), 2);
+    }
+
+    #[test]
+    fn levenshtein_insertion_deletion() {
+        assert_eq!(levenshtein_distance("apple", "aple"), 1);
+        assert_eq!(levenshtein_distance("aple", "apple"), 1);
+    }
+
+    #[test]
+    fn levenshtein_mixed() {
+        assert_eq!(levenshtein_distance("gumbo", "gambol"), 2);
+    }
+
+    #[test]
+    fn suggest_exact() {
+        let fruits = ["apple", "banana", "orange"];
+        assert_eq!(suggest("apple", &fruits, 2), Some("apple"));
+    }
+
+    #[test]
+    fn suggest_typo() {
+        let fruits = ["apple", "banana", "orange"];
+        assert_eq!(suggest("aple", &fruits, 2), Some("apple"));
+        assert_eq!(suggest("ornge", &fruits, 2), Some("orange"));
+    }
+
+    #[test]
+    fn suggest_no_match() {
+        let fruits = ["apple", "banana", "orange"];
+        assert_eq!(suggest("xyz", &fruits, 1), None);
+    }
+
+    #[test]
+    fn suggest_multiple_candidates() {
+        let words = ["cat", "bat", "rat"];
+        // all at distance 1; should pick the first encountered ("cat")
+        assert_eq!(suggest("cot", &words, 1), Some("cat"));
     }
 }

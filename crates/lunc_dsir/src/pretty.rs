@@ -8,7 +8,7 @@ use lunc_utils::{
 };
 
 use crate::{
-    DsArg, DsBlock, DsExpr, DsExpression, DsItem, DsItemDirective, DsModule, DsStatement, DsStmt,
+    DsArg, DsBlock, DsDirective, DsExpr, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
 };
 
 impl PrettyDump for DsModule {
@@ -59,7 +59,7 @@ impl PrettyDump for DsItem {
     }
 }
 
-impl PrettyDump for DsItemDirective {
+impl PrettyDump for DsDirective {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
             Self::Import { path, alias, loc } => {

@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use diags::{CantResolveComptimeValue, ExpectedTypeFoundExpr};
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, feature_todo};
 use lunc_dsir::{
-    BinOp, DsArg, DsBlock, DsExpr, DsExpression, DsItem, DsItemDirective, DsModule, DsStatement,
+    BinOp, DsArg, DsBlock, DsDirective, DsExpr, DsExpression, DsItem, DsModule, DsStatement,
     DsStmt, OSpan, QualifiedPath, UnaryOp,
 };
 use lunc_utils::{
@@ -40,8 +40,7 @@ impl FromHigher for ScModule {
         let mut items = Vec::with_capacity(ds_items.len());
 
         for ds_item in ds_items {
-            if let DsItem::Directive(DsItemDirective::Import { .. } | DsItemDirective::Mod { .. }) =
-                ds_item
+            if let DsItem::Directive(DsDirective::Import { .. } | DsDirective::Mod { .. }) = ds_item
             {
                 continue;
             }
@@ -119,7 +118,7 @@ impl FromHigher for ScItem {
                 loc,
                 sym: lazy.unwrap_sym(),
             },
-            DsItem::Directive(DsItemDirective::Import { .. } | DsItemDirective::Mod { .. }) => {
+            DsItem::Directive(DsDirective::Import { .. } | DsDirective::Mod { .. }) => {
                 unreachable!()
             }
         }

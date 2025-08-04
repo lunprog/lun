@@ -3,7 +3,7 @@
 use lunc_diag::FileId;
 
 use crate::{
-    directive::{ItemDirective, parse_mod_directive, parse_use_directive},
+    directive::{Directive, parse_import_directive, parse_mod_directive},
     expr::parse_typexpr,
 };
 
@@ -67,7 +67,7 @@ pub enum Item {
         loc: Span,
     },
     /// A directive, always starts with `#`
-    Directive(ItemDirective),
+    Directive(Directive),
 }
 
 impl AstNode for Item {
@@ -134,16 +134,24 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
 pub fn parse_directive_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
     match parser.nth_tt(1) {
         Some(Ident(id)) => match id.as_str() {
-            "mod" => parse_mod_directive(parser),
-            "use" => parse_use_directive(parser),
+            Directive::MOD_NAME => parse_mod_directive(parser),
+            Directive::IMPORT_NAME => parse_import_directive(parser),
             _ => {
                 let t = parser.nth_tok(1).unwrap().clone();
-                Err(ExpectedToken::new(["mod"], t.tt, Some("directive"), t.loc).into_diag())
+                // Err(ExpectedToken::new(["mod"], t.tt, Some("directive"), t.loc).into_diag())
+                Err(UnknownDirective {
+                    name: id.clone(),
+                    loc: t.loc,
+                }
+                .into_diag())
             }
         },
         _ => {
             let t = parser.nth_tok(1).unwrap().clone();
-            Err(ExpectedToken::new(["mod"], t.tt, Some("directive"), t.loc).into_diag())
+            Err(
+                ExpectedToken::new(TokenType::Ident(String::new()), t.tt, None::<String>, t.loc)
+                    .into_diag(),
+            )
         }
     }
 }

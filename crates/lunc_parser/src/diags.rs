@@ -2,11 +2,13 @@
 
 use lunc_diag::{Diagnostic, ErrorCode, Label, ToDiagnostic};
 use lunc_utils::{
-    Span, list_fmt,
+    DEFAULT_MAX_LEVENSHTEIN_DISTANCE, Span, list_fmt, suggest,
     token::{Punctuation, TokenType},
 };
 
 use std::fmt::Display;
+
+use crate::directive::Directive;
 
 pub struct ExpectedToken {
     /// what token was expected?
@@ -93,5 +95,27 @@ impl ToDiagnostic for ExpectedToken {
             .with_code(ErrorCode::ExpectedToken)
             .with_message(self.fmt_msg())
             .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnknownDirective {
+    pub name: String,
+    pub loc: Span,
+}
+
+impl ToDiagnostic for UnknownDirective {
+    fn into_diag(self) -> Diagnostic {
+        let suggestion = suggest(
+            &self.name,
+            Directive::DIRECTIVES,
+            DEFAULT_MAX_LEVENSHTEIN_DISTANCE,
+        );
+
+        Diagnostic::error()
+            .with_code(ErrorCode::UnknownDirective)
+            .with_message(format!("unknown directive '{}'", self.name))
+            .with_label(Label::primary(self.loc.fid, self.loc))
+            .with_notes_iter(suggestion.map(|suggested| format!("did you mean '{suggested}'?")))
     }
 }

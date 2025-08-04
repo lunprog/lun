@@ -8,7 +8,7 @@ use super::*;
 
 /// Directive in an item
 #[derive(Debug, Clone)]
-pub enum ItemDirective {
+pub enum Directive {
     /// `"#" "mod" ident ";"`
     Mod { name: String, loc: Span },
     /// `"#" "import" path [ "as" ident ] ";"`
@@ -19,28 +19,43 @@ pub enum ItemDirective {
     },
 }
 
+impl Directive {
+    /// Name of the [`Directive::Mod`].
+    pub const MOD_NAME: &str = "mod";
+
+    /// Name of the [`Directive::Import`].
+    pub const IMPORT_NAME: &str = "import";
+
+    /// List of every supported directives name.
+    pub const DIRECTIVES: &[&str] = &[
+        // all the directives V
+        Directive::MOD_NAME,
+        Directive::IMPORT_NAME,
+    ];
+}
+
 pub fn parse_mod_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
     let (_, lo) =
         expect_token!(parser => [Punct(Punctuation::Hashtag), ()], Punct(Punctuation::Hashtag));
 
-    expect_token!(parser => [Ident(id), id.clone(), if id.as_str() == "mod"], Ident(String::new()));
+    expect_token!(parser => [Ident(id), id.clone(), if id.as_str() == Directive::MOD_NAME], Ident(String::new()));
 
     let (name, _) = expect_token!(parser => [Ident(s), s.clone()], "integer literal");
 
     let (_, hi) =
         expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
 
-    Ok(Item::Directive(ItemDirective::Mod {
+    Ok(Item::Directive(Directive::Mod {
         name,
         loc: Span::from_ends(lo, hi),
     }))
 }
 
-pub fn parse_use_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
+pub fn parse_import_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
     let (_, lo) =
         expect_token!(parser => [Punct(Punctuation::Hashtag), ()], Punct(Punctuation::Hashtag));
 
-    expect_token!(parser => [Ident(id), id.clone(), if id.as_str() == "use"], Ident(String::new()));
+    expect_token!(parser => [Ident(id), id.clone(), if id.as_str() == Directive::IMPORT_NAME], Ident(String::new()));
 
     let path = parse!(parser => QualifiedPath);
 
@@ -56,7 +71,7 @@ pub fn parse_use_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
     let (_, hi) =
         expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
 
-    Ok(Item::Directive(ItemDirective::Import {
+    Ok(Item::Directive(Directive::Import {
         path,
         alias,
         loc: Span::from_ends(lo, hi),

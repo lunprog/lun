@@ -8,7 +8,7 @@ use lunc_utils::{
 };
 
 use crate::{
-    directive::{ItemDirective, QualifiedPath},
+    directive::{Directive, QualifiedPath},
     expr::{Arg, BinOp, Else, Expr, Expression, IfExpression, UnaryOp},
     item::{Item, Module},
     stmt::{Block, Statement, Stmt},
@@ -384,16 +384,16 @@ impl PrettyDump for Else {
     }
 }
 
-impl PrettyDump for ItemDirective {
+impl PrettyDump for Directive {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            ItemDirective::Mod { name, loc } => {
+            Directive::Mod { name, loc } => {
                 ctx.pretty_struct("Mod").field("name", name).finish()?;
                 ctx.print_loc(loc)?;
 
                 Ok(())
             }
-            ItemDirective::Import { path, alias, loc } => {
+            Directive::Import { path, alias, loc } => {
                 ctx.pretty_struct("Import")
                     .field("path", path)
                     .field("alias", alias)

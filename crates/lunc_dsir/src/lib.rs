@@ -10,7 +10,7 @@ use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic};
 use lunc_lexer::Lexer;
 use lunc_parser::{
     Parser,
-    directive::ItemDirective,
+    directive::Directive,
     expr::{Arg, Else, Expr, Expression, IfExpression},
     item::{Item, Module},
     stmt::{Block, Statement, Stmt},
@@ -81,7 +81,7 @@ pub enum DsItem {
     /// A [`Mod`], with its items inlined inside this member, constructed from
     /// the dsir directive `Mod` by the Desugarrer
     ///
-    /// [`Mod`]: lunc_parser::directive::ItemDirective::Mod
+    /// [`Mod`]: lunc_parser::directive::Directive::Mod
     Module {
         /// the name of the module when declared
         name: String,
@@ -95,14 +95,14 @@ pub enum DsItem {
     /// See [`Item::Directive`]
     ///
     /// [`Item::Directive`]: lunc_parser::item::Item::Directive
-    Directive(DsItemDirective),
+    Directive(DsDirective),
 }
 
 /// See [`ItemDirective`]
 ///
-/// [`ItemDirective`]: lunc_parser::directive::ItemDirective
+/// [`ItemDirective`]: lunc_parser::directive::Directive
 #[derive(Debug, Clone)]
-pub enum DsItemDirective {
+pub enum DsDirective {
     Import {
         path: QualifiedPath,
         alias: Option<String>,
@@ -112,16 +112,16 @@ pub enum DsItemDirective {
     Mod { name: String, loc: OSpan },
 }
 
-impl FromHigher for DsItemDirective {
-    type Higher = ItemDirective;
+impl FromHigher for DsDirective {
+    type Higher = Directive;
 
     fn lower(node: Self::Higher) -> Self {
         match node {
-            ItemDirective::Mod { name, loc } => DsItemDirective::Mod {
+            Directive::Mod { name, loc } => DsDirective::Mod {
                 name,
                 loc: Some(loc),
             },
-            ItemDirective::Import { path, alias, loc } => Self::Import {
+            Directive::Import { path, alias, loc } => Self::Import {
                 path,
                 alias,
                 loc: Some(loc),
@@ -902,7 +902,7 @@ impl Desugarrer {
         let parent_path = PathBuf::from(self.sink.name(parent.fid).unwrap());
 
         for item in &mut parent.items {
-            if let DsItem::Directive(DsItemDirective::Mod { name, loc }) = item {
+            if let DsItem::Directive(DsDirective::Mod { name, loc }) = item {
                 // 1. compute the path of the submodule
                 let submodule_path = if parent.fid.is_root() {
                     // root module's path
@@ -1475,7 +1475,7 @@ impl Desugarrer {
 
                 Ok(())
             }
-            DsItem::Directive(DsItemDirective::Import {
+            DsItem::Directive(DsDirective::Import {
                 path,
                 alias,
                 loc: _,
@@ -1499,7 +1499,7 @@ impl Desugarrer {
                     .into_diag())
                 }
             }
-            DsItem::Directive(DsItemDirective::Mod { .. }) => Ok(()),
+            DsItem::Directive(DsDirective::Mod { .. }) => Ok(()),
         }
     }
 }

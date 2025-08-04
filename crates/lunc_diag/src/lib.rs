@@ -439,6 +439,8 @@ pub enum ErrorCode {
     BreakFromLoopWithValue = 33,
     /// a literal expression is overflowing
     OverflowingLiteral = 34,
+    /// unknown directive
+    UnknownDirective = 35,
 }
 
 impl Display for ErrorCode {
