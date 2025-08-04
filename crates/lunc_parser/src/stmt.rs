@@ -56,9 +56,14 @@ impl AstNode for Block {
 
                     break;
                 }
-                // here, the next thing is a brace so, no need to keep parsing
-                // there is nothing more.
-                (true, false) => break,
+                (true, false) => {
+                    // there is a statement at the end of the block and we need
+                    // to parse the semicolon after appending the stmt to the
+                    // block
+                    stmts.push(stmt.clone());
+
+                    expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
+                }
                 (false, true) => {
                     // here we have a statement expression, we require a
                     // semicolon if the expression isn't a ExpressionWithBlock
@@ -67,8 +72,8 @@ impl AstNode for Block {
                         loc: _,
                     } = stmt
                     else {
-                        // NOTE: here we are fine because, we checked that stmt
-                        // is an expr before.
+                        // SAFETY: here we are fine because, we checked that
+                        // stmt is an expr before.
                         opt_unrecheable!()
                     };
 
