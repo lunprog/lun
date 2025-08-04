@@ -47,8 +47,8 @@ impl AstNode for Module {
 pub enum Item {
     /// Global constant.
     ///
-    /// ident ":" expression? ":" exprWithBlock
-    /// ident ":" expression? ":" exprWithoutBlock ";"
+    /// `ident ":" expression? ":" exprWithBlock`
+    /// `ident ":" expression? ":" exprWithoutBlock ";"`
     GlobalConst {
         name: String,
         name_loc: Span,
@@ -58,7 +58,7 @@ pub enum Item {
     },
     /// Global variable.
     ///
-    /// ident ":" expression? "=" expr ";"
+    /// `ident ":" expression? "=" expr ";"`
     GlobalVar {
         name: String,
         name_loc: Span,
@@ -66,7 +66,7 @@ pub enum Item {
         value: Expression,
         loc: Span,
     },
-    /// A directive, always starts with #
+    /// A directive, always starts with `#`
     Directive(ItemDirective),
 }
 

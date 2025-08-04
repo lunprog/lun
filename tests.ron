@@ -2545,17 +2545,17 @@
     name: module;
   } @ 20..32 (fid = 0),
 
-  Use {
+  Import {
     path: orb.driver.run @ 56..70 (fid = 0);
     alias: none;
   } @ 51..71 (fid = 0),
 
-  Use {
+  Import {
     path: std @ 77..80 (fid = 0);
     alias: none;
   } @ 72..81 (fid = 0),
 
-  Use {
+  Import {
     path: std.rc.Rc @ 87..96 (fid = 0);
     alias: ReferenceCountedPtr;
   } @ 82..120 (fid = 0),

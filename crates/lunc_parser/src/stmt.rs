@@ -119,9 +119,9 @@ impl Statement {
 pub enum Stmt {
     /// variable definition
     ///
-    /// "let" "mut"? ident [ ":" expr ] "=" expr
-    /// ident ":" [ expr ] ":" expr ";"
-    /// ident ":" [ expr ] "=" expr ";"
+    /// `"let" "mut"? ident [ ":" expr ] "=" expr`
+    /// `ident ":" [ expr ] ":" expr ";"`
+    /// `ident ":" [ expr ] "=" expr ";"`
     VariableDef {
         name: String,
         name_loc: Span,
@@ -131,11 +131,11 @@ pub enum Stmt {
     },
     /// defer statement
     ///
-    /// "defer" expr
+    /// `"defer" expr`
     Defer { expr: Expression },
     /// statement expression
     ///
-    /// expression
+    /// `expression`
     Expression(Expression),
 }
 
@@ -170,7 +170,7 @@ impl Parser {
     }
 }
 
-/// "let" "mut"? ident [ ":" expr ] "=" expr
+/// `"let" "mut"? ident [ ":" expr ] "=" expr`
 pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Let), ()], Kw(Keyword::Let));
 
@@ -208,8 +208,8 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
     })
 }
 
-/// ident ":" [ expr ] ":" expr ";"
-/// ident ":" [ expr ] "=" expr ";"
+/// `ident ":" [ expr ] ":" expr ";"`
+/// `ident ":" [ expr ] "=" expr ";"`
 pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
     let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], [Ident(String::new())]);
 

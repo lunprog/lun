@@ -71,35 +71,35 @@ impl AstNode for Expression {
 pub enum Expr {
     /// integer literal expression
     ///
-    /// integer
+    /// `integer`
     IntLit(u128),
     /// boolean literal expression
     ///
-    /// ("true" | "false")
+    /// `"true" | "false"`
     BoolLit(bool),
     /// string literal expression
     ///
-    /// string
+    /// `string`
     StringLit(String),
     /// character literal expression
     ///
-    /// char
+    /// `char`
     CharLit(char),
     /// float literal expression
     ///
-    /// float
+    /// `float`
     FloatLit(f64),
     /// grouping expression (just parenthesis)
     ///
-    /// "(" expr ")"
+    /// `"(" expr ")"`
     Grouping(Box<Expression>),
     /// an identifier expression
     ///
-    /// ident
+    /// `ident`
     Ident(String),
     /// binary operation
     ///
-    /// expr op expr
+    /// `expr op expr`
     Binary {
         lhs: Box<Expression>,
         op: BinOp,
@@ -107,29 +107,29 @@ pub enum Expr {
     },
     /// unary operation
     ///
-    /// op expr
+    /// `op expr`
     Unary { op: UnaryOp, expr: Box<Expression> },
     /// Address of
     ///
-    /// "&" "mut"? expression
+    /// `"&" "mut"? expression`
     AddressOf {
         mutable: bool,
         expr: Box<Expression>,
     },
     /// function call expression
     ///
-    /// expr "(" ( expr ),* ")"
+    /// `expr "(" ( expr ),* ")"`
     FunCall {
         callee: Box<Expression>,
         args: Vec<Expression>,
     },
     /// if else expression
     ///
-    /// "if" expression block [ "else" (if-expr | block-expr) ]
+    /// `"if" expression block [ "else" (if-expr | block-expr) ]`
     If(IfExpression),
     /// if then else expression
     ///
-    /// "if" expression "then" expression "else" expression
+    /// `"if" expression "then" expression "else" expression`
     IfThenElse {
         cond: Box<Expression>,
         true_val: Box<Expression>,
@@ -142,7 +142,7 @@ pub enum Expr {
     BlockWithLabel { label: (String, Span), block: Block },
     /// predicate loop expression
     ///
-    /// "while" expression block
+    /// `"while" expression block`
     PredicateLoop {
         label: Option<(String, Span)>,
         cond: Box<Expression>,
@@ -150,7 +150,7 @@ pub enum Expr {
     },
     /// iterator loop expression
     ///
-    /// "for" ident "in" expression block
+    /// `"for" ident "in" expression block`
     IteratorLoop {
         label: Option<(String, Span)>,
         variable: String,
@@ -159,47 +159,47 @@ pub enum Expr {
     },
     /// infinite loop
     ///
-    /// "loop" block
+    /// `"loop" block`
     InfiniteLoop {
         label: Option<(String, Span)>,
         body: Block,
     },
     /// return expression
     ///
-    /// "return" expression?
+    /// `"return" expression?`
     Return { expr: Option<Box<Expression>> },
     /// break expression
     ///
-    /// "break" [ ":" ident ] expression?
+    /// `"break" [ ":" ident ] expression?`
     Break {
         label: Option<String>,
         expr: Option<Box<Expression>>,
     },
     /// continue expression
     ///
-    /// "continue"
+    /// `"continue"`
     Continue { label: Option<String> },
     /// null expression
     ///
-    /// "null"
+    /// `"null"`
     Null,
     /// member access expression
     ///
-    /// expr "." ident
+    /// `expr "." ident`
     MemberAccess {
         expr: Box<Expression>,
         member: String,
     },
     /// orb expression
     ///
-    /// "orb"
+    /// `"orb"`
     Orb,
     //
     // definitions
     //
     /// function definition expression
     ///
-    /// "fun" "(" ( ident ":" expr ),* ")" [ "->" expr ] block
+    /// `"fun" "(" ( ident ":" expr ),* ")" [ "->" expr ] block`
     FunDefinition {
         args: Vec<Arg>,
         rettypexpr: Option<Box<Expression>>,
@@ -210,14 +210,14 @@ pub enum Expr {
     //
     /// pointer type expression
     ///
-    /// "*" "mut"? expression
+    /// `"*" "mut"? expression`
     PointerType {
         mutable: bool,
         typexpr: Box<Expression>,
     },
     /// function pointer type
     ///
-    /// "*" "fun" "(" ( expr ),* ")" [ "->" expr ]
+    /// `"*" "fun" "(" ( expr ),* ")" [ "->" expr ]`
     FunPtrType {
         args: Vec<Expression>,
         ret: Option<Box<Expression>>,

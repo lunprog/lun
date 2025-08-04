@@ -393,8 +393,8 @@ impl PrettyDump for ItemDirective {
 
                 Ok(())
             }
-            ItemDirective::Use { path, alias, loc } => {
-                ctx.pretty_struct("Use")
+            ItemDirective::Import { path, alias, loc } => {
+                ctx.pretty_struct("Import")
                     .field("path", path)
                     .field("alias", alias)
                     .finish()?;

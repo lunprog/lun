@@ -40,7 +40,7 @@ impl FromHigher for ScModule {
         let mut items = Vec::with_capacity(ds_items.len());
 
         for ds_item in ds_items {
-            if let DsItem::Directive(DsItemDirective::Use { .. } | DsItemDirective::Mod { .. }) =
+            if let DsItem::Directive(DsItemDirective::Import { .. } | DsItemDirective::Mod { .. }) =
                 ds_item
             {
                 continue;
@@ -119,7 +119,7 @@ impl FromHigher for ScItem {
                 loc,
                 sym: lazy.unwrap_sym(),
             },
-            DsItem::Directive(DsItemDirective::Use { .. } | DsItemDirective::Mod { .. }) => {
+            DsItem::Directive(DsItemDirective::Import { .. } | DsItemDirective::Mod { .. }) => {
                 unreachable!()
             }
         }

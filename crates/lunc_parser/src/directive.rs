@@ -9,10 +9,10 @@ use super::*;
 /// Directive in an item
 #[derive(Debug, Clone)]
 pub enum ItemDirective {
-    /// "#" "mod" ident ";"
+    /// `"#" "mod" ident ";"`
     Mod { name: String, loc: Span },
-    /// "#" "use" path [ "as" ident ] ";"
-    Use {
+    /// `"#" "import" path [ "as" ident ] ";"`
+    Import {
         path: QualifiedPath,
         alias: Option<String>,
         loc: Span,
@@ -56,14 +56,14 @@ pub fn parse_use_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
     let (_, hi) =
         expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
 
-    Ok(Item::Directive(ItemDirective::Use {
+    Ok(Item::Directive(ItemDirective::Import {
         path,
         alias,
         loc: Span::from_ends(lo, hi),
     }))
 }
 
-/// ident { "." ident }
+/// `ident { "." ident }`
 #[derive(Debug, Clone)]
 pub struct QualifiedPath {
     pub path: EffectivePath,

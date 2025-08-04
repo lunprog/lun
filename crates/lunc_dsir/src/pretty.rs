@@ -62,8 +62,8 @@ impl PrettyDump for DsItem {
 impl PrettyDump for DsItemDirective {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            Self::Use { path, alias, loc } => {
-                ctx.pretty_struct("Directive:Use")
+            Self::Import { path, alias, loc } => {
+                ctx.pretty_struct("Directive:Import")
                     .field("path", path)
                     .field("alias", alias)
                     .finish()?;

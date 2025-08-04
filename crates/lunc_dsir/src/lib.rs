@@ -103,7 +103,7 @@ pub enum DsItem {
 /// [`ItemDirective`]: lunc_parser::directive::ItemDirective
 #[derive(Debug, Clone)]
 pub enum DsItemDirective {
-    Use {
+    Import {
         path: QualifiedPath,
         alias: Option<String>,
         loc: OSpan,
@@ -121,7 +121,7 @@ impl FromHigher for DsItemDirective {
                 name,
                 loc: Some(loc),
             },
-            ItemDirective::Use { path, alias, loc } => Self::Use {
+            ItemDirective::Import { path, alias, loc } => Self::Import {
                 path,
                 alias,
                 loc: Some(loc),
@@ -1475,7 +1475,7 @@ impl Desugarrer {
 
                 Ok(())
             }
-            DsItem::Directive(DsItemDirective::Use {
+            DsItem::Directive(DsItemDirective::Import {
                 path,
                 alias,
                 loc: _,
