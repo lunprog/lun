@@ -11,11 +11,13 @@ use lunc_dsir::{
 use lunc_utils::{
     FromHigher, Span, lower,
     symbol::{Symbol, Type, ValueExpr},
+    target::TargetTriplet,
 };
 
 pub mod checking;
 pub mod diags;
 pub mod pretty;
+pub mod safety_ck;
 
 /// A semantic checked module, see the dsir version [`DsModule`]
 ///
@@ -544,23 +546,32 @@ pub struct SemaChecker {
     fun_retty_loc: OSpan,
     /// it is used to check the types and correctness of label using expression
     label_stack: LabelStack,
+    /// the target we are compiling to
+    target: TargetTriplet,
 }
 
 impl SemaChecker {
-    pub fn new(sink: DiagnosticSink) -> SemaChecker {
+    pub fn new(sink: DiagnosticSink, target: TargetTriplet) -> SemaChecker {
         SemaChecker {
             sink,
             fun_retty: Type::Unknown,
             fun_retty_loc: None,
             label_stack: LabelStack::new(),
+            target,
         }
     }
 
     pub fn produce(&mut self, dsir: DsModule) -> Option<ScModule> {
         let mut root = lower(dsir);
 
+        // we pre check the modules to compute the types of the global definitions
         self.pre_ck_module(&mut root);
+
+        // we check all of the SCIR
         self.ck_mod(&mut root);
+
+        // check the safety of the SCIR, we check if there is no integer literal overflow, float literal overflow..
+        self.safety_ck_mod(&root);
 
         if self.sink.failed() {
             return None;

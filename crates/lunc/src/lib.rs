@@ -239,6 +239,16 @@ pub enum TargetInput {
     Triplet(TargetTriplet),
 }
 
+impl TargetInput {
+    pub fn triplet(self) -> Option<TargetTriplet> {
+        match self {
+            Self::Unspecified => Some(TargetTriplet::host_target()),
+            Self::Help => None,
+            Self::Triplet(triplet) => Some(triplet),
+        }
+    }
+}
+
 // TODO: add -orb-type <type> arg
 /// Arguments to the `lunc` binary
 #[derive(Debug, Clone, Default)]
@@ -527,7 +537,7 @@ pub fn run() -> Result<()> {
     }
 
     // 6. type-checking and all the semantic analysis, DSIR => SCIR
-    let mut semacker = SemaChecker::new(sink.clone());
+    let mut semacker = SemaChecker::new(sink.clone(), argv.target.clone().triplet().unwrap());
     let scir = semacker.produce(dsir).ok_or_else(builderr)?;
 
     //    maybe print the SCIR

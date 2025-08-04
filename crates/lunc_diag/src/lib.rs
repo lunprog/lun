@@ -437,6 +437,8 @@ pub enum ErrorCode {
     CantContinueABlock = 32,
     /// break from a loop with a value, it is only supported inside a labeled block.
     BreakFromLoopWithValue = 33,
+    /// a literal expression is overflowing
+    OverflowingLiteral = 34,
 }
 
 impl Display for ErrorCode {

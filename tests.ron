@@ -2225,32 +2225,32 @@
                           name: divide @ 160..166 (fid = 0);
                           which: 0;
                           path: orb.divide;
-                          typ: *fun (f16, f16) -> f16;
+                          typ: *fun (f32, f32) -> f32;
                           typeness: explicit;
                           value: none;
                         };
-                        typ: *fun (f16, f16) -> f16;
+                        typ: *fun (f32, f32) -> f32;
                       } @ 164..170 (fid = 1);
                       args: [
                         Expression {
                           expr: float 1;
-                          typ: f16;
+                          typ: f32;
                         } @ 171..173 (fid = 1),
 
                         Expression {
                           expr: float 2;
-                          typ: f16;
+                          typ: f32;
                         } @ 175..177 (fid = 1),
                       ];
                     };
-                    typ: f16;
+                    typ: f32;
                   } @ 164..178 (fid = 1);
                   sym: Symbol {
                     kind: local;
                     name: half @ 156..160 (fid = 1);
                     which: 0;
                     path: half;
-                    typ: f16;
+                    typ: f32;
                     typeness: implicit;
                     value: none;
                   };
@@ -2404,13 +2404,13 @@
             typexpr: Expression {
               expr: Symbol {
                 kind: global;
-                name: f16 @ none;
+                name: f32 @ none;
                 which: 0;
                 path: ∅;
                 typ: type;
                 typeness: explicit;
                 value: Type {
-                  type: f16;
+                  type: f32;
                 };
               };
               typ: type;
@@ -2420,7 +2420,7 @@
               name: lhs @ 174..177 (fid = 0);
               which: 0;
               path: lhs;
-              typ: f16;
+              typ: f32;
               typeness: explicit;
               value: none;
             };
@@ -2431,13 +2431,13 @@
             typexpr: Expression {
               expr: Symbol {
                 kind: global;
-                name: f16 @ none;
+                name: f32 @ none;
                 which: 0;
                 path: ∅;
                 typ: type;
                 typeness: explicit;
                 value: Type {
-                  type: f16;
+                  type: f32;
                 };
               };
               typ: type;
@@ -2447,7 +2447,7 @@
               name: rhs @ 184..187 (fid = 0);
               which: 0;
               path: rhs;
-              typ: f16;
+              typ: f32;
               typeness: explicit;
               value: none;
             };
@@ -2456,13 +2456,13 @@
         rettypexpr: Expression {
           expr: Symbol {
             kind: global;
-            name: f16 @ none;
+            name: f32 @ none;
             which: 0;
             path: ∅;
             typ: type;
             typeness: explicit;
             value: Type {
-              type: f16;
+              type: f32;
             };
           };
           typ: type;
@@ -2477,11 +2477,11 @@
                   name: lhs @ 174..177 (fid = 0);
                   which: 0;
                   path: lhs;
-                  typ: f16;
+                  typ: f32;
                   typeness: explicit;
                   value: none;
                 };
-                typ: f16;
+                typ: f32;
               } @ 207..210 (fid = 0);
               op: Div;
               rhs: Expression {
@@ -2490,26 +2490,26 @@
                   name: rhs @ 184..187 (fid = 0);
                   which: 0;
                   path: rhs;
-                  typ: f16;
+                  typ: f32;
                   typeness: explicit;
                   value: none;
                 };
-                typ: f16;
+                typ: f32;
               } @ 213..216 (fid = 0);
             };
-            typ: f16;
+            typ: f32;
           } @ 207..216 (fid = 0);
-          typ: f16;
+          typ: f32;
         } @ 201..218 (fid = 0);
       };
-      typ: *fun (f16, f16) -> f16;
+      typ: *fun (f32, f32) -> f32;
     } @ 170..218 (fid = 0);
     sym: Symbol {
       kind: function;
       name: divide @ 160..166 (fid = 0);
       which: 0;
       path: orb.divide;
-      typ: *fun (f16, f16) -> f16;
+      typ: *fun (f32, f32) -> f32;
       typeness: explicit;
       value: none;
     };

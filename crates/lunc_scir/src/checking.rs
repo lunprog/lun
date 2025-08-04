@@ -296,8 +296,7 @@ impl SemaChecker {
                 );
 
                 notes.push(format!(
-                    "consider adding an else branch that evaluates to type '{}'",
-                    expected
+                    "consider adding an else branch that evaluates to type '{expected}'",
                 ));
             }
 

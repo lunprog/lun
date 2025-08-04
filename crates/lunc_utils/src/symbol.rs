@@ -3,11 +3,13 @@
 use std::{
     fmt::{self, Display},
     io,
+    ops::RangeInclusive,
 };
 
 use crate::{
     Span, idtype,
     pretty::{PrettyCtxt, PrettyDump},
+    target::{PtrWidth, TargetTriplet},
 };
 
 /// The underlying type of an expression
@@ -83,6 +85,86 @@ pub enum Type {
 }
 
 impl Type {
+    /// Minimum value of an `i8` Lun type.
+    pub const MIN_I8: i128 = -128;
+
+    /// Maximum value of an `i8` Lun type.
+    pub const MAX_I8: i128 = 127;
+
+    /// Minimum value of an `i16` Lun type.
+    pub const MIN_I16: i128 = -32_768;
+
+    /// Maximum value of an `i16` Lun type.
+    pub const MAX_I16: i128 = 32_767;
+
+    /// Minimum value of an `i32` Lun type.
+    pub const MIN_I32: i128 = -2_147_483_648;
+
+    /// Maximum value of an `i32` Lun type.
+    pub const MAX_I32: i128 = 2_147_483_647;
+
+    /// Minimum value of an `i64` Lun type.
+    pub const MIN_I64: i128 = -9_223_372_036_854_775_808;
+
+    /// Maximum value of an `i64` Lun type.
+    pub const MAX_I64: i128 = 9_223_372_036_854_775_807;
+
+    /// Minimum value of an `i128` Lun type.
+    pub const MIN_I128: i128 = -170_141_183_460_469_231_731_687_303_715_884_105_728;
+
+    /// Maximum value of an `i128` Lun type.
+    pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
+
+    /// Minimum value of an `u8` Lun type.
+    pub const MIN_U8: i128 = 0;
+
+    /// Maximum value of an `u8` Lun type.
+    pub const MAX_U8: i128 = 255;
+
+    /// Minimum value of an `u16` Lun type.
+    pub const MIN_U16: i128 = 0;
+
+    /// Maximum value of an `u16` Lun type.
+    pub const MAX_U16: i128 = 65_535;
+
+    /// Minimum value of an `u32` Lun type.
+    pub const MIN_U32: i128 = 0;
+
+    /// Maximum value of an `u32` Lun type.
+    pub const MAX_U32: i128 = 4_294_967_295;
+
+    /// Minimum value of an `u64` Lun type.
+    pub const MIN_U64: i128 = 0;
+
+    /// Maximum value of an `u64` Lun type.
+    pub const MAX_U64: i128 = 18_446_744_073_709_551_615;
+
+    /// Minimum value of an `u128` Lun type.
+    pub const MIN_U128: i128 = 0;
+
+    /// Maximum value of an `u128` Lun type.
+    pub const MAX_U128: u128 = 340_282_366_920_938_463_463_374_607_431_768_211_455;
+
+    /// Minimum value of an `f16` Lun type.
+    pub const MIN_F16: f64 = -65504.0;
+
+    /// Maximum value of an `f16` Lun type.
+    pub const MAX_F16: f64 = 65504.0;
+
+    /// Minimum value of an `f32` Lun type.
+    pub const MIN_F32: f64 = -3.402_823_47E+38;
+
+    /// Maximum value of an `f32` Lun type.
+    pub const MAX_F32: f64 = 3.402_823_47E+38;
+
+    /// Minimum value of an `f64` Lun type.
+    #[allow(clippy::excessive_precision)] // NOTE: see #15408 on clippy, it suggests to remove the `+`
+    pub const MIN_F64: f64 = -1.797_693_134_862_315_7E+308;
+
+    /// Maximum value of an `f64` Lun type.
+    #[allow(clippy::excessive_precision)] // NOTE: same as above
+    pub const MAX_F64: f64 = 1.797_693_134_862_315_7E+308;
+
     /// Can this type store an integer literal value?
     pub fn is_int(&self) -> bool {
         matches!(
@@ -176,6 +258,141 @@ impl Type {
             Type::Noreturn => true,
             Type::Str | Type::Char | Type::Type => false,
         }
+    }
+
+    /// Returns the maximum integer this integer type can store, returns None if
+    /// it is not an integer type
+    ///
+    /// # Note
+    ///
+    /// This function doesn't work to get the maximum value of a u128, because
+    /// it cannot be represented as a i128
+    pub const fn integer_max(&self, target: &TargetTriplet) -> Option<i128> {
+        match self {
+            Type::I8 => Some(Type::MAX_I8),
+            Type::I16 => Some(Type::MAX_I16),
+            Type::I32 => Some(Type::MAX_I32),
+            Type::I64 => Some(Type::MAX_I64),
+            Type::I128 => Some(Type::MAX_I128),
+            Type::Isz => match target.ptr_width() {
+                PtrWidth::Ptr16 => Some(Type::MAX_I16),
+                PtrWidth::Ptr32 => Some(Type::MAX_I32),
+                PtrWidth::Ptr64 => Some(Type::MAX_I64),
+            },
+            Type::U8 => Some(Type::MAX_U8),
+            Type::U16 => Some(Type::MAX_U16),
+            Type::U32 => Some(Type::MAX_U32),
+            Type::U64 => Some(Type::MAX_U64),
+            Type::Usz => match target.ptr_width() {
+                PtrWidth::Ptr16 => Some(Type::MAX_U16),
+                PtrWidth::Ptr32 => Some(Type::MAX_U32),
+                PtrWidth::Ptr64 => Some(Type::MAX_U64),
+            },
+            _ => None,
+        }
+    }
+
+    /// Returns the minimum integer this integer type can store, returns None if
+    /// it is not an integer type
+    pub const fn integer_min(&self, target: &TargetTriplet) -> Option<i128> {
+        match self {
+            Type::I8 => Some(Type::MIN_I8),
+            Type::I16 => Some(Type::MIN_I16),
+            Type::I32 => Some(Type::MIN_I32),
+            Type::I64 => Some(Type::MIN_I64),
+            Type::I128 => Some(Type::MIN_I128),
+            Type::Isz => match target.ptr_width() {
+                PtrWidth::Ptr16 => Some(Type::MIN_I16),
+                PtrWidth::Ptr32 => Some(Type::MIN_I32),
+                PtrWidth::Ptr64 => Some(Type::MIN_I64),
+            },
+            Type::U8 => Some(Type::MIN_U8),
+            Type::U16 => Some(Type::MIN_U16),
+            Type::U32 => Some(Type::MIN_U32),
+            Type::U64 => Some(Type::MIN_U64),
+            Type::U128 => Some(Type::MIN_U128),
+            Type::Usz => match target.ptr_width() {
+                PtrWidth::Ptr16 => Some(Type::MIN_U16),
+                PtrWidth::Ptr32 => Some(Type::MIN_U32),
+                PtrWidth::Ptr64 => Some(Type::MIN_U64),
+            },
+            _ => None,
+        }
+    }
+
+    /// Return the range of integer this integer type supports, returns None if
+    /// it is note an integer
+    ///
+    /// # Note `u128` type
+    ///
+    /// Because we can't represent the maximum value of a `u128` inside a `i128`
+    /// this function does not work for `u128`.
+    pub const fn integer_range(&self, target: &TargetTriplet) -> Option<RangeInclusive<i128>> {
+        // NOTE: we are not using `?` operator here because it's not supported
+        // in const evaluation
+        let min = match self.integer_min(target) {
+            Some(min) => min,
+            None => return None,
+        };
+
+        let max = match self.integer_max(target) {
+            Some(max) => max,
+            None => return None,
+        };
+
+        Some(min..=max)
+    }
+
+    /// Returns the maximum float this float type can store, returns None if
+    /// it is not a float type
+    ///
+    /// # Note `f128`
+    ///
+    /// This function doesn't support f128 because they are not yet stable in Rust.
+    pub const fn float_max(&self) -> Option<f64> {
+        match self {
+            Type::F16 => Some(Type::MAX_F16),
+            Type::F32 => Some(Type::MAX_F32),
+            Type::F64 => Some(Type::MAX_F64),
+            _ => None,
+        }
+    }
+
+    /// Returns the minimum float this float type can store, returns None if
+    /// it is not a float type
+    ///
+    /// # Note `f128`
+    ///
+    /// This function doesn't support f128 because they are not yet stable in Rust.
+    pub const fn float_min(&self) -> Option<f64> {
+        match self {
+            Type::F16 => Some(Type::MIN_F16),
+            Type::F32 => Some(Type::MIN_F32),
+            Type::F64 => Some(Type::MIN_F64),
+            _ => None,
+        }
+    }
+
+    /// Return the range of float this float type supports, returns None if it
+    /// is note an float
+    ///
+    /// # Note `f128`
+    ///
+    /// This function doesn't support f128 because they are not yet stable in Rust.
+    pub const fn float_range(&self) -> Option<RangeInclusive<f64>> {
+        // NOTE: we are not using `?` operator here because it's not supported
+        // in const evaluation
+        let min = match self.float_min() {
+            Some(min) => min,
+            None => return None,
+        };
+
+        let max = match self.float_max() {
+            Some(max) => max,
+            None => return None,
+        };
+
+        Some(min..=max)
     }
 }
 

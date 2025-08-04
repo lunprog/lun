@@ -1,6 +1,9 @@
 //! Diagnostics that can be emitted by the semantic checker.
 
-use std::fmt::Display;
+use std::{
+    fmt::{self, Display},
+    ops::RangeInclusive,
+};
 
 use lunc_diag::{ErrorCode, Label, ToDiagnostic, WarnCode};
 use lunc_utils::{Span, list_fmt};
@@ -269,5 +272,59 @@ impl ToDiagnostic for WUnusedLabel {
             .with_code(WarnCode::UnusedLabel)
             .with_message(format!("unused label '{}'", self.label))
             .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
+
+/// `i don't know 128`, is when you support both signedness of the integer.
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub enum Idk128 {
+    I128(i128),
+    U128(u128),
+    F64(f64),
+}
+
+impl Display for Idk128 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Idk128::I128(i128) => {
+                write!(f, "{i128}")
+            }
+            Idk128::U128(u128) => {
+                write!(f, "{u128}")
+            }
+            Idk128::F64(f64) => {
+                write!(f, "{f64:e}")
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct OverflowingLiteral {
+    /// the integer literal
+    pub integer: Idk128,
+    /// the type of the integer literal that is overflowing
+    pub typ: Type,
+    /// range of valid integers for the `typ`
+    pub range: RangeInclusive<Idk128>,
+    /// the location of the integer type
+    pub loc: Span,
+}
+
+impl ToDiagnostic for OverflowingLiteral {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::OverflowingLiteral)
+            .with_message("literal out of range")
+            .with_label(Label::primary(self.loc.fid, self.loc))
+            .with_note(format!(
+                "the literal (of value {}) does not fit in the type '{}'",
+                self.integer, self.typ
+            ))
+            .with_note(format!(
+                "the range of valid integers for this type is '{}..={}'",
+                self.range.start(),
+                self.range.end()
+            ))
     }
 }

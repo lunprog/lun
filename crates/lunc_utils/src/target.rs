@@ -92,8 +92,14 @@ impl TargetTriplet {
         Some(TargetTriplet { arch, sys, env })
     }
 
+    /// Returns the host target, will panic if the target is not supported.
     pub const fn host_target() -> TargetTriplet {
         TargetTriplet::maybe_host_triplet().unwrap()
+    }
+
+    /// Returns the pointer width of this architecture.
+    pub const fn ptr_width(&self) -> PtrWidth {
+        self.arch.ptr_width()
     }
 }
 
@@ -248,6 +254,22 @@ pub enum Arch {
     riscv64,
 }
 
+impl Arch {
+    /// Returns the pointer width of this architecture.
+    pub const fn ptr_width(&self) -> PtrWidth {
+        use PtrWidth::*;
+
+        match self {
+            Arch::x86_64 => Ptr64,
+            Arch::x86 => Ptr32,
+            Arch::arm => Ptr32,
+            Arch::aarch64 => Ptr64,
+            Arch::riscv32 => Ptr32,
+            Arch::riscv64 => Ptr64,
+        }
+    }
+}
+
 impl Display for Arch {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -314,5 +336,27 @@ impl Display for Env {
                 Env::Macho => "macho",
             }
         )
+    }
+}
+
+/// Width of the pointer for a target, supported: 16 bits, 32 bits, 64 bits and
+/// 128 bits?
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PtrWidth {
+    Ptr16,
+    Ptr32,
+    Ptr64,
+}
+
+impl PtrWidth {
+    /// Returns the amount of bits a target has
+    pub const fn bits(self) -> u8 {
+        use PtrWidth::*;
+
+        match self {
+            Ptr16 => 16,
+            Ptr32 => 32,
+            Ptr64 => 64,
+        }
     }
 }
