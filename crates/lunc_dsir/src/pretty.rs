@@ -2,7 +2,10 @@
 
 use std::io;
 
-use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
+use lunc_utils::{
+    Span,
+    pretty::{PrettyCtxt, PrettyDump},
+};
 
 use crate::{
     DsArg, DsBlock, DsExpr, DsExpression, DsItem, DsItemDirective, DsModule, DsStatement, DsStmt,
@@ -149,7 +152,13 @@ impl PrettyDump for DsExpr {
             }
             DsExpr::Block { label, block } => {
                 ctx.pretty_struct("Block")
-                    .field("label", label)
+                    .field(
+                        "label",
+                        (
+                            label.clone().map(|l| l.0),
+                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
+                        ),
+                    )
                     .field("block", block)
                     .finish()?;
 
@@ -157,7 +166,13 @@ impl PrettyDump for DsExpr {
             }
             DsExpr::Loop { label, body } => {
                 ctx.pretty_struct("Loop")
-                    .field("label", label)
+                    .field(
+                        "label",
+                        (
+                            label.clone().map(|l| l.0),
+                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
+                        ),
+                    )
                     .field("body", body)
                     .finish()?;
 

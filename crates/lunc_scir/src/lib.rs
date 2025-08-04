@@ -319,7 +319,7 @@ pub enum ScExpr {
     ///
     /// [`DsExpr::Block`]: lunc_dsir::DsExpr::Block
     Block {
-        label: Option<String>,
+        label: Option<(String, Span)>,
         block: ScBlock,
         /// label index after checking MUST be `Some(..)`
         index: Option<usize>,
@@ -328,7 +328,7 @@ pub enum ScExpr {
     ///
     /// [`DsExpr::Loop`]: lunc_dsir::DsExpr::Loop
     Loop {
-        label: Option<String>,
+        label: Option<(String, Span)>,
         body: ScBlock,
         /// label index after checking MUST be `Some(..)`
         index: Option<usize>,
@@ -695,14 +695,23 @@ impl SemaChecker {
 #[derive(Debug, Clone)]
 pub struct LabelInfo {
     /// name of the label, `:label` in continue / break and `label:` in
-    /// block and loops expression
-    pub name: Option<String>,
+    /// block and loops expression and it's location
+    pub name: Option<(String, Span)>,
     /// index of the loop
     pub index: usize,
     /// expected type of the loop
     pub typ: Type,
     /// is the label info referring to a loop?
     pub is_loop: bool,
+    /// **For loop**'s label, if set to `true` it indicates that we `break`'d
+    /// of the loop and `false` if we never `break`'d of the loop. It is used
+    /// to compute the type of a loop, because if the loop is truly infinite:
+    /// we can't reach the statement after the loop, then the type of the loop
+    /// is `noreturn`.
+    ///
+    /// **For block**'s label, it can indicate the we never used the label to
+    /// short circuit the block.
+    pub break_out: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -721,7 +730,7 @@ impl LabelStack {
     }
 
     /// Defines a new label
-    pub fn define_label(&mut self, name: Option<String>, is_loop: bool) -> usize {
+    pub fn define_label(&mut self, name: Option<(String, Span)>, is_loop: bool) -> usize {
         let index = self.last;
         self.last += 1;
 
@@ -730,6 +739,7 @@ impl LabelStack {
             index,
             typ: Type::Unknown,
             is_loop,
+            break_out: false,
         });
 
         index
@@ -758,7 +768,7 @@ impl LabelStack {
     /// Get the label info by name
     pub fn get_by_name(&self, needle: impl AsRef<str>) -> Option<&LabelInfo> {
         for info in &self.labels {
-            if let Some(name) = &info.name
+            if let Some((name, _)) = &info.name
                 && name == needle.as_ref()
             {
                 return Some(info);
@@ -771,7 +781,7 @@ impl LabelStack {
     /// Get a mutable reference to the label info by name
     pub fn get_mut_by_name(&mut self, needle: impl AsRef<str>) -> Option<&mut LabelInfo> {
         for info in &mut self.labels {
-            if let Some(name) = &info.name
+            if let Some((name, _)) = &info.name
                 && name == needle.as_ref()
             {
                 return Some(info);
@@ -779,6 +789,13 @@ impl LabelStack {
         }
 
         None
+    }
+
+    /// Indicate that the label was used in a `break` expression
+    pub fn set_breaked_out(&mut self, idx: usize) {
+        self.get_mut_by_idx(idx)
+            .expect("should be a working label")
+            .break_out = true;
     }
 }
 

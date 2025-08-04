@@ -1,7 +1,10 @@
 //! Pretty printing for SCIR.
 use std::io;
 
-use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
+use lunc_utils::{
+    Span,
+    pretty::{PrettyCtxt, PrettyDump},
+};
 
 use crate::{ScArg, ScBlock, ScExpr, ScExpression, ScItem, ScModule, ScStatement, ScStmt};
 
@@ -132,7 +135,13 @@ impl PrettyDump for ScExpr {
                 index,
             } => {
                 ctx.pretty_struct("Block")
-                    .field("label", label)
+                    .field(
+                        "label",
+                        (
+                            label.clone().map(|l| l.0),
+                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
+                        ),
+                    )
                     .field("block", block)
                     .field("index", index)
                     .finish()?;
@@ -141,7 +150,13 @@ impl PrettyDump for ScExpr {
             }
             ScExpr::Loop { label, body, index } => {
                 ctx.pretty_struct("Loop")
-                    .field("label", label)
+                    .field(
+                        "label",
+                        (
+                            label.clone().map(|l| l.0),
+                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
+                        ),
+                    )
                     .field("body", body)
                     .field("index", index)
                     .finish()?;

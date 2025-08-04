@@ -2,7 +2,10 @@
 
 use std::io;
 
-use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
+use lunc_utils::{
+    Span,
+    pretty::{PrettyCtxt, PrettyDump},
+};
 
 use crate::{
     directive::{ItemDirective, QualifiedPath},
@@ -135,7 +138,7 @@ impl PrettyDump for Expr {
             }
             Expr::BlockWithLabel { label, block } => {
                 ctx.pretty_struct("BlockWithLabel")
-                    .field("label", label)
+                    .field("label", (&label.0, &label.1))
                     .field("block", block)
                     .finish()?;
 
@@ -143,7 +146,13 @@ impl PrettyDump for Expr {
             }
             Expr::PredicateLoop { label, cond, body } => {
                 ctx.pretty_struct("PredicateLoop")
-                    .field("label", label)
+                    .field(
+                        "label",
+                        (
+                            label.clone().map(|l| l.0),
+                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
+                        ),
+                    )
                     .field("cond", cond)
                     .field("body", body)
                     .finish()?;
@@ -157,7 +166,13 @@ impl PrettyDump for Expr {
                 body,
             } => {
                 ctx.pretty_struct("IteratorLoop")
-                    .field("label", label)
+                    .field(
+                        "label",
+                        (
+                            label.clone().map(|l| l.0),
+                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
+                        ),
+                    )
                     .field("variable", variable)
                     .field("iterator", iterator)
                     .field("body", body)
@@ -167,7 +182,13 @@ impl PrettyDump for Expr {
             }
             Expr::InfiniteLoop { label, body } => {
                 ctx.pretty_struct("InfiniteLoop")
-                    .field("label", label)
+                    .field(
+                        "label",
+                        (
+                            label.clone().map(|l| l.0),
+                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
+                        ),
+                    )
                     .field("body", body)
                     .finish()?;
 

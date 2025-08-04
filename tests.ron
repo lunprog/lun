@@ -462,7 +462,7 @@
         If {
           cond: boolean true @ 542..546 (fid = 0);
           then_br: Block {
-            label: none;
+            label: none @ 0..0 (fid = 0);
             block: Block [
               FunCall {
                 callee: Symbol {
@@ -481,7 +481,7 @@
             ] @ 547..570 (fid = 0);
           } @ 539..599 (fid = 0);
           else_br: Block {
-            label: none;
+            label: none @ 0..0 (fid = 0);
             block: Block [
               FunCall {
                 callee: Symbol {
@@ -516,7 +516,7 @@
         } @ 625..660 (fid = 0) @ 625..660 (fid = 0),
 
         Block {
-          label: none;
+          label: none @ 0..0 (fid = 0);
           block: Block [
             Binary {
               lhs: Underscore @ 690..691 (fid = 0);
@@ -546,7 +546,7 @@
         } @ 680..722 (fid = 0) @ 680..722 (fid = 0),
 
         Loop {
-          label: none;
+          label: none @ 0..0 (fid = 0);
           body: Block [
             Break {
               label: none;
@@ -1053,7 +1053,7 @@
         } @ 179..185 (fid = 0),
 
         Loop {
-          label: none;
+          label: none @ 0..0 (fid = 0);
           body: Block [
             If {
               cond: Unary {
@@ -1080,7 +1080,7 @@
             } @ none @ none,
 
             @last_expr: Block {
-              label: none;
+              label: none @ 0..0 (fid = 0);
               block: Block [
                 FunCall {
                   callee: Symbol {
@@ -1130,7 +1130,7 @@
         } @ 248..254 (fid = 0),
 
         @last_expr: Loop {
-          label: label;
+          label: label @ 261..266 (fid = 0);
           body: Block [
             If {
               cond: Unary {
@@ -1173,7 +1173,7 @@
             } @ none @ none,
 
             @last_expr: Block {
-              label: none;
+              label: none @ 0..0 (fid = 0);
               block: Block [
                 FunCall {
                   callee: Symbol {
@@ -1970,7 +1970,7 @@
                       } @ 35..41 (fid = 2);
                       then_br: Expression {
                         expr: Block {
-                          label: none;
+                          label: none @ 0..0 (fid = 0);
                           block: Block {
                             stmts: [];
                             last_expr: Expression {
@@ -1987,13 +1987,13 @@
                             } @ 52..53 (fid = 2);
                             typ: i32;
                           } @ 42..59 (fid = 2);
-                          index: 0;
+                          index: none;
                         };
                         typ: i32;
                       } @ 32..104 (fid = 2);
                       else_br: Expression {
                         expr: Block {
-                          label: none;
+                          label: none @ 0..0 (fid = 0);
                           block: Block {
                             stmts: [];
                             last_expr: Expression {
@@ -2086,7 +2086,7 @@
                             } @ 75..98 (fid = 2);
                             typ: i32;
                           } @ 65..104 (fid = 2);
-                          index: 1;
+                          index: none;
                         };
                         typ: i32;
                       } @ 65..104 (fid = 2);
@@ -2754,7 +2754,7 @@
         ] @ 652..694 (fid = 0) @ 652..694 (fid = 0) @ 652..694 (fid = 0),
 
         BlockWithLabel {
-          label: label_block;
+          label: label_block @ 700..711 (fid = 0);
           block: Block [
             Break {
               label: label_block;
@@ -2766,7 +2766,7 @@
         } @ 700..748 (fid = 0) @ 700..748 (fid = 0),
 
         PredicateLoop {
-          label: none;
+          label: none @ 0..0 (fid = 0);
           cond: FunCall {
             callee: ident predicate @ 782..791 (fid = 0);
             args: [];
@@ -2784,7 +2784,7 @@
         } @ 776..828 (fid = 0) @ 776..828 (fid = 0),
 
         PredicateLoop {
-          label: label;
+          label: label @ 834..839 (fid = 0);
           cond: ident condition @ 847..856 (fid = 0);
           body: Block [
             FunCall {
@@ -2803,7 +2803,7 @@
         } @ 834..936 (fid = 0) @ 834..936 (fid = 0),
 
         IteratorLoop {
-          label: none;
+          label: none @ 0..0 (fid = 0);
           variable: i;
           iterator: FunCall {
             callee: ident range @ 972..977 (fid = 0);
@@ -2819,7 +2819,7 @@
         } @ 963..1008 (fid = 0) @ 963..1008 (fid = 0),
 
         IteratorLoop {
-          label: label2;
+          label: label2 @ 1014..1020 (fid = 0);
           variable: j;
           iterator: FunCall {
             callee: ident range @ 1031..1036 (fid = 0);
@@ -2835,7 +2835,7 @@
         } @ 1014..1068 (fid = 0) @ 1014..1068 (fid = 0),
 
         InfiniteLoop {
-          label: none;
+          label: none @ 0..0 (fid = 0);
           body: Block [
             Break {
               label: none;
@@ -2847,7 +2847,7 @@
         } @ 1095..1138 (fid = 0) @ 1095..1138 (fid = 0),
 
         InfiniteLoop {
-          label: label3;
+          label: label3 @ 1144..1150 (fid = 0);
           body: Block [
             @last_expr: none,
           ] @ 1157..1180 (fid = 0);
@@ -3095,7 +3095,7 @@
                 } @ 36..41 (fid = 0);
                 then_br: Expression {
                   expr: Block {
-                    label: none;
+                    label: none @ 0..0 (fid = 0);
                     block: Block {
                       stmts: [
                         Expression {
@@ -3111,7 +3111,7 @@
                       last_expr: none;
                       typ: noreturn;
                     } @ 42..68 (fid = 0);
-                    index: 0;
+                    index: none;
                   };
                   typ: noreturn;
                 } @ 33..68 (fid = 0);
@@ -3171,7 +3171,7 @@
                 } @ 117..122 (fid = 0);
                 then_br: Expression {
                   expr: Block {
-                    label: none;
+                    label: none @ 0..0 (fid = 0);
                     block: Block {
                       stmts: [
                         Expression {
@@ -3187,7 +3187,7 @@
                       last_expr: none;
                       typ: noreturn;
                     } @ 123..150 (fid = 0);
-                    index: 0;
+                    index: none;
                   };
                   typ: noreturn;
                 } @ 114..150 (fid = 0);
@@ -3247,7 +3247,7 @@
                 } @ 202..207 (fid = 0);
                 then_br: Expression {
                   expr: Block {
-                    label: none;
+                    label: none @ 0..0 (fid = 0);
                     block: Block {
                       stmts: [];
                       last_expr: Expression {
@@ -3261,7 +3261,7 @@
                       } @ 218..228 (fid = 0);
                       typ: noreturn;
                     } @ 208..234 (fid = 0);
-                    index: 0;
+                    index: none;
                   };
                   typ: noreturn;
                 } @ 199..234 (fid = 0);
@@ -3327,7 +3327,7 @@
                 } @ 287..292 (fid = 0);
                 then_br: Expression {
                   expr: Block {
-                    label: none;
+                    label: none @ 0..0 (fid = 0);
                     block: Block {
                       stmts: [];
                       last_expr: Expression {
@@ -3341,7 +3341,7 @@
                       } @ 303..324 (fid = 0);
                       typ: noreturn;
                     } @ 293..330 (fid = 0);
-                    index: 0;
+                    index: none;
                   };
                   typ: noreturn;
                 } @ 284..330 (fid = 0);
@@ -3388,7 +3388,7 @@
                 } @ 383..388 (fid = 0);
                 then_br: Expression {
                   expr: Block {
-                    label: none;
+                    label: none @ 0..0 (fid = 0);
                     block: Block {
                       stmts: [];
                       last_expr: Expression {
@@ -3399,7 +3399,7 @@
                       } @ 399..405 (fid = 0);
                       typ: noreturn;
                     } @ 389..411 (fid = 0);
-                    index: 0;
+                    index: none;
                   };
                   typ: noreturn;
                 } @ 380..411 (fid = 0);
@@ -3449,12 +3449,12 @@
           stmts: [];
           last_expr: Expression {
             expr: Loop {
-              label: lab;
+              label: lab @ 28..31 (fid = 0);
               body: Block {
                 stmts: [];
                 last_expr: Expression {
                   expr: Loop {
-                    label: none;
+                    label: none @ 0..0 (fid = 0);
                     body: Block {
                       stmts: [
                         Expression {
@@ -3549,7 +3549,7 @@
               } @ 197..200 (fid = 0);
               value: Expression {
                 expr: Block {
-                  label: blk;
+                  label: blk @ 203..206 (fid = 0);
                   block: Block {
                     stmts: [
                       Expression {
@@ -3601,6 +3601,46 @@
       value: none;
     };
   } @ 166..252 (fid = 0),
+
+  GlobalDef {
+    name: unused_label_block @ 254..272 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: none;
+        body: Block {
+          stmts: [
+            Expression {
+              expr: Block {
+                label: blk @ 288..291 (fid = 0);
+                block: Block {
+                  stmts: [];
+                  last_expr: none;
+                  typ: void;
+                } @ 293..295 (fid = 0);
+                index: 0;
+              };
+              typ: void;
+            } @ 288..295 (fid = 0) @ 288..295 (fid = 0),
+          ];
+          last_expr: none;
+          typ: void;
+        } @ 282..298 (fid = 0);
+      };
+      typ: *fun () -> void;
+    } @ 276..298 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: unused_label_block @ 254..272 (fid = 0);
+      which: 0;
+      path: orb.unused_label_block;
+      typ: *fun () -> void;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 254..298 (fid = 0),
 ]
 warning[W002]: unreachable code
   ┌─ ./tests/scir/label_kw_expr.lun:5:13
@@ -3619,8 +3659,241 @@ warning[W002]: unreachable code
 16 │         2
    │         ^ the unreachable code
 
-warning: compilation of `./tests/scir/label_kw_expr` succeeded but 2 warnings emitted.
+warning[W003]: unused label 'blk'
+   ┌─ ./tests/scir/label_kw_expr.lun:21:5
+   │
+21 │     blk: {};
+   │     ^^^
 
+warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings emitted.
+
+",
+        expected_test_out: "",
+    ),
+    "scir/loop_semantics": (
+        expected_compiler_out: "scir = [
+  GlobalDef {
+    name: loop_forever @ 0..12 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: usz @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: noreturn;
+            };
+          };
+          typ: type;
+        } @ 25..33 (fid = 0);
+        body: Block {
+          stmts: [];
+          last_expr: Expression {
+            expr: Loop {
+              label: none @ 0..0 (fid = 0);
+              body: Block {
+                stmts: [];
+                last_expr: none;
+                typ: void;
+              } @ 45..47 (fid = 0);
+              index: 0;
+            };
+            typ: noreturn;
+          } @ 40..47 (fid = 0);
+          typ: noreturn;
+        } @ 34..49 (fid = 0);
+      };
+      typ: *fun () -> noreturn;
+    } @ 16..49 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: loop_forever @ 0..12 (fid = 0);
+      which: 0;
+      path: orb.loop_forever;
+      typ: *fun () -> noreturn;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 0..49 (fid = 0),
+
+  GlobalDef {
+    name: still_loop_forever @ 51..69 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: usz @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: noreturn;
+            };
+          };
+          typ: type;
+        } @ 82..90 (fid = 0);
+        body: Block {
+          stmts: [];
+          last_expr: Expression {
+            expr: Loop {
+              label: none @ 0..0 (fid = 0);
+              body: Block {
+                stmts: [];
+                last_expr: Expression {
+                  expr: Loop {
+                    label: inner @ 112..117 (fid = 0);
+                    body: Block {
+                      stmts: [
+                        Expression {
+                          expr: Break {
+                            label: inner;
+                            expr: none;
+                            index: 1;
+                          };
+                          typ: noreturn;
+                        } @ 138..150 (fid = 0) @ 138..150 (fid = 0),
+                      ];
+                      last_expr: none;
+                      typ: noreturn;
+                    } @ 124..161 (fid = 0);
+                    index: 1;
+                  };
+                  typ: void;
+                } @ 112..161 (fid = 0);
+                typ: void;
+              } @ 102..167 (fid = 0);
+              index: 0;
+            };
+            typ: noreturn;
+          } @ 97..167 (fid = 0);
+          typ: noreturn;
+        } @ 91..169 (fid = 0);
+      };
+      typ: *fun () -> noreturn;
+    } @ 73..169 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: still_loop_forever @ 51..69 (fid = 0);
+      which: 0;
+      path: orb.still_loop_forever;
+      typ: *fun () -> noreturn;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 51..169 (fid = 0),
+
+  GlobalDef {
+    name: loop_forever_in_practice @ 171..195 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: none;
+        body: Block {
+          stmts: [
+            VariableDef {
+              name: reachable @ 405..414 (fid = 0);
+              mutable: false;
+              typexpr: none;
+              value: Expression {
+                expr: integer 12;
+                typ: i32;
+              } @ 418..420 (fid = 0);
+              sym: Symbol {
+                kind: local;
+                name: reachable @ 405..414 (fid = 0);
+                which: 0;
+                path: reachable;
+                typ: i32;
+                typeness: implicit;
+                value: none;
+              };
+            } @ 405..420 (fid = 0),
+
+            Expression {
+              expr: Loop {
+                label: none @ 0..0 (fid = 0);
+                body: Block {
+                  stmts: [];
+                  last_expr: Expression {
+                    expr: If {
+                      cond: Expression {
+                        expr: boolean false;
+                        typ: bool;
+                      } @ 445..450 (fid = 0);
+                      then_br: Expression {
+                        expr: Block {
+                          label: none @ 0..0 (fid = 0);
+                          block: Block {
+                            stmts: [];
+                            last_expr: Expression {
+                              expr: Break {
+                                label: none;
+                                expr: none;
+                                index: 0;
+                              };
+                              typ: noreturn;
+                            } @ 465..470 (fid = 0);
+                            typ: noreturn;
+                          } @ 451..480 (fid = 0);
+                          index: none;
+                        };
+                        typ: noreturn;
+                      } @ 442..480 (fid = 0);
+                      else_br: none;
+                    };
+                    typ: void;
+                  } @ 442..480 (fid = 0);
+                  typ: void;
+                } @ 432..486 (fid = 0);
+                index: 0;
+              };
+              typ: void;
+            } @ 427..486 (fid = 0) @ 427..486 (fid = 0),
+
+            Expression {
+              expr: Symbol {
+                kind: local;
+                name: reachable @ 405..414 (fid = 0);
+                which: 0;
+                path: reachable;
+                typ: i32;
+                typeness: implicit;
+                value: none;
+              };
+              typ: i32;
+            } @ 492..501 (fid = 0) @ 492..501 (fid = 0),
+          ];
+          last_expr: none;
+          typ: void;
+        } @ 205..504 (fid = 0);
+      };
+      typ: *fun () -> void;
+    } @ 199..504 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: loop_forever_in_practice @ 171..195 (fid = 0);
+      which: 0;
+      path: orb.loop_forever_in_practice;
+      typ: *fun () -> void;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 171..504 (fid = 0),
+]
 ",
         expected_test_out: "",
     ),
@@ -3689,7 +3962,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 2 warnings em
               } @ 49..52 (fid = 0);
               value: Expression {
                 expr: Block {
-                  label: blk;
+                  label: blk @ 55..58 (fid = 0);
                   block: Block {
                     stmts: [
                       Expression {

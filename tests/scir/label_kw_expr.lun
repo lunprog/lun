@@ -16,3 +16,7 @@ block_label :: fun() {
         2
     };
 }
+
+unused_label_block :: fun() {
+    blk: {};
+}

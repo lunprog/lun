@@ -16,7 +16,7 @@ use lunc_parser::{
     stmt::{Block, Statement, Stmt},
 };
 use lunc_utils::{
-    FromHigher, lower, opt_unrecheable,
+    FromHigher, Span, lower, opt_unrecheable,
     symbol::{EffectivePath, LazySymbol, SymKind, Symbol, Type, Typeness},
 };
 
@@ -394,7 +394,7 @@ pub enum DsExpr {
     ///
     /// [`Expr::Block`]: lunc_parser::expr::Expr::Block
     Block {
-        label: Option<String>,
+        label: Option<(String, Span)>,
         block: DsBlock,
     },
     /// See [`Expr::InfiniteLoop`], [`Expr::IteratorLoop`] and [`Expr::PredicateLoop`].
@@ -403,7 +403,7 @@ pub enum DsExpr {
     /// [`Expr::IteratorLoop`]: lunc_parser::expr::Expr::IteratorLoop
     /// [`Expr::PredicateLoop`]: lunc_parser::expr::Expr::PredicateLoop
     Loop {
-        label: Option<String>,
+        label: Option<(String, Span)>,
         body: DsBlock,
     },
     /// See [`Expr::Return`]
@@ -597,7 +597,7 @@ pub fn expr_block(block: DsBlock) -> DsExpression {
 }
 
 /// Creates a loop expression without location.
-pub fn expr_loop(label: Option<String>, body: DsBlock) -> DsExpression {
+pub fn expr_loop(label: Option<(String, Span)>, body: DsBlock) -> DsExpression {
     DsExpression {
         expr: DsExpr::Loop { label, body },
         loc: None,

@@ -451,6 +451,8 @@ pub enum WarnCode {
     NeverUsedSymbol = 1,
     /// Unreachable code
     UnreachableCode = 2,
+    /// unused label
+    UnusedLabel = 3,
 }
 
 impl Display for WarnCode {

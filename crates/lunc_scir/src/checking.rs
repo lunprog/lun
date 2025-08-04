@@ -12,7 +12,7 @@ use crate::diags::{
     ArityDoesntMatch, BreakFromLoopWithValue, BreakUseAnImplicitLabelInBlock, CallRequiresFuncType,
     CantContinueABlock, CantResolveComptimeValue, ExpectedPlaceExpression, ExpectedTypeFoundExpr,
     LabelKwOutsideLoopOrBlock, MismatchedTypes, TypeAnnotationsNeeded, UseOfUndefinedLabel,
-    WUnreachableCode,
+    WUnreachableCode, WUnusedLabel,
 };
 
 use super::*;
@@ -703,12 +703,27 @@ impl SemaChecker {
                 block,
                 index,
             } => {
-                *index = Some(self.label_stack.define_label(label.clone(), false));
+                if label.is_some() {
+                    *index = Some(self.label_stack.define_label(label.clone(), false));
+                }
 
                 self.ck_block(block, coerce_to)?;
 
-                expr.typ = if let Some(LabelInfo { typ, .. }) =
-                    self.label_stack.get_by_idx(index.unwrap())
+                if let Some(index) = index
+                    && let Some(info) = self.label_stack.get_by_idx(*index)
+                    && !info.break_out
+                {
+                    let Some((label, loc)) = info.name.clone() else {
+                        // SAFETY: cannot be reached because we only define a
+                        // label info if there is a named label.
+                        opt_unrecheable!()
+                    };
+
+                    self.sink.emit(WUnusedLabel { loc, label })
+                }
+
+                expr.typ = if let Some(index) = index
+                    && let Some(LabelInfo { typ, .. }) = self.label_stack.get_by_idx(*index)
                 {
                     typ.clone().as_option().unwrap_or(block.typ.clone())
                 } else {
@@ -724,7 +739,17 @@ impl SemaChecker {
 
                 self.block_typeck(&Type::Void, body, None, None, None);
 
-                expr.typ = Type::Void;
+                let break_out = self
+                    .label_stack
+                    .get_by_idx(index.unwrap())
+                    .expect("set the index just above")
+                    .break_out;
+
+                expr.typ = if !break_out {
+                    Type::Noreturn
+                } else {
+                    Type::Void
+                };
             }
             ScExpr::Return { expr: exp } => {
                 if let Some(exp) = exp {
@@ -800,6 +825,9 @@ impl SemaChecker {
 
                     (typ.clone(), *is_loop)
                 };
+
+                // we indicate that we used this label inside a break.
+                self.label_stack.set_breaked_out(index.unwrap());
 
                 if let Some(exp) = exp {
                     self.ck_expr(exp, None)?;
@@ -907,17 +935,21 @@ impl SemaChecker {
             }
             ScExpr::Null => {
                 self.sink.emit(feature_todo! {
-                    feature: "optional types are not yet implemented",
+                    feature: "optional types",
                     label: "'null' represent not having a value",
                     loc: expr.loc.clone().unwrap()
                 });
+
+                expr.typ = Type::Void;
             }
             ScExpr::MemberAccess { expr: _, member: _ } => {
                 self.sink.emit(feature_todo! {
                     feature: "field access",
-                    label: "field access, struct type definition are not yet implemented",
+                    label: "field access and struct type definition",
                     loc: expr.loc.clone().unwrap()
                 });
+
+                expr.typ = Type::Void;
             }
             ScExpr::QualifiedPath {
                 path: _,

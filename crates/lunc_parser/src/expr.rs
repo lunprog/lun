@@ -139,12 +139,12 @@ pub enum Expr {
     // TODO: make the grammar for block expr
     Block(Block),
     /// block with label
-    BlockWithLabel { label: String, block: Block },
+    BlockWithLabel { label: (String, Span), block: Block },
     /// predicate loop expression
     ///
     /// "while" expression block
     PredicateLoop {
-        label: Option<String>,
+        label: Option<(String, Span)>,
         cond: Box<Expression>,
         body: Block,
     },
@@ -152,7 +152,7 @@ pub enum Expr {
     ///
     /// "for" ident "in" expression block
     IteratorLoop {
-        label: Option<String>,
+        label: Option<(String, Span)>,
         variable: String,
         iterator: Box<Expression>,
         body: Block,
@@ -160,7 +160,10 @@ pub enum Expr {
     /// infinite loop
     ///
     /// "loop" block
-    InfiniteLoop { label: Option<String>, body: Block },
+    InfiniteLoop {
+        label: Option<(String, Span)>,
+        body: Block,
+    },
     /// return expression
     ///
     /// "return" expression?
@@ -972,10 +975,13 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 /// parses block expression
 pub fn parse_block_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     if let Some(Ident(id)) = parser.peek_tt() {
-        let label = id.clone();
+        let id = id.clone();
+
         let Some(Token { tt: _, loc: lo }) = parser.pop() else {
             opt_unrecheable!()
         };
+
+        let label = (id, lo.clone());
 
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
 
@@ -1021,11 +1027,7 @@ pub fn parse_predicate_loop_expr(parser: &mut Parser) -> Result<Expression, Diag
     let hi = body.loc.clone();
 
     Ok(Expression {
-        expr: Expr::PredicateLoop {
-            label: label.map(|l| l.0),
-            cond,
-            body,
-        },
+        expr: Expr::PredicateLoop { label, cond, body },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1060,7 +1062,7 @@ pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
 
     Ok(Expression {
         expr: Expr::IteratorLoop {
-            label: label.map(|l| l.0),
+            label,
             variable,
             iterator,
             body,
@@ -1092,10 +1094,7 @@ pub fn parse_infinite_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
     let hi = block.loc.clone();
 
     Ok(Expression {
-        expr: Expr::InfiniteLoop {
-            label: label.map(|l| l.0),
-            body: block,
-        },
+        expr: Expr::InfiniteLoop { label, body: block },
         loc: Span::from_ends(lo, hi),
     })
 }

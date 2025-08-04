@@ -254,3 +254,20 @@ impl ToDiagnostic for WUnreachableCode {
             )
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct WUnusedLabel {
+    /// location of the unused NAMED label
+    pub loc: Span,
+    /// name of the label
+    pub label: String,
+}
+
+impl ToDiagnostic for WUnusedLabel {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::warning()
+            .with_code(WarnCode::UnusedLabel)
+            .with_message(format!("unused label '{}'", self.label))
+            .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
