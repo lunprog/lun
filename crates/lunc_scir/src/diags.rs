@@ -107,6 +107,8 @@ impl ToDiagnostic for ArityDoesntMatch {
 
 #[derive(Debug, Clone)]
 pub struct CantResolveComptimeValue {
+    /// optional note
+    pub note: Option<String>,
     /// location of the entire expression trying to be evaluated at compile-time
     pub loc_expr: Span,
     /// location of the (maybe?) inner expression that fails to evaluate at comptime
@@ -123,6 +125,7 @@ impl ToDiagnostic for CantResolveComptimeValue {
                 Label::secondary(self.loc_expr.fid, self.loc_expr)
                     .with_message("due to this expression"),
             )
+            .with_notes_iter(self.note)
     }
 }
 

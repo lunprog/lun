@@ -969,7 +969,50 @@ impl PrettyDump for EffectivePath {
     }
 }
 
-/// A value of an expression evaluated at compile time, during constant folding of SCIR or types are also ValueExprs.
+macro_rules! value_expr_impl_op {
+    {name = $name:ident, errmsg = $errmsg:expr, int_fn = $int_fn:ident, float_fn = $float_fn:expr,} => {
+        /// Tries to perform an operation on two value expression if supported
+        /// returns the expected value, otherwise returns an error that maybe
+        /// contains a note.
+        ///
+        /// # Note
+        ///
+        /// This operation only works if both values have the same type.
+        pub fn $name(&self, other: &ValueExpr) -> Result<Self, Option<String>> {
+            use ValueExpr::*;
+            let err = Some($errmsg.to_string());
+
+            match (self, other) {
+                // signed integers
+                (I8(lhs), I8(rhs)) => Ok(I8(lhs.$int_fn(*rhs).ok_or(err)?)),
+                (I16(lhs), I16(rhs)) => Ok(I16(lhs.$int_fn(*rhs).ok_or(err)?)),
+                (I32(lhs), I32(rhs)) => Ok(I32(lhs.$int_fn(*rhs).ok_or(err)?)),
+                (I64(lhs), I64(rhs)) => Ok(I64(lhs.$int_fn(*rhs).ok_or(err)?)),
+                (I128(lhs), I128(rhs)) => Ok(I128(lhs.$int_fn(*rhs).ok_or(err)?)),
+
+                // unsigned integers
+                (U8(lhs), U8(rhs)) => Ok(U8(lhs.$int_fn(*rhs).ok_or(err)?)),
+                (U16(lhs), U16(rhs)) => Ok(U16(lhs.$int_fn(*rhs).ok_or(err)?)),
+                (U32(lhs), U32(rhs)) => Ok(U32(lhs.$int_fn(*rhs).ok_or(err)?)),
+                (U64(lhs), U64(rhs)) => Ok(U64(lhs.$int_fn(*rhs).ok_or(err)?)),
+                (U128(lhs), U128(rhs)) => Ok(U128(lhs.$int_fn(*rhs).ok_or(err)?)),
+
+                // floats
+                (F32(lhs), F32(rhs)) => Ok(F32($float_fn(lhs, rhs))),
+                (F64(lhs), F64(rhs)) => Ok(F64($float_fn(lhs, rhs))),
+                _ => Err(None),
+            }
+        }
+    };
+}
+
+/// A value of an expression evaluated at compile time, during constant folding
+/// of SCIR or types are also ValueExprs.
+///
+/// # Note
+///
+/// There is no `Usz` or `Isz` value expr, it's because we replace it when we do
+/// the evaluation to the corresponding integer.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueExpr {
     /// Internal value of a type
@@ -980,25 +1023,61 @@ pub enum ValueExpr {
     I32(i32),
     I64(i64),
     I128(i128),
-    Isz(isize),
     U8(u8),
     U16(u16),
     U32(u32),
     U64(u64),
     U128(u128),
-    Usz(usize),
     Str(String),
     Char(char),
     F32(f32),
     F64(f64),
 }
 
+use std::ops::{Add, Div, Mul, Rem, Sub};
+
 impl ValueExpr {
+    /// Tries to convert this value to a type.
     pub fn as_type(self) -> Option<Type> {
         match self {
             ValueExpr::Type(typ) => Some(typ),
             _ => None,
         }
+    }
+
+    value_expr_impl_op! {
+        name = add,
+        errmsg = "integer overflow",
+        int_fn = checked_add,
+        float_fn = Add::add,
+    }
+
+    value_expr_impl_op! {
+        name = sub,
+        errmsg = "integer overflow",
+        int_fn = checked_sub,
+        float_fn = Sub::sub,
+    }
+
+    value_expr_impl_op! {
+        name = mul,
+        errmsg = "integer overflow",
+        int_fn = checked_mul,
+        float_fn = Mul::mul,
+    }
+
+    value_expr_impl_op! {
+        name = div,
+        errmsg = "integer overflow",
+        int_fn = checked_div,
+        float_fn = Div::div,
+    }
+
+    value_expr_impl_op! {
+        name = rem,
+        errmsg = "integer overflow",
+        int_fn = checked_rem,
+        float_fn = Rem::rem,
     }
 }
 
@@ -1040,11 +1119,6 @@ impl PrettyDump for ValueExpr {
 
                 Ok(())
             }
-            ValueExpr::Isz(i) => {
-                ctx.pretty_struct("Isz").field("val", i).finish()?;
-
-                Ok(())
-            }
             ValueExpr::U8(i) => {
                 ctx.pretty_struct("U8").field("val", i).finish()?;
 
@@ -1067,11 +1141,6 @@ impl PrettyDump for ValueExpr {
             }
             ValueExpr::U128(i) => {
                 ctx.pretty_struct("U128").field("val", i).finish()?;
-
-                Ok(())
-            }
-            ValueExpr::Usz(i) => {
-                ctx.pretty_struct("Usz").field("val", i).finish()?;
 
                 Ok(())
             }

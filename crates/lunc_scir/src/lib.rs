@@ -11,7 +11,7 @@ use lunc_dsir::{
 use lunc_utils::{
     FromHigher, Span, lower,
     symbol::{Symbol, Type, ValueExpr},
-    target::TargetTriplet,
+    target::{PtrWidth, TargetTriplet},
 };
 
 pub mod checking;
@@ -597,29 +597,38 @@ impl SemaChecker {
     pub fn evaluate_expr(
         &mut self,
         expr: &ScExpression,
-        typ: Option<Type>,
-    ) -> Result<ValueExpr, Span> {
+    ) -> Result<ValueExpr, (Span, Option<String>)> {
+        let expr_loc = expr.loc.clone().unwrap();
+
         match &expr.expr {
-            ScExpr::IntLit(i) => match typ {
-                Some(Type::I8) => Ok(ValueExpr::I8(*i as i8)),
-                Some(Type::I16) => Ok(ValueExpr::I16(*i as i16)),
-                Some(Type::I32) => Ok(ValueExpr::I32(*i as i32)),
-                Some(Type::I64) => Ok(ValueExpr::I64(*i as i64)),
-                Some(Type::I128) => Ok(ValueExpr::I128(*i as i128)),
-                Some(Type::Isz) => Ok(ValueExpr::Isz(*i as isize)),
-                Some(Type::U8) => Ok(ValueExpr::U8(*i as u8)),
-                Some(Type::U16) => Ok(ValueExpr::U16(*i as u16)),
-                Some(Type::U32) => Ok(ValueExpr::U32(*i as u32)),
-                Some(Type::U64) => Ok(ValueExpr::U64(*i as u64)),
-                Some(Type::U128) => Ok(ValueExpr::U128(*i /* as u128 */)),
-                Some(Type::Usz) => Ok(ValueExpr::Usz(*i as usize)),
+            ScExpr::IntLit(i) => match expr.typ {
+                Type::I8 => Ok(ValueExpr::I8(*i as i8)),
+                Type::I16 => Ok(ValueExpr::I16(*i as i16)),
+                Type::I32 => Ok(ValueExpr::I32(*i as i32)),
+                Type::I64 => Ok(ValueExpr::I64(*i as i64)),
+                Type::I128 => Ok(ValueExpr::I128(*i as i128)),
+                Type::Isz => match self.target.ptr_width() {
+                    PtrWidth::Ptr16 => Ok(ValueExpr::I16(*i as i16)),
+                    PtrWidth::Ptr32 => Ok(ValueExpr::I32(*i as i32)),
+                    PtrWidth::Ptr64 => Ok(ValueExpr::I64(*i as i64)),
+                },
+                Type::U8 => Ok(ValueExpr::U8(*i as u8)),
+                Type::U16 => Ok(ValueExpr::U16(*i as u16)),
+                Type::U32 => Ok(ValueExpr::U32(*i as u32)),
+                Type::U64 => Ok(ValueExpr::U64(*i as u64)),
+                Type::U128 => Ok(ValueExpr::U128(*i /* as u128 */)),
+                Type::Usz => match self.target.ptr_width() {
+                    PtrWidth::Ptr16 => Ok(ValueExpr::U16(*i as u16)),
+                    PtrWidth::Ptr32 => Ok(ValueExpr::U32(*i as u32)),
+                    PtrWidth::Ptr64 => Ok(ValueExpr::U64(*i as u64)),
+                },
                 _ => Ok(ValueExpr::I32(*i as i32)),
             },
             ScExpr::BoolLit(b) => Ok(ValueExpr::Boolean(*b)),
             ScExpr::StringLit(str) => Ok(ValueExpr::Str(str.clone())),
             ScExpr::CharLit(c) => Ok(ValueExpr::Char(*c)),
-            ScExpr::FloatLit(f) => match typ {
-                Some(Type::F16 | Type::F128) => {
+            ScExpr::FloatLit(f) => match expr.typ {
+                Type::F16 | Type::F128 => {
                     self.sink.emit(feature_todo! {
                         feature: "f16 / f128 compile-time evaluation",
                         label: "",
@@ -627,18 +636,26 @@ impl SemaChecker {
                     });
                     Ok(ValueExpr::F32(*f as f32))
                 }
-                Some(Type::F32) => Ok(ValueExpr::F32(*f as f32)),
-                Some(Type::F64) => Ok(ValueExpr::F64(*f /* as f64 */)),
+                Type::F32 => Ok(ValueExpr::F32(*f as f32)),
+                Type::F64 => Ok(ValueExpr::F64(*f /* as f64 */)),
                 _ => Ok(ValueExpr::F32(*f as f32)),
             },
-            ScExpr::Ident(sym) if sym.is_comptime_known() => {
-                sym.value().ok_or(expr.loc.clone().unwrap())
+            ScExpr::Ident(sym) if sym.is_comptime_known() => sym.value().ok_or((expr_loc, None)),
+            ScExpr::Binary { lhs, op, rhs } => {
+                let lhs_val = self.evaluate_expr(lhs)?;
+                let rhs_val = self.evaluate_expr(rhs)?;
+
+                match op {
+                    BinOp::Add => Ok(lhs_val.add(&rhs_val).map_err(|note| (expr_loc, note))?),
+                    BinOp::Sub => Ok(lhs_val.sub(&rhs_val).map_err(|note| (expr_loc, note))?),
+                    BinOp::Mul => Ok(lhs_val.mul(&rhs_val).map_err(|note| (expr_loc, note))?),
+                    BinOp::Div => Ok(lhs_val.div(&rhs_val).map_err(|note| (expr_loc, note))?),
+                    BinOp::Rem => Ok(lhs_val.rem(&rhs_val).map_err(|note| (expr_loc, note))?),
+                    _ => Err((expr_loc, None)),
+                }
             }
             ScExpr::PointerType { mutable, typexpr } => {
-                let typ = self
-                    .evaluate_expr(typexpr, Some(Type::Type))?
-                    .as_type()
-                    .unwrap_or(Type::Void);
+                let typ = self.evaluate_expr(typexpr)?.as_type().unwrap_or(Type::Void);
                 // NOTE: we do not emit a diagnostic because we already did in
                 // the type checking
 
@@ -652,10 +669,11 @@ impl SemaChecker {
                 let mut args_typ = Vec::new();
 
                 for arg in args {
-                    let value_typ_arg = match self.evaluate_expr(arg, Some(Type::Type)) {
+                    let value_typ_arg = match self.evaluate_expr(arg) {
                         Ok(typ) => typ,
-                        Err(loc) => {
+                        Err((loc, note)) => {
                             self.sink.emit(CantResolveComptimeValue {
+                                note,
                                 loc_expr: arg.loc.clone().unwrap(),
                                 loc: loc.clone(),
                             });
@@ -679,10 +697,11 @@ impl SemaChecker {
 
                 // evaluate the return type expression
                 let ret_typ = if let Some(ret_typexpr) = ret {
-                    let value_typ_ret = match self.evaluate_expr(ret_typexpr, Some(Type::Type)) {
+                    let value_typ_ret = match self.evaluate_expr(ret_typexpr) {
                         Ok(typ) => typ,
-                        Err(loc) => {
+                        Err((loc, note)) => {
                             self.sink.emit(CantResolveComptimeValue {
+                                note,
                                 loc_expr: ret_typexpr.loc.clone().unwrap(),
                                 loc: loc.clone(),
                             });
@@ -697,6 +716,7 @@ impl SemaChecker {
                             self.sink.emit(ExpectedTypeFoundExpr {
                                 loc: ret_typexpr.loc.clone().unwrap(),
                             });
+
                             Type::Void
                         }
                     }
@@ -709,7 +729,7 @@ impl SemaChecker {
                     ret: Box::new(ret_typ),
                 }))
             }
-            _ => Err(expr.loc.clone().unwrap()),
+            _ => Err((expr_loc, None)),
         }
     }
 }

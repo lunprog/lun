@@ -95,15 +95,14 @@ impl SemaChecker {
 
                 // we evaluate the type expression
                 let typexpr_as_type = if let Some(typexpr) = &mut **typexpr {
-                    let value = self
-                        .evaluate_expr(typexpr, Some(Type::Type))
-                        .map_err(|loc| {
-                            CantResolveComptimeValue {
-                                loc_expr: typexpr.loc.clone().unwrap(),
-                                loc,
-                            }
-                            .into_diag()
-                        })?;
+                    let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
+                        CantResolveComptimeValue {
+                            note,
+                            loc_expr: typexpr.loc.clone().unwrap(),
+                            loc,
+                        }
+                        .into_diag()
+                    })?;
 
                     Some(value.as_type().unwrap_or(Type::Void))
                 } else {
@@ -124,10 +123,11 @@ impl SemaChecker {
                         Err(d) => self.sink.emit(d),
                     }
 
-                    let value_typ_arg = match self.evaluate_expr(typexpr_arg, Some(Type::Type)) {
+                    let value_typ_arg = match self.evaluate_expr(typexpr_arg) {
                         Ok(typ) => typ,
-                        Err(loc) => {
+                        Err((loc, note)) => {
                             self.sink.emit(CantResolveComptimeValue {
+                                note,
                                 loc_expr: typexpr_arg.loc.clone().unwrap(),
                                 loc: loc.clone(),
                             });
@@ -158,10 +158,11 @@ impl SemaChecker {
                         Err(d) => self.sink.emit(d),
                     }
 
-                    let value_typ_ret = match self.evaluate_expr(ret_typexpr, Some(Type::Type)) {
+                    let value_typ_ret = match self.evaluate_expr(ret_typexpr) {
                         Ok(typ) => typ,
-                        Err(loc) => {
+                        Err((loc, note)) => {
                             self.sink.emit(CantResolveComptimeValue {
+                                note,
                                 loc_expr: ret_typexpr.loc.clone().unwrap(),
                                 loc: loc.clone(),
                             });
@@ -211,15 +212,14 @@ impl SemaChecker {
 
                 // we evaluate the type expression
                 let typexpr_as_type = if let Some(typexpr) = &mut **typexpr {
-                    let value = self
-                        .evaluate_expr(typexpr, Some(Type::Type))
-                        .map_err(|loc| {
-                            CantResolveComptimeValue {
-                                loc_expr: typexpr.loc.clone().unwrap(),
-                                loc,
-                            }
-                            .into_diag()
-                        })?;
+                    let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
+                        CantResolveComptimeValue {
+                            note,
+                            loc_expr: typexpr.loc.clone().unwrap(),
+                            loc,
+                        }
+                        .into_diag()
+                    })?;
 
                     Some(value.as_type().unwrap_or(Type::Void))
                 } else {
@@ -455,14 +455,14 @@ impl SemaChecker {
 
                         // we evaluate the value of the global def
                         let value_expr = {
-                            self.evaluate_expr(value, Some(symref.typ()))
-                                .map_err(|loc| {
-                                    CantResolveComptimeValue {
-                                        loc_expr: value.loc.clone().unwrap(),
-                                        loc,
-                                    }
-                                    .into_diag()
-                                })?
+                            self.evaluate_expr(value).map_err(|(loc, note)| {
+                                CantResolveComptimeValue {
+                                    note,
+                                    loc_expr: value.loc.clone().unwrap(),
+                                    loc,
+                                }
+                                .into_diag()
+                            })?
                         };
 
                         symref.set_value(value_expr);
@@ -1128,15 +1128,14 @@ impl SemaChecker {
 
                 // we evaluate the type expression
                 let typexpr_as_type = if let Some(typexpr) = typexpr {
-                    let value = self
-                        .evaluate_expr(typexpr, Some(Type::Type))
-                        .map_err(|loc| {
-                            CantResolveComptimeValue {
-                                loc_expr: typexpr.loc.clone().unwrap(),
-                                loc,
-                            }
-                            .into_diag()
-                        })?;
+                    let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
+                        CantResolveComptimeValue {
+                            note,
+                            loc_expr: typexpr.loc.clone().unwrap(),
+                            loc,
+                        }
+                        .into_diag()
+                    })?;
 
                     Some(value.as_type().unwrap_or(Type::Void))
                 } else {
