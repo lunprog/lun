@@ -541,10 +541,11 @@ impl SemaChecker {
                 self.ck_expr(lhs, None)?;
                 self.ck_expr(rhs, Some(lhs.typ.clone()))?;
 
-                if !lhs.is_place() {
+                if let Some(note) = lhs.is_place() {
                     self.sink.emit(ExpectedPlaceExpression {
-                        loc: lhs.loc.clone().unwrap(),
+                        note: Some(note),
                         lhs_assign: true,
+                        loc: lhs.loc.clone().unwrap(),
                     });
                 }
 

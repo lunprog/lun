@@ -189,6 +189,17 @@ impl Type {
         matches!(self, Type::F16 | Type::F32 | Type::F64 | Type::F128)
     }
 
+    /// Is this type a mutable pointer type? `*mut T`?
+    pub fn is_mut_ptr(&self) -> bool {
+        matches!(
+            self,
+            Type::Ptr {
+                mutable: true,
+                typ: _
+            }
+        )
+    }
+
     /// Returns the signedness of an integer type or `None` if it's not an
     /// integer
     pub fn signedness(&self) -> Option<Signedness> {

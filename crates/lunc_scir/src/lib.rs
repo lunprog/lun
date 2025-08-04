@@ -136,21 +136,33 @@ pub struct ScExpression {
 }
 
 impl ScExpression {
-    /// Is the expression a place expression kind?
+    /// Is the expression a place expression kind? Returns
     ///
     /// # Definition
     ///
     /// A place expression, is an expression that represents a memory location,
     /// like a local / global variable / definition that is mutable, a
     /// dereference expression.
-    pub fn is_place(&self) -> bool {
+    pub fn is_place(&self) -> Option<String> {
         match &self.expr {
-            ScExpr::Ident(sym) if sym.is_place() => true,
+            ScExpr::Ident(sym) => {
+                if sym.is_place() {
+                    None
+                } else {
+                    Some("variable isn't mutable".to_string())
+                }
+            }
             ScExpr::Unary {
                 op: UnaryOp::Dereference,
-                expr: _,
-            } => true,
-            _ => false,
+                expr,
+            } => {
+                if expr.typ.is_mut_ptr() {
+                    None
+                } else {
+                    Some("the dereferenced expression is not of type '*mut T'".to_string())
+                }
+            }
+            _ => Some(String::new()),
         }
     }
 

@@ -63,8 +63,9 @@ impl ToDiagnostic for ExpectedTypeFoundExpr {
 
 #[derive(Debug, Clone)]
 pub struct ExpectedPlaceExpression {
-    pub loc: Span,
+    pub note: Option<String>,
     pub lhs_assign: bool,
+    pub loc: Span,
 }
 
 impl ToDiagnostic for ExpectedPlaceExpression {
@@ -77,6 +78,7 @@ impl ToDiagnostic for ExpectedPlaceExpression {
             } else {
                 vec![]
             })
+            .with_notes_iter(self.note)
             .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
