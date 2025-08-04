@@ -1079,7 +1079,7 @@
               else_br: none;
             } @ none @ none,
 
-            @last_expr: Block {
+            Block {
               label: none @ 0..0 (fid = 0);
               block: Block [
                 FunCall {
@@ -1109,7 +1109,9 @@
 
                 @last_expr: none,
               ] @ 205..242 (fid = 0);
-            } @ none,
+            } @ none @ none,
+
+            @last_expr: none,
           ] @ 205..242 (fid = 0);
         } @ 192..242 (fid = 0) @ 192..242 (fid = 0),
 
@@ -1166,13 +1168,13 @@
                 } @ 274..290 (fid = 0);
               } @ none;
               then_br: Break {
-                label: none;
+                label: label;
                 expr: none;
               } @ none;
               else_br: none;
             } @ none @ none,
 
-            @last_expr: Block {
+            Block {
               label: none @ 0..0 (fid = 0);
               block: Block [
                 FunCall {
@@ -1202,7 +1204,9 @@
 
                 @last_expr: none,
               ] @ 291..328 (fid = 0);
-            } @ none,
+            } @ none @ none,
+
+            @last_expr: none,
           ] @ 291..328 (fid = 0);
         } @ 261..328 (fid = 0),
       ] @ 173..330 (fid = 0);

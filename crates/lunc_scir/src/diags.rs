@@ -221,19 +221,18 @@ impl ToDiagnostic for CantContinueABlock {
 }
 
 #[derive(Debug, Clone)]
-pub struct BreakFromLoopWithValue {
+pub struct BreakWithValueUnsupported {
     pub loc: Span,
 }
 
-impl ToDiagnostic for BreakFromLoopWithValue {
+impl ToDiagnostic for BreakWithValueUnsupported {
     fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
-            .with_code(ErrorCode::BreakFromLoopWithValue)
-            .with_message("'break' from a loop with a value")
-            .with_label(
-                Label::primary(self.loc.fid, self.loc)
-                    .with_message("can only 'break' with a value from a labeled block"),
-            )
+            .with_code(ErrorCode::BreakWithValueUnsupported)
+            .with_message("'break' from a predicate or iterator loop with a value")
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message(
+                "can only 'break' with a value from a labeled block or an infinite loop",
+            ))
     }
 }
 

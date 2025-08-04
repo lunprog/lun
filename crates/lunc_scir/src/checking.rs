@@ -9,10 +9,10 @@ use lunc_utils::{
 };
 
 use crate::diags::{
-    ArityDoesntMatch, BreakFromLoopWithValue, BreakUseAnImplicitLabelInBlock, CallRequiresFuncType,
-    CantContinueABlock, CantResolveComptimeValue, ExpectedPlaceExpression, ExpectedTypeFoundExpr,
-    LabelKwOutsideLoopOrBlock, MismatchedTypes, TypeAnnotationsNeeded, UseOfUndefinedLabel,
-    WUnreachableCode, WUnusedLabel,
+    ArityDoesntMatch, BreakUseAnImplicitLabelInBlock, BreakWithValueUnsupported,
+    CallRequiresFuncType, CantContinueABlock, CantResolveComptimeValue, ExpectedPlaceExpression,
+    ExpectedTypeFoundExpr, LabelKwOutsideLoopOrBlock, MismatchedTypes, TypeAnnotationsNeeded,
+    UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
 };
 
 use super::*;
@@ -703,7 +703,10 @@ impl SemaChecker {
                 index,
             } => {
                 if label.is_some() {
-                    *index = Some(self.label_stack.define_label(label.clone(), false));
+                    *index = Some(
+                        self.label_stack
+                            .define_label(label.clone(), LabelKind::Block),
+                    );
                 }
 
                 self.ck_block(block, coerce_to)?;
@@ -731,21 +734,45 @@ impl SemaChecker {
             }
             ScExpr::Loop { label, body, index } => {
                 // define label info
-                *index = Some(self.label_stack.define_label(label.clone(), true));
+
+                // NOTE: here we are seeing if it is a predicate loop before
+                // checking the code but i see no reason why it should not work.
+                let is_predicate_loop = matches!(
+                    body.stmts.first(),
+                    Some(ScStatement {
+                        stmt: ScStmt::Expression(ScExpression {
+                            expr: ScExpr::If { .. },
+                            typ: _,
+                            loc: None
+                        }),
+                        loc: None
+                    })
+                );
+
+                let kind = if is_predicate_loop {
+                    LabelKind::PredicateLoop
+                } else {
+                    LabelKind::InfiniteLoop
+                };
+
+                *index = Some(self.label_stack.define_label(label.clone(), kind));
 
                 // check the body
                 self.ck_block(body, None)?;
 
                 self.block_typeck(&Type::Void, body, None, None, None);
 
-                let break_out = self
+                let info = self
                     .label_stack
                     .get_by_idx(index.unwrap())
-                    .expect("set the index just above")
-                    .break_out;
+                    .expect("set the index just above");
+
+                let break_out = info.break_out;
 
                 expr.typ = if !break_out {
                     Type::Noreturn
+                } else if info.typ != Type::Unknown {
+                    info.typ.clone()
                 } else {
                     Type::Void
                 };
@@ -779,11 +806,11 @@ impl SemaChecker {
                 index,
             } => {
                 // assign loop index
-                let (typ, is_loop) = if let Some(label) = label {
+                let (typ, kind) = if let Some(label) = label {
                     let Some(LabelInfo {
                         index: idx,
                         typ,
-                        is_loop,
+                        kind,
                         ..
                     }) = self.label_stack.get_by_name(&label)
                     else {
@@ -797,12 +824,12 @@ impl SemaChecker {
 
                     *index = Some(*idx);
 
-                    (typ.clone(), *is_loop)
+                    (typ.clone(), kind.clone())
                 } else {
                     let Some(LabelInfo {
                         index: idx,
                         typ,
-                        is_loop,
+                        kind,
                         ..
                     }) = self.label_stack.last()
                     else {
@@ -813,7 +840,7 @@ impl SemaChecker {
                         .into_diag());
                     };
 
-                    if !is_loop {
+                    if !kind.is_loop() {
                         return Err(BreakUseAnImplicitLabelInBlock {
                             loc: expr.loc.clone().unwrap(),
                         }
@@ -822,7 +849,7 @@ impl SemaChecker {
 
                     *index = Some(*idx);
 
-                    (typ.clone(), *is_loop)
+                    (typ.clone(), kind.clone())
                 };
 
                 // we indicate that we used this label inside a break.
@@ -831,10 +858,10 @@ impl SemaChecker {
                 if let Some(exp) = exp {
                     self.ck_expr(exp, None)?;
 
-                    if is_loop {
-                        self.sink.emit(BreakFromLoopWithValue {
+                    if !kind.can_have_val() {
+                        self.sink.emit(BreakWithValueUnsupported {
                             loc: expr.loc.clone().unwrap(),
-                        });
+                        })
                     } else if typ == Type::Unknown {
                         let info = self
                             .label_stack
@@ -880,9 +907,7 @@ impl SemaChecker {
                 'blk: {
                     if let Some(label) = label {
                         let Some(LabelInfo {
-                            index: idx,
-                            is_loop,
-                            ..
+                            index: idx, kind, ..
                         }) = self.label_stack.get_by_name(&label)
                         else {
                             self.sink.emit(UseOfUndefinedLabel {
@@ -894,7 +919,7 @@ impl SemaChecker {
                             break 'blk;
                         };
 
-                        if !is_loop {
+                        if !kind.is_loop() {
                             self.sink.emit(CantContinueABlock {
                                 loc: expr.loc.clone().unwrap(),
                             });
@@ -905,9 +930,7 @@ impl SemaChecker {
                         *index = Some(*idx);
                     } else {
                         let Some(LabelInfo {
-                            index: idx,
-                            is_loop,
-                            ..
+                            index: idx, kind, ..
                         }) = self.label_stack.last()
                         else {
                             self.sink.emit(LabelKwOutsideLoopOrBlock {
@@ -918,7 +941,7 @@ impl SemaChecker {
                             break 'blk;
                         };
 
-                        if !is_loop {
+                        if !kind.is_loop() {
                             self.sink.emit(CantContinueABlock {
                                 loc: expr.loc.clone().unwrap(),
                             });

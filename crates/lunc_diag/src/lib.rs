@@ -227,7 +227,7 @@ impl SinkInner {
         } else if diag.severity == Severity::Error {
             self.errors += 1;
         } else {
-            panic!("severity {:?} not supported", diag.severity);
+            panic!("severity '{:?}' is not supported", diag.severity);
         }
 
         self.diags.push(diag);
@@ -435,8 +435,9 @@ pub enum ErrorCode {
     BreakUseAnImplicitLabelInBlock = 31,
     /// a block cannot be continued.
     CantContinueABlock = 32,
-    /// break from a loop with a value, it is only supported inside a labeled block.
-    BreakFromLoopWithValue = 33,
+    /// break from a predicate or iterator loop with a value, it is only
+    /// supported inside a labeled block or an infinite loop.
+    BreakWithValueUnsupported = 33,
     /// a literal expression is overflowing
     OverflowingLiteral = 34,
     /// unknown directive

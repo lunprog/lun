@@ -703,16 +703,50 @@ impl SemaChecker {
 }
 
 #[derive(Debug, Clone)]
+pub enum LabelKind {
+    /// the label is on a block, like
+    ///
+    /// ```lun
+    /// blk: {};
+    /// ```
+    Block,
+    /// the label is on a infinite loop, like
+    ///
+    /// ```lun
+    /// lab: loop {};
+    /// ```
+    InfiniteLoop,
+    /// the label is on a predicate loop, like
+    ///
+    /// ```lun
+    /// lab: while {};
+    /// ```
+    PredicateLoop,
+}
+
+impl LabelKind {
+    /// Is this label kind a loop?
+    pub fn is_loop(&self) -> bool {
+        !matches!(self, LabelKind::Block)
+    }
+
+    /// Can this label kind have a value in `break` expressions?
+    pub fn can_have_val(&self) -> bool {
+        matches!(self, LabelKind::Block | LabelKind::InfiniteLoop)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct LabelInfo {
     /// name of the label, `:label` in continue / break and `label:` in
-    /// block and loops expression and it's location
+    /// block and loops expression and its location
     pub name: Option<(String, Span)>,
     /// index of the loop
     pub index: usize,
     /// expected type of the loop
     pub typ: Type,
-    /// is the label info referring to a loop?
-    pub is_loop: bool,
+    /// what kind of label it is.
+    pub kind: LabelKind,
     /// **For loop**'s label, if set to `true` it indicates that we `break`'d
     /// of the loop and `false` if we never `break`'d of the loop. It is used
     /// to compute the type of a loop, because if the loop is truly infinite:
@@ -724,6 +758,12 @@ pub struct LabelInfo {
     pub break_out: bool,
 }
 
+/// Stores the definitions of the label
+///
+/// # Note
+///
+/// The label live for the entirety of a function after that the stack is
+/// cleared.
 #[derive(Debug, Clone)]
 pub struct LabelStack {
     labels: Vec<LabelInfo>,
@@ -740,7 +780,7 @@ impl LabelStack {
     }
 
     /// Defines a new label
-    pub fn define_label(&mut self, name: Option<(String, Span)>, is_loop: bool) -> usize {
+    pub fn define_label(&mut self, name: Option<(String, Span)>, kind: LabelKind) -> usize {
         let index = self.last;
         self.last += 1;
 
@@ -748,7 +788,7 @@ impl LabelStack {
             name,
             index,
             typ: Type::Unknown,
-            is_loop,
+            kind,
             break_out: false,
         });
 

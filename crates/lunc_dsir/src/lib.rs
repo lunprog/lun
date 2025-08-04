@@ -230,33 +230,45 @@ impl FromHigher for DsExpression {
                 label: Some(label),
                 block: lower(block),
             },
+
+            // NOTE: here we make the following conversion eg:
+            //
+            // ```
+            // label: while condition {
+            //     // body
+            // }
+            // ```
+            //
+            // gets lowered down to
+            //
+            // ```
+            // label: loop {
+            //     if !condition { // <- without this block
+            //         break :label;
+            //     }
+            //
+            //     {
+            //         // body
+            //     };
+            // }
+            // ```
+            //
+            // NOTE: if you modify the desugaring of while expression, this
+            // might break the detection of while expression in the SCIR in
+            // file `lunc_scir/src/checking.rs` in the function `ck_expr`
             Expr::PredicateLoop { label, cond, body } => DsExpr::Loop {
-                // NOTE: here we make the following conversion eg:
-                //
-                // label: while condition {
-                //     // body
-                // }
-                //
-                // gets lowered down to
-                //
-                // label: loop {
-                //     if !condition {
-                //         break
-                //     }
-                //
-                //     {
-                //         // body
-                //     }
-                // }
-                label,
+                label: label.clone(),
                 body: block(
                     body.loc.clone(),
-                    vec![stmt_expr(expr_if(
-                        expr_unary(UnaryOp::Not, lower(*cond)),
-                        expr_break(None, None),
-                        None,
-                    ))],
-                    Some(Box::new(expr_block(lower(body)))),
+                    vec![
+                        stmt_expr(expr_if(
+                            expr_unary(UnaryOp::Not, lower(*cond)),
+                            expr_break(label.map(|(name, _)| name), None),
+                            None,
+                        )),
+                        stmt_expr(expr_block(lower(body))),
+                    ],
+                    None,
                 ),
             },
             Expr::IteratorLoop { .. } => todo!("iterator loop"),
