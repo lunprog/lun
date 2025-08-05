@@ -3,7 +3,7 @@
 use std::{
     env,
     fs::read_to_string,
-    io::{self, Write, stderr},
+    io::{self, Write, stderr, stdout},
     path::PathBuf,
     process::ExitCode,
     str::FromStr,
@@ -406,6 +406,11 @@ impl CliArgs {
         sink.dump_with(&mut stream)
             .expect("failed to emit the diagnostics");
     }
+}
+
+pub fn flush_outs() {
+    stderr().flush().expect("can't flush stderr");
+    stdout().flush().expect("can't flush stdout");
 }
 
 pub fn run() -> Result<()> {

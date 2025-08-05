@@ -315,6 +315,8 @@ impl SemaChecker {
     #[must_use]
     pub fn apply_typ_on_expr(expr: &mut ScExpression, typ: Type) -> Option<()> {
         match &mut expr.expr {
+            ScExpr::IntLit(_) => {}
+            ScExpr::FloatLit(_) => {}
             ScExpr::Ident(symref) if symref.typeness() == Typeness::Implicit => {
                 symref.inspect_mut(|sym| {
                     sym.typ = typ.clone();
@@ -366,7 +368,7 @@ impl SemaChecker {
                     Self::apply_typ_on_expr(last, typ.clone())?;
                 }
             }
-            _ => (),
+            _ => return None,
         }
 
         expr.typ = typ;

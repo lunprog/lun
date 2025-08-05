@@ -3,14 +3,20 @@ use std::process::ExitCode;
 
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
 
-use lunc::CliError::BuildDiagnostics;
+use lunc::{CliError::BuildDiagnostics, flush_outs};
 
 fn main() -> ExitCode {
     let mut out = StandardStream::stderr(termcolor::ColorChoice::Auto);
 
     match lunc::run() {
-        Ok(()) => ExitCode::SUCCESS,
+        Ok(()) => {
+            flush_outs();
+
+            ExitCode::SUCCESS
+        }
         Err(BuildDiagnostics { failed }) => {
+            flush_outs();
+
             if failed {
                 lunc::exit_code_compilation_failed()
             } else {
@@ -25,6 +31,8 @@ fn main() -> ExitCode {
             write!(out, "error: ").unwrap();
             out.reset().unwrap();
             writeln!(out, "{e}").unwrap();
+
+            flush_outs();
 
             ExitCode::FAILURE
         }
