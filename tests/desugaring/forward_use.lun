@@ -1,0 +1,10 @@
+//! forward use - here `res` is using a function `add` defined after it's use
+
+main :: fun() {
+    res :: add(1, 2);
+    _ = res;
+}
+
+add :: fun(a: isz, b: isz) -> isz {
+    a + b
+}

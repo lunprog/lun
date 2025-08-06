@@ -1,0 +1,15 @@
+name: Typos check
+
+on: [push, pull_request]
+
+jobs:
+  spellcheck:
+    name: Check typos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the source code
+        uses: actions/checkout@v4
+      - name: Check typos
+        uses: crate-ci/typos@v1.34.0
+        with:
+          config: ./typos.toml

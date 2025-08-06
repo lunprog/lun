@@ -1,0 +1,13 @@
+[package]
+name = "lunc_parser"
+description = "Parser for Lun."
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]
+lunc_diag = { workspace = true }
+lunc_utils = { workspace = true }
+
+# other dependencies
+thiserror = { workspace = true }

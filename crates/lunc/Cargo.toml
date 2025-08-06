@@ -1,0 +1,25 @@
+[package]
+name = "lunc"
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]
+lunc_codegen = { workspace = true }
+lunc_diag = { workspace = true }
+lunc_dsir = { workspace = true }
+lunc_fir = { workspace = true }
+lunc_lexer = { workspace = true }
+lunc_parser = { workspace = true }
+lunc_scir = { workspace = true }
+lunc_utils = { workspace = true }
+
+# other dependencies
+thiserror = { workspace = true }
+codespan-reporting = { workspace = true }
+half = { workspace = true }
+termcolor = { workspace = true }
+shadow-rs = "1.0.1"
+
+[build-dependencies]
+shadow-rs = "1.0.1"

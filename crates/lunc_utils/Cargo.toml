@@ -1,0 +1,11 @@
+[package]
+name = "lunc_utils"
+description = "Utils for Lun libs."
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]
+thiserror = { workspace = true }
+serde = { workspace = true }
+concat-idents = "1.1.5"

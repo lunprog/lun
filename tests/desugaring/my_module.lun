@@ -1,0 +1,2 @@
+// Testing of the inlining in one tree of the nested modules
+#mod global_def;

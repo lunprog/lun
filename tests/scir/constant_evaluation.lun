@@ -1,0 +1,94 @@
+// add operation
+
+add_i8 : i8 : 34 + 35;
+add_i16 : i16 : 34 + 35;
+add_i32 : i32 : 34 + 35;
+add_i64 : i64 : 34 + 35;
+add_i128 : i128 : 34 + 35;
+add_isz : isz : 34 + 35;
+
+add_u8 : u8 : 34 + 35;
+add_u16 : u16 : 34 + 35;
+add_u32 : u32 : 34 + 35;
+add_u64 : u64 : 34 + 35;
+add_u128 : u128 : 34 + 35;
+add_usz : usz : 34 + 35;
+
+add_f32 : f32 : 34. + 35.;
+add_f64 : f64 : 34. + 35.;
+
+// sub operation
+
+sub_i8 : i8 : 101 - 1;
+sub_i16 : i16 : 101 - 1;
+sub_i32 : i32 : 101 - 1;
+sub_i64 : i64 : 101 - 1;
+sub_i128 : i128 : 101 - 1;
+sub_isz : isz : 101 - 1;
+
+sub_u8 : u8 : 101 - 1;
+sub_u16 : u16 : 101 - 1;
+sub_u32 : u32 : 101 - 1;
+sub_u64 : u64 : 101 - 1;
+sub_u128 : u128 : 101 - 1;
+sub_usz : usz : 101 - 1;
+
+sub_f32 : f32 : 101. - 1.;
+sub_f64 : f64 : 101. - 1.;
+
+// mul operation
+
+mul_i8 : i8 : 6 * 4;
+mul_i16 : i16 : 6 * 4;
+mul_i32 : i32 : 6 * 4;
+mul_i64 : i64 : 6 * 4;
+mul_i128 : i128 : 6 * 4;
+mul_isz : isz : 6 * 4;
+
+mul_u8 : u8 : 6 * 4;
+mul_u16 : u16 : 6 * 4;
+mul_u32 : u32 : 6 * 4;
+mul_u64 : u64 : 6 * 4;
+mul_u128 : u128 : 6 * 4;
+mul_usz : usz : 6 * 4;
+
+mul_f32 : f32 : 6. * 4.;
+mul_f64 : f64 : 6. * 4.;
+
+// div operation
+
+div_i8 : i8 : 10 / 5;
+div_i16 : i16 : 10 / 5;
+div_i32 : i32 : 10 / 5;
+div_i64 : i64 : 10 / 5;
+div_i128 : i128 : 10 / 5;
+div_isz : isz : 10 / 5;
+
+div_u8 : u8 : 10 / 5;
+div_u16 : u16 : 10 / 5;
+div_u32 : u32 : 10 / 5;
+div_u64 : u64 : 10 / 5;
+div_u128 : u128 : 10 / 5;
+div_usz : usz : 10 / 5;
+
+div_f32 : f32 : 10. / 5.;
+div_f64 : f64 : 10. / 5.;
+
+// rem operation
+
+rem_i8 : i8 : 15 % 4;
+rem_i16 : i16 : 15 % 4;
+rem_i32 : i32 : 15 % 4;
+rem_i64 : i64 : 15 % 4;
+rem_i128 : i128 : 15 % 4;
+rem_isz : isz : 15 % 4;
+
+rem_u8 : u8 : 15 % 4;
+rem_u16 : u16 : 15 % 4;
+rem_u32 : u32 : 15 % 4;
+rem_u64 : u64 : 15 % 4;
+rem_u128 : u128 : 15 % 4;
+rem_usz : usz : 15 % 4;
+
+rem_f32 : f32 : 15. % 4.;
+rem_f64 : f64 : 15. % 4.;

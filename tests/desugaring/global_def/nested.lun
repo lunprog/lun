@@ -1,0 +1,5 @@
+// Submodule nested, full path is 'my_module.global_def.nested'
+
+add :: fun(a: usz, b: usz) -> usz {
+    a + b
+}

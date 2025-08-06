@@ -1,0 +1,26 @@
+loop_forever :: fun() -> noreturn {
+    loop {}
+}
+
+still_loop_forever :: fun() -> noreturn {
+    loop {
+        inner: loop {
+            break :inner;
+        }
+    }
+}
+
+loop_forever_in_practice :: fun() {
+    // NOTE: this is used to show that the compiler doesn't emit a
+    // `unreachable_code` warning because the loop is considered to be of type
+    // `void` but in practice it loops forever.
+    reachable :: 12;
+
+    loop {
+        if false {
+            break
+        }
+    }
+
+    reachable;
+}

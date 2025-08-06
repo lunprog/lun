@@ -1,0 +1,39 @@
+i32_return :: fun() -> i32 {
+    if false {
+        return 21;
+    }
+
+    120
+}
+
+f32_return :: fun() -> f32 {
+    if false {
+        return 2.1;
+    }
+
+    1.20
+}
+
+char_return :: fun() -> char {
+    if false {
+        return 'B'
+    }
+
+    'A'
+}
+
+string_return :: fun() -> *str {
+    if false {
+        return "!World Hello"
+    }
+
+    "Hello World"
+}
+
+void_return :: fun() {
+    if false {
+        return
+    }
+
+    return;
+}

@@ -1,0 +1,7 @@
+# Configuration file of typos
+#
+# See docs: https://github.com/crate-ci/typos/blob/v1.28.2/docs/reference.md
+
+[default.extend-words]
+# we can't use `type` because it's a keyword in Rust
+typ = "typ"

@@ -1,0 +1,15 @@
+main :: fun() {
+    // let variable def
+    let a = 12;
+    let mut b = 34;
+
+    // short variable def
+    c :: 56;
+    d := 78;
+
+    // defer statement
+    defer {}
+
+    // statement expression
+    hello_world();
+}

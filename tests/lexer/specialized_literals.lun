@@ -1,0 +1,30 @@
+// specialized char literal
+a7'C'
+
+// specialized string literal
+c"Hello, world! This string is a null terminated string"
+
+// specialized string literal does not escape
+r"no escapes \n\r"
+
+// specialized integer literal
+123_456'usz
+
+// specialized float literal
+123_456.789e+2'f64
+
+//
+// KEYWORDS AS SPECIALIZATION
+//
+
+// specialization can be keywords
+fun'\0'
+
+// specialization can be keywords, also here..
+orb"Hello"
+
+// and here..
+3435_69'let
+
+// and also here ...
+6.9'comptime

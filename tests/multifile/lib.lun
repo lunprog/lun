@@ -1,0 +1,17 @@
+// Multiple file tests
+
+#mod dbg;
+
+#import orb.dbg.nested;
+
+run :: fun () {
+    orb.dbg.puts("Hello world!");
+    dbg.puts("Hello world!");
+    nested.fib(12);
+}
+
+divide :: fun(lhs: f32, rhs: f32) -> f32 {
+    lhs / rhs
+}
+
+MY_LIL_CONSTANT :: 1234;

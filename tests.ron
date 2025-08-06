@@ -1,0 +1,7179 @@
+{
+    "desugaring/forward_use": (
+        expected_compiler_out: "dsir = [
+  GlobalDef {
+    name: main @ 79..83 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        VariableDef {
+          name: res @ 99..102 (fid = 0);
+          mutable: false;
+          typexpr: none;
+          value: FunCall {
+            callee: Symbol {
+              kind: function;
+              name: add @ 133..136 (fid = 0);
+              which: 0;
+              path: orb.add;
+              typ: unknown;
+              typeness: explicit;
+              value: none;
+            } @ 106..109 (fid = 0);
+            args: [
+              integer 1 @ 110..111 (fid = 0),
+
+              integer 2 @ 113..114 (fid = 0),
+            ];
+          } @ 106..115 (fid = 0);
+          sym: Symbol {
+            kind: local;
+            name: res @ 99..102 (fid = 0);
+            which: 0;
+            path: res;
+            typ: unknown;
+            typeness: implicit;
+            value: none;
+          };
+        } @ 99..115 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 121..122 (fid = 0);
+          op: Assignment;
+          rhs: Symbol {
+            kind: local;
+            name: res @ 99..102 (fid = 0);
+            which: 0;
+            path: res;
+            typ: unknown;
+            typeness: implicit;
+            value: none;
+          } @ 125..128 (fid = 0);
+        } @ 121..128 (fid = 0) @ 121..128 (fid = 0),
+
+        @last_expr: none,
+      ] @ 93..131 (fid = 0);
+    } @ 87..131 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: main @ 79..83 (fid = 0);
+      which: 0;
+      path: orb.main;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 79..131 (fid = 0),
+
+  GlobalDef {
+    name: add @ 133..136 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: FunDefinition {
+      args: [
+        Arg {
+          name: a @ 144..145 (fid = 0);
+          typexpr: Symbol {
+            kind: global;
+            name: isz @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: isz;
+            };
+          } @ 147..150 (fid = 0);
+          sym: Symbol {
+            kind: argument;
+            name: a @ 144..145 (fid = 0);
+            which: 0;
+            path: a;
+            typ: unknown;
+            typeness: explicit;
+            value: none;
+          };
+        } @ 144..150 (fid = 0),
+
+        Arg {
+          name: b @ 152..153 (fid = 0);
+          typexpr: Symbol {
+            kind: global;
+            name: isz @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: isz;
+            };
+          } @ 155..158 (fid = 0);
+          sym: Symbol {
+            kind: argument;
+            name: b @ 152..153 (fid = 0);
+            which: 0;
+            path: b;
+            typ: unknown;
+            typeness: explicit;
+            value: none;
+          };
+        } @ 152..158 (fid = 0),
+      ];
+      rettypexpr: Symbol {
+        kind: global;
+        name: isz @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: isz;
+        };
+      } @ 163..166 (fid = 0);
+      body: Block [
+        @last_expr: Binary {
+          lhs: Symbol {
+            kind: argument;
+            name: a @ 144..145 (fid = 0);
+            which: 0;
+            path: a;
+            typ: unknown;
+            typeness: explicit;
+            value: none;
+          } @ 173..174 (fid = 0);
+          op: Add;
+          rhs: Symbol {
+            kind: argument;
+            name: b @ 152..153 (fid = 0);
+            which: 0;
+            path: b;
+            typ: unknown;
+            typeness: explicit;
+            value: none;
+          } @ 177..178 (fid = 0);
+        } @ 173..178 (fid = 0),
+      ] @ 167..180 (fid = 0);
+    } @ 140..180 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: add @ 133..136 (fid = 0);
+      which: 0;
+      path: orb.add;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 133..180 (fid = 0),
+]
+",
+        expected_test_out: "",
+    ),
+    "desugaring/global_def": (
+        expected_compiler_out: r#"dsir = [
+  GlobalDef {
+    name: main @ 19..23 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        @last_expr: none,
+      ] @ 33..35 (fid = 0);
+    } @ 27..35 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: main @ 19..23 (fid = 0);
+      which: 0;
+      path: orb.main;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 19..35 (fid = 0),
+
+  GlobalDef {
+    name: avogadro @ 36..44 (fid = 0);
+    mutable: false;
+    typexpr: Symbol {
+      kind: global;
+      name: f64 @ none;
+      which: 0;
+      path: ∅;
+      typ: type;
+      typeness: explicit;
+      value: Type {
+        type: f64;
+      };
+    } @ 47..50 (fid = 0);
+    value: float 602199999999999960000000 @ 53..61 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: avogadro @ 36..44 (fid = 0);
+      which: 0;
+      path: orb.avogadro;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 36..62 (fid = 0),
+
+  GlobalDef {
+    name: hello @ 78..83 (fid = 0);
+    mutable: true;
+    typexpr: PointerType {
+      mutable: false;
+      typexpr: Symbol {
+        kind: global;
+        name: str @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: str;
+        };
+      } @ 87..90 (fid = 0);
+    } @ 86..90 (fid = 0);
+    value: string "Hello" @ 93..100 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: hello @ 78..83 (fid = 0);
+      which: 0;
+      path: orb.hello;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 78..101 (fid = 0),
+
+  GlobalDef {
+    name: globFloat @ 102..111 (fid = 0);
+    mutable: true;
+    typexpr: none;
+    value: float 12 @ 115..119 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: globFloat @ 102..111 (fid = 0);
+      which: 0;
+      path: orb.globFloat;
+      typ: unknown;
+      typeness: implicit;
+      value: none;
+    };
+  } @ 102..120 (fid = 0),
+
+  Module {
+    name: nested @ 179..191 (fid = 0);
+    module: [];
+    sym: Symbol {
+      kind: module;
+      name: nested @ 179..191 (fid = 0);
+      which: 0;
+      path: orb.nested;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  },
+]
+"#,
+        expected_test_out: "",
+    ),
+    "desugaring/lower_expr": (
+        expected_compiler_out: r#"dsir = [
+  GlobalDef {
+    name: main @ 11..15 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        Binary {
+          lhs: Underscore @ 54..55 (fid = 0);
+          op: Assignment;
+          rhs: integer 12 @ 58..60 (fid = 0);
+        } @ 54..60 (fid = 0) @ 54..60 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 87..88 (fid = 0);
+          op: Assignment;
+          rhs: boolean true @ 91..95 (fid = 0);
+        } @ 87..95 (fid = 0) @ 87..95 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 101..102 (fid = 0);
+          op: Assignment;
+          rhs: boolean false @ 105..110 (fid = 0);
+        } @ 101..110 (fid = 0) @ 101..110 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 139..140 (fid = 0);
+          op: Assignment;
+          rhs: string "Hello world!" @ 143..157 (fid = 0);
+        } @ 139..157 (fid = 0) @ 139..157 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 184..185 (fid = 0);
+          op: Assignment;
+          rhs: character 'C' @ 188..191 (fid = 0);
+        } @ 184..191 (fid = 0) @ 184..191 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 219..220 (fid = 0);
+          op: Assignment;
+          rhs: float 602199999999999960000000 @ 223..231 (fid = 0);
+        } @ 219..231 (fid = 0) @ 219..231 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 287..288 (fid = 0);
+          op: Assignment;
+          rhs: Binary {
+            lhs: integer 12 @ 292..294 (fid = 0);
+            op: Add;
+            rhs: integer 3 @ 297..298 (fid = 0);
+          } @ 292..298 (fid = 0);
+        } @ 287..299 (fid = 0) @ 287..299 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 324..325 (fid = 0);
+          op: Assignment;
+          rhs: Symbol {
+            kind: function;
+            name: main @ 11..15 (fid = 0);
+            which: 0;
+            path: orb.main;
+            typ: unknown;
+            typeness: explicit;
+            value: none;
+          } @ 328..332 (fid = 0);
+        } @ 324..332 (fid = 0) @ 324..332 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 356..357 (fid = 0);
+          op: Assignment;
+          rhs: Binary {
+            lhs: integer 34 @ 360..362 (fid = 0);
+            op: Add;
+            rhs: integer 35 @ 365..367 (fid = 0);
+          } @ 360..367 (fid = 0);
+        } @ 356..367 (fid = 0) @ 356..367 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 390..391 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Not;
+            expr: boolean false @ 395..400 (fid = 0);
+          } @ 394..400 (fid = 0);
+        } @ 390..400 (fid = 0) @ 390..400 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 406..407 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Negation;
+            expr: float 12 @ 411..415 (fid = 0);
+          } @ 410..415 (fid = 0);
+        } @ 406..415 (fid = 0) @ 406..415 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 438..439 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: Symbol {
+              kind: function;
+              name: some_fun @ 1162..1170 (fid = 0);
+              which: 0;
+              path: orb.some_fun;
+              typ: unknown;
+              typeness: explicit;
+              value: none;
+            } @ 442..450 (fid = 0);
+            args: [];
+          } @ 442..452 (fid = 0);
+        } @ 438..452 (fid = 0) @ 438..452 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 458..459 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: Symbol {
+              kind: function;
+              name: some_fun @ 1162..1170 (fid = 0);
+              which: 0;
+              path: orb.some_fun;
+              typ: unknown;
+              typeness: explicit;
+              value: none;
+            } @ 462..470 (fid = 0);
+            args: [
+              integer 1 @ 471..472 (fid = 0),
+            ];
+          } @ 462..473 (fid = 0);
+        } @ 458..473 (fid = 0) @ 458..473 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 479..480 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: Symbol {
+              kind: function;
+              name: some_fun @ 1162..1170 (fid = 0);
+              which: 0;
+              path: orb.some_fun;
+              typ: unknown;
+              typeness: explicit;
+              value: none;
+            } @ 483..491 (fid = 0);
+            args: [
+              integer 1 @ 492..493 (fid = 0),
+
+              integer 2 @ 495..496 (fid = 0),
+            ];
+          } @ 483..497 (fid = 0);
+        } @ 479..497 (fid = 0) @ 479..497 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 503..504 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: Symbol {
+              kind: function;
+              name: some_fun @ 1162..1170 (fid = 0);
+              which: 0;
+              path: orb.some_fun;
+              typ: unknown;
+              typeness: explicit;
+              value: none;
+            } @ 507..515 (fid = 0);
+            args: [
+              integer 1 @ 516..517 (fid = 0),
+
+              integer 2 @ 519..520 (fid = 0),
+            ];
+          } @ 507..522 (fid = 0);
+        } @ 503..522 (fid = 0) @ 503..522 (fid = 0),
+
+        If {
+          cond: boolean true @ 542..546 (fid = 0);
+          then_br: Block {
+            label: none @ 0..0 (fid = 0);
+            block: Block [
+              FunCall {
+                callee: Symbol {
+                  kind: function;
+                  name: main @ 11..15 (fid = 0);
+                  which: 0;
+                  path: orb.main;
+                  typ: unknown;
+                  typeness: explicit;
+                  value: none;
+                } @ 557..561 (fid = 0);
+                args: [];
+              } @ 557..563 (fid = 0) @ 557..563 (fid = 0),
+
+              @last_expr: none,
+            ] @ 547..570 (fid = 0);
+          } @ 539..599 (fid = 0);
+          else_br: Block {
+            label: none @ 0..0 (fid = 0);
+            block: Block [
+              FunCall {
+                callee: Symbol {
+                  kind: function;
+                  name: main @ 11..15 (fid = 0);
+                  which: 0;
+                  path: orb.main;
+                  typ: unknown;
+                  typeness: explicit;
+                  value: none;
+                } @ 586..590 (fid = 0);
+                args: [];
+              } @ 586..592 (fid = 0) @ 586..592 (fid = 0),
+
+              @last_expr: none,
+            ] @ 576..599 (fid = 0);
+          } @ 576..599 (fid = 0);
+        } @ 539..599 (fid = 0) @ 539..599 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 625..626 (fid = 0);
+          op: Assignment;
+          rhs: If {
+            cond: Binary {
+              lhs: integer 23 @ 632..634 (fid = 0);
+              op: CompGT;
+              rhs: integer 12 @ 637..639 (fid = 0);
+            } @ 632..639 (fid = 0);
+            then_br: boolean false @ 645..650 (fid = 0);
+            else_br: boolean true @ 656..660 (fid = 0);
+          } @ 629..660 (fid = 0);
+        } @ 625..660 (fid = 0) @ 625..660 (fid = 0),
+
+        Block {
+          label: none @ 0..0 (fid = 0);
+          block: Block [
+            Binary {
+              lhs: Underscore @ 690..691 (fid = 0);
+              op: Assignment;
+              rhs: integer 2 @ 694..695 (fid = 0);
+            } @ 690..695 (fid = 0) @ 690..695 (fid = 0),
+
+            Binary {
+              lhs: Underscore @ 705..706 (fid = 0);
+              op: Assignment;
+              rhs: FunCall {
+                callee: Symbol {
+                  kind: function;
+                  name: main @ 11..15 (fid = 0);
+                  which: 0;
+                  path: orb.main;
+                  typ: unknown;
+                  typeness: explicit;
+                  value: none;
+                } @ 709..713 (fid = 0);
+                args: [];
+              } @ 709..715 (fid = 0);
+            } @ 705..715 (fid = 0) @ 705..715 (fid = 0),
+
+            @last_expr: none,
+          ] @ 680..722 (fid = 0);
+        } @ 680..722 (fid = 0) @ 680..722 (fid = 0),
+
+        Loop {
+          label: none @ 0..0 (fid = 0);
+          body: Block [
+            Break {
+              label: none;
+              expr: none;
+            } @ 780..785 (fid = 0) @ 780..785 (fid = 0),
+
+            @last_expr: none,
+          ] @ 754..792 (fid = 0);
+        } @ 749..792 (fid = 0) @ 749..792 (fid = 0),
+
+        Return {
+          expr: Binary {
+            lhs: integer 12 @ 819..821 (fid = 0);
+            op: Mul;
+            rhs: integer 8 @ 824..825 (fid = 0);
+          } @ 819..825 (fid = 0);
+        } @ 812..825 (fid = 0) @ 812..825 (fid = 0),
+
+        Return {
+          expr: none;
+        } @ 831..837 (fid = 0) @ 831..837 (fid = 0),
+
+        Continue @ 860..868 (fid = 0) @ 860..868 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 887..888 (fid = 0);
+          op: Assignment;
+          rhs: Null @ 891..895 (fid = 0);
+        } @ 887..895 (fid = 0) @ 887..895 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 915..916 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Dereference;
+            expr: Symbol {
+              kind: global;
+              name: some_pointer @ 1183..1195 (fid = 0);
+              which: 0;
+              path: orb.some_pointer;
+              typ: unknown;
+              typeness: implicit;
+              value: none;
+            } @ 919..931 (fid = 0);
+          } @ 919..933 (fid = 0);
+        } @ 915..933 (fid = 0) @ 915..933 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 975..976 (fid = 0);
+          op: Assignment;
+          rhs: PointerType {
+            mutable: false;
+            typexpr: Symbol {
+              kind: global;
+              name: u32 @ none;
+              which: 0;
+              path: ∅;
+              typ: type;
+              typeness: explicit;
+              value: Type {
+                type: u32;
+              };
+            } @ 980..983 (fid = 0);
+          } @ 979..983 (fid = 0);
+        } @ 975..983 (fid = 0) @ 975..983 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 989..990 (fid = 0);
+          op: Assignment;
+          rhs: PointerType {
+            mutable: true;
+            typexpr: Symbol {
+              kind: global;
+              name: u32 @ none;
+              which: 0;
+              path: ∅;
+              typ: type;
+              typeness: explicit;
+              value: Type {
+                type: u32;
+              };
+            } @ 998..1001 (fid = 0);
+          } @ 993..1001 (fid = 0);
+        } @ 989..1001 (fid = 0) @ 989..1001 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 1037..1038 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [];
+            ret: none;
+          } @ 1041..1047 (fid = 0);
+        } @ 1037..1047 (fid = 0) @ 1037..1047 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 1053..1054 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [
+              Symbol {
+                kind: global;
+                name: usz @ none;
+                which: 0;
+                path: ∅;
+                typ: type;
+                typeness: explicit;
+                value: Type {
+                  type: usz;
+                };
+              } @ 1062..1065 (fid = 0),
+
+              Symbol {
+                kind: global;
+                name: bool @ none;
+                which: 0;
+                path: ∅;
+                typ: type;
+                typeness: explicit;
+                value: Type {
+                  type: bool;
+                };
+              } @ 1067..1071 (fid = 0),
+            ];
+            ret: Symbol {
+              kind: global;
+              name: usz @ none;
+              which: 0;
+              path: ∅;
+              typ: type;
+              typeness: explicit;
+              value: Type {
+                type: usz;
+              };
+            } @ 1076..1079 (fid = 0);
+          } @ 1057..1079 (fid = 0);
+        } @ 1053..1079 (fid = 0) @ 1053..1079 (fid = 0),
+
+        Binary {
+          lhs: Underscore @ 1085..1086 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [
+              Symbol {
+                kind: global;
+                name: usz @ none;
+                which: 0;
+                path: ∅;
+                typ: type;
+                typeness: explicit;
+                value: Type {
+                  type: usz;
+                };
+              } @ 1094..1097 (fid = 0),
+            ];
+            ret: Symbol {
+              kind: global;
+              name: usz @ none;
+              which: 0;
+              path: ∅;
+              typ: type;
+              typeness: explicit;
+              value: Type {
+                type: usz;
+              };
+            } @ 1103..1106 (fid = 0);
+          } @ 1089..1106 (fid = 0);
+        } @ 1085..1106 (fid = 0) @ 1085..1106 (fid = 0),
+
+        @last_expr: none,
+      ] @ 25..1109 (fid = 0);
+    } @ 19..1109 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: main @ 11..15 (fid = 0);
+      which: 0;
+      path: orb.main;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 11..1109 (fid = 0),
+
+  GlobalDef {
+    name: some_fun @ 1162..1170 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        @last_expr: none,
+      ] @ 1180..1182 (fid = 0);
+    } @ 1174..1182 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: some_fun @ 1162..1170 (fid = 0);
+      which: 0;
+      path: orb.some_fun;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 1162..1182 (fid = 0),
+
+  GlobalDef {
+    name: some_pointer @ 1183..1195 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: AddressOf {
+      mutable: false;
+      expr: integer 12 @ 1200..1202 (fid = 0);
+    } @ 1199..1202 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: some_pointer @ 1183..1195 (fid = 0);
+      which: 0;
+      path: orb.some_pointer;
+      typ: unknown;
+      typeness: implicit;
+      value: none;
+    };
+  } @ 1183..1203 (fid = 0),
+]
+"#,
+        expected_test_out: "",
+    ),
+    "desugaring/my_module": (
+        expected_compiler_out: r#"dsir = [
+  Module {
+    name: global_def @ 61..77 (fid = 0);
+    module: [
+      GlobalDef {
+        name: main @ 19..23 (fid = 1);
+        mutable: false;
+        typexpr: none;
+        value: FunDefinition {
+          args: [];
+          rettypexpr: none;
+          body: Block [
+            @last_expr: none,
+          ] @ 33..35 (fid = 1);
+        } @ 27..35 (fid = 1);
+        sym: Symbol {
+          kind: function;
+          name: main @ 19..23 (fid = 1);
+          which: 0;
+          path: orb.global_def.main;
+          typ: unknown;
+          typeness: explicit;
+          value: none;
+        };
+      } @ 19..35 (fid = 1),
+
+      GlobalDef {
+        name: avogadro @ 36..44 (fid = 1);
+        mutable: false;
+        typexpr: Symbol {
+          kind: global;
+          name: f64 @ none;
+          which: 0;
+          path: ∅;
+          typ: type;
+          typeness: explicit;
+          value: Type {
+            type: f64;
+          };
+        } @ 47..50 (fid = 1);
+        value: float 602199999999999960000000 @ 53..61 (fid = 1);
+        sym: Symbol {
+          kind: global;
+          name: avogadro @ 36..44 (fid = 1);
+          which: 0;
+          path: orb.global_def.avogadro;
+          typ: unknown;
+          typeness: explicit;
+          value: none;
+        };
+      } @ 36..62 (fid = 1),
+
+      GlobalDef {
+        name: hello @ 78..83 (fid = 1);
+        mutable: true;
+        typexpr: PointerType {
+          mutable: false;
+          typexpr: Symbol {
+            kind: global;
+            name: str @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: str;
+            };
+          } @ 87..90 (fid = 1);
+        } @ 86..90 (fid = 1);
+        value: string "Hello" @ 93..100 (fid = 1);
+        sym: Symbol {
+          kind: global;
+          name: hello @ 78..83 (fid = 1);
+          which: 0;
+          path: orb.global_def.hello;
+          typ: unknown;
+          typeness: explicit;
+          value: none;
+        };
+      } @ 78..101 (fid = 1),
+
+      GlobalDef {
+        name: globFloat @ 102..111 (fid = 1);
+        mutable: true;
+        typexpr: none;
+        value: float 12 @ 115..119 (fid = 1);
+        sym: Symbol {
+          kind: global;
+          name: globFloat @ 102..111 (fid = 1);
+          which: 0;
+          path: orb.global_def.globFloat;
+          typ: unknown;
+          typeness: implicit;
+          value: none;
+        };
+      } @ 102..120 (fid = 1),
+
+      Module {
+        name: nested @ 179..191 (fid = 1);
+        module: [
+          GlobalDef {
+            name: add @ 65..68 (fid = 2);
+            mutable: false;
+            typexpr: none;
+            value: FunDefinition {
+              args: [
+                Arg {
+                  name: a @ 76..77 (fid = 2);
+                  typexpr: Symbol {
+                    kind: global;
+                    name: usz @ none;
+                    which: 0;
+                    path: ∅;
+                    typ: type;
+                    typeness: explicit;
+                    value: Type {
+                      type: usz;
+                    };
+                  } @ 79..82 (fid = 2);
+                  sym: Symbol {
+                    kind: argument;
+                    name: a @ 76..77 (fid = 2);
+                    which: 0;
+                    path: a;
+                    typ: unknown;
+                    typeness: explicit;
+                    value: none;
+                  };
+                } @ 76..82 (fid = 2),
+
+                Arg {
+                  name: b @ 84..85 (fid = 2);
+                  typexpr: Symbol {
+                    kind: global;
+                    name: usz @ none;
+                    which: 0;
+                    path: ∅;
+                    typ: type;
+                    typeness: explicit;
+                    value: Type {
+                      type: usz;
+                    };
+                  } @ 87..90 (fid = 2);
+                  sym: Symbol {
+                    kind: argument;
+                    name: b @ 84..85 (fid = 2);
+                    which: 0;
+                    path: b;
+                    typ: unknown;
+                    typeness: explicit;
+                    value: none;
+                  };
+                } @ 84..90 (fid = 2),
+              ];
+              rettypexpr: Symbol {
+                kind: global;
+                name: usz @ none;
+                which: 0;
+                path: ∅;
+                typ: type;
+                typeness: explicit;
+                value: Type {
+                  type: usz;
+                };
+              } @ 95..98 (fid = 2);
+              body: Block [
+                @last_expr: Binary {
+                  lhs: Symbol {
+                    kind: argument;
+                    name: a @ 76..77 (fid = 2);
+                    which: 0;
+                    path: a;
+                    typ: unknown;
+                    typeness: explicit;
+                    value: none;
+                  } @ 105..106 (fid = 2);
+                  op: Add;
+                  rhs: Symbol {
+                    kind: argument;
+                    name: b @ 84..85 (fid = 2);
+                    which: 0;
+                    path: b;
+                    typ: unknown;
+                    typeness: explicit;
+                    value: none;
+                  } @ 109..110 (fid = 2);
+                } @ 105..110 (fid = 2),
+              ] @ 99..112 (fid = 2);
+            } @ 72..112 (fid = 2);
+            sym: Symbol {
+              kind: function;
+              name: add @ 65..68 (fid = 2);
+              which: 0;
+              path: orb.global_def.nested.add;
+              typ: unknown;
+              typeness: explicit;
+              value: none;
+            };
+          } @ 65..112 (fid = 2),
+        ];
+        sym: Symbol {
+          kind: module;
+          name: nested @ 179..191 (fid = 1);
+          which: 0;
+          path: orb.global_def.nested;
+          typ: unknown;
+          typeness: explicit;
+          value: none;
+        };
+      },
+    ];
+    sym: Symbol {
+      kind: module;
+      name: global_def @ 61..77 (fid = 0);
+      which: 0;
+      path: orb.global_def;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  },
+]
+"#,
+        expected_test_out: "",
+    ),
+    "desugaring/nested": (
+        expected_compiler_out: "dsir = []
+",
+        expected_test_out: "",
+    ),
+    "desugaring/predicate_loop": (
+        expected_compiler_out: r#"dsir = [
+  GlobalDef {
+    name: println @ 138..145 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        @last_expr: none,
+      ] @ 155..157 (fid = 0);
+    } @ 149..157 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: println @ 138..145 (fid = 0);
+      which: 0;
+      path: orb.println;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 138..157 (fid = 0),
+
+  GlobalDef {
+    name: main @ 159..163 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        VariableDef {
+          name: i @ 179..180 (fid = 0);
+          mutable: true;
+          typexpr: none;
+          value: integer 0 @ 184..185 (fid = 0);
+          sym: Symbol {
+            kind: local;
+            name: i @ 179..180 (fid = 0);
+            which: 0;
+            path: i;
+            typ: unknown;
+            typeness: implicit;
+            value: none;
+          };
+        } @ 179..185 (fid = 0),
+
+        Loop {
+          label: none @ 0..0 (fid = 0);
+          body: Block [
+            If {
+              cond: Unary {
+                op: Not;
+                expr: Binary {
+                  lhs: Symbol {
+                    kind: local;
+                    name: i @ 179..180 (fid = 0);
+                    which: 0;
+                    path: i;
+                    typ: unknown;
+                    typeness: implicit;
+                    value: none;
+                  } @ 198..199 (fid = 0);
+                  op: CompLT;
+                  rhs: integer 10 @ 202..204 (fid = 0);
+                } @ 198..204 (fid = 0);
+              } @ none;
+              then_br: Break {
+                label: none;
+                expr: none;
+              } @ none;
+              else_br: none;
+            } @ none @ none,
+
+            Block {
+              label: none @ 0..0 (fid = 0);
+              block: Block [
+                FunCall {
+                  callee: Symbol {
+                    kind: function;
+                    name: println @ 138..145 (fid = 0);
+                    which: 0;
+                    path: orb.println;
+                    typ: unknown;
+                    typeness: explicit;
+                    value: none;
+                  } @ 215..222 (fid = 0);
+                  args: [
+                    string "i = {}" @ 223..231 (fid = 0),
+
+                    Symbol {
+                      kind: local;
+                      name: i @ 179..180 (fid = 0);
+                      which: 0;
+                      path: i;
+                      typ: unknown;
+                      typeness: implicit;
+                      value: none;
+                    } @ 233..234 (fid = 0),
+                  ];
+                } @ 215..235 (fid = 0) @ 215..235 (fid = 0),
+
+                @last_expr: none,
+              ] @ 205..242 (fid = 0);
+            } @ none @ none,
+
+            @last_expr: none,
+          ] @ 205..242 (fid = 0);
+        } @ 192..242 (fid = 0) @ 192..242 (fid = 0),
+
+        VariableDef {
+          name: j @ 248..249 (fid = 0);
+          mutable: true;
+          typexpr: none;
+          value: integer 3 @ 253..254 (fid = 0);
+          sym: Symbol {
+            kind: local;
+            name: j @ 248..249 (fid = 0);
+            which: 1;
+            path: j;
+            typ: unknown;
+            typeness: implicit;
+            value: none;
+          };
+        } @ 248..254 (fid = 0),
+
+        @last_expr: Loop {
+          label: label @ 261..266 (fid = 0);
+          body: Block [
+            If {
+              cond: Unary {
+                op: Not;
+                expr: Binary {
+                  lhs: Binary {
+                    lhs: Symbol {
+                      kind: local;
+                      name: j @ 248..249 (fid = 0);
+                      which: 1;
+                      path: j;
+                      typ: unknown;
+                      typeness: implicit;
+                      value: none;
+                    } @ 274..275 (fid = 0);
+                    op: CompLT;
+                    rhs: integer 10 @ 278..280 (fid = 0);
+                  } @ 274..280 (fid = 0);
+                  op: LogicalAnd;
+                  rhs: Binary {
+                    lhs: Symbol {
+                      kind: local;
+                      name: j @ 248..249 (fid = 0);
+                      which: 1;
+                      path: j;
+                      typ: unknown;
+                      typeness: implicit;
+                      value: none;
+                    } @ 285..286 (fid = 0);
+                    op: CompGT;
+                    rhs: integer 2 @ 289..290 (fid = 0);
+                  } @ 285..290 (fid = 0);
+                } @ 274..290 (fid = 0);
+              } @ none;
+              then_br: Break {
+                label: label;
+                expr: none;
+              } @ none;
+              else_br: none;
+            } @ none @ none,
+
+            Block {
+              label: none @ 0..0 (fid = 0);
+              block: Block [
+                FunCall {
+                  callee: Symbol {
+                    kind: function;
+                    name: println @ 138..145 (fid = 0);
+                    which: 0;
+                    path: orb.println;
+                    typ: unknown;
+                    typeness: explicit;
+                    value: none;
+                  } @ 301..308 (fid = 0);
+                  args: [
+                    string "j = {}" @ 309..317 (fid = 0),
+
+                    Symbol {
+                      kind: local;
+                      name: j @ 248..249 (fid = 0);
+                      which: 1;
+                      path: j;
+                      typ: unknown;
+                      typeness: implicit;
+                      value: none;
+                    } @ 319..320 (fid = 0),
+                  ];
+                } @ 301..321 (fid = 0) @ 301..321 (fid = 0),
+
+                @last_expr: none,
+              ] @ 291..328 (fid = 0);
+            } @ none @ none,
+
+            @last_expr: none,
+          ] @ 291..328 (fid = 0);
+        } @ 261..328 (fid = 0),
+      ] @ 173..330 (fid = 0);
+    } @ 167..330 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: main @ 159..163 (fid = 0);
+      which: 0;
+      path: orb.main;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 159..330 (fid = 0),
+]
+"#,
+        expected_test_out: "",
+    ),
+    "lexer/char_literal": (
+        expected_compiler_out: r#"tokenstream = {
+  {
+    tt: character 'C';
+    loc: 0..3 (fid = 0);
+    lexeme: `'C'`;
+  },
+  {
+    tt: character '\0';
+    loc: 4..8 (fid = 0);
+    lexeme: `'\0'`;
+  },
+  {
+    tt: character '\n';
+    loc: 9..13 (fid = 0);
+    lexeme: `'\n'`;
+  },
+  {
+    tt: character '\u{c}';
+    loc: 14..18 (fid = 0);
+    lexeme: `'\f'`;
+  },
+  {
+    tt: character '\t';
+    loc: 19..23 (fid = 0);
+    lexeme: `'\t'`;
+  },
+  {
+    tt: character '\u{b}';
+    loc: 24..28 (fid = 0);
+    lexeme: `'\v'`;
+  },
+  {
+    tt: character '\u{7}';
+    loc: 29..33 (fid = 0);
+    lexeme: `'\a'`;
+  },
+  {
+    tt: character '\u{8}';
+    loc: 34..38 (fid = 0);
+    lexeme: `'\b'`;
+  },
+  {
+    tt: character '\u{1b}';
+    loc: 39..43 (fid = 0);
+    lexeme: `'\e'`;
+  },
+  {
+    tt: character '\\';
+    loc: 44..48 (fid = 0);
+    lexeme: `'\\'`;
+  },
+  {
+    tt: character '@';
+    loc: 49..55 (fid = 0);
+    lexeme: `'\x40'`;
+  },
+  {
+    tt: character 'ÿ';
+    loc: 56..60 (fid = 0);
+    lexeme: `'ÿ'`;
+  },
+  {
+    tt: character '🌒';
+    loc: 61..67 (fid = 0);
+    lexeme: `'🌒'`;
+  },
+  {
+    tt: character '🌒';
+    loc: 68..79 (fid = 0);
+    lexeme: `'\u{1F312}'`;
+  },
+  {
+    tt: end of file;
+    loc: 80..81 (fid = 0);
+    lexeme: N/A;
+  },
+}
+"#,
+        expected_test_out: "",
+    ),
+    "lexer/float_literal": (
+        expected_compiler_out: "tokenstream = {
+  {
+    tt: float 1012.3456;
+    loc: 18..31 (fid = 0);
+    lexeme: `1_012.345_600`;
+  },
+  {
+    tt: float 6.0219999999999996e23;
+    loc: 32..41 (fid = 0);
+    lexeme: `6.022e+23`;
+  },
+  {
+    tt: float 1.67e-27;
+    loc: 42..50 (fid = 0);
+    lexeme: `1.67e-27`;
+  },
+  {
+    tt: float 0.0;
+    loc: 51..53 (fid = 0);
+    lexeme: `0.`;
+  },
+  {
+    tt: float 1.2;
+    loc: 54..67 (fid = 0);
+    lexeme: `0001.2000e000`;
+  },
+  {
+    tt: float 15.6;
+    loc: 68..75 (fid = 0);
+    lexeme: `1_5.6_0`;
+  },
+  {
+    tt: float 0.25;
+    loc: 91..97 (fid = 0);
+    lexeme: `0x1p-2`;
+  },
+  {
+    tt: float 2048.0;
+    loc: 115..122 (fid = 0);
+    lexeme: `0x2.p10`;
+  },
+  {
+    tt: float 1.9375;
+    loc: 141..149 (fid = 0);
+    lexeme: `0x1.Fp+0`;
+  },
+  {
+    tt: float 0.5;
+    loc: 167..174 (fid = 0);
+    lexeme: `0X.8p-0`;
+  },
+  {
+    tt: float 0.1249847412109375;
+    loc: 190..201 (fid = 0);
+    lexeme: `0X_1FFFP-16`;
+  },
+  {
+    tt: end of file;
+    loc: 228..229 (fid = 0);
+    lexeme: N/A;
+  },
+}
+",
+        expected_test_out: "",
+    ),
+    "lexer/integer_literals": (
+        expected_compiler_out: "tokenstream = {
+  {
+    tt: integer '123456789';
+    loc: 0..9 (fid = 0);
+    lexeme: `123456789`;
+  },
+  {
+    tt: integer '123456789';
+    loc: 10..21 (fid = 0);
+    lexeme: `123_456_789`;
+  },
+  {
+    tt: integer '123';
+    loc: 41..50 (fid = 0);
+    lexeme: `0b1111011`;
+  },
+  {
+    tt: integer '123';
+    loc: 51..60 (fid = 0);
+    lexeme: `0B1111011`;
+  },
+  {
+    tt: integer '123';
+    loc: 61..72 (fid = 0);
+    lexeme: `0b0111_1011`;
+  },
+  {
+    tt: integer '123';
+    loc: 73..84 (fid = 0);
+    lexeme: `0B0111_1011`;
+  },
+  {
+    tt: integer '123';
+    loc: 103..108 (fid = 0);
+    lexeme: `0o173`;
+  },
+  {
+    tt: integer '123';
+    loc: 109..114 (fid = 0);
+    lexeme: `0O173`;
+  },
+  {
+    tt: integer '123';
+    loc: 115..122 (fid = 0);
+    lexeme: `0o01_73`;
+  },
+  {
+    tt: integer '123';
+    loc: 123..130 (fid = 0);
+    lexeme: `0O01_73`;
+  },
+  {
+    tt: integer '123';
+    loc: 155..159 (fid = 0);
+    lexeme: `0x7b`;
+  },
+  {
+    tt: integer '123';
+    loc: 160..164 (fid = 0);
+    lexeme: `0X7b`;
+  },
+  {
+    tt: integer '123';
+    loc: 165..169 (fid = 0);
+    lexeme: `0x7B`;
+  },
+  {
+    tt: integer '123';
+    loc: 170..174 (fid = 0);
+    lexeme: `0X7B`;
+  },
+  {
+    tt: integer '3735928559';
+    loc: 175..186 (fid = 0);
+    lexeme: `0xDEAD_BEEF`;
+  },
+  {
+    tt: integer '3735928559';
+    loc: 187..200 (fid = 0);
+    lexeme: `0Xde_ad_be_ef`;
+  },
+  {
+    tt: end of file;
+    loc: 201..202 (fid = 0);
+    lexeme: N/A;
+  },
+}
+",
+        expected_test_out: "",
+    ),
+    "lexer/kw_idents": (
+        expected_compiler_out: "tokenstream = {
+  {
+    tt: keyword 'and';
+    loc: 19..22 (fid = 0);
+    lexeme: `and`;
+  },
+  {
+    tt: keyword 'as';
+    loc: 23..25 (fid = 0);
+    lexeme: `as`;
+  },
+  {
+    tt: keyword 'break';
+    loc: 26..31 (fid = 0);
+    lexeme: `break`;
+  },
+  {
+    tt: keyword 'comptime';
+    loc: 32..40 (fid = 0);
+    lexeme: `comptime`;
+  },
+  {
+    tt: keyword 'continue';
+    loc: 41..49 (fid = 0);
+    lexeme: `continue`;
+  },
+  {
+    tt: keyword 'defer';
+    loc: 50..55 (fid = 0);
+    lexeme: `defer`;
+  },
+  {
+    tt: keyword 'else';
+    loc: 56..60 (fid = 0);
+    lexeme: `else`;
+  },
+  {
+    tt: keyword 'false';
+    loc: 61..66 (fid = 0);
+    lexeme: `false`;
+  },
+  {
+    tt: keyword 'for';
+    loc: 67..70 (fid = 0);
+    lexeme: `for`;
+  },
+  {
+    tt: keyword 'fun';
+    loc: 71..74 (fid = 0);
+    lexeme: `fun`;
+  },
+  {
+    tt: keyword 'if';
+    loc: 75..77 (fid = 0);
+    lexeme: `if`;
+  },
+  {
+    tt: keyword 'impl';
+    loc: 78..82 (fid = 0);
+    lexeme: `impl`;
+  },
+  {
+    tt: keyword 'in';
+    loc: 83..85 (fid = 0);
+    lexeme: `in`;
+  },
+  {
+    tt: keyword 'let';
+    loc: 86..89 (fid = 0);
+    lexeme: `let`;
+  },
+  {
+    tt: keyword 'loop';
+    loc: 90..94 (fid = 0);
+    lexeme: `loop`;
+  },
+  {
+    tt: keyword 'mut';
+    loc: 95..98 (fid = 0);
+    lexeme: `mut`;
+  },
+  {
+    tt: keyword 'null';
+    loc: 99..103 (fid = 0);
+    lexeme: `null`;
+  },
+  {
+    tt: keyword 'or';
+    loc: 104..106 (fid = 0);
+    lexeme: `or`;
+  },
+  {
+    tt: keyword 'orb';
+    loc: 107..110 (fid = 0);
+    lexeme: `orb`;
+  },
+  {
+    tt: keyword 'pub';
+    loc: 111..114 (fid = 0);
+    lexeme: `pub`;
+  },
+  {
+    tt: keyword 'return';
+    loc: 115..121 (fid = 0);
+    lexeme: `return`;
+  },
+  {
+    tt: keyword 'self';
+    loc: 122..126 (fid = 0);
+    lexeme: `self`;
+  },
+  {
+    tt: keyword 'then';
+    loc: 127..131 (fid = 0);
+    lexeme: `then`;
+  },
+  {
+    tt: keyword 'trait';
+    loc: 132..137 (fid = 0);
+    lexeme: `trait`;
+  },
+  {
+    tt: keyword 'true';
+    loc: 138..142 (fid = 0);
+    lexeme: `true`;
+  },
+  {
+    tt: keyword 'while';
+    loc: 143..148 (fid = 0);
+    lexeme: `while`;
+  },
+  {
+    tt: ident 'foo';
+    loc: 176..179 (fid = 0);
+    lexeme: `foo`;
+  },
+  {
+    tt: ident 'bar_baz';
+    loc: 180..187 (fid = 0);
+    lexeme: `bar_baz`;
+  },
+  {
+    tt: ident 'FooBarBaz';
+    loc: 188..197 (fid = 0);
+    lexeme: `FooBarBaz`;
+  },
+  {
+    tt: end of file;
+    loc: 198..199 (fid = 0);
+    lexeme: N/A;
+  },
+}
+",
+        expected_test_out: "",
+    ),
+    "lexer/punctuation": (
+        expected_compiler_out: "tokenstream = {
+  {
+    tt: punctuation LParen;
+    loc: 0..1 (fid = 0);
+    lexeme: `(`;
+  },
+  {
+    tt: punctuation RParen;
+    loc: 2..3 (fid = 0);
+    lexeme: `)`;
+  },
+  {
+    tt: punctuation LBracket;
+    loc: 4..5 (fid = 0);
+    lexeme: `[`;
+  },
+  {
+    tt: punctuation RBracket;
+    loc: 6..7 (fid = 0);
+    lexeme: `]`;
+  },
+  {
+    tt: punctuation LBrace;
+    loc: 8..9 (fid = 0);
+    lexeme: `{`;
+  },
+  {
+    tt: punctuation RBrace;
+    loc: 10..11 (fid = 0);
+    lexeme: `}`;
+  },
+  {
+    tt: punctuation Plus;
+    loc: 12..13 (fid = 0);
+    lexeme: `+`;
+  },
+  {
+    tt: punctuation Minus;
+    loc: 14..15 (fid = 0);
+    lexeme: `-`;
+  },
+  {
+    tt: punctuation Star;
+    loc: 16..17 (fid = 0);
+    lexeme: `*`;
+  },
+  {
+    tt: punctuation Slash;
+    loc: 18..19 (fid = 0);
+    lexeme: `/`;
+  },
+  {
+    tt: punctuation Colon;
+    loc: 20..21 (fid = 0);
+    lexeme: `:`;
+  },
+  {
+    tt: punctuation Comma;
+    loc: 22..23 (fid = 0);
+    lexeme: `,`;
+  },
+  {
+    tt: punctuation Equal;
+    loc: 24..25 (fid = 0);
+    lexeme: `=`;
+  },
+  {
+    tt: punctuation Equal2;
+    loc: 26..28 (fid = 0);
+    lexeme: `==`;
+  },
+  {
+    tt: punctuation BangEqual;
+    loc: 29..31 (fid = 0);
+    lexeme: `!=`;
+  },
+  {
+    tt: punctuation Bang;
+    loc: 32..33 (fid = 0);
+    lexeme: `!`;
+  },
+  {
+    tt: punctuation LtEqual;
+    loc: 34..36 (fid = 0);
+    lexeme: `<=`;
+  },
+  {
+    tt: punctuation Lt;
+    loc: 37..38 (fid = 0);
+    lexeme: `<`;
+  },
+  {
+    tt: punctuation Lt2;
+    loc: 39..41 (fid = 0);
+    lexeme: `<<`;
+  },
+  {
+    tt: punctuation Gt;
+    loc: 42..43 (fid = 0);
+    lexeme: `>`;
+  },
+  {
+    tt: punctuation Gt2;
+    loc: 44..46 (fid = 0);
+    lexeme: `>>`;
+  },
+  {
+    tt: punctuation GtEqual;
+    loc: 47..49 (fid = 0);
+    lexeme: `>=`;
+  },
+  {
+    tt: punctuation Semicolon;
+    loc: 50..51 (fid = 0);
+    lexeme: `;`;
+  },
+  {
+    tt: punctuation MinusGt;
+    loc: 52..54 (fid = 0);
+    lexeme: `->`;
+  },
+  {
+    tt: punctuation Caret;
+    loc: 55..56 (fid = 0);
+    lexeme: `^`;
+  },
+  {
+    tt: punctuation Ampsand;
+    loc: 57..58 (fid = 0);
+    lexeme: `&`;
+  },
+  {
+    tt: punctuation Pipe;
+    loc: 59..60 (fid = 0);
+    lexeme: `|`;
+  },
+  {
+    tt: punctuation Percent;
+    loc: 61..62 (fid = 0);
+    lexeme: `%`;
+  },
+  {
+    tt: punctuation Dot;
+    loc: 63..64 (fid = 0);
+    lexeme: `.`;
+  },
+  {
+    tt: punctuation DotStar;
+    loc: 65..67 (fid = 0);
+    lexeme: `.*`;
+  },
+  {
+    tt: end of file;
+    loc: 68..69 (fid = 0);
+    lexeme: N/A;
+  },
+}
+",
+        expected_test_out: "",
+    ),
+    "lexer/specialized_literals": (
+        expected_compiler_out: r#"tokenstream = {
+  {
+    tt: specialized char literal;
+    s12n: "a7";
+    lit: 'C'
+    loc: 28..33 (fid = 0);
+    lexeme: `a7'C'`;
+  },
+  {
+    tt: specialized string literal;
+    s12n: "c";
+    lit: "Hello, world! This string is a null terminated string"
+    loc: 65..121 (fid = 0);
+    lexeme: `c"Hello, world! This string is a null terminated string"`;
+  },
+  {
+    tt: specialized string literal;
+    s12n: "r";
+    lit: "no escapes \\n\\r"
+    loc: 169..187 (fid = 0);
+    lexeme: `r"no escapes \n\r"`;
+  },
+  {
+    tt: specialized int literal;
+    s12n: "usz";
+    lit: 123456
+    loc: 220..231 (fid = 0);
+    lexeme: `123_456'usz`;
+  },
+  {
+    tt: specialized float literal;
+    s12n: "f64";
+    lit: 12345678.9
+    loc: 262..280 (fid = 0);
+    lexeme: `123_456.789e+2'f64`;
+  },
+  {
+    tt: specialized char literal;
+    s12n: "fun";
+    lit: '\0'
+    loc: 353..360 (fid = 0);
+    lexeme: `fun'\0'`;
+  },
+  {
+    tt: specialized string literal;
+    s12n: "orb";
+    lit: "Hello"
+    loc: 409..419 (fid = 0);
+    lexeme: `orb"Hello"`;
+  },
+  {
+    tt: specialized int literal;
+    s12n: "let";
+    lit: 343569
+    loc: 435..446 (fid = 0);
+    lexeme: `3435_69'let`;
+  },
+  {
+    tt: specialized float literal;
+    s12n: "comptime";
+    lit: 6.9
+    loc: 469..481 (fid = 0);
+    lexeme: `6.9'comptime`;
+  },
+  {
+    tt: end of file;
+    loc: 482..483 (fid = 0);
+    lexeme: N/A;
+  },
+}
+"#,
+        expected_test_out: "",
+    ),
+    "lexer/string_literal": (
+        expected_compiler_out: r#"tokenstream = {
+  {
+    tt: string "Hello, world\n";
+    loc: 0..16 (fid = 0);
+    lexeme: `"Hello, world\n"`;
+  },
+  {
+    tt: string "\0 \n \r \u{c} \t \u{b} \u{7} \u{8} \u{1b} \\ ÿ";
+    loc: 17..53 (fid = 0);
+    lexeme: `"\0 \n \r \f \t \v \a \b \e \\ \xFF"`;
+  },
+  {
+    tt: string "'we can use simple quotes inside a string'";
+    loc: 54..98 (fid = 0);
+    lexeme: `"'we can use simple quotes inside a string'"`;
+  },
+  {
+    tt: string "string support UTF-8: ÿ, 🌒 etc..";
+    loc: 99..137 (fid = 0);
+    lexeme: `"string support UTF-8: ÿ, 🌒 etc.."`;
+  },
+  {
+    tt: string "and supports unicode escape; Lun: 🌒";
+    loc: 138..183 (fid = 0);
+    lexeme: `"and supports unicode escape; Lun: \u{1f312}"`;
+  },
+  {
+    tt: end of file;
+    loc: 184..185 (fid = 0);
+    lexeme: N/A;
+  },
+}
+"#,
+        expected_test_out: "",
+    ),
+    "multifile/lib": (
+        expected_compiler_out: r#"scir = [
+  Module {
+    name: dbg;
+    module: [
+      Module {
+        name: nested;
+        module: [
+          GlobalDef {
+            name: fib @ 0..3 (fid = 2);
+            mutable: false;
+            typexpr: none;
+            value: Expression {
+              expr: FunDefinition {
+                args: [
+                  Arg {
+                    name: n @ 11..12 (fid = 2);
+                    typexpr: Expression {
+                      expr: Symbol {
+                        kind: global;
+                        name: i32 @ none;
+                        which: 0;
+                        path: ∅;
+                        typ: type;
+                        typeness: explicit;
+                        value: Type {
+                          type: i32;
+                        };
+                      };
+                      typ: type;
+                    } @ 14..17 (fid = 2);
+                    sym: Symbol {
+                      kind: argument;
+                      name: n @ 11..12 (fid = 2);
+                      which: 0;
+                      path: n;
+                      typ: i32;
+                      typeness: explicit;
+                      value: none;
+                    };
+                  } @ 11..17 (fid = 2),
+                ];
+                rettypexpr: Expression {
+                  expr: Symbol {
+                    kind: global;
+                    name: i32 @ none;
+                    which: 0;
+                    path: ∅;
+                    typ: type;
+                    typeness: explicit;
+                    value: Type {
+                      type: i32;
+                    };
+                  };
+                  typ: type;
+                } @ 22..25 (fid = 2);
+                body: Block {
+                  stmts: [];
+                  last_expr: Expression {
+                    expr: If {
+                      cond: Expression {
+                        expr: Binary {
+                          lhs: Expression {
+                            expr: Symbol {
+                              kind: argument;
+                              name: n @ 11..12 (fid = 2);
+                              which: 0;
+                              path: n;
+                              typ: i32;
+                              typeness: explicit;
+                              value: none;
+                            };
+                            typ: i32;
+                          } @ 35..36 (fid = 2);
+                          op: CompLE;
+                          rhs: Expression {
+                            expr: integer 1;
+                            typ: i32;
+                          } @ 40..41 (fid = 2);
+                        };
+                        typ: bool;
+                      } @ 35..41 (fid = 2);
+                      then_br: Expression {
+                        expr: Block {
+                          label: none @ 0..0 (fid = 0);
+                          block: Block {
+                            stmts: [];
+                            last_expr: Expression {
+                              expr: Symbol {
+                                kind: argument;
+                                name: n @ 11..12 (fid = 2);
+                                which: 0;
+                                path: n;
+                                typ: i32;
+                                typeness: explicit;
+                                value: none;
+                              };
+                              typ: i32;
+                            } @ 52..53 (fid = 2);
+                            typ: i32;
+                          } @ 42..59 (fid = 2);
+                          index: none;
+                        };
+                        typ: i32;
+                      } @ 32..104 (fid = 2);
+                      else_br: Expression {
+                        expr: Block {
+                          label: none @ 0..0 (fid = 0);
+                          block: Block {
+                            stmts: [];
+                            last_expr: Expression {
+                              expr: Binary {
+                                lhs: Expression {
+                                  expr: FunCall {
+                                    callee: Expression {
+                                      expr: Symbol {
+                                        kind: function;
+                                        name: fib @ 0..3 (fid = 2);
+                                        which: 0;
+                                        path: orb.dbg.nested.fib;
+                                        typ: *fun (i32) -> i32;
+                                        typeness: explicit;
+                                        value: none;
+                                      };
+                                      typ: *fun (i32) -> i32;
+                                    } @ 75..78 (fid = 2);
+                                    args: [
+                                      Expression {
+                                        expr: Binary {
+                                          lhs: Expression {
+                                            expr: Symbol {
+                                              kind: argument;
+                                              name: n @ 11..12 (fid = 2);
+                                              which: 0;
+                                              path: n;
+                                              typ: i32;
+                                              typeness: explicit;
+                                              value: none;
+                                            };
+                                            typ: i32;
+                                          } @ 79..80 (fid = 2);
+                                          op: Sub;
+                                          rhs: Expression {
+                                            expr: integer 1;
+                                            typ: i32;
+                                          } @ 83..84 (fid = 2);
+                                        };
+                                        typ: i32;
+                                      } @ 79..84 (fid = 2),
+                                    ];
+                                  };
+                                  typ: i32;
+                                } @ 75..85 (fid = 2);
+                                op: Add;
+                                rhs: Expression {
+                                  expr: FunCall {
+                                    callee: Expression {
+                                      expr: Symbol {
+                                        kind: function;
+                                        name: fib @ 0..3 (fid = 2);
+                                        which: 0;
+                                        path: orb.dbg.nested.fib;
+                                        typ: *fun (i32) -> i32;
+                                        typeness: explicit;
+                                        value: none;
+                                      };
+                                      typ: *fun (i32) -> i32;
+                                    } @ 88..91 (fid = 2);
+                                    args: [
+                                      Expression {
+                                        expr: Binary {
+                                          lhs: Expression {
+                                            expr: Symbol {
+                                              kind: argument;
+                                              name: n @ 11..12 (fid = 2);
+                                              which: 0;
+                                              path: n;
+                                              typ: i32;
+                                              typeness: explicit;
+                                              value: none;
+                                            };
+                                            typ: i32;
+                                          } @ 92..93 (fid = 2);
+                                          op: Sub;
+                                          rhs: Expression {
+                                            expr: integer 2;
+                                            typ: i32;
+                                          } @ 96..97 (fid = 2);
+                                        };
+                                        typ: i32;
+                                      } @ 92..97 (fid = 2),
+                                    ];
+                                  };
+                                  typ: i32;
+                                } @ 88..98 (fid = 2);
+                              };
+                              typ: i32;
+                            } @ 75..98 (fid = 2);
+                            typ: i32;
+                          } @ 65..104 (fid = 2);
+                          index: none;
+                        };
+                        typ: i32;
+                      } @ 65..104 (fid = 2);
+                    };
+                    typ: i32;
+                  } @ 32..104 (fid = 2);
+                  typ: i32;
+                } @ 26..106 (fid = 2);
+              };
+              typ: *fun (i32) -> i32;
+            } @ 7..106 (fid = 2);
+            sym: Symbol {
+              kind: function;
+              name: fib @ 0..3 (fid = 2);
+              which: 0;
+              path: orb.dbg.nested.fib;
+              typ: *fun (i32) -> i32;
+              typeness: explicit;
+              value: none;
+            };
+          } @ 0..106 (fid = 2),
+        ];
+        sym: Symbol {
+          kind: module;
+          name: nested @ 21..33 (fid = 1);
+          which: 0;
+          path: orb.dbg.nested;
+          typ: unknown;
+          typeness: explicit;
+          value: none;
+        };
+      } @ 21..33 (fid = 1),
+
+      GlobalDef {
+        name: puts @ 58..62 (fid = 1);
+        mutable: false;
+        typexpr: none;
+        value: Expression {
+          expr: FunDefinition {
+            args: [
+              Arg {
+                name: msg @ 70..73 (fid = 1);
+                typexpr: Expression {
+                  expr: PointerType {
+                    mutable: false;
+                    typexpr: Expression {
+                      expr: Symbol {
+                        kind: global;
+                        name: str @ none;
+                        which: 0;
+                        path: ∅;
+                        typ: type;
+                        typeness: explicit;
+                        value: Type {
+                          type: str;
+                        };
+                      };
+                      typ: type;
+                    } @ 76..79 (fid = 1);
+                  };
+                  typ: type;
+                } @ 75..79 (fid = 1);
+                sym: Symbol {
+                  kind: argument;
+                  name: msg @ 70..73 (fid = 1);
+                  which: 0;
+                  path: msg;
+                  typ: * str;
+                  typeness: explicit;
+                  value: none;
+                };
+              } @ 70..79 (fid = 1),
+            ];
+            rettypexpr: none;
+            body: Block {
+              stmts: [
+                Expression {
+                  expr: Binary {
+                    lhs: Expression {
+                      expr: Underscore;
+                      typ: unknown;
+                    } @ 87..88 (fid = 1);
+                    op: Assignment;
+                    rhs: Expression {
+                      expr: Symbol {
+                        kind: argument;
+                        name: msg @ 70..73 (fid = 1);
+                        which: 0;
+                        path: msg;
+                        typ: * str;
+                        typeness: explicit;
+                        value: none;
+                      };
+                      typ: * str;
+                    } @ 91..94 (fid = 1);
+                  };
+                  typ: void;
+                } @ 87..94 (fid = 1) @ 87..94 (fid = 1),
+              ];
+              last_expr: none;
+              typ: void;
+            } @ 81..125 (fid = 1);
+          };
+          typ: *fun (* str) -> void;
+        } @ 66..125 (fid = 1);
+        sym: Symbol {
+          kind: function;
+          name: puts @ 58..62 (fid = 1);
+          which: 0;
+          path: orb.dbg.puts;
+          typ: *fun (* str) -> void;
+          typeness: explicit;
+          value: none;
+        };
+      } @ 58..125 (fid = 1),
+
+      GlobalDef {
+        name: some_other_thing @ 127..143 (fid = 1);
+        mutable: false;
+        typexpr: none;
+        value: Expression {
+          expr: FunDefinition {
+            args: [];
+            rettypexpr: none;
+            body: Block {
+              stmts: [
+                VariableDef {
+                  name: half @ 159..163 (fid = 1);
+                  mutable: false;
+                  typexpr: none;
+                  value: Expression {
+                    expr: FunCall {
+                      callee: Expression {
+                        expr: Symbol {
+                          kind: function;
+                          name: divide @ 163..169 (fid = 0);
+                          which: 0;
+                          path: orb.divide;
+                          typ: *fun (f32, f32) -> f32;
+                          typeness: explicit;
+                          value: none;
+                        };
+                        typ: *fun (f32, f32) -> f32;
+                      } @ 167..173 (fid = 1);
+                      args: [
+                        Expression {
+                          expr: float 1;
+                          typ: f32;
+                        } @ 174..176 (fid = 1),
+
+                        Expression {
+                          expr: float 2;
+                          typ: f32;
+                        } @ 178..180 (fid = 1),
+                      ];
+                    };
+                    typ: f32;
+                  } @ 167..181 (fid = 1);
+                  sym: Symbol {
+                    kind: local;
+                    name: half @ 159..163 (fid = 1);
+                    which: 0;
+                    path: half;
+                    typ: f32;
+                    typeness: implicit;
+                    value: none;
+                  };
+                } @ 159..181 (fid = 1),
+              ];
+              last_expr: none;
+              typ: void;
+            } @ 153..184 (fid = 1);
+          };
+          typ: *fun () -> void;
+        } @ 147..184 (fid = 1);
+        sym: Symbol {
+          kind: function;
+          name: some_other_thing @ 127..143 (fid = 1);
+          which: 0;
+          path: orb.dbg.some_other_thing;
+          typ: *fun () -> void;
+          typeness: explicit;
+          value: none;
+        };
+      } @ 127..184 (fid = 1),
+    ];
+    sym: Symbol {
+      kind: module;
+      name: dbg @ 24..33 (fid = 0);
+      which: 0;
+      path: orb.dbg;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 24..33 (fid = 0),
+
+  GlobalDef {
+    name: run @ 60..63 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: none;
+        body: Block {
+          stmts: [
+            Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: QualifiedPath {
+                    path: orb.dbg.puts @ 80..92 (fid = 0);
+                    sym: Symbol {
+                      kind: function;
+                      name: puts @ 58..62 (fid = 1);
+                      which: 0;
+                      path: orb.dbg.puts;
+                      typ: *fun (* str) -> void;
+                      typeness: explicit;
+                      value: none;
+                    };
+                  };
+                  typ: *fun (* str) -> void;
+                } @ 80..92 (fid = 0);
+                args: [
+                  Expression {
+                    expr: string "Hello world!";
+                    typ: * str;
+                  } @ 93..107 (fid = 0),
+                ];
+              };
+              typ: void;
+            } @ 80..108 (fid = 0) @ 80..108 (fid = 0),
+
+            Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: QualifiedPath {
+                    path: dbg.puts @ 114..122 (fid = 0);
+                    sym: Symbol {
+                      kind: function;
+                      name: puts @ 58..62 (fid = 1);
+                      which: 0;
+                      path: orb.dbg.puts;
+                      typ: *fun (* str) -> void;
+                      typeness: explicit;
+                      value: none;
+                    };
+                  };
+                  typ: *fun (* str) -> void;
+                } @ 114..122 (fid = 0);
+                args: [
+                  Expression {
+                    expr: string "Hello world!";
+                    typ: * str;
+                  } @ 123..137 (fid = 0),
+                ];
+              };
+              typ: void;
+            } @ 114..138 (fid = 0) @ 114..138 (fid = 0),
+
+            Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: QualifiedPath {
+                    path: nested.fib @ 144..154 (fid = 0);
+                    sym: Symbol {
+                      kind: function;
+                      name: fib @ 0..3 (fid = 2);
+                      which: 0;
+                      path: orb.dbg.nested.fib;
+                      typ: *fun (i32) -> i32;
+                      typeness: explicit;
+                      value: none;
+                    };
+                  };
+                  typ: *fun (i32) -> i32;
+                } @ 144..154 (fid = 0);
+                args: [
+                  Expression {
+                    expr: integer 12;
+                    typ: i32;
+                  } @ 155..157 (fid = 0),
+                ];
+              };
+              typ: i32;
+            } @ 144..158 (fid = 0) @ 144..158 (fid = 0),
+          ];
+          last_expr: none;
+          typ: void;
+        } @ 74..161 (fid = 0);
+      };
+      typ: *fun () -> void;
+    } @ 67..161 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: run @ 60..63 (fid = 0);
+      which: 0;
+      path: orb.run;
+      typ: *fun () -> void;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 60..161 (fid = 0),
+
+  GlobalDef {
+    name: divide @ 163..169 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [
+          Arg {
+            name: lhs @ 177..180 (fid = 0);
+            typexpr: Expression {
+              expr: Symbol {
+                kind: global;
+                name: f32 @ none;
+                which: 0;
+                path: ∅;
+                typ: type;
+                typeness: explicit;
+                value: Type {
+                  type: f32;
+                };
+              };
+              typ: type;
+            } @ 182..185 (fid = 0);
+            sym: Symbol {
+              kind: argument;
+              name: lhs @ 177..180 (fid = 0);
+              which: 0;
+              path: lhs;
+              typ: f32;
+              typeness: explicit;
+              value: none;
+            };
+          } @ 177..185 (fid = 0),
+
+          Arg {
+            name: rhs @ 187..190 (fid = 0);
+            typexpr: Expression {
+              expr: Symbol {
+                kind: global;
+                name: f32 @ none;
+                which: 0;
+                path: ∅;
+                typ: type;
+                typeness: explicit;
+                value: Type {
+                  type: f32;
+                };
+              };
+              typ: type;
+            } @ 192..195 (fid = 0);
+            sym: Symbol {
+              kind: argument;
+              name: rhs @ 187..190 (fid = 0);
+              which: 0;
+              path: rhs;
+              typ: f32;
+              typeness: explicit;
+              value: none;
+            };
+          } @ 187..195 (fid = 0),
+        ];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: f32 @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: f32;
+            };
+          };
+          typ: type;
+        } @ 200..203 (fid = 0);
+        body: Block {
+          stmts: [];
+          last_expr: Expression {
+            expr: Binary {
+              lhs: Expression {
+                expr: Symbol {
+                  kind: argument;
+                  name: lhs @ 177..180 (fid = 0);
+                  which: 0;
+                  path: lhs;
+                  typ: f32;
+                  typeness: explicit;
+                  value: none;
+                };
+                typ: f32;
+              } @ 210..213 (fid = 0);
+              op: Div;
+              rhs: Expression {
+                expr: Symbol {
+                  kind: argument;
+                  name: rhs @ 187..190 (fid = 0);
+                  which: 0;
+                  path: rhs;
+                  typ: f32;
+                  typeness: explicit;
+                  value: none;
+                };
+                typ: f32;
+              } @ 216..219 (fid = 0);
+            };
+            typ: f32;
+          } @ 210..219 (fid = 0);
+          typ: f32;
+        } @ 204..221 (fid = 0);
+      };
+      typ: *fun (f32, f32) -> f32;
+    } @ 173..221 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: divide @ 163..169 (fid = 0);
+      which: 0;
+      path: orb.divide;
+      typ: *fun (f32, f32) -> f32;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 163..221 (fid = 0),
+
+  GlobalDef {
+    name: MY_LIL_CONSTANT @ 223..238 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: integer 1234;
+      typ: i32;
+    } @ 242..246 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: MY_LIL_CONSTANT @ 223..238 (fid = 0);
+      which: 0;
+      path: orb.MY_LIL_CONSTANT;
+      typ: i32;
+      typeness: implicit;
+      value: I32 {
+        val: 1234;
+      };
+    };
+  } @ 223..247 (fid = 0),
+]
+"#,
+        expected_test_out: "",
+    ),
+    "parser/directive": (
+        expected_compiler_out: "ast = [
+  Mod {
+    name: module;
+  } @ 20..32 (fid = 0),
+
+  Import {
+    path: orb.driver.run @ 59..73 (fid = 0);
+    alias: none;
+  } @ 51..74 (fid = 0),
+
+  Import {
+    path: std @ 83..86 (fid = 0);
+    alias: none;
+  } @ 75..87 (fid = 0),
+
+  Import {
+    path: std.rc.Rc @ 96..105 (fid = 0);
+    alias: ReferenceCountedPtr;
+  } @ 88..129 (fid = 0),
+]
+",
+        expected_test_out: "",
+    ),
+    "parser/expression": (
+        expected_compiler_out: r#"ast = [
+  GlobalConst {
+    name: main @ 11..15 (fid = 0);
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        Binary {
+          lhs: ident _ @ 54..55 (fid = 0);
+          op: Assignment;
+          rhs: integer 12 @ 58..60 (fid = 0);
+        } @ 54..60 (fid = 0) @ 54..60 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 87..88 (fid = 0);
+          op: Assignment;
+          rhs: boolean true @ 91..95 (fid = 0);
+        } @ 87..95 (fid = 0) @ 87..95 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 101..102 (fid = 0);
+          op: Assignment;
+          rhs: boolean false @ 105..110 (fid = 0);
+        } @ 101..110 (fid = 0) @ 101..110 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 139..140 (fid = 0);
+          op: Assignment;
+          rhs: string "Hello world!" @ 143..157 (fid = 0);
+        } @ 139..157 (fid = 0) @ 139..157 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 184..185 (fid = 0);
+          op: Assignment;
+          rhs: character 'C' @ 188..191 (fid = 0);
+        } @ 184..191 (fid = 0) @ 184..191 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 219..220 (fid = 0);
+          op: Assignment;
+          rhs: float 602199999999999960000000 @ 223..231 (fid = 0);
+        } @ 219..231 (fid = 0) @ 219..231 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 259..260 (fid = 0);
+          op: Assignment;
+          rhs: Grouping {
+            expr: Binary {
+              lhs: integer 12 @ 264..266 (fid = 0);
+              op: Add;
+              rhs: integer 3 @ 269..270 (fid = 0);
+            } @ 264..270 (fid = 0);
+          } @ 263..271 (fid = 0);
+        } @ 259..271 (fid = 0) @ 259..271 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 296..297 (fid = 0);
+          op: Assignment;
+          rhs: ident main @ 300..304 (fid = 0);
+        } @ 296..304 (fid = 0) @ 296..304 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 328..329 (fid = 0);
+          op: Assignment;
+          rhs: Binary {
+            lhs: integer 34 @ 332..334 (fid = 0);
+            op: Add;
+            rhs: integer 35 @ 337..339 (fid = 0);
+          } @ 332..339 (fid = 0);
+        } @ 328..339 (fid = 0) @ 328..339 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 362..363 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Not;
+            expr: boolean false @ 367..372 (fid = 0);
+          } @ 366..372 (fid = 0);
+        } @ 362..372 (fid = 0) @ 362..372 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 378..379 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Negation;
+            expr: float 12 @ 383..387 (fid = 0);
+          } @ 382..387 (fid = 0);
+        } @ 378..387 (fid = 0) @ 378..387 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 410..411 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: ident some_fun @ 414..422 (fid = 0);
+            args: [];
+          } @ 414..424 (fid = 0);
+        } @ 410..424 (fid = 0) @ 410..424 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 430..431 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: ident some_fun @ 434..442 (fid = 0);
+            args: [
+              integer 1 @ 443..444 (fid = 0),
+            ];
+          } @ 434..445 (fid = 0);
+        } @ 430..445 (fid = 0) @ 430..445 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 451..452 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: ident some_fun @ 455..463 (fid = 0);
+            args: [
+              integer 1 @ 464..465 (fid = 0),
+
+              integer 2 @ 467..468 (fid = 0),
+            ];
+          } @ 455..469 (fid = 0);
+        } @ 451..469 (fid = 0) @ 451..469 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 475..476 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: ident some_fun @ 479..487 (fid = 0);
+            args: [
+              integer 1 @ 488..489 (fid = 0),
+
+              integer 2 @ 491..492 (fid = 0),
+            ];
+          } @ 479..494 (fid = 0);
+        } @ 475..494 (fid = 0) @ 475..494 (fid = 0),
+
+        If {
+          cond: boolean true @ 514..518 (fid = 0);
+          body: Block [
+            FunCall {
+              callee: ident main @ 529..533 (fid = 0);
+              args: [];
+            } @ 529..535 (fid = 0) @ 529..535 (fid = 0),
+
+            @last_expr: none,
+          ] @ 519..542 (fid = 0);
+          else_br: Block [
+            FunCall {
+              callee: ident main @ 558..562 (fid = 0);
+              args: [];
+            } @ 558..564 (fid = 0) @ 558..564 (fid = 0),
+
+            @last_expr: none,
+          ] @ 548..571 (fid = 0);
+        } @ 511..571 (fid = 0) @ 511..571 (fid = 0) @ 511..571 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 597..598 (fid = 0);
+          op: Assignment;
+          rhs: IfThenElse {
+            cond: Binary {
+              lhs: integer 23 @ 604..606 (fid = 0);
+              op: CompGT;
+              rhs: integer 12 @ 609..611 (fid = 0);
+            } @ 604..611 (fid = 0);
+            true_val: boolean false @ 617..622 (fid = 0);
+            false_val: boolean true @ 628..632 (fid = 0);
+          } @ 601..632 (fid = 0);
+        } @ 597..632 (fid = 0) @ 597..632 (fid = 0),
+
+        Block Block [
+          Binary {
+            lhs: ident _ @ 662..663 (fid = 0);
+            op: Assignment;
+            rhs: integer 2 @ 666..667 (fid = 0);
+          } @ 662..667 (fid = 0) @ 662..667 (fid = 0),
+
+          Binary {
+            lhs: ident _ @ 677..678 (fid = 0);
+            op: Assignment;
+            rhs: FunCall {
+              callee: ident main @ 681..685 (fid = 0);
+              args: [];
+            } @ 681..687 (fid = 0);
+          } @ 677..687 (fid = 0) @ 677..687 (fid = 0),
+
+          @last_expr: none,
+        ] @ 652..694 (fid = 0) @ 652..694 (fid = 0) @ 652..694 (fid = 0),
+
+        BlockWithLabel {
+          label: label_block @ 700..711 (fid = 0);
+          block: Block [
+            Break {
+              label: label_block;
+              expr: none;
+            } @ 723..741 (fid = 0) @ 723..741 (fid = 0),
+
+            @last_expr: none,
+          ] @ 713..748 (fid = 0);
+        } @ 700..748 (fid = 0) @ 700..748 (fid = 0),
+
+        PredicateLoop {
+          label: none @ 0..0 (fid = 0);
+          cond: FunCall {
+            callee: ident predicate @ 782..791 (fid = 0);
+            args: [];
+          } @ 782..793 (fid = 0);
+          body: Block [
+            FunCall {
+              callee: ident println @ 804..811 (fid = 0);
+              args: [
+                string "Hello!" @ 812..820 (fid = 0),
+              ];
+            } @ 804..821 (fid = 0) @ 804..821 (fid = 0),
+
+            @last_expr: none,
+          ] @ 794..828 (fid = 0);
+        } @ 776..828 (fid = 0) @ 776..828 (fid = 0),
+
+        PredicateLoop {
+          label: label @ 834..839 (fid = 0);
+          cond: ident condition @ 847..856 (fid = 0);
+          body: Block [
+            FunCall {
+              callee: ident println @ 867..874 (fid = 0);
+              args: [
+                string "Hello from loop with label" @ 875..903 (fid = 0),
+              ];
+            } @ 867..904 (fid = 0) @ 867..904 (fid = 0),
+
+            Continue {
+              label: label;
+            } @ 914..929 (fid = 0) @ 914..929 (fid = 0),
+
+            @last_expr: none,
+          ] @ 857..936 (fid = 0);
+        } @ 834..936 (fid = 0) @ 834..936 (fid = 0),
+
+        IteratorLoop {
+          label: none @ 0..0 (fid = 0);
+          variable: i;
+          iterator: FunCall {
+            callee: ident range @ 972..977 (fid = 0);
+            args: [
+              integer 1 @ 978..979 (fid = 0),
+
+              integer 12 @ 981..983 (fid = 0),
+            ];
+          } @ 972..984 (fid = 0);
+          body: Block [
+            @last_expr: none,
+          ] @ 985..1008 (fid = 0);
+        } @ 963..1008 (fid = 0) @ 963..1008 (fid = 0),
+
+        IteratorLoop {
+          label: label2 @ 1014..1020 (fid = 0);
+          variable: j;
+          iterator: FunCall {
+            callee: ident range @ 1031..1036 (fid = 0);
+            args: [
+              integer 13 @ 1037..1039 (fid = 0),
+
+              integer 16 @ 1041..1043 (fid = 0),
+            ];
+          } @ 1031..1044 (fid = 0);
+          body: Block [
+            @last_expr: none,
+          ] @ 1045..1068 (fid = 0);
+        } @ 1014..1068 (fid = 0) @ 1014..1068 (fid = 0),
+
+        InfiniteLoop {
+          label: none @ 0..0 (fid = 0);
+          body: Block [
+            Break {
+              label: none;
+              expr: none;
+            } @ 1126..1131 (fid = 0) @ 1126..1131 (fid = 0),
+
+            @last_expr: none,
+          ] @ 1100..1138 (fid = 0);
+        } @ 1095..1138 (fid = 0) @ 1095..1138 (fid = 0),
+
+        InfiniteLoop {
+          label: label3 @ 1144..1150 (fid = 0);
+          body: Block [
+            @last_expr: none,
+          ] @ 1157..1180 (fid = 0);
+        } @ 1144..1180 (fid = 0) @ 1144..1180 (fid = 0),
+
+        Return {
+          expr: Binary {
+            lhs: integer 12 @ 1207..1209 (fid = 0);
+            op: Mul;
+            rhs: integer 8 @ 1212..1213 (fid = 0);
+          } @ 1207..1213 (fid = 0);
+        } @ 1200..1213 (fid = 0) @ 1200..1213 (fid = 0),
+
+        Return {
+          expr: none;
+        } @ 1219..1225 (fid = 0) @ 1219..1225 (fid = 0),
+
+        Continue @ 1248..1256 (fid = 0) @ 1248..1256 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1275..1276 (fid = 0);
+          op: Assignment;
+          rhs: Null @ 1279..1283 (fid = 0);
+        } @ 1275..1283 (fid = 0) @ 1275..1283 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1303..1304 (fid = 0);
+          op: Assignment;
+          rhs: Unary {
+            op: Dereference;
+            expr: ident some_pointer @ 1307..1319 (fid = 0);
+          } @ 1307..1321 (fid = 0);
+        } @ 1303..1321 (fid = 0) @ 1303..1321 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1349..1350 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: MemberAccess {
+              expr: string "Hello" @ 1353..1360 (fid = 0);
+              member: len;
+            } @ 1353..1364 (fid = 0);
+            args: [];
+          } @ 1353..1366 (fid = 0);
+        } @ 1349..1366 (fid = 0) @ 1349..1366 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1373..1374 (fid = 0);
+          op: Assignment;
+          rhs: FunCall {
+            callee: MemberAccess {
+              expr: MemberAccess {
+                expr: Orb @ 1377..1380 (fid = 0);
+                member: driver;
+              } @ 1377..1387 (fid = 0);
+              member: run;
+            } @ 1377..1391 (fid = 0);
+            args: [];
+          } @ 1377..1393 (fid = 0);
+        } @ 1373..1393 (fid = 0) @ 1373..1393 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1435..1436 (fid = 0);
+          op: Assignment;
+          rhs: PointerType {
+            mutable: false;
+            typexpr: ident u32 @ 1440..1443 (fid = 0);
+          } @ 1439..1443 (fid = 0);
+        } @ 1435..1443 (fid = 0) @ 1435..1443 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1449..1450 (fid = 0);
+          op: Assignment;
+          rhs: PointerType {
+            mutable: true;
+            typexpr: ident u32 @ 1458..1461 (fid = 0);
+          } @ 1453..1461 (fid = 0);
+        } @ 1449..1461 (fid = 0) @ 1449..1461 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1497..1498 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [];
+            ret: none;
+          } @ 1501..1507 (fid = 0);
+        } @ 1497..1507 (fid = 0) @ 1497..1507 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1513..1514 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [
+              ident usz @ 1522..1525 (fid = 0),
+
+              ident bool @ 1527..1531 (fid = 0),
+            ];
+            ret: ident usz @ 1536..1539 (fid = 0);
+          } @ 1517..1539 (fid = 0);
+        } @ 1513..1539 (fid = 0) @ 1513..1539 (fid = 0),
+
+        Binary {
+          lhs: ident _ @ 1545..1546 (fid = 0);
+          op: Assignment;
+          rhs: FunPtrType {
+            args: [
+              ident usz @ 1554..1557 (fid = 0),
+            ];
+            ret: ident usz @ 1563..1566 (fid = 0);
+          } @ 1549..1566 (fid = 0);
+        } @ 1545..1566 (fid = 0) @ 1545..1566 (fid = 0),
+
+        @last_expr: none,
+      ] @ 25..1569 (fid = 0);
+    } @ 19..1569 (fid = 0);
+  } @ 11..1569 (fid = 0),
+]
+"#,
+        expected_test_out: "",
+    ),
+    "parser/item": (
+        expected_compiler_out: r#"ast = [
+  GlobalConst {
+    name: main @ 19..23 (fid = 0);
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        @last_expr: none,
+      ] @ 33..35 (fid = 0);
+    } @ 27..35 (fid = 0);
+  } @ 19..35 (fid = 0),
+
+  GlobalConst {
+    name: avogadro @ 36..44 (fid = 0);
+    typexpr: ident f64 @ 47..50 (fid = 0);
+    value: float 602199999999999960000000 @ 53..61 (fid = 0);
+  } @ 36..62 (fid = 0),
+
+  GlobalVar {
+    name: hello @ 78..83 (fid = 0);
+    typexpr: PointerType {
+      mutable: false;
+      typexpr: ident str @ 87..90 (fid = 0);
+    } @ 86..90 (fid = 0);
+    value: string "Hello" @ 93..100 (fid = 0);
+  } @ 78..101 (fid = 0),
+
+  GlobalVar {
+    name: globFloat @ 102..111 (fid = 0);
+    typexpr: none;
+    value: float 12 @ 115..119 (fid = 0);
+  } @ 102..120 (fid = 0),
+]
+"#,
+        expected_test_out: "",
+    ),
+    "parser/statement": (
+        expected_compiler_out: "ast = [
+  GlobalConst {
+    name: main @ 0..4 (fid = 0);
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        VariableDef {
+          name: a @ 48..49 (fid = 0);
+          mutable: false;
+          typexpr: none;
+          value: integer 12 @ 52..54 (fid = 0);
+        } @ 44..54 (fid = 0),
+
+        VariableDef {
+          name: b @ 68..69 (fid = 0);
+          mutable: true;
+          typexpr: none;
+          value: integer 34 @ 72..74 (fid = 0);
+        } @ 60..74 (fid = 0),
+
+        VariableDef {
+          name: c @ 107..108 (fid = 0);
+          mutable: false;
+          typexpr: none;
+          value: integer 56 @ 112..114 (fid = 0);
+        } @ 107..114 (fid = 0),
+
+        VariableDef {
+          name: d @ 120..121 (fid = 0);
+          mutable: true;
+          typexpr: none;
+          value: integer 78 @ 125..127 (fid = 0);
+        } @ 120..127 (fid = 0),
+
+        Defer {
+          expr: Block Block [
+            @last_expr: none,
+          ] @ 163..165 (fid = 0) @ 163..165 (fid = 0);
+        } @ 157..165 (fid = 0),
+
+        FunCall {
+          callee: ident hello_world @ 199..210 (fid = 0);
+          args: [];
+        } @ 199..212 (fid = 0) @ 199..212 (fid = 0),
+
+        @last_expr: none,
+      ] @ 14..215 (fid = 0);
+    } @ 8..215 (fid = 0);
+  } @ 0..215 (fid = 0),
+]
+",
+        expected_test_out: "",
+    ),
+    "scir/constant_evaluation": (
+        expected_compiler_out: "scir = [
+  GlobalDef {
+    name: add_i8 @ 18..24 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i8 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i8;
+        };
+      };
+      typ: type;
+    } @ 27..29 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: i8;
+        } @ 32..34 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: i8;
+        } @ 37..39 (fid = 0);
+      };
+      typ: i8;
+    } @ 32..39 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_i8 @ 18..24 (fid = 0);
+      which: 0;
+      path: orb.add_i8;
+      typ: i8;
+      typeness: explicit;
+      value: I8 {
+        val: 69;
+      };
+    };
+  } @ 18..40 (fid = 0),
+
+  GlobalDef {
+    name: add_i16 @ 41..48 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i16 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i16;
+        };
+      };
+      typ: type;
+    } @ 51..54 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: i16;
+        } @ 57..59 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: i16;
+        } @ 62..64 (fid = 0);
+      };
+      typ: i16;
+    } @ 57..64 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_i16 @ 41..48 (fid = 0);
+      which: 0;
+      path: orb.add_i16;
+      typ: i16;
+      typeness: explicit;
+      value: I16 {
+        val: 69;
+      };
+    };
+  } @ 41..65 (fid = 0),
+
+  GlobalDef {
+    name: add_i32 @ 66..73 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i32;
+        };
+      };
+      typ: type;
+    } @ 76..79 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: i32;
+        } @ 82..84 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: i32;
+        } @ 87..89 (fid = 0);
+      };
+      typ: i32;
+    } @ 82..89 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_i32 @ 66..73 (fid = 0);
+      which: 0;
+      path: orb.add_i32;
+      typ: i32;
+      typeness: explicit;
+      value: I32 {
+        val: 69;
+      };
+    };
+  } @ 66..90 (fid = 0),
+
+  GlobalDef {
+    name: add_i64 @ 91..98 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i64;
+        };
+      };
+      typ: type;
+    } @ 101..104 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: i64;
+        } @ 107..109 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: i64;
+        } @ 112..114 (fid = 0);
+      };
+      typ: i64;
+    } @ 107..114 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_i64 @ 91..98 (fid = 0);
+      which: 0;
+      path: orb.add_i64;
+      typ: i64;
+      typeness: explicit;
+      value: I64 {
+        val: 69;
+      };
+    };
+  } @ 91..115 (fid = 0),
+
+  GlobalDef {
+    name: add_i128 @ 116..124 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i128 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i128;
+        };
+      };
+      typ: type;
+    } @ 127..131 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: i128;
+        } @ 134..136 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: i128;
+        } @ 139..141 (fid = 0);
+      };
+      typ: i128;
+    } @ 134..141 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_i128 @ 116..124 (fid = 0);
+      which: 0;
+      path: orb.add_i128;
+      typ: i128;
+      typeness: explicit;
+      value: I128 {
+        val: 69;
+      };
+    };
+  } @ 116..142 (fid = 0),
+
+  GlobalDef {
+    name: add_isz @ 143..150 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: isz @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: isz;
+        };
+      };
+      typ: type;
+    } @ 153..156 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: isz;
+        } @ 159..161 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: isz;
+        } @ 164..166 (fid = 0);
+      };
+      typ: isz;
+    } @ 159..166 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_isz @ 143..150 (fid = 0);
+      which: 0;
+      path: orb.add_isz;
+      typ: isz;
+      typeness: explicit;
+      value: I64 {
+        val: 69;
+      };
+    };
+  } @ 143..167 (fid = 0),
+
+  GlobalDef {
+    name: add_u8 @ 169..175 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u8 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u8;
+        };
+      };
+      typ: type;
+    } @ 178..180 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: u8;
+        } @ 183..185 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: u8;
+        } @ 188..190 (fid = 0);
+      };
+      typ: u8;
+    } @ 183..190 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_u8 @ 169..175 (fid = 0);
+      which: 0;
+      path: orb.add_u8;
+      typ: u8;
+      typeness: explicit;
+      value: U8 {
+        val: 69;
+      };
+    };
+  } @ 169..191 (fid = 0),
+
+  GlobalDef {
+    name: add_u16 @ 192..199 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u16 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u16;
+        };
+      };
+      typ: type;
+    } @ 202..205 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: u16;
+        } @ 208..210 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: u16;
+        } @ 213..215 (fid = 0);
+      };
+      typ: u16;
+    } @ 208..215 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_u16 @ 192..199 (fid = 0);
+      which: 0;
+      path: orb.add_u16;
+      typ: u16;
+      typeness: explicit;
+      value: U16 {
+        val: 69;
+      };
+    };
+  } @ 192..216 (fid = 0),
+
+  GlobalDef {
+    name: add_u32 @ 217..224 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u32;
+        };
+      };
+      typ: type;
+    } @ 227..230 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: u32;
+        } @ 233..235 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: u32;
+        } @ 238..240 (fid = 0);
+      };
+      typ: u32;
+    } @ 233..240 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_u32 @ 217..224 (fid = 0);
+      which: 0;
+      path: orb.add_u32;
+      typ: u32;
+      typeness: explicit;
+      value: U32 {
+        val: 69;
+      };
+    };
+  } @ 217..241 (fid = 0),
+
+  GlobalDef {
+    name: add_u64 @ 242..249 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u64;
+        };
+      };
+      typ: type;
+    } @ 252..255 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: u64;
+        } @ 258..260 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: u64;
+        } @ 263..265 (fid = 0);
+      };
+      typ: u64;
+    } @ 258..265 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_u64 @ 242..249 (fid = 0);
+      which: 0;
+      path: orb.add_u64;
+      typ: u64;
+      typeness: explicit;
+      value: U64 {
+        val: 69;
+      };
+    };
+  } @ 242..266 (fid = 0),
+
+  GlobalDef {
+    name: add_u128 @ 267..275 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u128 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u128;
+        };
+      };
+      typ: type;
+    } @ 278..282 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: u128;
+        } @ 285..287 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: u128;
+        } @ 290..292 (fid = 0);
+      };
+      typ: u128;
+    } @ 285..292 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_u128 @ 267..275 (fid = 0);
+      which: 0;
+      path: orb.add_u128;
+      typ: u128;
+      typeness: explicit;
+      value: U128 {
+        val: 69;
+      };
+    };
+  } @ 267..293 (fid = 0),
+
+  GlobalDef {
+    name: add_usz @ 294..301 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: usz @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: usz;
+        };
+      };
+      typ: type;
+    } @ 304..307 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 34;
+          typ: usz;
+        } @ 310..312 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: integer 35;
+          typ: usz;
+        } @ 315..317 (fid = 0);
+      };
+      typ: usz;
+    } @ 310..317 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_usz @ 294..301 (fid = 0);
+      which: 0;
+      path: orb.add_usz;
+      typ: usz;
+      typeness: explicit;
+      value: U64 {
+        val: 69;
+      };
+    };
+  } @ 294..318 (fid = 0),
+
+  GlobalDef {
+    name: add_f32 @ 320..327 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: f32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: f32;
+        };
+      };
+      typ: type;
+    } @ 330..333 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: float 34;
+          typ: f32;
+        } @ 336..339 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: float 35;
+          typ: f32;
+        } @ 342..345 (fid = 0);
+      };
+      typ: f32;
+    } @ 336..345 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_f32 @ 320..327 (fid = 0);
+      which: 0;
+      path: orb.add_f32;
+      typ: f32;
+      typeness: explicit;
+      value: F32 {
+        val: 69;
+      };
+    };
+  } @ 320..346 (fid = 0),
+
+  GlobalDef {
+    name: add_f64 @ 347..354 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: f64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: f64;
+        };
+      };
+      typ: type;
+    } @ 357..360 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: float 34;
+          typ: f64;
+        } @ 363..366 (fid = 0);
+        op: Add;
+        rhs: Expression {
+          expr: float 35;
+          typ: f64;
+        } @ 369..372 (fid = 0);
+      };
+      typ: f64;
+    } @ 363..372 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: add_f64 @ 347..354 (fid = 0);
+      which: 0;
+      path: orb.add_f64;
+      typ: f64;
+      typeness: explicit;
+      value: F64 {
+        val: 69;
+      };
+    };
+  } @ 347..373 (fid = 0),
+
+  GlobalDef {
+    name: sub_i8 @ 393..399 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i8 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i8;
+        };
+      };
+      typ: type;
+    } @ 402..404 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: i8;
+        } @ 407..410 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: i8;
+        } @ 413..414 (fid = 0);
+      };
+      typ: i8;
+    } @ 407..414 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_i8 @ 393..399 (fid = 0);
+      which: 0;
+      path: orb.sub_i8;
+      typ: i8;
+      typeness: explicit;
+      value: I8 {
+        val: 100;
+      };
+    };
+  } @ 393..415 (fid = 0),
+
+  GlobalDef {
+    name: sub_i16 @ 416..423 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i16 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i16;
+        };
+      };
+      typ: type;
+    } @ 426..429 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: i16;
+        } @ 432..435 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: i16;
+        } @ 438..439 (fid = 0);
+      };
+      typ: i16;
+    } @ 432..439 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_i16 @ 416..423 (fid = 0);
+      which: 0;
+      path: orb.sub_i16;
+      typ: i16;
+      typeness: explicit;
+      value: I16 {
+        val: 100;
+      };
+    };
+  } @ 416..440 (fid = 0),
+
+  GlobalDef {
+    name: sub_i32 @ 441..448 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i32;
+        };
+      };
+      typ: type;
+    } @ 451..454 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: i32;
+        } @ 457..460 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: i32;
+        } @ 463..464 (fid = 0);
+      };
+      typ: i32;
+    } @ 457..464 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_i32 @ 441..448 (fid = 0);
+      which: 0;
+      path: orb.sub_i32;
+      typ: i32;
+      typeness: explicit;
+      value: I32 {
+        val: 100;
+      };
+    };
+  } @ 441..465 (fid = 0),
+
+  GlobalDef {
+    name: sub_i64 @ 466..473 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i64;
+        };
+      };
+      typ: type;
+    } @ 476..479 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: i64;
+        } @ 482..485 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: i64;
+        } @ 488..489 (fid = 0);
+      };
+      typ: i64;
+    } @ 482..489 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_i64 @ 466..473 (fid = 0);
+      which: 0;
+      path: orb.sub_i64;
+      typ: i64;
+      typeness: explicit;
+      value: I64 {
+        val: 100;
+      };
+    };
+  } @ 466..490 (fid = 0),
+
+  GlobalDef {
+    name: sub_i128 @ 491..499 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i128 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i128;
+        };
+      };
+      typ: type;
+    } @ 502..506 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: i128;
+        } @ 509..512 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: i128;
+        } @ 515..516 (fid = 0);
+      };
+      typ: i128;
+    } @ 509..516 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_i128 @ 491..499 (fid = 0);
+      which: 0;
+      path: orb.sub_i128;
+      typ: i128;
+      typeness: explicit;
+      value: I128 {
+        val: 100;
+      };
+    };
+  } @ 491..517 (fid = 0),
+
+  GlobalDef {
+    name: sub_isz @ 518..525 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: isz @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: isz;
+        };
+      };
+      typ: type;
+    } @ 528..531 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: isz;
+        } @ 534..537 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: isz;
+        } @ 540..541 (fid = 0);
+      };
+      typ: isz;
+    } @ 534..541 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_isz @ 518..525 (fid = 0);
+      which: 0;
+      path: orb.sub_isz;
+      typ: isz;
+      typeness: explicit;
+      value: I64 {
+        val: 100;
+      };
+    };
+  } @ 518..542 (fid = 0),
+
+  GlobalDef {
+    name: sub_u8 @ 544..550 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u8 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u8;
+        };
+      };
+      typ: type;
+    } @ 553..555 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: u8;
+        } @ 558..561 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: u8;
+        } @ 564..565 (fid = 0);
+      };
+      typ: u8;
+    } @ 558..565 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_u8 @ 544..550 (fid = 0);
+      which: 0;
+      path: orb.sub_u8;
+      typ: u8;
+      typeness: explicit;
+      value: U8 {
+        val: 100;
+      };
+    };
+  } @ 544..566 (fid = 0),
+
+  GlobalDef {
+    name: sub_u16 @ 567..574 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u16 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u16;
+        };
+      };
+      typ: type;
+    } @ 577..580 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: u16;
+        } @ 583..586 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: u16;
+        } @ 589..590 (fid = 0);
+      };
+      typ: u16;
+    } @ 583..590 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_u16 @ 567..574 (fid = 0);
+      which: 0;
+      path: orb.sub_u16;
+      typ: u16;
+      typeness: explicit;
+      value: U16 {
+        val: 100;
+      };
+    };
+  } @ 567..591 (fid = 0),
+
+  GlobalDef {
+    name: sub_u32 @ 592..599 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u32;
+        };
+      };
+      typ: type;
+    } @ 602..605 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: u32;
+        } @ 608..611 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: u32;
+        } @ 614..615 (fid = 0);
+      };
+      typ: u32;
+    } @ 608..615 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_u32 @ 592..599 (fid = 0);
+      which: 0;
+      path: orb.sub_u32;
+      typ: u32;
+      typeness: explicit;
+      value: U32 {
+        val: 100;
+      };
+    };
+  } @ 592..616 (fid = 0),
+
+  GlobalDef {
+    name: sub_u64 @ 617..624 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u64;
+        };
+      };
+      typ: type;
+    } @ 627..630 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: u64;
+        } @ 633..636 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: u64;
+        } @ 639..640 (fid = 0);
+      };
+      typ: u64;
+    } @ 633..640 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_u64 @ 617..624 (fid = 0);
+      which: 0;
+      path: orb.sub_u64;
+      typ: u64;
+      typeness: explicit;
+      value: U64 {
+        val: 100;
+      };
+    };
+  } @ 617..641 (fid = 0),
+
+  GlobalDef {
+    name: sub_u128 @ 642..650 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u128 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u128;
+        };
+      };
+      typ: type;
+    } @ 653..657 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: u128;
+        } @ 660..663 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: u128;
+        } @ 666..667 (fid = 0);
+      };
+      typ: u128;
+    } @ 660..667 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_u128 @ 642..650 (fid = 0);
+      which: 0;
+      path: orb.sub_u128;
+      typ: u128;
+      typeness: explicit;
+      value: U128 {
+        val: 100;
+      };
+    };
+  } @ 642..668 (fid = 0),
+
+  GlobalDef {
+    name: sub_usz @ 669..676 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: usz @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: usz;
+        };
+      };
+      typ: type;
+    } @ 679..682 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 101;
+          typ: usz;
+        } @ 685..688 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: integer 1;
+          typ: usz;
+        } @ 691..692 (fid = 0);
+      };
+      typ: usz;
+    } @ 685..692 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_usz @ 669..676 (fid = 0);
+      which: 0;
+      path: orb.sub_usz;
+      typ: usz;
+      typeness: explicit;
+      value: U64 {
+        val: 100;
+      };
+    };
+  } @ 669..693 (fid = 0),
+
+  GlobalDef {
+    name: sub_f32 @ 695..702 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: f32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: f32;
+        };
+      };
+      typ: type;
+    } @ 705..708 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: float 101;
+          typ: f32;
+        } @ 711..715 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: float 1;
+          typ: f32;
+        } @ 718..720 (fid = 0);
+      };
+      typ: f32;
+    } @ 711..720 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_f32 @ 695..702 (fid = 0);
+      which: 0;
+      path: orb.sub_f32;
+      typ: f32;
+      typeness: explicit;
+      value: F32 {
+        val: 100;
+      };
+    };
+  } @ 695..721 (fid = 0),
+
+  GlobalDef {
+    name: sub_f64 @ 722..729 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: f64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: f64;
+        };
+      };
+      typ: type;
+    } @ 732..735 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: float 101;
+          typ: f64;
+        } @ 738..742 (fid = 0);
+        op: Sub;
+        rhs: Expression {
+          expr: float 1;
+          typ: f64;
+        } @ 745..747 (fid = 0);
+      };
+      typ: f64;
+    } @ 738..747 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: sub_f64 @ 722..729 (fid = 0);
+      which: 0;
+      path: orb.sub_f64;
+      typ: f64;
+      typeness: explicit;
+      value: F64 {
+        val: 100;
+      };
+    };
+  } @ 722..748 (fid = 0),
+
+  GlobalDef {
+    name: mul_i8 @ 768..774 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i8 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i8;
+        };
+      };
+      typ: type;
+    } @ 777..779 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: i8;
+        } @ 782..783 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: i8;
+        } @ 786..787 (fid = 0);
+      };
+      typ: i8;
+    } @ 782..787 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_i8 @ 768..774 (fid = 0);
+      which: 0;
+      path: orb.mul_i8;
+      typ: i8;
+      typeness: explicit;
+      value: I8 {
+        val: 24;
+      };
+    };
+  } @ 768..788 (fid = 0),
+
+  GlobalDef {
+    name: mul_i16 @ 789..796 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i16 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i16;
+        };
+      };
+      typ: type;
+    } @ 799..802 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: i16;
+        } @ 805..806 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: i16;
+        } @ 809..810 (fid = 0);
+      };
+      typ: i16;
+    } @ 805..810 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_i16 @ 789..796 (fid = 0);
+      which: 0;
+      path: orb.mul_i16;
+      typ: i16;
+      typeness: explicit;
+      value: I16 {
+        val: 24;
+      };
+    };
+  } @ 789..811 (fid = 0),
+
+  GlobalDef {
+    name: mul_i32 @ 812..819 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i32;
+        };
+      };
+      typ: type;
+    } @ 822..825 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: i32;
+        } @ 828..829 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: i32;
+        } @ 832..833 (fid = 0);
+      };
+      typ: i32;
+    } @ 828..833 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_i32 @ 812..819 (fid = 0);
+      which: 0;
+      path: orb.mul_i32;
+      typ: i32;
+      typeness: explicit;
+      value: I32 {
+        val: 24;
+      };
+    };
+  } @ 812..834 (fid = 0),
+
+  GlobalDef {
+    name: mul_i64 @ 835..842 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i64;
+        };
+      };
+      typ: type;
+    } @ 845..848 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: i64;
+        } @ 851..852 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: i64;
+        } @ 855..856 (fid = 0);
+      };
+      typ: i64;
+    } @ 851..856 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_i64 @ 835..842 (fid = 0);
+      which: 0;
+      path: orb.mul_i64;
+      typ: i64;
+      typeness: explicit;
+      value: I64 {
+        val: 24;
+      };
+    };
+  } @ 835..857 (fid = 0),
+
+  GlobalDef {
+    name: mul_i128 @ 858..866 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i128 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i128;
+        };
+      };
+      typ: type;
+    } @ 869..873 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: i128;
+        } @ 876..877 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: i128;
+        } @ 880..881 (fid = 0);
+      };
+      typ: i128;
+    } @ 876..881 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_i128 @ 858..866 (fid = 0);
+      which: 0;
+      path: orb.mul_i128;
+      typ: i128;
+      typeness: explicit;
+      value: I128 {
+        val: 24;
+      };
+    };
+  } @ 858..882 (fid = 0),
+
+  GlobalDef {
+    name: mul_isz @ 883..890 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: isz @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: isz;
+        };
+      };
+      typ: type;
+    } @ 893..896 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: isz;
+        } @ 899..900 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: isz;
+        } @ 903..904 (fid = 0);
+      };
+      typ: isz;
+    } @ 899..904 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_isz @ 883..890 (fid = 0);
+      which: 0;
+      path: orb.mul_isz;
+      typ: isz;
+      typeness: explicit;
+      value: I64 {
+        val: 24;
+      };
+    };
+  } @ 883..905 (fid = 0),
+
+  GlobalDef {
+    name: mul_u8 @ 907..913 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u8 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u8;
+        };
+      };
+      typ: type;
+    } @ 916..918 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: u8;
+        } @ 921..922 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: u8;
+        } @ 925..926 (fid = 0);
+      };
+      typ: u8;
+    } @ 921..926 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_u8 @ 907..913 (fid = 0);
+      which: 0;
+      path: orb.mul_u8;
+      typ: u8;
+      typeness: explicit;
+      value: U8 {
+        val: 24;
+      };
+    };
+  } @ 907..927 (fid = 0),
+
+  GlobalDef {
+    name: mul_u16 @ 928..935 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u16 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u16;
+        };
+      };
+      typ: type;
+    } @ 938..941 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: u16;
+        } @ 944..945 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: u16;
+        } @ 948..949 (fid = 0);
+      };
+      typ: u16;
+    } @ 944..949 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_u16 @ 928..935 (fid = 0);
+      which: 0;
+      path: orb.mul_u16;
+      typ: u16;
+      typeness: explicit;
+      value: U16 {
+        val: 24;
+      };
+    };
+  } @ 928..950 (fid = 0),
+
+  GlobalDef {
+    name: mul_u32 @ 951..958 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u32;
+        };
+      };
+      typ: type;
+    } @ 961..964 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: u32;
+        } @ 967..968 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: u32;
+        } @ 971..972 (fid = 0);
+      };
+      typ: u32;
+    } @ 967..972 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_u32 @ 951..958 (fid = 0);
+      which: 0;
+      path: orb.mul_u32;
+      typ: u32;
+      typeness: explicit;
+      value: U32 {
+        val: 24;
+      };
+    };
+  } @ 951..973 (fid = 0),
+
+  GlobalDef {
+    name: mul_u64 @ 974..981 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u64;
+        };
+      };
+      typ: type;
+    } @ 984..987 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: u64;
+        } @ 990..991 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: u64;
+        } @ 994..995 (fid = 0);
+      };
+      typ: u64;
+    } @ 990..995 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_u64 @ 974..981 (fid = 0);
+      which: 0;
+      path: orb.mul_u64;
+      typ: u64;
+      typeness: explicit;
+      value: U64 {
+        val: 24;
+      };
+    };
+  } @ 974..996 (fid = 0),
+
+  GlobalDef {
+    name: mul_u128 @ 997..1005 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u128 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u128;
+        };
+      };
+      typ: type;
+    } @ 1008..1012 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: u128;
+        } @ 1015..1016 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: u128;
+        } @ 1019..1020 (fid = 0);
+      };
+      typ: u128;
+    } @ 1015..1020 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_u128 @ 997..1005 (fid = 0);
+      which: 0;
+      path: orb.mul_u128;
+      typ: u128;
+      typeness: explicit;
+      value: U128 {
+        val: 24;
+      };
+    };
+  } @ 997..1021 (fid = 0),
+
+  GlobalDef {
+    name: mul_usz @ 1022..1029 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: usz @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: usz;
+        };
+      };
+      typ: type;
+    } @ 1032..1035 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 6;
+          typ: usz;
+        } @ 1038..1039 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: integer 4;
+          typ: usz;
+        } @ 1042..1043 (fid = 0);
+      };
+      typ: usz;
+    } @ 1038..1043 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_usz @ 1022..1029 (fid = 0);
+      which: 0;
+      path: orb.mul_usz;
+      typ: usz;
+      typeness: explicit;
+      value: U64 {
+        val: 24;
+      };
+    };
+  } @ 1022..1044 (fid = 0),
+
+  GlobalDef {
+    name: mul_f32 @ 1046..1053 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: f32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: f32;
+        };
+      };
+      typ: type;
+    } @ 1056..1059 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: float 6;
+          typ: f32;
+        } @ 1062..1064 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: float 4;
+          typ: f32;
+        } @ 1067..1069 (fid = 0);
+      };
+      typ: f32;
+    } @ 1062..1069 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_f32 @ 1046..1053 (fid = 0);
+      which: 0;
+      path: orb.mul_f32;
+      typ: f32;
+      typeness: explicit;
+      value: F32 {
+        val: 24;
+      };
+    };
+  } @ 1046..1070 (fid = 0),
+
+  GlobalDef {
+    name: mul_f64 @ 1071..1078 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: f64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: f64;
+        };
+      };
+      typ: type;
+    } @ 1081..1084 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: float 6;
+          typ: f64;
+        } @ 1087..1089 (fid = 0);
+        op: Mul;
+        rhs: Expression {
+          expr: float 4;
+          typ: f64;
+        } @ 1092..1094 (fid = 0);
+      };
+      typ: f64;
+    } @ 1087..1094 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: mul_f64 @ 1071..1078 (fid = 0);
+      which: 0;
+      path: orb.mul_f64;
+      typ: f64;
+      typeness: explicit;
+      value: F64 {
+        val: 24;
+      };
+    };
+  } @ 1071..1095 (fid = 0),
+
+  GlobalDef {
+    name: div_i8 @ 1115..1121 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i8 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i8;
+        };
+      };
+      typ: type;
+    } @ 1124..1126 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: i8;
+        } @ 1129..1131 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: i8;
+        } @ 1134..1135 (fid = 0);
+      };
+      typ: i8;
+    } @ 1129..1135 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_i8 @ 1115..1121 (fid = 0);
+      which: 0;
+      path: orb.div_i8;
+      typ: i8;
+      typeness: explicit;
+      value: I8 {
+        val: 2;
+      };
+    };
+  } @ 1115..1136 (fid = 0),
+
+  GlobalDef {
+    name: div_i16 @ 1137..1144 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i16 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i16;
+        };
+      };
+      typ: type;
+    } @ 1147..1150 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: i16;
+        } @ 1153..1155 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: i16;
+        } @ 1158..1159 (fid = 0);
+      };
+      typ: i16;
+    } @ 1153..1159 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_i16 @ 1137..1144 (fid = 0);
+      which: 0;
+      path: orb.div_i16;
+      typ: i16;
+      typeness: explicit;
+      value: I16 {
+        val: 2;
+      };
+    };
+  } @ 1137..1160 (fid = 0),
+
+  GlobalDef {
+    name: div_i32 @ 1161..1168 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i32;
+        };
+      };
+      typ: type;
+    } @ 1171..1174 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: i32;
+        } @ 1177..1179 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: i32;
+        } @ 1182..1183 (fid = 0);
+      };
+      typ: i32;
+    } @ 1177..1183 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_i32 @ 1161..1168 (fid = 0);
+      which: 0;
+      path: orb.div_i32;
+      typ: i32;
+      typeness: explicit;
+      value: I32 {
+        val: 2;
+      };
+    };
+  } @ 1161..1184 (fid = 0),
+
+  GlobalDef {
+    name: div_i64 @ 1185..1192 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i64;
+        };
+      };
+      typ: type;
+    } @ 1195..1198 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: i64;
+        } @ 1201..1203 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: i64;
+        } @ 1206..1207 (fid = 0);
+      };
+      typ: i64;
+    } @ 1201..1207 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_i64 @ 1185..1192 (fid = 0);
+      which: 0;
+      path: orb.div_i64;
+      typ: i64;
+      typeness: explicit;
+      value: I64 {
+        val: 2;
+      };
+    };
+  } @ 1185..1208 (fid = 0),
+
+  GlobalDef {
+    name: div_i128 @ 1209..1217 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i128 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i128;
+        };
+      };
+      typ: type;
+    } @ 1220..1224 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: i128;
+        } @ 1227..1229 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: i128;
+        } @ 1232..1233 (fid = 0);
+      };
+      typ: i128;
+    } @ 1227..1233 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_i128 @ 1209..1217 (fid = 0);
+      which: 0;
+      path: orb.div_i128;
+      typ: i128;
+      typeness: explicit;
+      value: I128 {
+        val: 2;
+      };
+    };
+  } @ 1209..1234 (fid = 0),
+
+  GlobalDef {
+    name: div_isz @ 1235..1242 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: isz @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: isz;
+        };
+      };
+      typ: type;
+    } @ 1245..1248 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: isz;
+        } @ 1251..1253 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: isz;
+        } @ 1256..1257 (fid = 0);
+      };
+      typ: isz;
+    } @ 1251..1257 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_isz @ 1235..1242 (fid = 0);
+      which: 0;
+      path: orb.div_isz;
+      typ: isz;
+      typeness: explicit;
+      value: I64 {
+        val: 2;
+      };
+    };
+  } @ 1235..1258 (fid = 0),
+
+  GlobalDef {
+    name: div_u8 @ 1260..1266 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u8 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u8;
+        };
+      };
+      typ: type;
+    } @ 1269..1271 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: u8;
+        } @ 1274..1276 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: u8;
+        } @ 1279..1280 (fid = 0);
+      };
+      typ: u8;
+    } @ 1274..1280 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_u8 @ 1260..1266 (fid = 0);
+      which: 0;
+      path: orb.div_u8;
+      typ: u8;
+      typeness: explicit;
+      value: U8 {
+        val: 2;
+      };
+    };
+  } @ 1260..1281 (fid = 0),
+
+  GlobalDef {
+    name: div_u16 @ 1282..1289 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u16 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u16;
+        };
+      };
+      typ: type;
+    } @ 1292..1295 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: u16;
+        } @ 1298..1300 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: u16;
+        } @ 1303..1304 (fid = 0);
+      };
+      typ: u16;
+    } @ 1298..1304 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_u16 @ 1282..1289 (fid = 0);
+      which: 0;
+      path: orb.div_u16;
+      typ: u16;
+      typeness: explicit;
+      value: U16 {
+        val: 2;
+      };
+    };
+  } @ 1282..1305 (fid = 0),
+
+  GlobalDef {
+    name: div_u32 @ 1306..1313 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u32;
+        };
+      };
+      typ: type;
+    } @ 1316..1319 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: u32;
+        } @ 1322..1324 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: u32;
+        } @ 1327..1328 (fid = 0);
+      };
+      typ: u32;
+    } @ 1322..1328 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_u32 @ 1306..1313 (fid = 0);
+      which: 0;
+      path: orb.div_u32;
+      typ: u32;
+      typeness: explicit;
+      value: U32 {
+        val: 2;
+      };
+    };
+  } @ 1306..1329 (fid = 0),
+
+  GlobalDef {
+    name: div_u64 @ 1330..1337 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u64;
+        };
+      };
+      typ: type;
+    } @ 1340..1343 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: u64;
+        } @ 1346..1348 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: u64;
+        } @ 1351..1352 (fid = 0);
+      };
+      typ: u64;
+    } @ 1346..1352 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_u64 @ 1330..1337 (fid = 0);
+      which: 0;
+      path: orb.div_u64;
+      typ: u64;
+      typeness: explicit;
+      value: U64 {
+        val: 2;
+      };
+    };
+  } @ 1330..1353 (fid = 0),
+
+  GlobalDef {
+    name: div_u128 @ 1354..1362 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u128 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u128;
+        };
+      };
+      typ: type;
+    } @ 1365..1369 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: u128;
+        } @ 1372..1374 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: u128;
+        } @ 1377..1378 (fid = 0);
+      };
+      typ: u128;
+    } @ 1372..1378 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_u128 @ 1354..1362 (fid = 0);
+      which: 0;
+      path: orb.div_u128;
+      typ: u128;
+      typeness: explicit;
+      value: U128 {
+        val: 2;
+      };
+    };
+  } @ 1354..1379 (fid = 0),
+
+  GlobalDef {
+    name: div_usz @ 1380..1387 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: usz @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: usz;
+        };
+      };
+      typ: type;
+    } @ 1390..1393 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 10;
+          typ: usz;
+        } @ 1396..1398 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: integer 5;
+          typ: usz;
+        } @ 1401..1402 (fid = 0);
+      };
+      typ: usz;
+    } @ 1396..1402 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_usz @ 1380..1387 (fid = 0);
+      which: 0;
+      path: orb.div_usz;
+      typ: usz;
+      typeness: explicit;
+      value: U64 {
+        val: 2;
+      };
+    };
+  } @ 1380..1403 (fid = 0),
+
+  GlobalDef {
+    name: div_f32 @ 1405..1412 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: f32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: f32;
+        };
+      };
+      typ: type;
+    } @ 1415..1418 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: float 10;
+          typ: f32;
+        } @ 1421..1424 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: float 5;
+          typ: f32;
+        } @ 1427..1429 (fid = 0);
+      };
+      typ: f32;
+    } @ 1421..1429 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_f32 @ 1405..1412 (fid = 0);
+      which: 0;
+      path: orb.div_f32;
+      typ: f32;
+      typeness: explicit;
+      value: F32 {
+        val: 2;
+      };
+    };
+  } @ 1405..1430 (fid = 0),
+
+  GlobalDef {
+    name: div_f64 @ 1431..1438 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: f64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: f64;
+        };
+      };
+      typ: type;
+    } @ 1441..1444 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: float 10;
+          typ: f64;
+        } @ 1447..1450 (fid = 0);
+        op: Div;
+        rhs: Expression {
+          expr: float 5;
+          typ: f64;
+        } @ 1453..1455 (fid = 0);
+      };
+      typ: f64;
+    } @ 1447..1455 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: div_f64 @ 1431..1438 (fid = 0);
+      which: 0;
+      path: orb.div_f64;
+      typ: f64;
+      typeness: explicit;
+      value: F64 {
+        val: 2;
+      };
+    };
+  } @ 1431..1456 (fid = 0),
+
+  GlobalDef {
+    name: rem_i8 @ 1476..1482 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i8 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i8;
+        };
+      };
+      typ: type;
+    } @ 1485..1487 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: i8;
+        } @ 1490..1492 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: i8;
+        } @ 1495..1496 (fid = 0);
+      };
+      typ: i8;
+    } @ 1490..1496 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_i8 @ 1476..1482 (fid = 0);
+      which: 0;
+      path: orb.rem_i8;
+      typ: i8;
+      typeness: explicit;
+      value: I8 {
+        val: 3;
+      };
+    };
+  } @ 1476..1497 (fid = 0),
+
+  GlobalDef {
+    name: rem_i16 @ 1498..1505 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i16 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i16;
+        };
+      };
+      typ: type;
+    } @ 1508..1511 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: i16;
+        } @ 1514..1516 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: i16;
+        } @ 1519..1520 (fid = 0);
+      };
+      typ: i16;
+    } @ 1514..1520 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_i16 @ 1498..1505 (fid = 0);
+      which: 0;
+      path: orb.rem_i16;
+      typ: i16;
+      typeness: explicit;
+      value: I16 {
+        val: 3;
+      };
+    };
+  } @ 1498..1521 (fid = 0),
+
+  GlobalDef {
+    name: rem_i32 @ 1522..1529 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i32;
+        };
+      };
+      typ: type;
+    } @ 1532..1535 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: i32;
+        } @ 1538..1540 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: i32;
+        } @ 1543..1544 (fid = 0);
+      };
+      typ: i32;
+    } @ 1538..1544 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_i32 @ 1522..1529 (fid = 0);
+      which: 0;
+      path: orb.rem_i32;
+      typ: i32;
+      typeness: explicit;
+      value: I32 {
+        val: 3;
+      };
+    };
+  } @ 1522..1545 (fid = 0),
+
+  GlobalDef {
+    name: rem_i64 @ 1546..1553 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i64;
+        };
+      };
+      typ: type;
+    } @ 1556..1559 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: i64;
+        } @ 1562..1564 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: i64;
+        } @ 1567..1568 (fid = 0);
+      };
+      typ: i64;
+    } @ 1562..1568 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_i64 @ 1546..1553 (fid = 0);
+      which: 0;
+      path: orb.rem_i64;
+      typ: i64;
+      typeness: explicit;
+      value: I64 {
+        val: 3;
+      };
+    };
+  } @ 1546..1569 (fid = 0),
+
+  GlobalDef {
+    name: rem_i128 @ 1570..1578 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: i128 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: i128;
+        };
+      };
+      typ: type;
+    } @ 1581..1585 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: i128;
+        } @ 1588..1590 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: i128;
+        } @ 1593..1594 (fid = 0);
+      };
+      typ: i128;
+    } @ 1588..1594 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_i128 @ 1570..1578 (fid = 0);
+      which: 0;
+      path: orb.rem_i128;
+      typ: i128;
+      typeness: explicit;
+      value: I128 {
+        val: 3;
+      };
+    };
+  } @ 1570..1595 (fid = 0),
+
+  GlobalDef {
+    name: rem_isz @ 1596..1603 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: isz @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: isz;
+        };
+      };
+      typ: type;
+    } @ 1606..1609 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: isz;
+        } @ 1612..1614 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: isz;
+        } @ 1617..1618 (fid = 0);
+      };
+      typ: isz;
+    } @ 1612..1618 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_isz @ 1596..1603 (fid = 0);
+      which: 0;
+      path: orb.rem_isz;
+      typ: isz;
+      typeness: explicit;
+      value: I64 {
+        val: 3;
+      };
+    };
+  } @ 1596..1619 (fid = 0),
+
+  GlobalDef {
+    name: rem_u8 @ 1621..1627 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u8 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u8;
+        };
+      };
+      typ: type;
+    } @ 1630..1632 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: u8;
+        } @ 1635..1637 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: u8;
+        } @ 1640..1641 (fid = 0);
+      };
+      typ: u8;
+    } @ 1635..1641 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_u8 @ 1621..1627 (fid = 0);
+      which: 0;
+      path: orb.rem_u8;
+      typ: u8;
+      typeness: explicit;
+      value: U8 {
+        val: 3;
+      };
+    };
+  } @ 1621..1642 (fid = 0),
+
+  GlobalDef {
+    name: rem_u16 @ 1643..1650 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u16 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u16;
+        };
+      };
+      typ: type;
+    } @ 1653..1656 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: u16;
+        } @ 1659..1661 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: u16;
+        } @ 1664..1665 (fid = 0);
+      };
+      typ: u16;
+    } @ 1659..1665 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_u16 @ 1643..1650 (fid = 0);
+      which: 0;
+      path: orb.rem_u16;
+      typ: u16;
+      typeness: explicit;
+      value: U16 {
+        val: 3;
+      };
+    };
+  } @ 1643..1666 (fid = 0),
+
+  GlobalDef {
+    name: rem_u32 @ 1667..1674 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u32;
+        };
+      };
+      typ: type;
+    } @ 1677..1680 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: u32;
+        } @ 1683..1685 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: u32;
+        } @ 1688..1689 (fid = 0);
+      };
+      typ: u32;
+    } @ 1683..1689 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_u32 @ 1667..1674 (fid = 0);
+      which: 0;
+      path: orb.rem_u32;
+      typ: u32;
+      typeness: explicit;
+      value: U32 {
+        val: 3;
+      };
+    };
+  } @ 1667..1690 (fid = 0),
+
+  GlobalDef {
+    name: rem_u64 @ 1691..1698 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u64;
+        };
+      };
+      typ: type;
+    } @ 1701..1704 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: u64;
+        } @ 1707..1709 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: u64;
+        } @ 1712..1713 (fid = 0);
+      };
+      typ: u64;
+    } @ 1707..1713 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_u64 @ 1691..1698 (fid = 0);
+      which: 0;
+      path: orb.rem_u64;
+      typ: u64;
+      typeness: explicit;
+      value: U64 {
+        val: 3;
+      };
+    };
+  } @ 1691..1714 (fid = 0),
+
+  GlobalDef {
+    name: rem_u128 @ 1715..1723 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: u128 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: u128;
+        };
+      };
+      typ: type;
+    } @ 1726..1730 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: u128;
+        } @ 1733..1735 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: u128;
+        } @ 1738..1739 (fid = 0);
+      };
+      typ: u128;
+    } @ 1733..1739 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_u128 @ 1715..1723 (fid = 0);
+      which: 0;
+      path: orb.rem_u128;
+      typ: u128;
+      typeness: explicit;
+      value: U128 {
+        val: 3;
+      };
+    };
+  } @ 1715..1740 (fid = 0),
+
+  GlobalDef {
+    name: rem_usz @ 1741..1748 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: usz @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: usz;
+        };
+      };
+      typ: type;
+    } @ 1751..1754 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: integer 15;
+          typ: usz;
+        } @ 1757..1759 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: integer 4;
+          typ: usz;
+        } @ 1762..1763 (fid = 0);
+      };
+      typ: usz;
+    } @ 1757..1763 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_usz @ 1741..1748 (fid = 0);
+      which: 0;
+      path: orb.rem_usz;
+      typ: usz;
+      typeness: explicit;
+      value: U64 {
+        val: 3;
+      };
+    };
+  } @ 1741..1764 (fid = 0),
+
+  GlobalDef {
+    name: rem_f32 @ 1766..1773 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: f32 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: f32;
+        };
+      };
+      typ: type;
+    } @ 1776..1779 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: float 15;
+          typ: f32;
+        } @ 1782..1785 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: float 4;
+          typ: f32;
+        } @ 1788..1790 (fid = 0);
+      };
+      typ: f32;
+    } @ 1782..1790 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_f32 @ 1766..1773 (fid = 0);
+      which: 0;
+      path: orb.rem_f32;
+      typ: f32;
+      typeness: explicit;
+      value: F32 {
+        val: 3;
+      };
+    };
+  } @ 1766..1791 (fid = 0),
+
+  GlobalDef {
+    name: rem_f64 @ 1792..1799 (fid = 0);
+    mutable: false;
+    typexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: f64 @ none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: f64;
+        };
+      };
+      typ: type;
+    } @ 1802..1805 (fid = 0);
+    value: Expression {
+      expr: Binary {
+        lhs: Expression {
+          expr: float 15;
+          typ: f64;
+        } @ 1808..1811 (fid = 0);
+        op: Rem;
+        rhs: Expression {
+          expr: float 4;
+          typ: f64;
+        } @ 1814..1816 (fid = 0);
+      };
+      typ: f64;
+    } @ 1808..1816 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: rem_f64 @ 1792..1799 (fid = 0);
+      which: 0;
+      path: orb.rem_f64;
+      typ: f64;
+      typeness: explicit;
+      value: F64 {
+        val: 3;
+      };
+    };
+  } @ 1792..1817 (fid = 0),
+]
+",
+        expected_test_out: "",
+    ),
+    "scir/fun_ret_ty": (
+        expected_compiler_out: r#"scir = [
+  GlobalDef {
+    name: i32_return @ 0..10 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: i32 @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: i32;
+            };
+          };
+          typ: type;
+        } @ 23..26 (fid = 0);
+        body: Block {
+          stmts: [
+            Expression {
+              expr: If {
+                cond: Expression {
+                  expr: boolean false;
+                  typ: bool;
+                } @ 36..41 (fid = 0);
+                then_br: Expression {
+                  expr: Block {
+                    label: none @ 0..0 (fid = 0);
+                    block: Block {
+                      stmts: [
+                        Expression {
+                          expr: Return {
+                            expr: Expression {
+                              expr: integer 21;
+                              typ: i32;
+                            } @ 59..61 (fid = 0);
+                          };
+                          typ: noreturn;
+                        } @ 52..61 (fid = 0) @ 52..61 (fid = 0),
+                      ];
+                      last_expr: none;
+                      typ: noreturn;
+                    } @ 42..68 (fid = 0);
+                    index: none;
+                  };
+                  typ: noreturn;
+                } @ 33..68 (fid = 0);
+                else_br: none;
+              };
+              typ: void;
+            } @ 33..68 (fid = 0) @ 33..68 (fid = 0),
+          ];
+          last_expr: Expression {
+            expr: integer 120;
+            typ: i32;
+          } @ 74..77 (fid = 0);
+          typ: i32;
+        } @ 27..79 (fid = 0);
+      };
+      typ: *fun () -> i32;
+    } @ 14..79 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: i32_return @ 0..10 (fid = 0);
+      which: 0;
+      path: orb.i32_return;
+      typ: *fun () -> i32;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 0..79 (fid = 0),
+
+  GlobalDef {
+    name: f32_return @ 81..91 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: f32 @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: f32;
+            };
+          };
+          typ: type;
+        } @ 104..107 (fid = 0);
+        body: Block {
+          stmts: [
+            Expression {
+              expr: If {
+                cond: Expression {
+                  expr: boolean false;
+                  typ: bool;
+                } @ 117..122 (fid = 0);
+                then_br: Expression {
+                  expr: Block {
+                    label: none @ 0..0 (fid = 0);
+                    block: Block {
+                      stmts: [
+                        Expression {
+                          expr: Return {
+                            expr: Expression {
+                              expr: float 2.1;
+                              typ: f32;
+                            } @ 140..143 (fid = 0);
+                          };
+                          typ: noreturn;
+                        } @ 133..143 (fid = 0) @ 133..143 (fid = 0),
+                      ];
+                      last_expr: none;
+                      typ: noreturn;
+                    } @ 123..150 (fid = 0);
+                    index: none;
+                  };
+                  typ: noreturn;
+                } @ 114..150 (fid = 0);
+                else_br: none;
+              };
+              typ: void;
+            } @ 114..150 (fid = 0) @ 114..150 (fid = 0),
+          ];
+          last_expr: Expression {
+            expr: float 1.2;
+            typ: f32;
+          } @ 156..160 (fid = 0);
+          typ: f32;
+        } @ 108..162 (fid = 0);
+      };
+      typ: *fun () -> f32;
+    } @ 95..162 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: f32_return @ 81..91 (fid = 0);
+      which: 0;
+      path: orb.f32_return;
+      typ: *fun () -> f32;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 81..162 (fid = 0),
+
+  GlobalDef {
+    name: char_return @ 164..175 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: char @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: char;
+            };
+          };
+          typ: type;
+        } @ 188..192 (fid = 0);
+        body: Block {
+          stmts: [
+            Expression {
+              expr: If {
+                cond: Expression {
+                  expr: boolean false;
+                  typ: bool;
+                } @ 202..207 (fid = 0);
+                then_br: Expression {
+                  expr: Block {
+                    label: none @ 0..0 (fid = 0);
+                    block: Block {
+                      stmts: [];
+                      last_expr: Expression {
+                        expr: Return {
+                          expr: Expression {
+                            expr: character 'B';
+                            typ: char;
+                          } @ 225..228 (fid = 0);
+                        };
+                        typ: noreturn;
+                      } @ 218..228 (fid = 0);
+                      typ: noreturn;
+                    } @ 208..234 (fid = 0);
+                    index: none;
+                  };
+                  typ: noreturn;
+                } @ 199..234 (fid = 0);
+                else_br: none;
+              };
+              typ: void;
+            } @ 199..234 (fid = 0) @ 199..234 (fid = 0),
+          ];
+          last_expr: Expression {
+            expr: character 'A';
+            typ: char;
+          } @ 240..243 (fid = 0);
+          typ: char;
+        } @ 193..245 (fid = 0);
+      };
+      typ: *fun () -> char;
+    } @ 179..245 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: char_return @ 164..175 (fid = 0);
+      which: 0;
+      path: orb.char_return;
+      typ: *fun () -> char;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 164..245 (fid = 0),
+
+  GlobalDef {
+    name: string_return @ 247..260 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: PointerType {
+            mutable: false;
+            typexpr: Expression {
+              expr: Symbol {
+                kind: global;
+                name: str @ none;
+                which: 0;
+                path: ∅;
+                typ: type;
+                typeness: explicit;
+                value: Type {
+                  type: str;
+                };
+              };
+              typ: type;
+            } @ 274..277 (fid = 0);
+          };
+          typ: type;
+        } @ 273..277 (fid = 0);
+        body: Block {
+          stmts: [
+            Expression {
+              expr: If {
+                cond: Expression {
+                  expr: boolean false;
+                  typ: bool;
+                } @ 287..292 (fid = 0);
+                then_br: Expression {
+                  expr: Block {
+                    label: none @ 0..0 (fid = 0);
+                    block: Block {
+                      stmts: [];
+                      last_expr: Expression {
+                        expr: Return {
+                          expr: Expression {
+                            expr: string "!World Hello";
+                            typ: * str;
+                          } @ 310..324 (fid = 0);
+                        };
+                        typ: noreturn;
+                      } @ 303..324 (fid = 0);
+                      typ: noreturn;
+                    } @ 293..330 (fid = 0);
+                    index: none;
+                  };
+                  typ: noreturn;
+                } @ 284..330 (fid = 0);
+                else_br: none;
+              };
+              typ: void;
+            } @ 284..330 (fid = 0) @ 284..330 (fid = 0),
+          ];
+          last_expr: Expression {
+            expr: string "Hello World";
+            typ: * str;
+          } @ 336..349 (fid = 0);
+          typ: * str;
+        } @ 278..351 (fid = 0);
+      };
+      typ: *fun () -> * str;
+    } @ 264..351 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: string_return @ 247..260 (fid = 0);
+      which: 0;
+      path: orb.string_return;
+      typ: *fun () -> * str;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 247..351 (fid = 0),
+
+  GlobalDef {
+    name: void_return @ 353..364 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: none;
+        body: Block {
+          stmts: [
+            Expression {
+              expr: If {
+                cond: Expression {
+                  expr: boolean false;
+                  typ: bool;
+                } @ 383..388 (fid = 0);
+                then_br: Expression {
+                  expr: Block {
+                    label: none @ 0..0 (fid = 0);
+                    block: Block {
+                      stmts: [];
+                      last_expr: Expression {
+                        expr: Return {
+                          expr: none;
+                        };
+                        typ: noreturn;
+                      } @ 399..405 (fid = 0);
+                      typ: noreturn;
+                    } @ 389..411 (fid = 0);
+                    index: none;
+                  };
+                  typ: noreturn;
+                } @ 380..411 (fid = 0);
+                else_br: none;
+              };
+              typ: void;
+            } @ 380..411 (fid = 0) @ 380..411 (fid = 0),
+
+            Expression {
+              expr: Return {
+                expr: none;
+              };
+              typ: noreturn;
+            } @ 417..423 (fid = 0) @ 417..423 (fid = 0),
+          ];
+          last_expr: none;
+          typ: noreturn;
+        } @ 374..426 (fid = 0);
+      };
+      typ: *fun () -> void;
+    } @ 368..426 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: void_return @ 353..364 (fid = 0);
+      which: 0;
+      path: orb.void_return;
+      typ: *fun () -> void;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 353..426 (fid = 0),
+]
+"#,
+        expected_test_out: "",
+    ),
+    "scir/label_kw_expr": (
+        expected_compiler_out: "scir = [
+  GlobalDef {
+    name: nested_loops @ 0..12 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: none;
+        body: Block {
+          stmts: [];
+          last_expr: Expression {
+            expr: Loop {
+              label: lab @ 28..31 (fid = 0);
+              body: Block {
+                stmts: [];
+                last_expr: Expression {
+                  expr: Loop {
+                    label: none @ 0..0 (fid = 0);
+                    body: Block {
+                      stmts: [
+                        Expression {
+                          expr: Break {
+                            label: none;
+                            expr: none;
+                            index: 1;
+                          };
+                          typ: noreturn;
+                        } @ 67..72 (fid = 0) @ 67..72 (fid = 0),
+
+                        Expression {
+                          expr: Break {
+                            label: lab;
+                            expr: none;
+                            index: 0;
+                          };
+                          typ: noreturn;
+                        } @ 86..96 (fid = 0) @ 86..96 (fid = 0),
+
+                        Expression {
+                          expr: Continue {
+                            label: none;
+                            index: 1;
+                          };
+                          typ: noreturn;
+                        } @ 110..118 (fid = 0) @ 110..118 (fid = 0),
+
+                        Expression {
+                          expr: Continue {
+                            label: lab;
+                            index: 0;
+                          };
+                          typ: noreturn;
+                        } @ 132..145 (fid = 0) @ 132..145 (fid = 0),
+                      ];
+                      last_expr: none;
+                      typ: noreturn;
+                    } @ 53..156 (fid = 0);
+                    index: 1;
+                  };
+                  typ: void;
+                } @ 48..156 (fid = 0);
+                typ: void;
+              } @ 38..162 (fid = 0);
+              index: 0;
+            };
+            typ: void;
+          } @ 28..162 (fid = 0);
+          typ: void;
+        } @ 22..164 (fid = 0);
+      };
+      typ: *fun () -> void;
+    } @ 16..164 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: nested_loops @ 0..12 (fid = 0);
+      which: 0;
+      path: orb.nested_loops;
+      typ: *fun () -> void;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 0..164 (fid = 0),
+
+  GlobalDef {
+    name: block_label @ 166..177 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: none;
+        body: Block {
+          stmts: [
+            VariableDef {
+              name: a @ 193..194 (fid = 0);
+              mutable: false;
+              typexpr: Expression {
+                expr: Symbol {
+                  kind: global;
+                  name: i32 @ none;
+                  which: 0;
+                  path: ∅;
+                  typ: type;
+                  typeness: explicit;
+                  value: Type {
+                    type: i32;
+                  };
+                };
+                typ: type;
+              } @ 197..200 (fid = 0);
+              value: Expression {
+                expr: Block {
+                  label: blk @ 203..206 (fid = 0);
+                  block: Block {
+                    stmts: [
+                      Expression {
+                        expr: Break {
+                          label: blk;
+                          expr: Expression {
+                            expr: integer 12;
+                            typ: i32;
+                          } @ 229..231 (fid = 0);
+                          index: 0;
+                        };
+                        typ: noreturn;
+                      } @ 218..231 (fid = 0) @ 218..231 (fid = 0),
+                    ];
+                    last_expr: Expression {
+                      expr: integer 2;
+                      typ: i32;
+                    } @ 242..243 (fid = 0);
+                    typ: noreturn;
+                  } @ 208..249 (fid = 0);
+                  index: 0;
+                };
+                typ: i32;
+              } @ 203..249 (fid = 0);
+              sym: Symbol {
+                kind: local;
+                name: a @ 193..194 (fid = 0);
+                which: 0;
+                path: a;
+                typ: i32;
+                typeness: explicit;
+                value: none;
+              };
+            } @ 193..249 (fid = 0),
+          ];
+          last_expr: none;
+          typ: void;
+        } @ 187..252 (fid = 0);
+      };
+      typ: *fun () -> void;
+    } @ 181..252 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: block_label @ 166..177 (fid = 0);
+      which: 0;
+      path: orb.block_label;
+      typ: *fun () -> void;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 166..252 (fid = 0),
+
+  GlobalDef {
+    name: unused_label_block @ 254..272 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: none;
+        body: Block {
+          stmts: [
+            Expression {
+              expr: Block {
+                label: blk @ 288..291 (fid = 0);
+                block: Block {
+                  stmts: [];
+                  last_expr: none;
+                  typ: void;
+                } @ 293..295 (fid = 0);
+                index: 0;
+              };
+              typ: void;
+            } @ 288..295 (fid = 0) @ 288..295 (fid = 0),
+          ];
+          last_expr: none;
+          typ: void;
+        } @ 282..298 (fid = 0);
+      };
+      typ: *fun () -> void;
+    } @ 276..298 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: unused_label_block @ 254..272 (fid = 0);
+      which: 0;
+      path: orb.unused_label_block;
+      typ: *fun () -> void;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 254..298 (fid = 0),
+]
+warning[W002]: unreachable code
+  ┌─ ./tests/scir/label_kw_expr.lun:5:13
+  │
+4 │             break;
+  │             ----- any code following this statement is unreachable
+5 │             break :lab;
+  │             ^^^^^^^^^^ the unreachable code
+
+warning[W002]: unreachable code
+   ┌─ ./tests/scir/label_kw_expr.lun:16:9
+   │
+14 │         break :blk 12;
+   │         ------------- any code following this statement is unreachable
+15 │ 
+16 │         2
+   │         ^ the unreachable code
+
+warning[W003]: unused label 'blk'
+   ┌─ ./tests/scir/label_kw_expr.lun:21:5
+   │
+21 │     blk: {};
+   │     ^^^
+
+warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings emitted.
+
+",
+        expected_test_out: "",
+    ),
+    "scir/loop_semantics": (
+        expected_compiler_out: "scir = [
+  GlobalDef {
+    name: loop_forever @ 0..12 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: usz @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: noreturn;
+            };
+          };
+          typ: type;
+        } @ 25..33 (fid = 0);
+        body: Block {
+          stmts: [];
+          last_expr: Expression {
+            expr: Loop {
+              label: none @ 0..0 (fid = 0);
+              body: Block {
+                stmts: [];
+                last_expr: none;
+                typ: void;
+              } @ 45..47 (fid = 0);
+              index: 0;
+            };
+            typ: noreturn;
+          } @ 40..47 (fid = 0);
+          typ: noreturn;
+        } @ 34..49 (fid = 0);
+      };
+      typ: *fun () -> noreturn;
+    } @ 16..49 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: loop_forever @ 0..12 (fid = 0);
+      which: 0;
+      path: orb.loop_forever;
+      typ: *fun () -> noreturn;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 0..49 (fid = 0),
+
+  GlobalDef {
+    name: still_loop_forever @ 51..69 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: usz @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: noreturn;
+            };
+          };
+          typ: type;
+        } @ 82..90 (fid = 0);
+        body: Block {
+          stmts: [];
+          last_expr: Expression {
+            expr: Loop {
+              label: none @ 0..0 (fid = 0);
+              body: Block {
+                stmts: [];
+                last_expr: Expression {
+                  expr: Loop {
+                    label: inner @ 112..117 (fid = 0);
+                    body: Block {
+                      stmts: [
+                        Expression {
+                          expr: Break {
+                            label: inner;
+                            expr: none;
+                            index: 1;
+                          };
+                          typ: noreturn;
+                        } @ 138..150 (fid = 0) @ 138..150 (fid = 0),
+                      ];
+                      last_expr: none;
+                      typ: noreturn;
+                    } @ 124..161 (fid = 0);
+                    index: 1;
+                  };
+                  typ: void;
+                } @ 112..161 (fid = 0);
+                typ: void;
+              } @ 102..167 (fid = 0);
+              index: 0;
+            };
+            typ: noreturn;
+          } @ 97..167 (fid = 0);
+          typ: noreturn;
+        } @ 91..169 (fid = 0);
+      };
+      typ: *fun () -> noreturn;
+    } @ 73..169 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: still_loop_forever @ 51..69 (fid = 0);
+      which: 0;
+      path: orb.still_loop_forever;
+      typ: *fun () -> noreturn;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 51..169 (fid = 0),
+
+  GlobalDef {
+    name: loop_forever_in_practice @ 171..195 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: none;
+        body: Block {
+          stmts: [
+            VariableDef {
+              name: reachable @ 405..414 (fid = 0);
+              mutable: false;
+              typexpr: none;
+              value: Expression {
+                expr: integer 12;
+                typ: i32;
+              } @ 418..420 (fid = 0);
+              sym: Symbol {
+                kind: local;
+                name: reachable @ 405..414 (fid = 0);
+                which: 0;
+                path: reachable;
+                typ: i32;
+                typeness: implicit;
+                value: none;
+              };
+            } @ 405..420 (fid = 0),
+
+            Expression {
+              expr: Loop {
+                label: none @ 0..0 (fid = 0);
+                body: Block {
+                  stmts: [];
+                  last_expr: Expression {
+                    expr: If {
+                      cond: Expression {
+                        expr: boolean false;
+                        typ: bool;
+                      } @ 445..450 (fid = 0);
+                      then_br: Expression {
+                        expr: Block {
+                          label: none @ 0..0 (fid = 0);
+                          block: Block {
+                            stmts: [];
+                            last_expr: Expression {
+                              expr: Break {
+                                label: none;
+                                expr: none;
+                                index: 0;
+                              };
+                              typ: noreturn;
+                            } @ 465..470 (fid = 0);
+                            typ: noreturn;
+                          } @ 451..480 (fid = 0);
+                          index: none;
+                        };
+                        typ: noreturn;
+                      } @ 442..480 (fid = 0);
+                      else_br: none;
+                    };
+                    typ: void;
+                  } @ 442..480 (fid = 0);
+                  typ: void;
+                } @ 432..486 (fid = 0);
+                index: 0;
+              };
+              typ: void;
+            } @ 427..486 (fid = 0) @ 427..486 (fid = 0),
+
+            Expression {
+              expr: Symbol {
+                kind: local;
+                name: reachable @ 405..414 (fid = 0);
+                which: 0;
+                path: reachable;
+                typ: i32;
+                typeness: implicit;
+                value: none;
+              };
+              typ: i32;
+            } @ 492..501 (fid = 0) @ 492..501 (fid = 0),
+          ];
+          last_expr: none;
+          typ: void;
+        } @ 205..504 (fid = 0);
+      };
+      typ: *fun () -> void;
+    } @ 199..504 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: loop_forever_in_practice @ 171..195 (fid = 0);
+      which: 0;
+      path: orb.loop_forever_in_practice;
+      typ: *fun () -> void;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 171..504 (fid = 0),
+]
+",
+        expected_test_out: "",
+    ),
+    "scir/noreturn_block": (
+        expected_compiler_out: "scir = [
+  GlobalDef {
+    name: cant_reach @ 0..10 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: integer 1;
+      typ: i32;
+    } @ 14..15 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: cant_reach @ 0..10 (fid = 0);
+      which: 0;
+      path: orb.cant_reach;
+      typ: usz;
+      typeness: explicit;
+      value: I32 {
+        val: 1;
+      };
+    };
+  } @ 0..16 (fid = 0),
+
+  GlobalDef {
+    name: main @ 18..22 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: Expression {
+          expr: Symbol {
+            kind: global;
+            name: usz @ none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: usz;
+            };
+          };
+          typ: type;
+        } @ 35..38 (fid = 0);
+        body: Block {
+          stmts: [
+            VariableDef {
+              name: a @ 45..46 (fid = 0);
+              mutable: false;
+              typexpr: Expression {
+                expr: Symbol {
+                  kind: global;
+                  name: usz @ none;
+                  which: 0;
+                  path: ∅;
+                  typ: type;
+                  typeness: explicit;
+                  value: Type {
+                    type: usz;
+                  };
+                };
+                typ: type;
+              } @ 49..52 (fid = 0);
+              value: Expression {
+                expr: Block {
+                  label: blk @ 55..58 (fid = 0);
+                  block: Block {
+                    stmts: [
+                      Expression {
+                        expr: Symbol {
+                          kind: global;
+                          name: cant_reach @ 0..10 (fid = 0);
+                          which: 0;
+                          path: orb.cant_reach;
+                          typ: usz;
+                          typeness: explicit;
+                          value: I32 {
+                            val: 1;
+                          };
+                        };
+                        typ: i32;
+                      } @ 128..138 (fid = 0) @ 128..138 (fid = 0),
+
+                      Expression {
+                        expr: Break {
+                          label: blk;
+                          expr: Expression {
+                            expr: integer 12;
+                            typ: usz;
+                          } @ 160..162 (fid = 0);
+                          index: 0;
+                        };
+                        typ: noreturn;
+                      } @ 149..162 (fid = 0) @ 149..162 (fid = 0),
+                    ];
+                    last_expr: Expression {
+                      expr: Symbol {
+                        kind: global;
+                        name: cant_reach @ 0..10 (fid = 0);
+                        which: 0;
+                        path: orb.cant_reach;
+                        typ: usz;
+                        typeness: explicit;
+                        value: I32 {
+                          val: 1;
+                        };
+                      };
+                      typ: usz;
+                    } @ 173..183 (fid = 0);
+                    typ: noreturn;
+                  } @ 60..189 (fid = 0);
+                  index: 0;
+                };
+                typ: usz;
+              } @ 55..189 (fid = 0);
+              sym: Symbol {
+                kind: local;
+                name: a @ 45..46 (fid = 0);
+                which: 0;
+                path: a;
+                typ: usz;
+                typeness: explicit;
+                value: none;
+              };
+            } @ 45..189 (fid = 0),
+
+            Expression {
+              expr: Return {
+                expr: Expression {
+                  expr: integer 12;
+                  typ: usz;
+                } @ 244..246 (fid = 0);
+              };
+              typ: noreturn;
+            } @ 237..246 (fid = 0) @ 237..246 (fid = 0),
+
+            Expression {
+              expr: Symbol {
+                kind: global;
+                name: cant_reach @ 0..10 (fid = 0);
+                which: 0;
+                path: orb.cant_reach;
+                typ: usz;
+                typeness: explicit;
+                value: I32 {
+                  val: 1;
+                };
+              };
+              typ: usz;
+            } @ 252..262 (fid = 0) @ 252..262 (fid = 0),
+          ];
+          last_expr: none;
+          typ: noreturn;
+        } @ 39..265 (fid = 0);
+      };
+      typ: *fun () -> usz;
+    } @ 26..265 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: main @ 18..22 (fid = 0);
+      which: 0;
+      path: orb.main;
+      typ: *fun () -> usz;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 18..265 (fid = 0),
+]
+warning[W002]: unreachable code
+   ┌─ ./tests/scir/noreturn_block.lun:10:9
+   │
+ 8 │         break :blk 12;
+   │         ------------- any code following this statement is unreachable
+ 9 │ 
+10 │         cant_reach
+   │         ^^^^^^^^^^ the unreachable code
+
+warning[W002]: unreachable code
+   ┌─ ./tests/scir/noreturn_block.lun:15:5
+   │
+14 │     return 12;
+   │     --------- any code following this statement is unreachable
+15 │     cant_reach;
+   │     ^^^^^^^^^^ the unreachable code
+
+warning: compilation of `./tests/scir/noreturn_block` succeeded but 2 warnings emitted.
+
+",
+        expected_test_out: "",
+    ),
+}

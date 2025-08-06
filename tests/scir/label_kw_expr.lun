@@ -1,0 +1,22 @@
+nested_loops :: fun() {
+    lab: loop {
+        loop {
+            break;
+            break :lab;
+            continue;
+            continue :lab;
+        }
+    }
+}
+
+block_label :: fun() {
+    a : i32 : blk: {
+        break :blk 12;
+
+        2
+    };
+}
+
+unused_label_block :: fun() {
+    blk: {};
+}

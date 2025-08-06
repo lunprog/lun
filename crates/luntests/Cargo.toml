@@ -1,0 +1,17 @@
+[package]
+name = "luntests"
+edition = "2024"
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+lunc_utils = { workspace = true }
+
+# other dependencies
+termcolor = { workspace = true }
+serde = { workspace = true }
+ron = "0.10.1"
+indexmap = { version = "2.10.0", features = ["serde"] }
+humantime = "2.2.0"
+thiserror = { workspace = true }
+clap = { version = "4.5.41", features = ["derive"] }

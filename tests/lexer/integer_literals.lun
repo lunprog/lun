@@ -1,0 +1,22 @@
+123456789
+123_456_789
+
+// binary literal
+0b1111011
+0B1111011
+0b0111_1011
+0B0111_1011
+
+// octal literal
+0o173
+0O173
+0o01_73
+0O01_73
+
+// hexadecimal literal
+0x7b
+0X7b
+0x7B
+0X7B
+0xDEAD_BEEF
+0Xde_ad_be_ef
