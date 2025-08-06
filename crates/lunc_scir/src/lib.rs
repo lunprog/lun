@@ -5,14 +5,16 @@ use std::fmt::Debug;
 use diags::{CantResolveComptimeValue, ExpectedTypeFoundExpr};
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, feature_todo};
 use lunc_dsir::{
-    BinOp, DsArg, DsBlock, DsDirective, DsExpr, DsExpression, DsItem, DsModule, DsStatement,
-    DsStmt, OSpan, QualifiedPath, UnaryOp,
+    DsArg, DsBlock, DsDirective, DsExpr, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
+    OSpan, QualifiedPath,
 };
 use lunc_utils::{
     FromHigher, Span, lower,
     symbol::{Symbol, Type, ValueExpr},
     target::{PtrWidth, TargetTriplet},
 };
+
+pub use lunc_dsir::{BinOp, UnaryOp};
 
 pub mod checking;
 pub mod diags;

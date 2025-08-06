@@ -6,4 +6,5 @@ license.workspace = true
 edition = "2024"
 
 [dependencies]
-lunc_parser = { workspace = true }
+lunc_utils = { workspace = true }
+lunc_scir = { workspace = true }

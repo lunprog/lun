@@ -1,395 +1,1204 @@
-//! Intermediate Representation of Lun, the closest one to the final assembly
-//! or machine code, while still being target independent
+//! Final Intermediate Representation of Lun, the closest one to the final
+//! assembly or machine code.
 
-use std::{fmt::Display, io};
+use std::{
+    fmt::{self, Display},
+    io,
+    num::NonZeroU32,
+};
 
-use lunc_parser::expr::{BinOp, UnaryOp};
+use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
+pub mod builder;
+
+/// A FIR unit
 #[derive(Debug, Clone)]
-pub struct IrUnit {
-    functions: Vec<Fun>,
-    /// read-only data
-    rodata: Vec<u8>,
+pub struct FirUnit {
+    functions: Vec<FunDef>,
+    globals: Vec<Glob>,
 }
 
-impl IrUnit {
-    pub fn new() -> IrUnit {
-        IrUnit {
+impl FirUnit {
+    /// Create a new IR unit
+    pub fn new() -> FirUnit {
+        FirUnit {
             functions: Vec::new(),
-            rodata: Vec::new(),
+            globals: Vec::new(),
         }
     }
 
-    pub fn push_rodata(&mut self, data: impl AsRef<[u8]>) -> usize {
-        let off = self.rodata.len();
-
-        self.rodata.extend_from_slice(data.as_ref());
-        off
-    }
-
-    pub fn push_fun(&mut self, fun: Fun) {
+    /// Append a function to the unit
+    pub fn append_fun(&mut self, fun: FunDef) -> &mut FunDef {
         self.functions.push(fun);
+
+        self.functions.last_mut().unwrap()
     }
 
-    /// Dump ir to stdout
-    pub fn dump(&self) -> io::Result<()> {
-        self.dump_with(&mut io::stdout())
+    /// Append a global variable to the unit
+    pub fn append_glob(&mut self, glob: Glob) {
+        self.globals.push(glob);
     }
+}
 
-    /// Dump ir, write to the provided writer
-    pub fn dump_with(&self, mut out: impl io::Write) -> io::Result<()> {
-        out.flush()?;
+impl PrettyDump for FirUnit {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        writeln!(ctx.out, "// IR unit")?;
 
-        writeln!(out, "==== Function ====")?;
-        writeln!(out)?;
+        for glob in &self.globals {
+            println!();
+            glob.try_dump(ctx)?;
+        }
 
         for fun in &self.functions {
-            fun.dump_with(&mut out)?;
+            println!();
+            fun.try_dump(ctx)?;
         }
 
-        if !self.rodata.is_empty() {
-            writeln!(out)?;
-            writeln!(out, "==== Rodata ====")?;
-            writeln!(out)?;
-            self.dump_rodata(&mut out)?;
-        }
-
-        Ok(())
-    }
-
-    pub fn dump_rodata(&self, mut out: impl io::Write) -> io::Result<()> {
-        writeln!(
-            out,
-            "  OFFSET  | 00 01 02 03  04 05 06 07  08 09 0A 0B  0C 0D 0E 0F |      ASCII       |"
-        )?;
-        let chunks = self.rodata.chunks(16);
-
-        for (i, chunk) in chunks.clone().enumerate() {
-            // Offset
-            write!(out, " {:8X} |", i * 16)?;
-
-            // Hexadecimal bytes
-            for (j, byte) in chunk.iter().enumerate() {
-                if j != 0 && j % 4 == 0 {
-                    write!(out, " ")?;
-                }
-                write!(out, " {byte:02X}")?;
-            }
-            if chunk.len() % 4 == 0 && i == chunks.len() - 1 {
-                write!(out, " ")?;
-            }
-
-            // Align if less than 16 bytes
-            let remaining = 16 - chunk.len();
-            if remaining > 0 {
-                // Calculate how many gaps to insert
-                for j in 0..remaining {
-                    if (chunk.len() + j) % 4 == 0 && j != 0 {
-                        write!(out, " ")?;
-                    }
-                    write!(out, "   ")?;
-                }
-            }
-
-            write!(out, " | ")?;
-
-            // ASCII representation
-            for byte in chunk {
-                let ch = *byte;
-                if ch.is_ascii_graphic() || ch == b' ' {
-                    write!(out, "{}", ch as char)?;
-                } else {
-                    write!(out, ".")?;
-                }
-            }
-
-            // Align if less than 16 bytes
-            for _ in 0..(16 - chunk.len()) {
-                write!(out, ".")?;
-            }
-
-            writeln!(out, " |")?;
-        }
+        ctx.out.flush()?;
 
         Ok(())
     }
 }
 
-impl Default for IrUnit {
+impl Default for FirUnit {
     fn default() -> Self {
-        IrUnit::new()
+        FirUnit::new()
     }
 }
 
-type AtomicType = String;
-
-/// Function
+/// First class type, they can only be produced by instructions.
+///
+/// It is a subset of [`Type`].
+///
+/// [`Type`]: lunc_utils::symbol::Type
 #[derive(Debug, Clone)]
-pub struct Fun {
-    /// un mangled name of the function
-    pub name: String,
-    /// arguments types
-    pub args: Vec<AtomicType>,
-    /// return type
-    pub ret: AtomicType,
-    /// body of the function composed of a list of blocks.
-    pub body: Vec<OpBlock>,
+pub enum FcType {
+    /// 8 bit signed integer
+    I8,
+    /// 16 bit signed integer
+    I16,
+    /// 32 bit signed integer
+    I32,
+    /// 64 bit signed integer
+    I64,
+    /// 128 bit signed integer
+    I128,
+    /// 8 bit unsigned integer
+    U8,
+    /// 16 bit unsigned integer
+    U16,
+    /// 32 bit unsigned integer
+    U32,
+    /// 64 bit unsigned integer
+    U64,
+    /// 128 bit unsigned integer
+    U128,
+    /// Single precision floating point, IEEE 754
+    F32,
+    /// Double precision floating point, IEEE 754
+    F64,
+    /// Boolean,
+    ///
+    /// only to legal values, `0 -> false` and `1 -> true`
+    Bool,
+    /// Void, nothing returned, this type is a `ZST`.
+    Void,
+    /// Function Pointer
+    FunPtr { args: Vec<FcType>, ret: Box<FcType> },
+    /// Pointer
+    Ptr { ty: Box<FcType> },
 }
 
-impl Fun {
-    pub fn dump_with(&self, mut out: impl io::Write) -> io::Result<()> {
-        let Fun {
+impl FcType {
+    /// Create a new pointer type
+    pub fn ptr(ty: FcType) -> FcType {
+        FcType::Ptr { ty: Box::new(ty) }
+    }
+}
+
+impl Display for FcType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FcType::I8 => write!(f, "i8"),
+            FcType::I16 => write!(f, "i16"),
+            FcType::I32 => write!(f, "i32"),
+            FcType::I64 => write!(f, "i64"),
+            FcType::I128 => write!(f, "i128"),
+            FcType::U8 => write!(f, "u8"),
+            FcType::U16 => write!(f, "u16"),
+            FcType::U32 => write!(f, "u32"),
+            FcType::U64 => write!(f, "u64"),
+            FcType::U128 => write!(f, "u128"),
+            FcType::F32 => write!(f, "f32"),
+            FcType::F64 => write!(f, "f64"),
+            FcType::Bool => write!(f, "bool"),
+            FcType::Void => write!(f, "void"),
+            FcType::FunPtr { args, ret } => {
+                write!(f, "funptr (")?;
+
+                if let Some(arg) = args.first() {
+                    arg.fmt(f)?;
+                }
+
+                if args.len() >= 2 {
+                    for arg in &args[1..] {
+                        write!(f, ", ")?;
+                        arg.fmt(f)?;
+                    }
+                }
+
+                write!(f, ") -> ")?;
+
+                ret.fmt(f)?;
+
+                Ok(())
+            }
+            FcType::Ptr { ty } => {
+                write!(f, "ptr ")?;
+                ty.fmt(f)
+            }
+        }
+    }
+}
+
+/// Function definition
+///
+/// # Block entry
+///
+/// The entry block of a function is the block where the function goes to when
+/// it is called. The entry block must:
+/// - have label `.bb0`
+/// - be the first block of the list of blocks
+/// - be present.
+///
+/// # Arguments
+///
+/// Arguments, if any, can be accessed by using registers `%1` to `%N` where
+/// `N` is the arity of the function. Eg: a function with two arguments have
+/// the following registers allocated: `%1` for the first one and `%2` for the
+/// second one.
+///
+/// eg:
+/// ```text
+/// define $'main'(%1: i32, %2: ptr ptr i8) -> i32 {
+///     // ...
+/// }
+/// ```
+/// in this example we clearly see the registers next to the arguments
+#[derive(Debug, Clone)]
+pub struct FunDef {
+    /// un mangled name of the function
+    name: String,
+    /// arguments types
+    args: Vec<FcType>,
+    /// return type
+    ret: FcType,
+    /// basic blocks they compose the body of the function.
+    bbs: Vec<BasicBlock>,
+    /// is the signature of the function finished?
+    sig_finished: bool,
+}
+
+impl FunDef {
+    /// Create a new function with a name, no args and a default return type of
+    /// `void`, and no basic blocks.
+    pub fn new(name: impl ToString) -> FunDef {
+        FunDef::with_args_ret_bbs(name.to_string(), Vec::new(), FcType::Void, Vec::new())
+            .unfinished()
+    }
+
+    fn unfinished(mut self) -> FunDef {
+        self.sig_finished = false;
+
+        self
+    }
+
+    /// Create a new function definition with the arguments, the return type and
+    /// the basic blocks.
+    pub const fn with_args_ret_bbs(
+        name: String,
+        args: Vec<FcType>,
+        ret: FcType,
+        bbs: Vec<BasicBlock>,
+    ) -> FunDef {
+        FunDef {
             name,
             args,
             ret,
-            body,
+            bbs,
+            sig_finished: true,
+        }
+    }
+
+    /// Append an argument to a function with an unfinished signature
+    ///
+    /// # Panic
+    ///
+    /// This method panics if the function signature is already finished.
+    pub fn append_arg(&mut self, arg: FcType) {
+        if self.sig_finished {
+            panic!("cannot mutate the signature of a function once it is finished.");
+        }
+
+        self.args.push(arg);
+    }
+
+    /// Append some arguments to a function with an unfinished signature
+    ///
+    /// # Panic
+    ///
+    /// This method panics if the function signature is already finished.
+    pub fn append_args(&mut self, arg: impl IntoIterator<Item = FcType>) {
+        if self.sig_finished {
+            panic!("cannot mutate the signature of a function once it is finished.");
+        }
+
+        self.args.extend(arg);
+    }
+
+    /// Set the return type of a function with an unfinished signature,
+    /// overriding any previous return types.
+    ///
+    /// # Panic
+    ///
+    /// This method panics if the function signature is already finished.
+    pub fn set_ret(&mut self, ret: FcType) {
+        if self.sig_finished {
+            panic!("cannot mutate the signature of a function once it is finished.");
+        }
+
+        self.ret = ret;
+    }
+
+    /// Mark the signature of the function as finished
+    pub fn finish_sig(&mut self) {
+        self.sig_finished = true;
+    }
+
+    /// Get the basic block by label
+    pub fn get_bb(&self, label: BbLabel) -> Option<&BasicBlock> {
+        self.bbs.iter().find(|bb| bb.label == label)
+    }
+
+    /// Mutably get the basic block by label
+    pub fn get_bb_mut(&mut self, label: BbLabel) -> Option<&mut BasicBlock> {
+        self.bbs.iter_mut().find(|bb| bb.label == label)
+    }
+}
+
+impl PrettyDump for FunDef {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        let FunDef {
+            name,
+            args,
+            ret,
+            bbs,
+            sig_finished: _,
         } = self;
 
-        write!(out, "{name}(")?;
+        write!(ctx.out, "define $'{name}'(")?;
         for (i, arg) in args.iter().enumerate() {
-            write!(out, "{arg}")?;
+            write!(ctx.out, "{}: {arg}", Reg::new(i as u32 + 1))?;
 
             if i != args.len() - 1 {
-                write!(out, ", ")?;
+                write!(ctx.out, ", ")?;
             }
         }
-        write!(out, ")")?;
-        writeln!(out, " -> {ret}")?;
-        // TODO: dump var like this
-        // -> var[1]: u8
+        write!(ctx.out, ")")?;
+        write!(ctx.out, " -> {ret} ")?;
 
-        writeln!(out, "{{")?;
+        writeln!(ctx.out, "{{")?;
 
-        for (i, block) in body.iter().enumerate() {
-            writeln!(out, ".b{i}:")?;
-            block.dump_with(&mut out)?;
+        for block in bbs {
+            block.try_dump(ctx)?;
         }
 
-        writeln!(out, "}}")?;
+        writeln!(ctx.out, "}}")?;
 
         Ok(())
     }
 }
 
-/// A variable index. Every variable index must be greater than 0, because the
-/// zero variable index is special
+/// A global variable, can be read-only.
 #[derive(Debug, Clone)]
-pub struct VarIndex(u64);
+pub struct Glob {
+    /// name of the global variable, must be an unmangled name, used in linking,
+    /// it's the name of the symbol
+    name: String,
+    /// type of the global
+    ty: FcType,
+    /// index of the global in an ir unit.
+    idx: usize,
+    /// read-only
+    ro: bool,
+    /// value
+    val: ConstValue,
+}
 
-impl VarIndex {
-    pub const ZERO: VarIndex = VarIndex(0);
-
-    pub fn to_usize(&self) -> usize {
-        self.0 as usize
+impl Glob {
+    /// Create a new global variable
+    pub fn new(name: String, ty: FcType, idx: usize, ro: bool, val: ConstValue) -> Glob {
+        Glob {
+            name,
+            ty,
+            idx,
+            ro,
+            val,
+        }
     }
 }
 
-impl Display for VarIndex {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(&self.0, f)
+impl PrettyDump for Glob {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        let out = &mut ctx.out;
+
+        let Glob {
+            name,
+            ty: typ,
+            idx,
+            ro,
+            val,
+        } = self;
+
+        write!(out, "$'{name}': {typ} idx {idx} ")?;
+
+        if *ro {
+            write!(out, "readonly")?;
+        }
+
+        writeln!(out, "= {val};")?;
+
+        Ok(())
     }
 }
 
-/// Argument
+/// A constant value
 #[derive(Debug, Clone)]
-pub enum Arg {
-    Var(VarIndex),
-    IntegerLiteral(u32),
-    Symbol(String),
-    /// An offset in the read-only data.
-    RoData(u64),
+pub enum ConstValue {
+    Bool(bool),
+    I8(i8),
+    I16(i16),
+    I32(i32),
+    I64(i64),
+    I128(i128),
+    U8(u8),
+    U16(u16),
+    U32(u32),
+    U64(u64),
+    U128(u128),
+    /// the FIR, makes no guarantees about string, this exist just to be able to
+    /// pretty print it like a string.
+    String(Box<[u8]>),
+    F32(f32),
+    F64(f64),
 }
 
-impl Arg {
-    pub fn dump_with(&self, mut out: impl io::Write) -> io::Result<()> {
+impl ConstValue {
+    pub fn string(str: impl AsRef<[u8]>) -> ConstValue {
+        ConstValue::String(Box::from(str.as_ref()))
+    }
+}
+
+impl Display for ConstValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Arg::Var(idx) => write!(out, "var[{idx}]")?,
-            Arg::IntegerLiteral(i) => write!(out, "{i}")?,
-            Arg::Symbol(name) => write!(out, "{name}")?,
-            Arg::RoData(offset) => write!(out, "data[{offset}]")?,
+            Self::Bool(b) => write!(f, "{b}"),
+            Self::I8(i) => write!(f, "{i}"),
+            Self::I16(i) => write!(f, "{i}"),
+            Self::I32(i) => write!(f, "{i}"),
+            Self::I64(i) => write!(f, "{i}"),
+            Self::I128(i) => write!(f, "{i}"),
+            Self::U8(i) => write!(f, "{i}"),
+            Self::U16(i) => write!(f, "{i}"),
+            Self::U32(i) => write!(f, "{i}"),
+            Self::U64(i) => write!(f, "{i}"),
+            Self::U128(i) => write!(f, "{i}"),
+            Self::String(str) => write!(f, "{:?}", String::from_utf8_lossy(str)),
+            Self::F32(v) => write!(f, "{v:e}"),
+            Self::F64(v) => write!(f, "{v:e}"),
         }
-
-        Ok(())
     }
 }
 
-/// A block is a list of [`Op`] that MUST end with a terminal operation.
+/// A block label.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BbLabel(u32);
+
+impl BbLabel {
+    /// Create a new block label
+    pub const fn new(i: u32) -> BbLabel {
+        BbLabel(i)
+    }
+}
+
+impl Display for BbLabel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, ".bb{}", self.0)
+    }
+}
+
+/// A basic block, is a list of instructions, that is finished by a terminating
+/// instruction.
+///
+/// # Finished block guarantees
+///
+/// - immutatability of the list of instructions and the terminal inst
+/// - the presence of a terminator instruction
 #[derive(Debug, Clone)]
-pub struct OpBlock {
-    ops: Vec<Op>,
+pub struct BasicBlock {
+    /// label of the block
+    label: BbLabel,
+    /// the instructions of the block
+    insts: Vec<Inst>,
+    /// terminator instruction of the block.
+    terminator: Option<Terminator>,
+    /// used to guarantee that the block is finished
     finished: bool,
 }
 
-impl OpBlock {
-    pub fn new() -> OpBlock {
-        OpBlock {
-            ops: Vec::new(),
+impl BasicBlock {
+    /// Create a new basic block
+    pub fn new(label: BbLabel) -> BasicBlock {
+        BasicBlock {
+            label,
+            insts: Vec::new(),
+            terminator: None,
             finished: false,
         }
     }
 
-    pub fn finish(&mut self) {
-        assert!(
-            self.ops
-                .last()
-                .expect("a block require at least one operation")
-                .is_terminating(),
-            "a block must finish with a terminating operation at the end"
-        );
-        self.finished = true;
-    }
-
-    pub fn push(&mut self, op: Op) {
+    /// Append an instruction
+    pub fn append_inst(&mut self, inst: Inst) {
         assert!(
             !self.finished,
-            "cannot push an operation on a finished block"
+            "cannot mutate block when it is already finished"
         );
-        self.ops.push(op);
+
+        self.insts.push(inst);
     }
 
-    pub fn dump_with(&self, mut out: impl io::Write) -> io::Result<()> {
-        for op in &self.ops {
-            match op {
-                Op::LoadArgToVar { index, val } => {
-                    writeln!(out, "    var[{index}] = ")?;
-                    val.dump_with(&mut out)?;
-                }
-                Op::TemporaryAssign { index, val } => {
-                    writeln!(out, "    ${index} = ")?;
-                    val.dump_with(&mut out)?;
-                }
-                Op::Fallthrough => {
-                    writeln!(out, "    fallthrough")?;
-                }
-                Op::Branch {
-                    arg,
-                    true_branch,
-                    false_branch,
-                } => {
-                    write!(out, "    branch ")?;
-                    arg.dump_with(&mut out)?;
-                    writeln!(out, ", .{true_branch} else .{false_branch}")?;
-                }
-                Op::Return { arg } => {
-                    write!(out, "    return")?;
+    /// Set the terminal instruction
+    pub fn set_terminator(&mut self, terminator: Terminator) {
+        assert!(
+            !self.finished,
+            "cannot mutate block when it is already finished"
+        );
 
-                    if let Some(arg) = arg {
-                        write!(out, " ")?;
-                        arg.dump_with(&mut out)?;
-                    }
+        self.terminator = Some(terminator);
+    }
 
-                    writeln!(out)?;
-                }
-            }
+    /// Finish the block
+    ///
+    /// # Panic
+    ///
+    /// This function panic if the block doesn't uphold the guarantees a
+    /// finished block has.
+    pub fn finish(&mut self) {
+        assert!(
+            self.terminator.is_some(),
+            "you must have a terminal instruction to make the block finished"
+        );
+
+        self.finished = true;
+    }
+}
+
+impl PrettyDump for BasicBlock {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        let BasicBlock {
+            label,
+            insts,
+            terminator: Some(terminal),
+            finished: true,
+        } = self
+        else {
+            panic!("cannot dump a basic block if it's not finished")
+        };
+
+        writeln!(ctx.out, "{label}:")?;
+
+        for inst in insts {
+            writeln!(ctx.out, "    {inst}")?;
         }
+
+        writeln!(ctx.out, "    {terminal}")?;
+
         Ok(())
     }
 }
 
-impl Default for OpBlock {
-    fn default() -> Self {
-        OpBlock::new()
-    }
-}
-
-/// Operation
+/// An argument of an instruction
 #[derive(Debug, Clone)]
-pub enum Op {
-    /// ```text
-    /// var[index] = val
-    /// ```
-    LoadArgToVar { index: VarIndex, val: Value },
-    /// ```text
-    /// $index = val
-    /// ```
-    TemporaryAssign { index: u64, val: Arg },
-    /// ```text
-    /// falthrough
-    /// ```
-    ///
-    /// falls through the following block (it is a no-op in most platforms, so
-    /// no cost)
-    Fallthrough,
-    /// ```text
-    /// branch arg, .true_branch else .false_branch
-    /// ```
-    ///
-    /// evaluates `arg` then jumps to `.true_branch` if arg == 0, or jumps to
-    /// `.false_branch` if arg != 0,
-    Branch {
-        arg: Arg,
-        /// block index in function
-        true_branch: u64,
-        /// block index in function
-        false_branch: u64,
-    },
-    /// ```text
-    /// return arg?
-    /// ```
-    ///
-    /// returns the function with the provided value, may be nothing if, return
-    /// type is void.
-    Return { arg: Option<Arg> },
+pub enum Arg {
+    /// A constant
+    Constant(ConstValue),
+    /// A symbol
+    Symbol(Box<[u8]>),
+    /// A register
+    Reg(Reg),
 }
 
-impl Op {
-    pub fn is_terminating(&self) -> bool {
-        matches!(
-            self,
-            Op::Fallthrough | Op::Branch { .. } | Op::Return { .. }
-        )
-    }
-}
-
-/// Value
-#[derive(Debug, Clone)]
-pub enum Value {
-    /// ```text
-    /// arg
-    /// ```
-    Arg(Arg),
-    /// ```text
-    /// lhs op rhs
-    /// ```
-    Binary { lhs: Arg, op: BinOp, rhs: Arg },
-    /// ```text
-    /// op arg
-    /// ```
-    Unary { op: UnaryOp, arg: Arg },
-    /// ```text
-    /// call(fun, args..)
-    /// ```
-    Call { fun: Arg, args: Vec<Arg> },
-}
-
-impl Value {
-    pub fn dump_with(&self, mut out: impl io::Write) -> io::Result<()> {
+impl Display for Arg {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Value::Arg(arg) => {
-                arg.dump_with(&mut out)?;
-            }
-            Value::Binary { lhs, op, rhs } => {
-                lhs.dump_with(&mut out)?;
-                write!(out, " {op} ")?;
-                rhs.dump_with(&mut out)?;
-            }
-            Value::Unary { op, arg } => {
-                write!(out, "{op} ")?;
-                arg.dump_with(&mut out)?;
-            }
-            Value::Call { fun, args } => {
-                write!(out, "call(")?;
+            Self::Constant(constval) => write!(f, "{constval}"),
+            Self::Symbol(sym) => write!(f, "$'{}'", String::from_utf8_lossy(sym)),
+            Self::Reg(reg) => write!(f, "{reg}"),
+        }
+    }
+}
 
-                fun.dump_with(&mut out)?;
+/// Alignment of an allocation, especially a `salloc` allocation.
+pub type Alignment = NonZeroU32;
 
-                for arg in args {
-                    write!(out, ", ")?;
-                    arg.dump_with(&mut out)?;
+/// An instruction of FIR.
+#[derive(Debug, Clone)]
+pub enum Inst {
+    /// # Syntax
+    ///
+    /// `<res> = call <ty> <fnptr> ( <function args> )`
+    ///
+    /// # Description
+    ///
+    /// This instruction makes a call to the `<fnptr>`, with the args `<function
+    /// args>`, puts the result of the call into `<res>`, the type of the
+    /// returned value is specified with `<ty>`
+    Call {
+        res: Reg,
+        ty: FcType,
+        fnptr: Arg,
+        args: Vec<Arg>,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = add <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs an addition, `lhs + rhs` that must be of type `ty`, the result
+    /// is then put in `<res>`. The type must be an integer type and works for
+    /// both signed and unsigned integer types, `iNN` / `uNN`.
+    ///
+    /// ## Overflow
+    ///
+    /// If an overflow occurs, the result of the operation is a poisoned value.
+    Add {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = fadd <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a floating point addition, `lhs + rhs` that must be of type
+    /// `ty`, the result is then put in `<res>`. The type must be a floating
+    /// point type.
+    Fadd {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = sub <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a subtraction, `lhs - rhs` that must be of type `ty`, the
+    /// result is then put in `<res>`. The type must be an integer type and
+    /// works for both signed and unsigned integer types, `iNN` / `uNN`.
+    ///
+    /// ## Overflow
+    ///
+    /// If an overflow occurs, the result of the operation is a poisoned value.
+    Sub {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = fsub <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a floating point subtraction, `lhs - rhs` that must be of type
+    /// `ty`, the result is then put in `<res>`. The type must be a floating
+    /// point type.
+    Fsub {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = mul <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a multiplication, `lhs * rhs` that must be of type `ty`, the
+    /// result is then put in `<res>`. The type must be an integer type and
+    /// works for both signed and unsigned integer types, `iNN` / `uNN`.
+    ///
+    /// ## Overflow
+    ///
+    /// If an overflow occurs, the result of the operation is a poisoned value.
+    Mul {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = fmul <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a floating point multiplication, `lhs * rhs` that must be
+    /// of type `ty`, the result is then put in `<res>`. The type must be a
+    /// floating point type.
+    Fmul {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = udiv <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs an **unsigned** division, `lhs / rhs` that must be of type `ty`,
+    /// the result is then put in `<res>`. The type must be an integer type and
+    /// **only works with unsigned integer types.**
+    ///
+    /// ## Undefined behavior
+    ///
+    /// A division by zero (`rhs == 0`), is an undefined behavior and the result
+    /// is a poison value.
+    Udiv {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = sdiv <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs an **signed** division, `lhs / rhs` that must be of type `ty`,
+    /// the result is then put in `<res>`. The type must be an integer type and
+    /// **only works with signed integer types.**
+    ///
+    /// ## Undefined behavior
+    ///
+    /// A division by zero (`rhs == 0`), is an undefined behavior and the result
+    /// is a poison value. It is also an undefined behavior if there is an
+    /// overflow, the result would also be a poison value.
+    Sdiv {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = fdiv <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a floating point division, `lhs / rhs` that must be
+    /// of type `ty`, the result is then put in `<res>`. The type must be a
+    /// floating point type.
+    Fdiv {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = urem <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs an **unsigned** remainder (computes the remainder of the
+    /// division `lhs / rhs`), `lhs % rhs` that must be of type `ty`, the result
+    /// is then put in `<res>`. The type must be an integer type and **only
+    /// works with unsigned integer types.**
+    ///
+    /// ## Undefined behavior
+    ///
+    /// A remainder by zero (`rhs == 0`), is an undefined behavior and the result
+    /// is a poison value.
+    Urem {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = srem <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs an **signed** remainder (computes the remainder of the division
+    /// `lhs / rhs`), `lhs % rhs` that must be of type `ty`, the result is then
+    /// put in `<res>`. The type must be an integer type and **only works with
+    /// signed integer types.**
+    ///
+    /// ## Undefined behavior
+    ///
+    /// A remainder by zero (`rhs == 0`), is an undefined behavior and the result
+    /// is a poison value. It is also an undefined behavior if there is an
+    /// overflow, the result would also be a poison value.
+    Srem {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = frem <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a floating point remainder (computes the remainder of the
+    /// division `lhs / rhs`), `lhs / rhs` that must be of type `ty`, the result
+    /// is then put in `<res>`. The type must be a floating point type.
+    Frem {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = and <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a bitwise and, `lhs & rhs` that must be of type `ty`, the result
+    /// is then put in `<res>`. The type must be an integer type and works for
+    /// both signed and unsigned integer types, `iNN` / `uNN`.
+    And {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = xor <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a bitwise xor, `lhs ^ rhs` that must be of type `ty`, the result
+    /// is then put in `<res>`. The type must be an integer type and works for
+    /// both signed and unsigned integer types, `iNN` / `uNN`.
+    Xor {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = or <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a bitwise or, `lhs ^ rhs` that must be of type `ty`, the result
+    /// is then put in `<res>`. The type must be an integer type and works for
+    /// both signed and unsigned integer types, `iNN` / `uNN`.
+    Or {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = shr <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a shift right, `lhs >> rhs` that must be of type `ty`, the result
+    /// is then put in `<res>`. The type must be an integer type and works for
+    /// both signed and unsigned integer types, `iNN` / `uNN`.
+    Shr {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = shl <ty>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs a shift left, `lhs << rhs` that must be of type `ty`, the result
+    /// is then put in `<res>`. The type must be an integer type and works for
+    /// both signed and unsigned integer types, `iNN` / `uNN`.
+    Shl {
+        res: Reg,
+        ty: FcType,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = neg <ty>, <op>`
+    ///
+    /// # Description
+    ///
+    /// Performs the negation on the operand and put the result in `<res>`. The
+    /// type must be a **signed integer type**.
+    Neg { res: Reg, ty: FcType, op: Arg },
+    /// # Syntax
+    ///
+    /// `<res> = fneg <ty>, <op>`
+    ///
+    /// # Description
+    ///
+    /// Performs the floating point negation on the operand and put the result
+    /// in `<res>`. The type must be a **floating point type**.
+    Fneg { res: Reg, ty: FcType, op: Arg },
+    /// # Syntax
+    ///
+    /// `<res> = icmp <cc>, <lhs>, <rhs>`
+    ///
+    /// # Description
+    ///
+    /// Performs the `<cc>` comparison on `lhs` and `rhs`, the result is then
+    /// put in `<res>`. The type must be an integer type and works for both
+    /// signed and unsigned integer types, `iNN` / `uNN`.
+    Icmp {
+        res: Reg,
+        cc: IntCC,
+        lhs: Arg,
+        rhs: Arg,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = salloc <ty> [ * <NumElems> ], align <alignment>`
+    ///
+    /// # Description
+    ///
+    /// Allocates `sizeof(<ty>) * NumElems` bytes of memory on the stack and
+    /// puts the pointer (with the provided type) of the allocated memory in
+    /// `<res>`. The memory is aligned with the given `<alignment>`, that must
+    /// be a power of 2 and not zero.
+    ///
+    /// The memory after allocating it is uninitialized, and loading from
+    /// it produces an undefined value. The allocated memory by `salloc` is
+    /// automatically released when the function returns.
+    Salloc {
+        res: Reg,
+        ty: FcType,
+        num_elems: Option<u32>,
+        alignment: Alignment,
+    },
+    /// # Syntax
+    ///
+    /// `<res> = load <ty>, ptr <pointer>`
+    ///
+    /// # Description
+    ///
+    /// Loads a value of type `<ty>` from memory at location `<pointer>`, and
+    /// puts the result in `<res>`. When `<pointer>` is the null pointer the
+    /// behavior is undefined, and the result is also undefined.
+    ///
+    /// - `pointer` must be of type `pointer` and it's pointee must be the same
+    ///   type as `ty`.
+    Load { res: Reg, ty: FcType, pointer: Arg },
+    /// # Syntax
+    ///
+    /// `store <ty> <val>, ptr <pointer>`
+    ///
+    /// # Description
+    ///
+    /// The content of the memory is updated to store `<val>` at the location
+    /// `<pointer>`, if `<pointer>` is the null pointer the behavior is
+    /// undefined. `<val>` must be of type `<ty>`.
+    Store { ty: FcType, val: Arg, pointer: Arg },
+}
+
+/// Integer Comparison code
+///
+/// | Unsigned | Signed | Description              |
+/// |----------|--------|--------------------------|
+/// | Eq       | Eq     | Equality                 |
+/// | Ne       | Ne     | Non-equality             |
+/// | Ult      | Slt    | Less than                |
+/// | Ule      | Sle    | Less than or equal to    |
+/// | Ugt      | Sgt    | Greater than             |
+/// | Uge      | Sge    | Greater than or equal to |
+#[derive(Debug, Clone)]
+pub enum IntCC {
+    /// Equal cmp
+    Eq,
+    /// Non-equal cmp
+    Ne,
+    /// Signed less than cmp
+    Slt,
+    /// Signed less than or equal to cmp
+    Sle,
+    /// Signed greater than cmp
+    Sgt,
+    /// Signed greater than or equal to
+    Sge,
+    /// Unsigned less than cmp
+    Ult,
+    /// Unsigned less than or equal to cmp
+    Ule,
+    /// Unsigned greater than cmp
+    Ugt,
+    /// Unsigned greater than or equal to cmp
+    Uge,
+}
+
+impl Display for IntCC {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            IntCC::Eq => write!(f, "eq"),
+            IntCC::Ne => write!(f, "ne"),
+            IntCC::Slt => write!(f, "slt"),
+            IntCC::Sle => write!(f, "sle"),
+            IntCC::Sgt => write!(f, "sgt"),
+            IntCC::Sge => write!(f, "sge"),
+            IntCC::Ult => write!(f, "ult"),
+            IntCC::Ule => write!(f, "ule"),
+            IntCC::Ugt => write!(f, "ugt"),
+            IntCC::Uge => write!(f, "uge"),
+        }
+    }
+}
+
+#[inline(always)]
+fn display_binop_inst(
+    f: &mut fmt::Formatter<'_>,
+    res: &Reg,
+    name: &str,
+    ty: &FcType,
+    lhs: &Arg,
+    rhs: &Arg,
+) -> fmt::Result {
+    write!(f, "{res} = {name} {ty}, {lhs}, {rhs}")
+}
+
+#[inline(always)]
+fn display_unary_inst(
+    f: &mut fmt::Formatter<'_>,
+    res: &Reg,
+    name: &str,
+    ty: &FcType,
+    op: &Arg,
+) -> fmt::Result {
+    write!(f, "{res} = {name} {ty}, {op}")
+}
+
+impl Display for Inst {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Inst::Call {
+                res,
+                ty,
+                fnptr,
+                args,
+            } => {
+                write!(f, "{res} = call {ty} {fnptr}(")?;
+
+                for (i, arg) in args.iter().enumerate() {
+                    write!(f, "{arg}")?;
+
+                    if i != args.len() - 1 {
+                        write!(f, ", ")?;
+                    }
                 }
 
-                write!(out, ")")?;
+                write!(f, ")")?;
+
+                Ok(())
+            }
+            // Binary operations insts
+            Inst::Add { res, ty, lhs, rhs } => display_binop_inst(f, res, "add", ty, lhs, rhs),
+            Inst::Fadd { res, ty, lhs, rhs } => display_binop_inst(f, res, "fadd", ty, lhs, rhs),
+            Inst::Sub { res, ty, lhs, rhs } => display_binop_inst(f, res, "sub", ty, lhs, rhs),
+            Inst::Fsub { res, ty, lhs, rhs } => display_binop_inst(f, res, "fsub", ty, lhs, rhs),
+            Inst::Mul { res, ty, lhs, rhs } => display_binop_inst(f, res, "mul", ty, lhs, rhs),
+            Inst::Fmul { res, ty, lhs, rhs } => display_binop_inst(f, res, "fmul", ty, lhs, rhs),
+            Inst::Udiv { res, ty, lhs, rhs } => display_binop_inst(f, res, "udiv", ty, lhs, rhs),
+            Inst::Sdiv { res, ty, lhs, rhs } => display_binop_inst(f, res, "sdiv", ty, lhs, rhs),
+            Inst::Fdiv { res, ty, lhs, rhs } => display_binop_inst(f, res, "fdiv", ty, lhs, rhs),
+            Inst::Urem { res, ty, lhs, rhs } => display_binop_inst(f, res, "urem", ty, lhs, rhs),
+            Inst::Srem { res, ty, lhs, rhs } => display_binop_inst(f, res, "srem", ty, lhs, rhs),
+            Inst::Frem { res, ty, lhs, rhs } => display_binop_inst(f, res, "frem", ty, lhs, rhs),
+            Inst::And { res, ty, lhs, rhs } => display_binop_inst(f, res, "and", ty, lhs, rhs),
+            Inst::Xor { res, ty, lhs, rhs } => display_binop_inst(f, res, "xor", ty, lhs, rhs),
+            Inst::Or { res, ty, lhs, rhs } => display_binop_inst(f, res, "or", ty, lhs, rhs),
+            Inst::Shr { res, ty, lhs, rhs } => display_binop_inst(f, res, "shr", ty, lhs, rhs),
+            Inst::Shl { res, ty, lhs, rhs } => display_binop_inst(f, res, "shl", ty, lhs, rhs),
+            // Unary operations insts
+            Inst::Neg { res, ty, op } => display_unary_inst(f, res, "neg", ty, op),
+            Inst::Fneg { res, ty, op } => display_unary_inst(f, res, "fneg", ty, op),
+            // comparisons
+            Inst::Icmp { res, cc, lhs, rhs } => {
+                write!(f, "{res} = icmp {cc}, {lhs}, {rhs}")
+            }
+            // memory operations
+            Inst::Salloc {
+                res,
+                ty,
+                num_elems,
+                alignment,
+            } => {
+                write!(f, "{res} = salloc {ty}")?;
+
+                if let Some(num_elems) = num_elems {
+                    write!(f, " * {num_elems}")?;
+                }
+
+                write!(f, ", align {alignment}")?;
+
+                Ok(())
+            }
+            Inst::Load { res, ty, pointer } => {
+                write!(f, "{res} = load {ty}, ptr {pointer}")
+            }
+            Inst::Store { ty, val, pointer } => {
+                write!(f, "store {ty} {val}, ptr {pointer}")
             }
         }
-        Ok(())
+    }
+}
+
+/// A register in FIR, it is a place to store the result of an instruction and
+/// can also be used as an [`Arg`], takes the form `%NN` where `NN` is the index
+/// and starts at 1.
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Reg(NonZeroU32);
+
+impl Reg {
+    /// Create a new register instance
+    pub const fn new(idx: u32) -> Reg {
+        Reg(NonZeroU32::new(idx).expect("not zero"))
+    }
+}
+
+impl Display for Reg {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "%{}", self.0)
+    }
+}
+
+/// A terminator is the last instruction of the [basic block], and must branch
+/// out.
+///
+/// [basic block]: crate::BasicBlock
+#[derive(Debug, Clone)]
+pub enum Terminator {
+    /// # Syntax
+    ///
+    /// `br <cond>, then <true_br>, else <false_br>`
+    ///
+    /// # Description
+    ///
+    /// This instruction evaluates the `<cond>`, then branch to `<true_br>` if
+    /// it evaluated to `true`, or branches to `<else_br>` otherwise.
+    ///
+    /// - `<cond>` must be of type [`FcType::Bool`].
+    /// - `true_br` and `false_br` are Block labels.
+    Br {
+        cond: Arg,
+        true_br: BbLabel,
+        false_br: BbLabel,
+    },
+    /// # Syntax
+    ///
+    /// `br.icmp <cc>, <lhs>, <rhs>, then <true_br>, else <false_br>`
+    ///
+    /// # Description
+    ///
+    /// Evaluates the condition given by the condition code on `<lhs>` and
+    /// `<rhs>`, then branch to `<true_br>` if it evaluated to `true`, or to
+    /// `<else_br>` otherwise.
+    BrIcmp {
+        cc: IntCC,
+        lhs: Arg,
+        rhs: Arg,
+        true_br: BbLabel,
+        false_br: BbLabel,
+    },
+    /// # Syntax
+    ///
+    /// `j <dest>`
+    ///
+    /// # Description
+    ///
+    /// This instruction unconditionally branch to `<dest>` label.
+    Jump { dest: BbLabel },
+    /// # Syntax
+    ///
+    /// `ret <ty> [val]`
+    ///
+    /// # Description
+    ///
+    /// Return the control flow (and a value maybe) back to the caller.
+    Ret { ty: FcType, val: Option<Arg> },
+}
+
+impl Display for Terminator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Terminator::Br {
+                cond,
+                true_br,
+                false_br,
+            } => {
+                write!(f, "br {cond}, then {true_br}, then {false_br}")
+            }
+            Terminator::BrIcmp {
+                cc,
+                lhs,
+                rhs,
+                true_br,
+                false_br,
+            } => {
+                write!(
+                    f,
+                    "br.icmp {cc}, {lhs}, {rhs}, then {true_br}, else {false_br}"
+                )
+            }
+            Terminator::Jump { dest } => {
+                write!(f, "j {dest}")?;
+
+                Ok(())
+            }
+            Terminator::Ret { ty, val } => {
+                write!(f, "ret {ty}")?;
+
+                if let Some(val) = val {
+                    write!(f, ", {val}")?;
+                }
+
+                Ok(())
+            }
+        }
     }
 }
