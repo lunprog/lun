@@ -17,10 +17,10 @@
 
 > [!WARNING]
 > The compiler, `lunc` and the programming language are both experimental, and
-> **may not** work. It is not recommanded to use Lun in production.
+> **may not** work. It is not recommended to use Lun in production.
 
 Lun is a general-purpose programming language, that compile AOT to machine code,
-used to create **maintanable**, **reusable** and **optimized** softwares.
+used to create **maintanable**, **reusable** and **optimized** software.
 
 ## Installation
 
