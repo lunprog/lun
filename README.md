@@ -1,4 +1,4 @@
-<p align="center">
+<div align="center">
   <picture>
     <!-- white logo for dark mode -->
     <source
@@ -9,10 +9,10 @@
     <img
       src="https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_black.png"
       alt="The Lun Programming Language"
-      style="width: 50%; height: auto;"
+      style="width: 50%;"
     >
   </picture>
-</p>
+</div>
 
 # The Lun Programming Language
 
