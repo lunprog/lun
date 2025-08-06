@@ -1,35 +1,52 @@
-# Lun
+<p align="center">
+  <picture>
+    <!-- white logo for dark mode -->
+    <source
+      srcset="https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_white.png"
+      media="(prefers-color-scheme: dark)"
+    >
+    <!-- black logo for light mode (fallback) -->
+    <img
+      src="https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_black.png"
+      alt="The Lun Programming Language"
+    >
+  </picture>
+</p>
 
-Lun is a simple, statically typed programming language heavily inspired by Lua.
+# The Lun Programming Language
 
-Make a treesitter parser and check out treereduce.
+> [!WARNING]
+> The compiler, `lunc` and the programming language are both experimental, and
+> **may not** work. It is not recommanded to use Lun in production.
 
-- To create the tree sitter take inspiration from:
-  https://github.com/tjdevries/tree-sitter-lua
-- Name resolution -> https://www3.nd.edu/~dthain/compilerbook/chapter7.pdf
-  and generally -> https://www3.nd.edu/~dthain/compilerbook/
-- Use https://github.com/brendanzab/codespan for diagnostics or
-  https://github.com/zesterer/ariadne, or `miette`, create a Diagnostic Collector
-  `DiagnosticSink`, that we store in the lexer, parser etc and we return it if,
-  we encountered errors in the current phase.
-- Reimplement with `salsa` to enable incremental compilation and some crazy
-  things
-- Using `cranelift`, make this an AOT language? it pretty much already kinda
-  looks like one, BUT very painful and will probably never happen
+Lun is a general-purpose programming language, that compile AOT to machine code,
+used to create **maintanable**, **reusable** and **optimized** softwares.
 
-TODO: implement a tests suit in `tests/` that check every stage of `lun` and
-source code files have the following format to expect errors or a result:
-```lun
-local fun = 0
-//    ^ err: E0006
+## Installation
+
+### Build from source on Linux
+
+```bash
+# 1. clone the repo
+$ git clone git@github.com:thi8v/lun.git
+
+# 2. build the lunc compiler
+$ cargo build --bin lunc --release
+
+# 3. use the lunc compiler
+$ ./target/release/lunc
 ```
-to expect an error or
-```lun
-local a = 2 * 4 + 3 // ok: a = 11
-```
-to expect a value in a variable or elsewhere
 
-GOALS: be faster than python, without JIT.
+## Example
+
+Checkout the examples in the [examples folder].
+
+### Hello world
+
+Unfortunately there is no function currently to print to stdout, so we can't do
+hello world.
+
+[examples folder]: examples/
 
 ## License
 
