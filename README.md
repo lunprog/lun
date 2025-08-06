@@ -9,6 +9,7 @@
     <img
       src="https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_black.png"
       alt="The Lun Programming Language"
+      style="width: 50%; height: auto;"
     >
   </picture>
 </p>
