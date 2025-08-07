@@ -597,6 +597,10 @@ idtype! {
     impl clone_methods for Symbol;
 
     impl PartialEq for Symbol;
+
+    impl FieldSet<typ: Type> for Symbol;
+
+    impl FieldSet<value: Option<ValueExpr>> for Symbol;
 }
 
 impl Symbol {
@@ -609,7 +613,7 @@ impl Symbol {
         typeness: Typeness,
         loc: Option<Span>,
     ) -> Symbol {
-        Symbol::new(InternalSymbol {
+        Symbol::with_internal(InternalSymbol {
             kind,
             name,
             which,
@@ -670,7 +674,7 @@ impl Symbol {
     /// This is an exception, we assign a type and a compile time value to those
     /// global types, now because later will be painful
     pub fn new_typ(name: &str, typ: Type) -> Symbol {
-        Symbol::new(InternalSymbol {
+        Symbol::with_internal(InternalSymbol {
             kind: SymKind::Global { mutable: false },
             name: name.to_string(),
             which: 0,

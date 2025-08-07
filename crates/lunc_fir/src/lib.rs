@@ -1,57 +1,91 @@
 //! Final Intermediate Representation of Lun, the closest one to the final
 //! assembly or machine code.
+//!
+//! # What is fir?
+//!
+//! FIR is an SSA based, intermiadiate representation without a phi function but
+//! with block arguments that replaces them.
 
 use std::{
     fmt::{self, Display},
     io,
     num::NonZeroU32,
+    ops::Deref,
 };
 
-use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
+use lunc_utils::{
+    idtype,
+    pretty::{PrettyCtxt, PrettyDump},
+};
 
 pub mod builder;
 
 /// A FIR unit
 #[derive(Debug, Clone)]
 pub struct FirUnit {
-    functions: Vec<FunDef>,
     globals: Vec<Glob>,
+    fundecls: Vec<FunDecl>,
+    fundefs: Vec<FunDef>,
 }
 
 impl FirUnit {
     /// Create a new IR unit
     pub fn new() -> FirUnit {
         FirUnit {
-            functions: Vec::new(),
             globals: Vec::new(),
+            fundecls: Vec::new(),
+            fundefs: Vec::new(),
         }
     }
 
-    /// Append a function to the unit
-    pub fn append_fun(&mut self, fun: FunDef) -> &mut FunDef {
-        self.functions.push(fun);
+    /// Append a function definition to the unit
+    pub fn append_fundef(&mut self, def: FunDef) -> FunDef {
+        self.fundefs.push(def);
 
-        self.functions.last_mut().unwrap()
+        self.fundefs.last().unwrap().clone()
+    }
+
+    /// Append a function declaration to the unit
+    pub fn append_fundecl(&mut self, decl: FunDecl) -> FunDecl {
+        self.fundecls.push(decl);
+
+        self.fundecls.last().unwrap().clone()
     }
 
     /// Append a global variable to the unit
-    pub fn append_glob(&mut self, glob: Glob) {
+    pub fn append_glob(&mut self, glob: Glob) -> Glob {
         self.globals.push(glob);
+
+        self.globals.last().unwrap().clone()
     }
 }
 
 impl PrettyDump for FirUnit {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        writeln!(ctx.out, "// IR unit")?;
+        writeln!(ctx.out, "// ======== FIR UNIT ========")?;
 
-        for glob in &self.globals {
-            println!();
-            glob.try_dump(ctx)?;
+        if !self.globals.is_empty() {
+            writeln!(ctx.out, "\n// Global variables")?;
+            for glob in &self.globals {
+                println!();
+                glob.try_dump(ctx)?;
+            }
         }
 
-        for fun in &self.functions {
-            println!();
-            fun.try_dump(ctx)?;
+        if !self.fundecls.is_empty() {
+            writeln!(ctx.out, "\n// Function declarations")?;
+            for decl in &self.fundecls {
+                println!();
+                decl.try_dump(ctx)?;
+            }
+        }
+
+        if !self.fundefs.is_empty() {
+            writeln!(ctx.out, "\n// Function definitions")?;
+            for fun in &self.fundefs {
+                println!();
+                fun.try_dump(ctx)?;
+            }
         }
 
         ctx.out.flush()?;
@@ -107,6 +141,8 @@ pub enum FcType {
     FunPtr { args: Vec<FcType>, ret: Box<FcType> },
     /// Pointer
     Ptr { ty: Box<FcType> },
+    /// A fixed size array.
+    Array { n: u64, ty: Box<FcType> },
 }
 
 impl FcType {
@@ -157,46 +193,134 @@ impl Display for FcType {
                 write!(f, "ptr ")?;
                 ty.fmt(f)
             }
+            FcType::Array { n, ty } => {
+                ty.fmt(f)?;
+
+                write!(f, " x {n}")
+            }
         }
     }
 }
 
-/// Function definition
-///
-/// # Block entry
-///
-/// The entry block of a function is the block where the function goes to when
-/// it is called. The entry block must:
-/// - have label `.bb0`
-/// - be the first block of the list of blocks
-/// - be present.
-///
-/// # Arguments
-///
-/// Arguments, if any, can be accessed by using registers `%1` to `%N` where
-/// `N` is the arity of the function. Eg: a function with two arguments have
-/// the following registers allocated: `%1` for the first one and `%2` for the
-/// second one.
-///
-/// eg:
-/// ```text
-/// define $'main'(%1: i32, %2: ptr ptr i8) -> i32 {
-///     // ...
-/// }
-/// ```
-/// in this example we clearly see the registers next to the arguments
-#[derive(Debug, Clone)]
-pub struct FunDef {
-    /// un mangled name of the function
-    name: String,
-    /// arguments types
-    args: Vec<FcType>,
-    /// return type
-    ret: FcType,
-    /// basic blocks they compose the body of the function.
-    bbs: Vec<BasicBlock>,
-    /// is the signature of the function finished?
-    sig_finished: bool,
+/// Name of a definition, used have the convenient `$my_global_name` or
+/// `$'something with whitespaces or non-ascii'`
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Name(String);
+
+impl Name {
+    /// Create a new [`Name`] from a [`String`].
+    pub fn from_string(str: impl ToString) -> Name {
+        Name(str.to_string())
+    }
+}
+
+impl Display for Name {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.0.is_ascii() && !self.0.contains(char::is_whitespace) {
+            write!(f, "${}", self.0)
+        } else {
+            write!(f, "$'{}'", self.0)
+        }
+    }
+}
+
+impl Deref for Name {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+idtype! {
+    /// Function declaration
+    pub struct FunDecl {
+        /// un mangled name of the function
+        name: Name,
+        /// arguments types
+        args: Vec<FcType>,
+        /// return type
+        ret: FcType,
+    }
+
+    /// Function definition
+    ///
+    /// # Block entry
+    ///
+    /// The entry block of a function is the block where the function goes to when
+    /// it is called. The entry block must:
+    /// - have label `.bb0`
+    /// - be the first block of the list of blocks
+    /// - be present.
+    ///
+    /// The entry block gets as block argument the arguments of the function, a
+    /// function is malformed if the entry block does not have exactly the same
+    /// arguments as the function arguments.
+    ///
+    /// # Arguments
+    ///
+    /// Arguments, if any, can be accessed by using registers `%1` to `%N` where
+    /// `N` is the arity of the function. Eg: a function with two arguments have
+    /// the following registers allocated: `%1` for the first one and `%2` for the
+    /// second one.
+    ///
+    /// eg:
+    /// ```text
+    /// define $'main'(%1: i32, %2: ptr ptr i8) -> i32 {
+    ///     // ...
+    /// }
+    /// ```
+    /// in this example we clearly see the registers next to the arguments
+    pub struct FunDef {
+        /// un mangled name of the function
+        name: Name,
+        /// arguments types
+        args: Vec<FcType>,
+        /// return type
+        ret: FcType,
+        /// basic blocks they compose the body of the function.
+        bbs: Vec<BasicBlock>,
+        /// is the signature of the function finished?
+        sig_finished: bool,
+    }
+
+    impl FieldGet<sig_finished: bool> for FunDef;
+}
+
+impl FunDecl {
+    /// Create a new function declaration with the arguments and the return type
+    pub fn new(
+        name: impl ToString,
+        args: impl IntoIterator<Item = FcType>,
+        ret: FcType,
+    ) -> FunDecl {
+        FunDecl::with_internal(InternalFunDecl {
+            name: Name::from_string(name),
+            args: args.into_iter().collect(),
+            ret,
+        })
+    }
+}
+
+impl PrettyDump for FunDecl {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        self.inspect(|this| {
+            let InternalFunDecl { name, args, ret } = this;
+
+            write!(ctx.out, "declare {name}(")?;
+            for (i, arg) in args.iter().enumerate() {
+                write!(ctx.out, "{arg}")?;
+
+                if i != args.len() - 1 {
+                    write!(ctx.out, ", ")?;
+                }
+            }
+            write!(ctx.out, ")")?;
+            writeln!(ctx.out, " -> {ret};")?;
+
+            Ok(())
+        })
+    }
 }
 
 impl FunDef {
@@ -207,27 +331,27 @@ impl FunDef {
             .unfinished()
     }
 
-    fn unfinished(mut self) -> FunDef {
-        self.sig_finished = false;
+    fn unfinished(self) -> FunDef {
+        self.inspect_mut(|this| this.sig_finished = false);
 
         self
     }
 
     /// Create a new function definition with the arguments, the return type and
     /// the basic blocks.
-    pub const fn with_args_ret_bbs(
+    pub fn with_args_ret_bbs(
         name: String,
         args: Vec<FcType>,
         ret: FcType,
         bbs: Vec<BasicBlock>,
     ) -> FunDef {
-        FunDef {
-            name,
+        FunDef::with_internal(InternalFunDef {
+            name: Name::from_string(name),
             args,
             ret,
             bbs,
             sig_finished: true,
-        }
+        })
     }
 
     /// Append an argument to a function with an unfinished signature
@@ -236,11 +360,11 @@ impl FunDef {
     ///
     /// This method panics if the function signature is already finished.
     pub fn append_arg(&mut self, arg: FcType) {
-        if self.sig_finished {
+        if self.sig_finished() {
             panic!("cannot mutate the signature of a function once it is finished.");
         }
 
-        self.args.push(arg);
+        self.inspect_once(|this| this.args.push(arg));
     }
 
     /// Append some arguments to a function with an unfinished signature
@@ -249,11 +373,13 @@ impl FunDef {
     ///
     /// This method panics if the function signature is already finished.
     pub fn append_args(&mut self, arg: impl IntoIterator<Item = FcType>) {
-        if self.sig_finished {
+        if self.sig_finished() {
             panic!("cannot mutate the signature of a function once it is finished.");
         }
 
-        self.args.extend(arg);
+        self.inspect_once(|this| {
+            this.args.extend(arg);
+        });
     }
 
     /// Set the return type of a function with an unfinished signature,
@@ -262,113 +388,145 @@ impl FunDef {
     /// # Panic
     ///
     /// This method panics if the function signature is already finished.
-    pub fn set_ret(&mut self, ret: FcType) {
-        if self.sig_finished {
+    pub fn set_ret(&self, ret: FcType) {
+        if self.sig_finished() {
             panic!("cannot mutate the signature of a function once it is finished.");
         }
 
-        self.ret = ret;
+        self.inspect_once(|this| this.ret = ret);
     }
 
     /// Mark the signature of the function as finished
     pub fn finish_sig(&mut self) {
-        self.sig_finished = true;
+        self.inspect_once(|this| this.sig_finished = true)
     }
 
     /// Get the basic block by label
-    pub fn get_bb(&self, label: BbLabel) -> Option<&BasicBlock> {
-        self.bbs.iter().find(|bb| bb.label == label)
+    pub fn get_bb(&self, label: BbLabel) -> Option<BasicBlock> {
+        self.inspect(|this| {
+            this.bbs
+                .iter()
+                .find(|bb| bb.inspect(|bb| bb.label) == label)
+                .cloned()
+        })
     }
 
-    /// Mutably get the basic block by label
-    pub fn get_bb_mut(&mut self, label: BbLabel) -> Option<&mut BasicBlock> {
-        self.bbs.iter_mut().find(|bb| bb.label == label)
+    /// Get the last basic block inserted
+    pub fn last_bb(&self) -> Option<BasicBlock> {
+        self.inspect(|this| this.bbs.last().cloned())
+    }
+
+    /// Get the entry basic block
+    pub fn entry(&self) -> BasicBlock {
+        self.inspect(|this| {
+            let entry = this.bbs.first().unwrap().clone();
+
+            assert!(entry.label() == BbLabel::new(0));
+
+            entry
+        })
     }
 }
 
 impl PrettyDump for FunDef {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        let FunDef {
-            name,
-            args,
-            ret,
-            bbs,
-            sig_finished: _,
-        } = self;
+        self.inspect(|this| {
+            let InternalFunDef {
+                name,
+                args,
+                ret,
+                bbs,
+                sig_finished: _,
+            } = this;
 
-        write!(ctx.out, "define $'{name}'(")?;
-        for (i, arg) in args.iter().enumerate() {
-            write!(ctx.out, "{}: {arg}", Reg::new(i as u32 + 1))?;
+            write!(ctx.out, "define {name}(")?;
+            for (i, arg) in args.iter().enumerate() {
+                write!(ctx.out, "{}: {arg}", Reg::new(i as u32 + 1))?;
 
-            if i != args.len() - 1 {
-                write!(ctx.out, ", ")?;
+                if i != args.len() - 1 {
+                    write!(ctx.out, ", ")?;
+                }
             }
-        }
-        write!(ctx.out, ")")?;
-        write!(ctx.out, " -> {ret} ")?;
+            write!(ctx.out, ")")?;
+            write!(ctx.out, " -> {ret} ")?;
 
-        writeln!(ctx.out, "{{")?;
+            writeln!(ctx.out, "{{")?;
 
-        for block in bbs {
-            block.try_dump(ctx)?;
-        }
+            for block in bbs {
+                block.try_dump(ctx)?;
+            }
 
-        writeln!(ctx.out, "}}")?;
+            writeln!(ctx.out, "}}")?;
 
-        Ok(())
+            Ok(())
+        })
     }
 }
 
-/// A global variable, can be read-only.
-#[derive(Debug, Clone)]
-pub struct Glob {
-    /// name of the global variable, must be an unmangled name, used in linking,
-    /// it's the name of the symbol
-    name: String,
-    /// type of the global
-    ty: FcType,
-    /// index of the global in an ir unit.
-    idx: usize,
-    /// read-only
-    ro: bool,
-    /// value
-    val: ConstValue,
+idtype! {
+    /// A global variable, can be read-only.
+    pub struct Glob {
+        /// name of the global variable, must be an unmangled name, used in linking,
+        /// it's the name of the symbol
+        name: Name,
+        /// type of the global
+        ty: FcType,
+        /// read-only
+        ro: bool,
+        /// value
+        val: ConstValue,
+    }
 }
 
 impl Glob {
     /// Create a new global variable
-    pub fn new(name: String, ty: FcType, idx: usize, ro: bool, val: ConstValue) -> Glob {
-        Glob {
-            name,
+    pub fn new(name: impl ToString, ty: FcType, ro: bool, val: ConstValue) -> Glob {
+        Glob::with_internal(InternalGlob {
+            name: Name::from_string(name),
             ty,
-            idx,
             ro,
             val,
-        }
+        })
+    }
+
+    /// Create a new global variable with a string constant as its value
+    pub fn string_const(name: impl ToString, string: impl AsRef<str>) -> Glob {
+        let string = string.as_ref();
+
+        Glob::new(
+            name,
+            FcType::Array {
+                n: string.len() as u64,
+                ty: Box::new(FcType::U8),
+            },
+            true,
+            ConstValue::string(string),
+        )
     }
 }
 
 impl PrettyDump for Glob {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        let out = &mut ctx.out;
+        self.inspect(|this| {
+            let out = &mut ctx.out;
 
-        let Glob {
-            name,
-            ty: typ,
-            idx,
-            ro,
-            val,
-        } = self;
+            let InternalGlob {
+                name,
+                ty: typ,
+                ro,
+                val,
+            } = this;
 
-        write!(out, "$'{name}': {typ} idx {idx} ")?;
+            write!(out, "{name}: {typ} ")?;
 
-        if *ro {
-            write!(out, "readonly")?;
-        }
+            if *ro {
+                write!(out, "readonly")?;
+            }
 
-        writeln!(out, "= {val};")?;
+            writeln!(out, "= {val};")?;
 
-        Ok(())
+            Ok(())
+        })
     }
 }
 
@@ -386,11 +544,18 @@ pub enum ConstValue {
     U32(u32),
     U64(u64),
     U128(u128),
-    /// the FIR, makes no guarantees about string, this exist just to be able to
-    /// pretty print it like a string.
-    String(Box<[u8]>),
     F32(f32),
     F64(f64),
+    /// # Note
+    ///
+    /// - the FIR, makes no guarantees about strings encoding, doesn't enforce
+    ///   utf-8, but tries to print it as utf-8 when pretty printed, this exist
+    ///   just to be able to pretty print it like a string.
+    /// - **the only valid** place to have a string is in a [`Glob`], you cannot
+    ///   have a string in where an [`Arg`] is expected in an [instruction].
+    ///
+    /// [instruction]: crate::Inst
+    String(Box<[u8]>),
 }
 
 impl ConstValue {
@@ -425,6 +590,9 @@ impl Display for ConstValue {
 pub struct BbLabel(u32);
 
 impl BbLabel {
+    /// Block label of the entry point of a function
+    pub const ENTRY: BbLabel = BbLabel::new(0);
+
     /// Create a new block label
     pub const fn new(i: u32) -> BbLabel {
         BbLabel(i)
@@ -437,54 +605,64 @@ impl Display for BbLabel {
     }
 }
 
-/// A basic block, is a list of instructions, that is finished by a terminating
-/// instruction.
-///
-/// # Finished block guarantees
-///
-/// - immutatability of the list of instructions and the terminal inst
-/// - the presence of a terminator instruction
-#[derive(Debug, Clone)]
-pub struct BasicBlock {
-    /// label of the block
-    label: BbLabel,
-    /// the instructions of the block
-    insts: Vec<Inst>,
-    /// terminator instruction of the block.
-    terminator: Option<Terminator>,
-    /// used to guarantee that the block is finished
-    finished: bool,
+idtype! {
+    /// A basic block, is a list of instructions, that is finished by a terminating
+    /// instruction.
+    ///
+    /// # Finished block guarantees
+    ///
+    /// - immutatability of the list of instructions and the terminal inst
+    /// - the presence of a terminator instruction
+    pub struct BasicBlock {
+        /// label of the block
+        label: BbLabel,
+        /// arguments types
+        args: Vec<FcType>,
+        /// the instructions of the block
+        insts: Vec<Inst>,
+        /// terminator instruction of the block.
+        terminator: Option<Terminator>,
+        /// used to guarantee that the block is finished
+        finished: bool,
+    }
+
+    impl FieldGet<finished: bool> for BasicBlock;
+
+    impl FieldGet<pub label: BbLabel> for BasicBlock;
 }
 
 impl BasicBlock {
     /// Create a new basic block
-    pub fn new(label: BbLabel) -> BasicBlock {
-        BasicBlock {
+    pub fn new(label: BbLabel, args: Vec<FcType>) -> BasicBlock {
+        BasicBlock::with_internal(InternalBasicBlock {
             label,
+            args,
             insts: Vec::new(),
             terminator: None,
             finished: false,
-        }
+        })
     }
 
     /// Append an instruction
     pub fn append_inst(&mut self, inst: Inst) {
         assert!(
-            !self.finished,
+            !self.finished(),
             "cannot mutate block when it is already finished"
         );
 
-        self.insts.push(inst);
+        self.inspect_once(|this| {
+            this.insts.push(inst);
+        })
     }
 
     /// Set the terminal instruction
     pub fn set_terminator(&mut self, terminator: Terminator) {
         assert!(
-            !self.finished,
+            !self.finished(),
             "cannot mutate block when it is already finished"
         );
 
-        self.terminator = Some(terminator);
+        self.inspect_once(|this| this.terminator = Some(terminator));
     }
 
     /// Finish the block
@@ -494,36 +672,58 @@ impl BasicBlock {
     /// This function panic if the block doesn't uphold the guarantees a
     /// finished block has.
     pub fn finish(&mut self) {
-        assert!(
-            self.terminator.is_some(),
-            "you must have a terminal instruction to make the block finished"
-        );
+        self.inspect_mut(|this| {
+            assert!(
+                this.terminator.is_some(),
+                "you must have a terminal instruction to make the block finished"
+            );
 
-        self.finished = true;
+            this.finished = true;
+        });
+    }
+
+    /// Does the basic block has a terminator instruction set?
+    pub fn is_terminated(&self) -> bool {
+        self.inspect(|this| this.terminator.is_some())
     }
 }
 
 impl PrettyDump for BasicBlock {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        let BasicBlock {
-            label,
-            insts,
-            terminator: Some(terminal),
-            finished: true,
-        } = self
-        else {
-            panic!("cannot dump a basic block if it's not finished")
-        };
+        self.inspect(|this| {
+            let InternalBasicBlock {
+                label,
+                args,
+                insts,
+                terminator,
+                finished: _,
+            } = this;
 
-        writeln!(ctx.out, "{label}:")?;
+            if *label != BbLabel::ENTRY {
+                write!(ctx.out, "{label} (")?;
 
-        for inst in insts {
-            writeln!(ctx.out, "    {inst}")?;
-        }
+                for (i, arg) in args.iter().enumerate() {
+                    write!(ctx.out, "{}: {arg}", Reg::new(i as u32 + 1))?;
 
-        writeln!(ctx.out, "    {terminal}")?;
+                    if i != args.len() - 1 {
+                        write!(ctx.out, ", ")?;
+                    }
+                }
 
-        Ok(())
+                writeln!(ctx.out, "):")?;
+            }
+
+            for inst in insts {
+                writeln!(ctx.out, "    {inst}")?;
+            }
+
+            write!(ctx.out, "    ")?;
+            terminator.try_dump(ctx)?;
+
+            writeln!(ctx.out)?;
+
+            Ok(())
+        })
     }
 }
 
@@ -532,18 +732,47 @@ impl PrettyDump for BasicBlock {
 pub enum Arg {
     /// A constant
     Constant(ConstValue),
-    /// A symbol
-    Symbol(Box<[u8]>),
     /// A register
     Reg(Reg),
+    /// A reference to a global variable inside the current unit.
+    Glob(Glob),
+    /// A reference to a function definition or function declaration.
+    Fun(Fun),
+}
+
+/// A function definition or declaration
+#[derive(Debug, Clone)]
+pub enum Fun {
+    Def(FunDef),
+    Decl(FunDecl),
+}
+
+impl From<FunDef> for Fun {
+    fn from(def: FunDef) -> Self {
+        Fun::Def(def)
+    }
+}
+
+impl From<FunDecl> for Fun {
+    fn from(decl: FunDecl) -> Self {
+        Fun::Decl(decl)
+    }
+}
+
+impl Arg {
+    pub fn fun(fun: impl Into<Fun>) -> Arg {
+        Arg::Fun(fun.into())
+    }
 }
 
 impl Display for Arg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Constant(constval) => write!(f, "{constval}"),
-            Self::Symbol(sym) => write!(f, "$'{}'", String::from_utf8_lossy(sym)),
+            Self::Glob(glob) => glob.inspect(|this| write!(f, "{}", this.name)),
             Self::Reg(reg) => write!(f, "{reg}"),
+            Self::Fun(Fun::Def(def)) => def.inspect(|this| write!(f, "{}", this.name)),
+            Self::Fun(Fun::Decl(decl)) => decl.inspect(|this| write!(f, "{}", this.name)),
         }
     }
 }
@@ -1096,8 +1325,9 @@ pub struct Reg(NonZeroU32);
 
 impl Reg {
     /// Create a new register instance
+    #[track_caller]
     pub const fn new(idx: u32) -> Reg {
-        Reg(NonZeroU32::new(idx).expect("not zero"))
+        Reg(NonZeroU32::new(idx).expect("non zero index for a register"))
     }
 }
 
@@ -1115,44 +1345,53 @@ impl Display for Reg {
 pub enum Terminator {
     /// # Syntax
     ///
-    /// `br <cond>, then <true_br>, else <false_br>`
+    /// `br <cond>, then <true_br>( <true block args> ), else <false_br>( <false block args> )`
     ///
     /// # Description
     ///
     /// This instruction evaluates the `<cond>`, then branch to `<true_br>` if
-    /// it evaluated to `true`, or branches to `<else_br>` otherwise.
+    /// it evaluated to `true` with the `<true block args>` as block arguments,
+    /// or branches to `<else_br>` otherwise with the `<false block args>`.
     ///
     /// - `<cond>` must be of type [`FcType::Bool`].
     /// - `true_br` and `false_br` are Block labels.
+    /// - the block arguments `<true block args>` and `<false block args>` must
+    ///   have the same types as defined by the block.
     Br {
         cond: Arg,
         true_br: BbLabel,
+        true_args: Vec<Arg>,
         false_br: BbLabel,
+        false_args: Vec<Arg>,
     },
     /// # Syntax
     ///
-    /// `br.icmp <cc>, <lhs>, <rhs>, then <true_br>, else <false_br>`
+    /// `br.icmp <cc>, <lhs>, <rhs>, then <true_br>( <true block args> ), else <false_br>( <false block args> )`
     ///
     /// # Description
     ///
     /// Evaluates the condition given by the condition code on `<lhs>` and
-    /// `<rhs>`, then branch to `<true_br>` if it evaluated to `true`, or to
-    /// `<else_br>` otherwise.
+    /// `<rhs>`, then branch to `<true_br>` if it evaluated to `true` with block
+    /// arguments `<true block args>`, or to `<else_br>` with block arguments
+    /// `<false block args>` otherwise.
     BrIcmp {
         cc: IntCC,
         lhs: Arg,
         rhs: Arg,
         true_br: BbLabel,
+        true_args: Vec<Arg>,
         false_br: BbLabel,
+        false_args: Vec<Arg>,
     },
     /// # Syntax
     ///
-    /// `j <dest>`
+    /// `j <dest>( <block args> )`
     ///
     /// # Description
     ///
-    /// This instruction unconditionally branch to `<dest>` label.
-    Jump { dest: BbLabel },
+    /// This instruction unconditionally branch to `<dest>` block with
+    /// `<block args>` as block arguments.
+    Jump { dest: BbLabel, args: Vec<Arg> },
     /// # Syntax
     ///
     /// `ret <ty> [val]`
@@ -1163,30 +1402,63 @@ pub enum Terminator {
     Ret { ty: FcType, val: Option<Arg> },
 }
 
+fn pretty_print_bb_args(f: &mut fmt::Formatter, args: &[Arg]) -> fmt::Result {
+    for (i, arg) in args.iter().enumerate() {
+        write!(f, "{arg}")?;
+
+        if i != args.len() - 1 {
+            write!(f, ", ")?;
+        }
+    }
+
+    Ok(())
+}
+
 impl Display for Terminator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Terminator::Br {
                 cond,
                 true_br,
+                true_args,
                 false_br,
+                false_args,
             } => {
-                write!(f, "br {cond}, then {true_br}, then {false_br}")
+                write!(f, "br {cond}, then {true_br}(")?;
+
+                pretty_print_bb_args(f, true_args)?;
+
+                write!(f, "), then {false_br}(")?;
+
+                pretty_print_bb_args(f, false_args)?;
+                write!(f, ")")?;
+
+                Ok(())
             }
             Terminator::BrIcmp {
                 cc,
                 lhs,
                 rhs,
                 true_br,
+                true_args,
                 false_br,
+                false_args,
             } => {
-                write!(
-                    f,
-                    "br.icmp {cc}, {lhs}, {rhs}, then {true_br}, else {false_br}"
-                )
+                write!(f, "br.icmp {cc}, {lhs}, {rhs}, then {true_br}(")?;
+
+                pretty_print_bb_args(f, true_args)?;
+
+                write!(f, "), else {false_br}(")?;
+
+                pretty_print_bb_args(f, false_args)?;
+                write!(f, ")")?;
+
+                Ok(())
             }
-            Terminator::Jump { dest } => {
-                write!(f, "j {dest}")?;
+            Terminator::Jump { dest, args } => {
+                write!(f, "j {dest}(")?;
+                pretty_print_bb_args(f, args)?;
+                write!(f, ")")?;
 
                 Ok(())
             }
@@ -1200,5 +1472,11 @@ impl Display for Terminator {
                 Ok(())
             }
         }
+    }
+}
+
+impl PrettyDump for Terminator {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        write!(ctx.out, "{self}")
     }
 }

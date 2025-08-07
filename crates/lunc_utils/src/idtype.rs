@@ -22,7 +22,7 @@
 //!     pub type NoTypeOne;
 //! }
 //!
-//! let a = TestId::new("A");
+//! let a = TestId::with_internal("A");
 //!
 //! // you can access the data stored
 //! a.inspect(|this| {
@@ -201,31 +201,6 @@ macro_rules! idtype {
                 type Internal = internal_name ;
             }
 
-            impl $name {
-                $(
-
-                $crate::idtype::concat_idents!(set_method = set_, $field_name {
-                    /// Set the field `
-                    #[doc = stringify!($field_name)]
-                    ///` to the new value.
-                    ///
-                    /// # Panic
-                    ///
-                    /// This function may panic if it cannot acquire a write
-                    /// guard to the lock.
-                    pub fn set_method(&mut self, $field_name: impl Into<$field_ty>) {
-                        let db = Self::database().lock();
-
-                        let entry = db.get_entry(self.0);
-
-                        let mut guard = entry.value.write().unwrap();
-
-                        guard.$field_name = $field_name.into();
-                    }
-                });
-
-                )*
-            }
 
             $crate::internal_idtype!(
                 attr = [
@@ -244,6 +219,44 @@ macro_rules! idtype {
                 T = <$name as $crate::idtype::InternalType>::Internal,
             );
         });
+
+        $crate::idtype! { $( $rest )* }
+    };
+
+    {impl FieldSet<$field_name:ident: $field_ty:ty> for $name:ident; $($rest:tt)*} => {
+        impl $name {
+            $crate::idtype::concat_idents!(set_method = set_, $field_name {
+                /// Set the field `
+                #[doc = stringify!($field_name)]
+                ///` to the new value.
+                ///
+                /// # Panic
+                ///
+                /// This function may panic if it cannot acquire a write
+                /// guard to the lock.
+                pub fn set_method(&mut self, $field_name: impl Into<$field_ty>) {
+                    let db = Self::database().lock();
+
+                    let entry = db.get_entry(self.0);
+
+                    let mut guard = entry.value.write().unwrap();
+
+                    guard.$field_name = $field_name.into();
+                }
+            });
+        }
+
+        $crate::idtype! { $( $rest )* }
+    };
+    {impl FieldGet<$vis:vis $field_name:ident: $field_ty:ty> for $name:ident; $($rest:tt)*} => {
+        impl $name {
+            #[doc = concat!("Get the `", stringify!($field_name), "` of ", stringify!($name))]
+            $vis fn $field_name(&self) -> $field_ty {
+                let db = Self::database().lock();
+
+                db.get(self.0).read().unwrap().$field_name.clone()
+            }
+        }
 
         $crate::idtype! { $( $rest )* }
     }
@@ -278,7 +291,7 @@ macro_rules! internal_idtype {
             impl $name {
                 /// Creates a new [`
                 #[doc = stringify!($name)]
-                ///`] with the value.
+                ///`] with the internal value.
                 ///
                 /// # Example
                 ///
@@ -288,13 +301,13 @@ macro_rules! internal_idtype {
                 ///     type TestId(usize);
                 /// }
                 ///
-                /// let a = TestId::new(12);
+                /// let a = TestId::with_internal(12);
                 ///
                 /// a.inspect(|id| {
                 ///     assert_eq!(*id, 12);
                 /// });
                 /// ```
-                pub fn new(value: $T) -> Self {
+                pub fn with_internal(value: $T) -> Self {
                     let mut db = database_name.lock_mut();
                     let id = db.register(value);
 
@@ -349,7 +362,7 @@ macro_rules! internal_idtype {
                 ///     type TestId(usize);
                 /// }
                 ///
-                /// let a = TestId::new(12);
+                /// let a = TestId::with_internal(12);
                 ///
                 /// a.inspect(|id| {
                 ///     assert_eq!(*id, 12);
@@ -370,6 +383,33 @@ macro_rules! internal_idtype {
                 /// to the underlying data
                 pub fn inspect_mut<R>(&self, f: impl FnMut(&mut $T) -> R) -> R {
                     self.try_inspect_mut(f).unwrap()
+                }
+
+                /// Mutable failable inspection of the value of [`
+                #[doc = stringify!($name)]
+                ///`] that captures all variables.
+                ///
+                #[doc = concat!("See [`", stringify!($name), "::inspect_once`] for more details.")]
+                pub fn try_inspect_once<R>(&self, f: impl FnOnce(&mut $T) -> R) -> Option<R> {
+                    let db = database_name.lock();
+
+                    let entry = db.get_entry(self.0);
+
+                    let mut guard = entry.value.write().ok()?;
+
+                    Some(f(&mut *guard))
+                }
+
+                /// Mutable inspection of the value of [`
+                #[doc = stringify!($name)]
+                ///`] that moves every captured variable.
+                ///
+                /// # Panic
+                ///
+                /// This function will panic if we cannot acquire a write lock
+                /// to the underlying data
+                pub fn inspect_once<R>(&self, f: impl FnOnce(&mut $T) -> R) -> R {
+                    self.try_inspect_once(f).unwrap()
                 }
 
                 /// Failable inspection of the value of [`
@@ -399,7 +439,7 @@ macro_rules! internal_idtype {
                 ///     type TestId(usize);
                 /// }
                 ///
-                /// let a = TestId::new(12);
+                /// let a = TestId::with_internal(12);
                 ///
                 /// a.inspect(|id| {
                 ///     assert_eq!(*id, 12);
@@ -434,7 +474,7 @@ macro_rules! internal_idtype {
                 ///     type TestId;
                 /// }
                 ///
-                /// let a = TestId::new(());
+                /// let a = TestId::with_internal(());
                 ///
                 /// // SAFETY: this is safe for the example but not for real
                 /// // use cases, because we did not increment the count of
@@ -467,7 +507,7 @@ macro_rules! internal_idtype {
                 ///     type TestId;
                 /// }
                 ///
-                /// let a = TestId::new(());
+                /// let a = TestId::with_internal(());
                 /// let b = a.clone();
                 ///
                 /// assert!(a.object_eq(&b));
@@ -486,7 +526,7 @@ macro_rules! internal_idtype {
                 ///     type TestId;
                 /// }
                 ///
-                /// let a = TestId::new(());
+                /// let a = TestId::with_internal(());
                 /// let b = a.clone();
                 ///
                 /// assert_eq!(a.alive(), 2);
@@ -832,7 +872,7 @@ pub mod tests {
         let _lock = LOCK.lock()?;
         clear_test_id_db();
 
-        let a = TestId::new("hello");
+        let a = TestId::with_internal("hello");
         assert_eq!(a.alive(), 1);
 
         a.inspect(|v| {
@@ -849,7 +889,7 @@ pub mod tests {
         let _lock = LOCK.lock()?;
         clear_test_id_db();
 
-        let a = TestId::new("value");
+        let a = TestId::with_internal("value");
         let b = a.clone();
 
         assert!(a.object_eq(&b));
@@ -866,7 +906,7 @@ pub mod tests {
         let _lock = LOCK.lock()?;
         clear_test_id_db();
 
-        let a = TestId::new("temp");
+        let a = TestId::with_internal("temp");
         let id = a.id();
         drop(a);
 
@@ -881,7 +921,7 @@ pub mod tests {
         let _lock = LOCK.lock()?;
         clear_test_id_db();
 
-        let a = TestId::new("hello");
+        let a = TestId::with_internal("hello");
 
         a.inspect_mut(|v| {
             *v = "world";
@@ -899,7 +939,7 @@ pub mod tests {
         let _lock = LOCK.lock()?;
         clear_test_id_db();
 
-        let a = TestId::new("abc");
+        let a = TestId::with_internal("abc");
 
         assert_eq!(a.try_clone_value(), Some("abc"));
         assert_eq!(a.clone_val(), "abc");
@@ -913,8 +953,8 @@ pub mod tests {
         clear_test_id_db();
         clear_another_id_db();
 
-        let a = TestId::new("a");
-        let b = AnotherId::new("b");
+        let a = TestId::with_internal("a");
+        let b = AnotherId::with_internal("b");
 
         assert!(!ptr::eq(TestId::database(), AnotherId::database()));
 
@@ -929,7 +969,7 @@ pub mod tests {
         let _lock = LOCK.lock()?;
         clear_unit_id_db();
 
-        let a = UnitId::new(());
+        let a = UnitId::with_internal(());
 
         assert_eq!(a.alive(), 1);
 
@@ -946,8 +986,8 @@ pub mod tests {
         let _lock = LOCK.lock()?;
         clear_test_id_db();
 
-        let a = TestId::new("same");
-        let b = TestId::new("same");
+        let a = TestId::with_internal("same");
+        let b = TestId::with_internal("same");
 
         // object_eq compares identity
         assert!(!a.object_eq(&b));
@@ -963,8 +1003,8 @@ pub mod tests {
 
         clear_test_id_db();
 
-        let a = TestId::new("foo");
-        let b = TestId::new("foo");
+        let a = TestId::with_internal("foo");
+        let b = TestId::with_internal("foo");
 
         // They should hash the same
         let hash_a = {
@@ -994,7 +1034,7 @@ pub mod tests {
         let _lock = LOCK.lock()?;
         clear_test_id_db();
 
-        let x = TestId::new("dbg");
+        let x = TestId::with_internal("dbg");
         let s = format!("{x:?}");
         assert!(s.contains("TestId"));
         assert!(s.contains("dbg"));
@@ -1008,7 +1048,7 @@ pub mod tests {
         let _lock = LOCK.lock()?;
         clear_test_id_db();
 
-        let a = TestId::new("raw");
+        let a = TestId::with_internal("raw");
         let id = a.id();
         let before = a.alive();
         // from_raw doesn’t bump the count
@@ -1029,7 +1069,7 @@ pub mod tests {
         let _lock = LOCK.lock()?;
         clear_unit_id_db();
 
-        let u1 = UnitId::new(());
+        let u1 = UnitId::with_internal(());
         assert_eq!(u1.alive(), 1);
 
         let u2 = u1.clone();

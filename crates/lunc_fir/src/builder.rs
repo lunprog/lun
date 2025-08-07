@@ -4,18 +4,18 @@ use super::*;
 
 /// Helping structure to build one function of FIR.
 #[derive(Debug)]
-pub struct FundefBuilder<'fir> {
+pub struct FundefBuilder {
     /// function being built in
-    fun: &'fir mut FunDef,
+    fun: FunDef,
     /// current basic block, the last inserted in the current function
-    current_bb: Option<&'fir mut BasicBlock>,
+    current_bb: Option<BasicBlock>,
     /// last basic block label of the current function
     last_bb_label: u32,
 }
 
-impl<'fir> FundefBuilder<'fir> {
+impl FundefBuilder {
     /// Create a new fir unit builder
-    pub fn new(fun: &'fir mut FunDef) -> FundefBuilder<'fir> {
+    pub fn new(fun: FunDef) -> FundefBuilder {
         FundefBuilder {
             fun,
             current_bb: None,
@@ -23,25 +23,76 @@ impl<'fir> FundefBuilder<'fir> {
         }
     }
 
-    /// Create a new basic block in the current function
-    pub fn create_bb(&'fir mut self) -> BbLabel {
-        let label = BbLabel::new(self.last_bb_label);
+    /// Create the entry basic block
+    pub fn create_entry(&mut self) -> BasicBlock {
+        let args = self.fun.inspect(|this| this.args.clone());
 
-        let bb = BasicBlock::new(label);
-
-        self.fun.bbs.push(bb);
-
-        self.current_bb = Some(self.fun.bbs.last_mut().unwrap());
-
-        label
+        self.create_bb(args)
     }
 
-    // /// Returns the last basic block appended to the bbs.
-    // pub fn bb(&mut self) -> &mut BasicBlock {}
+    /// Create a new basic block in the current function, and make it the
+    /// current block.
+    pub fn create_bb(&mut self, args: impl IntoIterator<Item = FcType>) -> BasicBlock {
+        let label = BbLabel::new(self.last_bb_label);
+        self.last_bb_label += 1;
+
+        let bb = BasicBlock::new(label, args.into_iter().collect());
+
+        self.fun.inspect_once(|this| {
+            this.bbs.push(bb.clone());
+        });
+
+        self.current_bb = Some(self.fun.last_bb().expect("just inserted a new bb"));
+
+        bb
+    }
+
+    /// Returns the current basic block
+    pub fn bblock(&mut self) -> BasicBlock {
+        self.current_bb.as_ref().unwrap().clone()
+    }
+
+    /// Set the current block to be the one with `label`
+    pub fn switch_bb(&mut self, label: BbLabel) {
+        self.current_bb = Some(self.fun.get_bb(label).expect("unknown label"));
+    }
 
     /// Returns an instruction builder that builds instruction in the current
     /// block of the current function
-    pub fn inst(&mut self) {}
+    pub fn inst(&mut self) -> FundefInstBuilder {
+        FundefInstBuilder {
+            bb: self.current_bb.clone().unwrap(),
+        }
+    }
+}
+
+/// An instruction builder for a basic block in a function definition, created
+/// with [`inst`].
+///
+/// [`inst`]: crate::builder::FundefBuilder::inst
+#[derive(Debug, Clone)]
+pub struct FundefInstBuilder {
+    bb: BasicBlock,
+}
+
+impl InstBuilder for FundefInstBuilder {
+    fn build_inst(&mut self, inst: Inst) {
+        if self.bb.is_terminated() {
+            // NOTE: we do nothing the block is already terminated
+            return;
+        }
+
+        self.bb.append_inst(inst);
+    }
+
+    fn build_terminator(&mut self, terminator: Terminator) {
+        if self.bb.is_terminated() {
+            // NOTE: we do nothing the block is already terminated
+            return;
+        }
+
+        self.bb.set_terminator(terminator);
+    }
 }
 
 /// A trait for types able to build [instructions] and [terminators].
@@ -58,6 +109,11 @@ pub trait InstBuilder {
     fn build_inst(&mut self, inst: Inst);
 
     /// Build a terminator given the [`Terminator`].
+    ///
+    /// # Note
+    ///
+    /// If a terminator was already build in the Basic Block, then calling this
+    /// function is a no-op.
     fn build_terminator(&mut self, terminator: Terminator);
 
     // the instructions
@@ -419,7 +475,9 @@ pub trait InstBuilder {
     ///
     /// - `cond`: the condition of the branch
     /// - `true_br`: the branch taken when `cond` evaluates to `true`
+    /// - `true_args`: the arguments passed to the block `true_br`
     /// - `false_br`: the branch taken when `cond` evaluates to `false`
+    /// - `false_args`: the arguments passed to the block `false_br`
     ///
     /// # Note
     ///
@@ -428,11 +486,20 @@ pub trait InstBuilder {
     /// effect.
     ///
     /// [`Br`]: crate::Terminator::Br
-    fn br(&mut self, cond: Arg, true_br: BbLabel, false_br: BbLabel) {
+    fn br(
+        &mut self,
+        cond: Arg,
+        true_br: BbLabel,
+        true_args: impl IntoIterator<Item = Arg>,
+        false_br: BbLabel,
+        false_args: impl IntoIterator<Item = Arg>,
+    ) {
         self.build_terminator(Terminator::Br {
             cond,
             true_br,
+            true_args: true_args.into_iter().collect(),
             false_br,
+            false_args: false_args.into_iter().collect(),
         });
     }
 
@@ -444,7 +511,9 @@ pub trait InstBuilder {
     /// - `lhs`: left-hand side of the condition
     /// - `rhs`: right-hand side of the condition
     /// - `true_br`: the branch taken when the condition evaluates to `true`
+    /// - `true_args`: the arguments passed to the block `true_br`
     /// - `false_br`: the branch taken when the condition evaluates to `false`
+    /// - `false_args`: the arguments passed to the block `false_br`
     ///
     /// # Note
     ///
@@ -454,13 +523,26 @@ pub trait InstBuilder {
     ///
     /// [`BrIcmp`]: crate::Terminator::BrIcmp
     /// [comparison code]: crate::IntCC
-    fn br_icmp(&mut self, cc: IntCC, lhs: Arg, rhs: Arg, true_br: BbLabel, false_br: BbLabel) {
+    // NOTE: we ignore the clippy lint, because i think it's fine in this case i don't want to create an intermediate struct for it to not complain.
+    #[allow(clippy::too_many_arguments)]
+    fn br_icmp(
+        &mut self,
+        cc: IntCC,
+        lhs: Arg,
+        rhs: Arg,
+        true_br: BbLabel,
+        true_args: impl IntoIterator<Item = Arg>,
+        false_br: BbLabel,
+        false_args: impl IntoIterator<Item = Arg>,
+    ) {
         self.build_terminator(Terminator::BrIcmp {
             cc,
             lhs,
             rhs,
             true_br,
+            true_args: true_args.into_iter().collect(),
             false_br,
+            false_args: false_args.into_iter().collect(),
         });
     }
 
@@ -469,6 +551,7 @@ pub trait InstBuilder {
     /// # Input
     ///
     /// - `dest`: the destination block
+    /// - `args`: the block arguments passed to the block `dest`.
     ///
     /// # Note
     ///
@@ -477,8 +560,11 @@ pub trait InstBuilder {
     /// effect.
     ///
     /// [`Jump`]: crate::Terminator::Jump
-    fn jump(&mut self, dest: BbLabel) {
-        self.build_terminator(Terminator::Jump { dest });
+    fn jump(&mut self, dest: BbLabel, args: impl IntoIterator<Item = Arg>) {
+        self.build_terminator(Terminator::Jump {
+            dest,
+            args: args.into_iter().collect(),
+        });
     }
 
     /// Build a [`Ret`] terminator.
@@ -495,7 +581,10 @@ pub trait InstBuilder {
     /// effect.
     ///
     /// [`Ret`]: crate::Terminator::Ret
-    fn ret(&mut self, ty: FcType, val: Option<Arg>) {
-        self.build_terminator(Terminator::Ret { ty, val });
+    fn ret(&mut self, ty: FcType, val: impl Into<Option<Arg>>) {
+        self.build_terminator(Terminator::Ret {
+            ty,
+            val: val.into(),
+        });
     }
 }
