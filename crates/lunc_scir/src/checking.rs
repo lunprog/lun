@@ -1089,12 +1089,11 @@ impl SemaChecker {
                 self.sink.emit(WUnreachableCode { noret_loc, loc });
             } else if let NoreturnPos::Statements { pos } = noret_pos
                 && let Some(last) = &block.last_expr
+                && let Some(noret_loc) = block.stmts.get(pos).unwrap().loc.clone()
             {
-                if let Some(noret_loc) = block.stmts.get(pos).unwrap().loc.clone() {
-                    let loc = last.loc.clone().unwrap();
+                let loc = last.loc.clone().unwrap();
 
-                    self.sink.emit(WUnreachableCode { noret_loc, loc });
-                }
+                self.sink.emit(WUnreachableCode { noret_loc, loc });
             }
 
             Type::Noreturn

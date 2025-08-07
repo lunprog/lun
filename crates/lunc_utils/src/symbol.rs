@@ -158,11 +158,9 @@ impl Type {
     pub const MAX_F32: f64 = 3.402_823_47E+38;
 
     /// Minimum value of an `f64` Lun type.
-    #[allow(clippy::excessive_precision)] // NOTE: see #15408 on clippy, it suggests to remove the `+`
     pub const MIN_F64: f64 = -1.797_693_134_862_315_7E+308;
 
     /// Maximum value of an `f64` Lun type.
-    #[allow(clippy::excessive_precision)] // NOTE: same as above
     pub const MAX_F64: f64 = 1.797_693_134_862_315_7E+308;
 
     /// Can this type store an integer literal value?
