@@ -644,7 +644,7 @@ impl BasicBlock {
     }
 
     /// Append an instruction
-    pub fn append_inst(&mut self, inst: Inst) {
+    pub fn append_inst(&self, inst: Inst) {
         assert!(
             !self.finished(),
             "cannot mutate block when it is already finished"
@@ -656,7 +656,7 @@ impl BasicBlock {
     }
 
     /// Set the terminal instruction
-    pub fn set_terminator(&mut self, terminator: Terminator) {
+    pub fn set_terminator(&self, terminator: Terminator) {
         assert!(
             !self.finished(),
             "cannot mutate block when it is already finished"
@@ -671,7 +671,7 @@ impl BasicBlock {
     ///
     /// This function panic if the block doesn't uphold the guarantees a
     /// finished block has.
-    pub fn finish(&mut self) {
+    pub fn finish(&self) {
         self.inspect_mut(|this| {
             assert!(
                 this.terminator.is_some(),
@@ -738,6 +738,13 @@ pub enum Arg {
     Glob(Glob),
     /// A reference to a function definition or function declaration.
     Fun(Fun),
+}
+
+impl Arg {
+    /// Create a new [`Arg::Reg`].
+    pub fn reg(reg: impl Into<Reg>) -> Arg {
+        Arg::Reg(reg.into())
+    }
 }
 
 /// A function definition or declaration
@@ -1319,6 +1326,11 @@ impl Display for Inst {
 /// A register in FIR, it is a place to store the result of an instruction and
 /// can also be used as an [`Arg`], takes the form `%NN` where `NN` is the index
 /// and starts at 1.
+///
+/// # Note
+///
+/// Registers are local to a basic block, a register `%1` in `.bb0` is not the
+/// same as the register `%1` in `.bb1`.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Reg(NonZeroU32);
@@ -1334,6 +1346,12 @@ impl Reg {
 impl Display for Reg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "%{}", self.0)
+    }
+}
+
+impl From<u32> for Reg {
+    fn from(value: u32) -> Self {
+        Reg::new(value)
     }
 }
 

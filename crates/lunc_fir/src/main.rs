@@ -1,7 +1,7 @@
 // NOTE: THIS IS TEMPORARY, JUST FOR THE TIME OF THE DEVELOPMENT OF LUNC_FIR.
 
 use lunc_fir::{
-    Arg, ConstValue, FcType, FirUnit, FunDecl, FunDef, Glob, IntCC, Reg,
+    Arg, ConstValue, FcType, FirUnit, FunDecl, FunDef, Glob, IntCC,
     builder::{FundefBuilder, InstBuilder},
 };
 use lunc_utils::pretty::PrettyDump;
@@ -44,25 +44,28 @@ fn main() {
     // build entry bb
     builder.switch_bb(entry);
     let mut inst = builder.inst();
-    inst.call(Reg::new(3), FcType::I32, Arg::fun(getchar), []);
+
+    let call_reg = builder.reg();
+    inst.call(call_reg, FcType::I32, Arg::fun(getchar), []);
 
     inst.br_icmp(
         IntCC::Eq,
         Arg::Constant(ConstValue::I8(121)),
-        Arg::Reg(Reg::new(3)),
+        Arg::Reg(call_reg),
         then,
         [],
         r#else,
-        [Arg::Reg(Reg::new(3))],
+        [Arg::Reg(call_reg)],
     );
 
     builder.bblock().finish();
 
     // build then bb
     builder.switch_bb(then);
-    inst = builder.inst();
+    let call_reg = builder.reg();
+
     inst.call(
-        Reg::new(1),
+        call_reg,
         FcType::I32,
         Arg::fun(puts),
         [Arg::Glob(yes_string)],
@@ -72,12 +75,13 @@ fn main() {
 
     // build else bb
     builder.switch_bb(r#else);
-    inst = builder.inst();
+    let call_reg = builder.reg();
+
     inst.call(
-        Reg::new(2),
+        call_reg,
         FcType::I32,
         Arg::fun(printf_c),
-        [Arg::Glob(else_string), Arg::Reg(Reg::new(1))],
+        [Arg::Glob(else_string), Arg::reg(1)],
     );
     inst.ret(FcType::I32, Arg::Constant(ConstValue::I32(1)));
     builder.bblock().finish();
