@@ -158,7 +158,7 @@
 //! assert_eq!(EXPECTED, built_fir);
 //! ```
 #![doc(
-    html_logo_url = "https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_black.png"
+    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/logo/logo_no_bg_black.png"
 )]
 
 use std::{

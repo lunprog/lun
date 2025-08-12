@@ -1,6 +1,6 @@
 //! Lun is a statically typed programming language.
 #![doc(
-    html_logo_url = "https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_black.png"
+    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/logo/logo_no_bg_black.png"
 )]
 
 use std::{
@@ -446,7 +446,7 @@ pub fn run() -> Result<()> {
         }
         eprintln!("BUG: unexpected compiler panic.");
         eprintln!(
-            "  = note: we would appreciate a bug report on https://github.com/thi8v/lun/issues/new",
+            "  = note: we would appreciate a bug report on https://github.com/lunprog/lun/issues/new",
         );
         eprintln!(
             "  = note: lunc {version} ({commit} {date})",

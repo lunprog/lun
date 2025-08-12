@@ -2,12 +2,12 @@
   <picture>
     <!-- white logo for dark mode -->
     <source
-      srcset="https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_white.png"
+      srcset="https://raw.githubusercontent.com/lunprog/lun/main/logo/logo_no_bg_white.png"
       media="(prefers-color-scheme: dark)"
     >
     <!-- black logo for light mode (fallback) -->
     <img
-      src="https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_black.png"
+      src="https://raw.githubusercontent.com/lunprog/lun/main/logo/logo_no_bg_black.png"
       alt="The Lun Programming Language"
       style="width: 50%;"
     >
@@ -29,7 +29,7 @@ used to create **maintanable**, **reusable** and **optimized** software.
 
 ```bash
 # 1. clone the repo
-$ git clone git@github.com:thi8v/lun.git
+$ git clone git@github.com:lunprog/lun.git
 
 # 2. build the lunc compiler
 $ cargo build --bin lunc --release
