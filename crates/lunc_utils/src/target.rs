@@ -350,13 +350,24 @@ pub enum PtrWidth {
 
 impl PtrWidth {
     /// Returns the amount of bits a target has
-    pub const fn bits(self) -> u8 {
+    pub const fn bits(&self) -> u8 {
         use PtrWidth::*;
 
         match self {
             Ptr16 => 16,
             Ptr32 => 32,
             Ptr64 => 64,
+        }
+    }
+
+    /// Returns the alignment of the pointer
+    pub const fn align(&self) -> u32 {
+        use PtrWidth::*;
+
+        match self {
+            Ptr16 => 2,
+            Ptr32 => 4,
+            Ptr64 => 8,
         }
     }
 }

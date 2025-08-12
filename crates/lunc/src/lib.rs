@@ -1,12 +1,18 @@
 //! Lun is a statically typed programming language.
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_black.png"
+)]
 
 use std::{
+    backtrace::{Backtrace, BacktraceStatus},
     env,
     fs::read_to_string,
     io::{self, Write, stderr, stdout},
+    panic,
     path::PathBuf,
-    process::ExitCode,
+    process::{ExitCode, abort},
     str::FromStr,
+    thread,
 };
 
 use lunc_diag::Diagnostic;
@@ -414,6 +420,42 @@ pub fn flush_outs() {
 }
 
 pub fn run() -> Result<()> {
+    panic::set_hook(Box::new(|panic_info| {
+        let thread = thread::current();
+        let backtrace = Backtrace::capture();
+        eprintln!("{}\n", panic_info);
+
+        match backtrace.status() {
+            BacktraceStatus::Captured => {
+                if let Some(name) = thread.name() {
+                    eprintln!("thread '{}'\n{}", name, backtrace);
+                    eprintln!();
+                } else {
+                    eprintln!("{}", backtrace);
+                    eprintln!();
+                }
+            }
+            BacktraceStatus::Disabled => eprintln!(
+                "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace"
+            ),
+            BacktraceStatus::Unsupported => eprintln!("note: backtrace is not supported."),
+            status => {
+                eprintln!("unknown backtrace status, {status:?}");
+                abort()
+            }
+        }
+        eprintln!("BUG: unexpected compiler panic.");
+        eprintln!(
+            "  = note: we would appreciate a bug report on https://github.com/thi8v/lun/issues/new",
+        );
+        eprintln!(
+            "  = note: lunc {version} ({commit} {date})",
+            version = env!("CARGO_PKG_VERSION"),
+            commit = build::SHORT_COMMIT,
+            date = &build::COMMIT_DATE[..10]
+        );
+    }));
+
     let argv = CliArgs::parse_args(env::args())?;
 
     // maybe print help message

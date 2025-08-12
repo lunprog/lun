@@ -1,5 +1,6 @@
 //! Pretty printing for SCIR.
-use std::io;
+
+use std::io::{self, Write};
 
 use lunc_utils::{
     Span,

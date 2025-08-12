@@ -89,7 +89,7 @@ impl FundefBuilder {
 
     /// Set the current block to be the one with `label`, and changes the
     /// current block of the current instruction builder if any, to the one
-    /// refered to as `label`.
+    /// referred to as `label`.
     pub fn switch_bb(&mut self, label: BbLabel) {
         let bb = self.fun.get_bb(label).expect("unknown label");
         self.current_bb = Some(bb.clone());

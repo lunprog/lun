@@ -5,13 +5,13 @@ use std::io::{self, Write};
 use crate::Span;
 
 /// A struct helping to dump tree where you encounter a struct
-pub struct StructDump<'ctx> {
-    ctx: &'ctx mut PrettyCtxt,
+pub struct StructDump<'ctx, 'w> {
+    ctx: &'ctx mut PrettyCtxt<'w>,
     res: io::Result<()>,
     finished: bool,
 }
 
-impl<'ctx> StructDump<'ctx> {
+impl<'ctx, 'w> StructDump<'ctx, 'w> {
     pub fn field(mut self, name: &str, field: impl AsPrettyDump) -> Self {
         let field = field.as_pretty_dump();
 
@@ -64,15 +64,15 @@ impl<T: PrettyDump> AsPrettyDump for T {
 }
 
 /// A list helping struct to dump list-like tree nodes
-pub struct ListDump<'ctx> {
-    ctx: &'ctx mut PrettyCtxt,
+pub struct ListDump<'ctx, 'w> {
+    ctx: &'ctx mut PrettyCtxt<'w>,
     res: io::Result<()>,
     finished: bool,
     is_empty: bool,
 }
 
-impl<'ctx> ListDump<'ctx> {
-    pub fn item(mut self, item: impl AsPrettyDump) -> ListDump<'ctx> {
+impl<'ctx, 'w> ListDump<'ctx, 'w> {
+    pub fn item(mut self, item: impl AsPrettyDump) -> ListDump<'ctx, 'w> {
         let item = item.as_pretty_dump();
         if self.finished {
             self.res = Err(io::Error::other("StructDump already finished"));
@@ -93,7 +93,7 @@ impl<'ctx> ListDump<'ctx> {
         self
     }
 
-    pub fn items<I: AsPrettyDump>(mut self, items: impl Iterator<Item = I>) -> ListDump<'ctx> {
+    pub fn items<I: AsPrettyDump>(mut self, items: impl Iterator<Item = I>) -> ListDump<'ctx, 'w> {
         if self.finished {
             self.res = Err(io::Error::other("ListDump already finished"));
             return self;
@@ -139,22 +139,58 @@ impl<'ctx> ListDump<'ctx> {
     }
 }
 
+/// Wrapper around either an owned or borrowed writer.
+pub enum Writer<'w> {
+    Owned(Box<dyn Write>),
+    Borrowed(&'w mut dyn Write),
+}
+
+impl<'w> Writer<'w> {
+    pub fn owned(writer: impl Write + 'static) -> Writer<'w> {
+        Writer::Owned(Box::new(writer))
+    }
+}
+
+impl<'w> Write for Writer<'w> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        match self {
+            Writer::Owned(w) => w.write(buf),
+            Writer::Borrowed(w) => w.write(buf),
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        match self {
+            Writer::Owned(w) => w.flush(),
+            Writer::Borrowed(w) => w.flush(),
+        }
+    }
+}
+
+impl<'w> From<&'w mut dyn Write> for Writer<'w> {
+    fn from(value: &'w mut dyn Write) -> Self {
+        Writer::Borrowed(value)
+    }
+}
+
 /// Context of pretty printing trees
-pub struct PrettyCtxt {
+pub struct PrettyCtxt<'w> {
     /// indent amount (count of spaces)
     indent: usize,
     /// current indentation amount, (count of spaces)
     current_indent: usize,
-    pub out: Box<dyn Write>,
+    pub out: Writer<'w>,
 }
 
-impl PrettyCtxt {
+impl<'w> PrettyCtxt<'w> {
+    pub const DEFAULT_INDENT: usize = 2;
+
     /// create a new pretty context
-    pub fn new(indent: usize, out: impl Write + 'static) -> PrettyCtxt {
+    pub fn new(indent: usize, out: impl Into<Writer<'w>>) -> PrettyCtxt<'w> {
         PrettyCtxt {
             indent,
             current_indent: 0,
-            out: Box::new(out),
+            out: out.into(),
         }
     }
 
@@ -175,7 +211,7 @@ impl PrettyCtxt {
 
     /// create a new dump of a struct, used to assist tree dumping when there
     /// is a struct
-    pub fn pretty_struct<'ctx>(&'ctx mut self, name: &str) -> StructDump<'ctx> {
+    pub fn pretty_struct<'ctx>(&'ctx mut self, name: &str) -> StructDump<'ctx, 'w> {
         let res = (|| {
             writeln!(self.out, "{name} {{")?;
             self.indent();
@@ -191,7 +227,7 @@ impl PrettyCtxt {
     }
 
     /// create a new helper for list-like tree nodes dump
-    pub fn pretty_list<'ctx>(&'ctx mut self, name: Option<String>) -> ListDump<'ctx> {
+    pub fn pretty_list<'ctx>(&'ctx mut self, name: Option<String>) -> ListDump<'ctx, 'w> {
         let res = (|| {
             if let Some(name) = name {
                 write!(self.out, "{name} ")?;
@@ -219,9 +255,9 @@ impl PrettyCtxt {
     }
 }
 
-impl Default for PrettyCtxt {
+impl<'w> Default for PrettyCtxt<'w> {
     fn default() -> Self {
-        PrettyCtxt::new(2, io::stderr())
+        PrettyCtxt::new(PrettyCtxt::DEFAULT_INDENT, Writer::owned(io::stderr()))
     }
 }
 
@@ -234,6 +270,14 @@ pub trait PrettyDump {
     #[track_caller]
     fn dump(&self) {
         self.try_dump(&mut PrettyCtxt::default()).unwrap()
+    }
+
+    /// Dumps the node with the default indent level to the writer `out`.
+    #[inline]
+    #[track_caller]
+    fn dump_to(&self, out: &mut dyn Write) {
+        let mut ctx = PrettyCtxt::new(PrettyCtxt::DEFAULT_INDENT, out);
+        self.try_dump(&mut ctx).unwrap()
     }
 }
 
@@ -251,7 +295,7 @@ impl<T: PrettyDump> PrettyDump for &[T] {
     }
 }
 
-impl<'ctx> PrettyDump for StructDump<'ctx> {
+impl<'ctx, 'w> PrettyDump for StructDump<'ctx, 'w> {
     fn try_dump(&self, _: &mut PrettyCtxt) -> io::Result<()> {
         assert!(self.finished);
         // we already printed everything
@@ -259,7 +303,7 @@ impl<'ctx> PrettyDump for StructDump<'ctx> {
     }
 }
 
-impl<'ctx> PrettyDump for ListDump<'ctx> {
+impl<'ctx, 'w> PrettyDump for ListDump<'ctx, 'w> {
     fn try_dump(&self, _: &mut PrettyCtxt) -> io::Result<()> {
         assert!(self.finished);
         // we already printed everything

@@ -1,6 +1,6 @@
 //! Pretty AST tree printer
 
-use std::io;
+use std::io::{self, Write};
 
 use lunc_utils::{
     Span,

@@ -1,6 +1,6 @@
 //! Pretty printing for DSIR.
 
-use std::io;
+use std::io::{self, Write};
 
 use lunc_utils::{
     Span,

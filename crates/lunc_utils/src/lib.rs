@@ -1,4 +1,7 @@
 //! Common useful types, functions and traits across the Lun Compiler.
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_black.png"
+)]
 
 use std::{
     fmt::{Debug, Display, Write},
@@ -435,6 +438,11 @@ pub fn suggest<'a>(word: &str, dictionary: &'a [&str], max_dist: usize) -> Optio
     } else {
         None
     }
+}
+
+/// Return `true` if a number is a power of 2.
+pub fn is_pow2(x: u32) -> bool {
+    x != 0 && (x & (x - 1)) == 0
 }
 
 /// This macro expands to [`unreachable_unchecked`] in release mode, or in the

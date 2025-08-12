@@ -5,10 +5,165 @@
 //!
 //! FIR is an SSA based, intermiadiate representation without a phi function but
 //! with block arguments that replaces them.
+//!
+//! # Example
+//!
+//! The following C code:
+//! ```c
+//! #include <stdio.h>
+//!
+//! int main(int argc, char **argv) {
+//!     int c = getchar();
+//!
+//!     if (c == 121) {
+//!         puts("You said 'y'!\n");
+//!
+//!         return 0;
+//!     } else {
+//!         printf("Instead you said '%c'.\n");
+//!
+//!         return 1;
+//!     }
+//! }
+//! ```
+//!
+//! can be compiled like that:
+//!
+//! ```
+//! use lunc_fir::{
+//!     Arg, ConstValue, FcType, FirUnit, FunDecl, FunDef, Glob, IntCC,
+//!     builder::{FundefBuilder, InstBuilder},
+//!     verifier::FirUnitVerifier,
+//! };
+//! use lunc_utils::pretty::{PrettyDump, PrettyCtxt};
+//! use lunc_utils::target::PtrWidth;
+//!
+//! let mut unit = FirUnit::new();
+//!
+//! let mut main_fun = FunDef::new("main");
+//! main_fun.append_arg(FcType::S32);
+//! main_fun.append_arg(FcType::ptr(FcType::ptr(FcType::S8)));
+//! main_fun.set_ret(FcType::S32);
+//! main_fun.finish_sig();
+//!
+//! let fun = unit.append_fundef(main_fun);
+//!
+//! // function declarations
+//! let getchar = unit.append_fundecl(FunDecl::new("getchar", [], FcType::S32));
+//! let puts = unit.append_fundecl(FunDecl::new("puts", [FcType::ptr(FcType::U8)], FcType::S32));
+//!
+//! let printf_c = unit.append_fundecl(FunDecl::new(
+//!     "printf",
+//!     [FcType::ptr(FcType::U8), FcType::S32],
+//!     FcType::S32,
+//! ));
+//!
+//! // globals
+//! let yes_string = unit.append_glob(Glob::string_const("yes_string", "You said 'y'!\n\0"));
+//! let else_string = unit.append_glob(Glob::string_const(
+//!     "else_string",
+//!     "Instead you said '%c'.\n\0",
+//! ));
+//!
+//! let mut builder = FundefBuilder::new(fun.clone());
+//!
+//! // create the entry point
+//! let entry = builder.create_entry().label();
+//! let then = builder.create_bb([]).label();
+//! let r#else = builder.create_bb([FcType::S32]).label();
+//!
+//! // build entry bb
+//! builder.switch_bb(entry);
+//! let mut inst = builder.inst();
+//!
+//! let call_reg = builder.reg();
+//! inst.call(call_reg, FcType::S32, Arg::fun(getchar), []);
+//!
+//! inst.br_icmp(
+//!     IntCC::Eq,
+//!     Arg::Constant(ConstValue::S32(121)),
+//!     Arg::Reg(call_reg),
+//!     then,
+//!     [],
+//!     r#else,
+//!     [Arg::Reg(call_reg)],
+//! );
+//!
+//! builder.bblock().finish();
+//!
+//! // build then bb
+//! builder.switch_bb(then);
+//! let call_reg = builder.reg();
+//!
+//! inst.call(
+//!     call_reg,
+//!     FcType::S32,
+//!     Arg::fun(puts),
+//!     [Arg::Glob(yes_string)],
+//! );
+//! inst.ret(FcType::S32, Arg::Constant(ConstValue::S32(0)));
+//! builder.bblock().finish();
+//!
+//! // build else bb
+//! builder.switch_bb(r#else);
+//! let call_reg = builder.reg();
+//!
+//! inst.call(
+//!     call_reg,
+//!     FcType::S32,
+//!     Arg::fun(printf_c),
+//!     [Arg::Glob(else_string), Arg::reg(1)],
+//! );
+//! inst.ret(FcType::S32, Arg::Constant(ConstValue::S32(1)));
+//! builder.bblock().finish();
+//!
+//! let mut verifier = FirUnitVerifier::new(&unit, PtrWidth::Ptr64);
+//! match verifier.verify() {
+//!     Ok(()) => {}
+//!     Err(err) => {
+//!         panic!("{err}");
+//!     }
+//! }
+//!
+//! const EXPECTED: &str = "\
+//! // ======== FIR UNIT ========
+//!
+//! // Global variables
+//! $yes_string: u8 x 15 readonly = \"You said 'y'!\\n\\0\";
+//! $else_string: u8 x 24 readonly = \"Instead you said '%c'.\\n\\0\";
+//!
+//! // Function declarations
+//! declare $getchar() -> s32;
+//! declare $puts(ptr u8) -> s32;
+//! declare $printf(ptr u8, s32) -> s32;
+//!
+//! // Function definitions
+//! define $main(%1: s32, %2: ptr ptr s8) -> s32 {
+//!     %3 = call s32 $getchar()
+//!     br.icmp eq, 121's32, %3, then .bb1(), else .bb2(%3)
+//! .bb1 ():
+//!     %1 = call s32 $puts($yes_string)
+//!     ret s32, 0's32
+//! .bb2 (%1: s32):
+//!     %2 = call s32 $printf($else_string, %1)
+//!     ret s32, 1's32
+//! }
+//! ";
+//!
+//! // just pretty printing the FIR to a String.
+//! let mut built_fir_bytes = Vec::new();
+//! unit.dump_to(&mut built_fir_bytes);
+//! let built_fir = String::from_utf8(built_fir_bytes).unwrap();
+//!
+//! assert_eq!(EXPECTED, built_fir);
+//! ```
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_black.png"
+)]
 
 use std::{
     fmt::{self, Display},
-    io,
+    io::{self, Write},
     num::NonZeroU32,
     ops::Deref,
 };
@@ -16,9 +171,11 @@ use std::{
 use lunc_utils::{
     idtype,
     pretty::{PrettyCtxt, PrettyDump},
+    target::PtrWidth,
 };
 
 pub mod builder;
+pub mod verifier;
 
 /// A FIR unit
 #[derive(Debug, Clone)]
@@ -105,18 +262,18 @@ impl Default for FirUnit {
 /// It is a subset of [`Type`].
 ///
 /// [`Type`]: lunc_utils::symbol::Type
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FcType {
     /// 8 bit signed integer
-    I8,
+    S8,
     /// 16 bit signed integer
-    I16,
+    S16,
     /// 32 bit signed integer
-    I32,
+    S32,
     /// 64 bit signed integer
-    I64,
+    S64,
     /// 128 bit signed integer
-    I128,
+    S128,
     /// 8 bit unsigned integer
     U8,
     /// 16 bit unsigned integer
@@ -150,16 +307,84 @@ impl FcType {
     pub fn ptr(ty: FcType) -> FcType {
         FcType::Ptr { ty: Box::new(ty) }
     }
+
+    /// Create a new function pointer type
+    pub fn funptr(args: Vec<FcType>, ret: FcType) -> FcType {
+        FcType::FunPtr {
+            args,
+            ret: Box::new(ret),
+        }
+    }
+
+    /// Returns true if the type is a float.
+    pub fn is_float(&self) -> bool {
+        matches!(self, FcType::F32 | FcType::F64)
+    }
+
+    /// Returns true if the type is an integer.
+    pub fn is_int(&self) -> bool {
+        self.is_sint() || self.is_uint()
+    }
+
+    /// Returns true if the type is a signed integer.
+    pub fn is_sint(&self) -> bool {
+        matches!(
+            self,
+            FcType::S8 | FcType::S16 | FcType::S32 | FcType::S64 | FcType::S128
+        )
+    }
+
+    /// Returns true if the type is an unsigned integer.
+    pub fn is_uint(&self) -> bool {
+        matches!(
+            self,
+            FcType::U8 | FcType::U16 | FcType::U32 | FcType::U64 | FcType::U128
+        )
+    }
+
+    /// Is the `self` and `other` type equal?
+    ///
+    /// # Note
+    ///
+    /// It also returns true if self or other as type `Array` and the other has
+    /// type `Ptr` with the same pointee type.
+    pub fn type_eq(&self, other: &FcType) -> bool {
+        if let FcType::Array { n: _, ty: array_ty } = self
+            && let FcType::Ptr { ty: ptr_ty } = other
+        {
+            array_ty.type_eq(ptr_ty)
+        } else if let FcType::Array { n: _, ty: array_ty } = other
+            && let FcType::Ptr { ty: ptr_ty } = self
+        {
+            array_ty.type_eq(ptr_ty)
+        } else {
+            self == other
+        }
+    }
+
+    /// Returns the alignment of this type.
+    pub fn align(&self, ptr: PtrWidth) -> Alignment {
+        match self {
+            FcType::S8 | FcType::U8 => 1,
+            FcType::S16 | FcType::U16 => 2,
+            FcType::S32 | FcType::U32 | FcType::F32 => 4,
+            FcType::S64 | FcType::U64 | FcType::F64 => 8,
+            FcType::S128 | FcType::U128 => 16,
+            FcType::Bool => 1,
+            FcType::Void => 1,
+            FcType::FunPtr { .. } | FcType::Ptr { .. } | FcType::Array { .. } => ptr.align(),
+        }
+    }
 }
 
 impl Display for FcType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            FcType::I8 => write!(f, "i8"),
-            FcType::I16 => write!(f, "i16"),
-            FcType::I32 => write!(f, "i32"),
-            FcType::I64 => write!(f, "i64"),
-            FcType::I128 => write!(f, "i128"),
+            FcType::S8 => write!(f, "s8"),
+            FcType::S16 => write!(f, "s16"),
+            FcType::S32 => write!(f, "s32"),
+            FcType::S64 => write!(f, "s64"),
+            FcType::S128 => write!(f, "s128"),
             FcType::U8 => write!(f, "u8"),
             FcType::U16 => write!(f, "u16"),
             FcType::U32 => write!(f, "u32"),
@@ -247,15 +472,16 @@ idtype! {
     ///
     /// # Block entry
     ///
-    /// The entry block of a function is the block where the function goes to when
-    /// it is called. The entry block must:
+    /// The entry block of a function is the block where the function goes to
+    /// when it is called. The entry block must:
     /// - have label `.bb0`
     /// - be the first block of the list of blocks
     /// - be present.
+    /// - have THE SAME arguments as the function definition (even tho they are
+    ///   not used).
     ///
-    /// The entry block gets as block argument the arguments of the function, a
-    /// function is malformed if the entry block does not have exactly the same
-    /// arguments as the function arguments.
+    /// A function definition is considered malformed if it does not fulfill
+    /// those prerequisites.
     ///
     /// # Arguments
     ///
@@ -517,13 +743,13 @@ impl PrettyDump for Glob {
                 val,
             } = this;
 
-            write!(out, "{name}: {typ} ")?;
+            write!(out, "{name}: {typ}")?;
 
             if *ro {
-                write!(out, "readonly")?;
+                write!(out, " readonly")?;
             }
 
-            writeln!(out, "= {val};")?;
+            writeln!(out, " = {val};")?;
 
             Ok(())
         })
@@ -534,11 +760,11 @@ impl PrettyDump for Glob {
 #[derive(Debug, Clone)]
 pub enum ConstValue {
     Bool(bool),
-    I8(i8),
-    I16(i16),
-    I32(i32),
-    I64(i64),
-    I128(i128),
+    S8(i8),
+    S16(i16),
+    S32(i32),
+    S64(i64),
+    S128(i128),
     U8(u8),
     U16(u16),
     U32(u32),
@@ -559,8 +785,32 @@ pub enum ConstValue {
 }
 
 impl ConstValue {
+    /// Create a new string constant
     pub fn string(str: impl AsRef<[u8]>) -> ConstValue {
         ConstValue::String(Box::from(str.as_ref()))
+    }
+
+    /// Returns the type of the constant
+    pub fn typ(&self) -> FcType {
+        match self {
+            Self::Bool(_) => FcType::Bool,
+            Self::S8(_) => FcType::S8,
+            Self::S16(_) => FcType::S16,
+            Self::S32(_) => FcType::S32,
+            Self::S64(_) => FcType::S64,
+            Self::S128(_) => FcType::S128,
+            Self::U8(_) => FcType::U8,
+            Self::U16(_) => FcType::U16,
+            Self::U32(_) => FcType::U32,
+            Self::U64(_) => FcType::U64,
+            Self::U128(_) => FcType::U128,
+            Self::F32(_) => FcType::F32,
+            Self::F64(_) => FcType::F64,
+            Self::String(str) => FcType::Array {
+                n: str.len() as u64,
+                ty: Box::new(FcType::U8),
+            },
+        }
     }
 }
 
@@ -568,16 +818,16 @@ impl Display for ConstValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Bool(b) => write!(f, "{b}"),
-            Self::I8(i) => write!(f, "{i}"),
-            Self::I16(i) => write!(f, "{i}"),
-            Self::I32(i) => write!(f, "{i}"),
-            Self::I64(i) => write!(f, "{i}"),
-            Self::I128(i) => write!(f, "{i}"),
-            Self::U8(i) => write!(f, "{i}"),
-            Self::U16(i) => write!(f, "{i}"),
-            Self::U32(i) => write!(f, "{i}"),
-            Self::U64(i) => write!(f, "{i}"),
-            Self::U128(i) => write!(f, "{i}"),
+            Self::S8(i) => write!(f, "{i}'s8"),
+            Self::S16(i) => write!(f, "{i}'s16"),
+            Self::S32(i) => write!(f, "{i}'s32"),
+            Self::S64(i) => write!(f, "{i}'s64"),
+            Self::S128(i) => write!(f, "{i}'s128"),
+            Self::U8(i) => write!(f, "{i}'u8"),
+            Self::U16(i) => write!(f, "{i}'u16"),
+            Self::U32(i) => write!(f, "{i}'u32"),
+            Self::U64(i) => write!(f, "{i}'u64"),
+            Self::U128(i) => write!(f, "{i}'u128"),
             Self::String(str) => write!(f, "{:?}", String::from_utf8_lossy(str)),
             Self::F32(v) => write!(f, "{v:e}"),
             Self::F64(v) => write!(f, "{v:e}"),
@@ -754,6 +1004,24 @@ pub enum Fun {
     Decl(FunDecl),
 }
 
+impl Fun {
+    /// Returns a clone of the arguments
+    pub fn clone_args(&self) -> Vec<FcType> {
+        match self {
+            Fun::Def(fundef) => fundef.inspect(|this| this.args.clone()),
+            Fun::Decl(fundecl) => fundecl.inspect(|this| this.args.clone()),
+        }
+    }
+
+    /// Returns a clone of the return type
+    pub fn clone_ret(&self) -> FcType {
+        match self {
+            Fun::Def(fundef) => fundef.inspect(|this| this.ret.clone()),
+            Fun::Decl(fundecl) => fundecl.inspect(|this| this.ret.clone()),
+        }
+    }
+}
+
 impl From<FunDef> for Fun {
     fn from(def: FunDef) -> Self {
         Fun::Def(def)
@@ -785,7 +1053,7 @@ impl Display for Arg {
 }
 
 /// Alignment of an allocation, especially a `salloc` allocation.
-pub type Alignment = NonZeroU32;
+pub type Alignment = u32;
 
 /// An instruction of FIR.
 #[derive(Debug, Clone)]
@@ -1174,6 +1442,90 @@ pub enum Inst {
     Store { ty: FcType, val: Arg, pointer: Arg },
 }
 
+impl Inst {
+    /// Return the register in which the result of the instruction goes, or
+    /// `None` if it doesn't return a value.
+    pub fn res(&self) -> Option<Reg> {
+        match self {
+            Inst::Call { res, .. }
+            | Inst::Add { res, .. }
+            | Inst::Fadd { res, .. }
+            | Inst::Sub { res, .. }
+            | Inst::Fsub { res, .. }
+            | Inst::Mul { res, .. }
+            | Inst::Fmul { res, .. }
+            | Inst::Udiv { res, .. }
+            | Inst::Sdiv { res, .. }
+            | Inst::Fdiv { res, .. }
+            | Inst::Urem { res, .. }
+            | Inst::Srem { res, .. }
+            | Inst::Frem { res, .. }
+            | Inst::And { res, .. }
+            | Inst::Xor { res, .. }
+            | Inst::Or { res, .. }
+            | Inst::Shr { res, .. }
+            | Inst::Shl { res, .. }
+            | Inst::Neg { res, .. }
+            | Inst::Fneg { res, .. }
+            | Inst::Icmp { res, .. }
+            | Inst::Salloc { res, .. }
+            | Inst::Load { res, .. } => Some(*res),
+            Inst::Store { .. } => None,
+        }
+    }
+
+    /// Is the instruction a binary operation on float ?
+    pub fn is_binop_float(&self) -> bool {
+        matches!(
+            self,
+            Inst::Fadd { .. }
+                | Inst::Fsub { .. }
+                | Inst::Fmul { .. }
+                | Inst::Fdiv { .. }
+                | Inst::Frem { .. }
+        )
+    }
+
+    /// Is the instruction a binary operation on integers?
+    pub fn is_binop_int(&self) -> bool {
+        self.is_binop_sint() || self.is_binop_uint()
+    }
+
+    /// Is the instruction a binary operation on signed integers?
+    pub fn is_binop_sint(&self) -> bool {
+        matches!(
+            self,
+            Inst::Add { .. }
+                | Inst::Sub { .. }
+                | Inst::Mul { .. }
+                | Inst::Sdiv { .. }
+                | Inst::Srem { .. }
+                | Inst::And { .. }
+                | Inst::Xor { .. }
+                | Inst::Or { .. }
+                | Inst::Shr { .. }
+                | Inst::Shl { .. }
+        )
+    }
+
+    /// Is the instruction a binary operation on unsigned integers?
+    pub fn is_binop_uint(&self) -> bool {
+        matches!(
+            self,
+            Inst::Add { .. }
+                | Inst::Sub { .. }
+                | Inst::Mul { .. }
+                | Inst::Udiv { .. }
+                | Inst::Urem { .. }
+                | Inst::And { .. }
+                | Inst::Xor { .. }
+                | Inst::Or { .. }
+                | Inst::Shr { .. }
+                | Inst::Shl { .. }
+        )
+    }
+}
+
 /// Integer Comparison code
 ///
 /// | Unsigned | Signed | Description              |
@@ -1331,6 +1683,14 @@ impl Display for Inst {
 ///
 /// Registers are local to a basic block, a register `%1` in `.bb0` is not the
 /// same as the register `%1` in `.bb1`.
+///
+/// # Assignment
+///
+/// Because FIR is an IR in `SSA`-form, a register can only be assigned once,
+/// assigning it more than once is undefined.
+///
+/// A register argument is considered already assigned, so you cannot mutate
+/// register arguments (on basic blocks and function definitions by extension).
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Reg(NonZeroU32);

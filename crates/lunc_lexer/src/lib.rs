@@ -1,4 +1,7 @@
 //! Lexer of lun
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_black.png"
+)]
 
 use diags::{
     EmptyCharLiteral, ExpectedExponentPart, InvalidDigitInNumber, InvalidUnicodeEscape,

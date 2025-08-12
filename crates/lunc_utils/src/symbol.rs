@@ -2,7 +2,7 @@
 
 use std::{
     fmt::{self, Display},
-    io,
+    io::{self, Write},
     ops::RangeInclusive,
 };
 

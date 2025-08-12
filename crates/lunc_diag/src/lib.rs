@@ -1,4 +1,7 @@
 //! Diagnostic reporting system for the Lun Compiler.
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/thi8v/lun/main/logo/logo_no_bg_black.png"
+)]
 
 use codespan_reporting::{
     files::{self, Files, SimpleFile},
