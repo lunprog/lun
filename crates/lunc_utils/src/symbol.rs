@@ -599,6 +599,20 @@ idtype! {
     impl FieldSet<typ: Type> for Symbol;
 
     impl FieldSet<value: Option<ValueExpr>> for Symbol;
+
+    impl FieldGet<pub name: String> for Symbol;
+
+    impl FieldGet<pub kind: SymKind> for Symbol;
+
+    impl FieldGet<pub loc: Option<Span>> for Symbol;
+
+    impl FieldGet<pub value: Option<ValueExpr>> for Symbol;
+
+    impl FieldGet<pub typ: Type> for Symbol;
+
+    impl FieldGet<pub typeness: Typeness> for Symbol;
+
+    impl FieldGet<pub path: EffectivePath> for Symbol;
 }
 
 impl Symbol {
@@ -704,6 +718,8 @@ impl Symbol {
         })
     }
 
+    // NOTE: this is probably fine for now but if we allow interior mutability,
+    // it can lead to bugs.
     /// Returns true if the symbol is known at compile time, like immutable
     /// local variables or immutable global variables or functions
     pub fn is_comptime_known(&self) -> bool {
@@ -715,48 +731,6 @@ impl Symbol {
                     | SymKind::Function
             )
         })
-    }
-
-    /// Get the kind of the symbol
-    pub fn kind(&self) -> SymKind {
-        let db = Self::database().lock();
-
-        db.get(self.0).read().unwrap().kind.clone()
-    }
-
-    /// Get the location of the symbol
-    pub fn loc(&self) -> Option<Span> {
-        let db = Self::database().lock();
-
-        db.get(self.0).read().unwrap().loc.clone()
-    }
-
-    /// Get the value of the symbol
-    pub fn value(&self) -> Option<ValueExpr> {
-        let db = Self::database().lock();
-
-        db.get(self.0).read().unwrap().value.clone()
-    }
-
-    /// Get the typ of the symbol
-    pub fn typ(&self) -> Type {
-        let db = Self::database().lock();
-
-        db.get(self.0).read().unwrap().typ.clone()
-    }
-
-    /// Get the typeness of the symbol
-    pub fn typeness(&self) -> Typeness {
-        let db = Self::database().lock();
-
-        db.get(self.0).read().unwrap().typeness.clone()
-    }
-
-    /// Get the path of the symbol
-    pub fn path(&self) -> EffectivePath {
-        let db = Self::database().lock();
-
-        db.get(self.0).read().unwrap().path.clone()
     }
 }
 

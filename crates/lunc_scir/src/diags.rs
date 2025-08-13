@@ -332,3 +332,28 @@ impl ToDiagnostic for OverflowingLiteral {
             ))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct BorrowMutWhenNotDefinedMut {
+    /// location of the definition lile `a :: 12;`
+    pub loc_def: Span,
+    /// name of the def like `a`
+    pub name_def: String,
+    /// location of the `&mut expr`
+    pub loc: Span,
+}
+
+impl ToDiagnostic for BorrowMutWhenNotDefinedMut {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::BorrowMutWhenNotDefinedMut)
+            .with_message(format!(
+                "cannot borrow '{}' as mutable because it is not declared as mutable",
+                self.name_def
+            ))
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message("mutable borrow here"))
+            .with_label(
+                Label::secondary(self.loc_def.fid, self.loc_def).with_message("defined here"),
+            )
+    }
+}

@@ -445,6 +445,8 @@ pub enum ErrorCode {
     OverflowingLiteral = 34,
     /// unknown directive
     UnknownDirective = 35,
+    /// borrowed as mutable, but was not defined as mutable
+    BorrowMutWhenNotDefinedMut = 36,
 }
 
 impl Display for ErrorCode {

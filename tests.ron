@@ -755,7 +755,7 @@
     name: some_pointer @ 1183..1195 (fid = 0);
     mutable: false;
     typexpr: none;
-    value: AddressOf {
+    value: Borrow {
       mutable: false;
       expr: integer 12 @ 1200..1202 (fid = 0);
     } @ 1199..1202 (fid = 0);

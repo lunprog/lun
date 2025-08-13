@@ -9,10 +9,10 @@ use lunc_utils::{
 };
 
 use crate::diags::{
-    ArityDoesntMatch, BreakUseAnImplicitLabelInBlock, BreakWithValueUnsupported,
-    CallRequiresFuncType, CantContinueABlock, CantResolveComptimeValue, ExpectedPlaceExpression,
-    ExpectedTypeFoundExpr, LabelKwOutsideLoopOrBlock, MismatchedTypes, TypeAnnotationsNeeded,
-    UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
+    ArityDoesntMatch, BorrowMutWhenNotDefinedMut, BreakUseAnImplicitLabelInBlock,
+    BreakWithValueUnsupported, CallRequiresFuncType, CantContinueABlock, CantResolveComptimeValue,
+    ExpectedPlaceExpression, ExpectedTypeFoundExpr, LabelKwOutsideLoopOrBlock, MismatchedTypes,
+    TypeAnnotationsNeeded, UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
 };
 
 use super::*;
@@ -642,6 +642,16 @@ impl SemaChecker {
                 };
 
                 self.ck_expr(exp, real_coerce)?;
+
+                if let ScExpr::Ident(sym) = &exp.expr
+                    && !sym.is_place()
+                {
+                    self.sink.emit(BorrowMutWhenNotDefinedMut {
+                        loc_def: sym.loc().unwrap(),
+                        name_def: sym.name(),
+                        loc: expr.loc.clone().unwrap(),
+                    })
+                }
 
                 expr.typ = Type::Ptr {
                     mutable: *mutable,
