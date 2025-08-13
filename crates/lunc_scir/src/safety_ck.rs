@@ -8,7 +8,11 @@ use super::*;
 
 impl SemaChecker {
     pub fn safety_ck_mod(&mut self, module: &ScModule) {
-        for item in &module.items {
+        self.safety_ck_items(&module.items);
+    }
+
+    pub fn safety_ck_items(&mut self, items: &[ScItem]) {
+        for item in items {
             match self.safety_ck_item(item) {
                 Ok(()) => {}
                 Err(d) => self.sink.emit(d),
@@ -42,6 +46,16 @@ impl SemaChecker {
                 sym: _,
             } => {
                 self.safety_ck_mod(module);
+
+                Ok(())
+            }
+            ScItem::ExternBlock {
+                abi: _,
+                items,
+                loc: _,
+            } => {
+                self.safety_ck_items(items);
+
                 Ok(())
             }
         }

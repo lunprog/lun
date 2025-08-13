@@ -26,6 +26,7 @@ use lunc_utils::{
 pub use lunc_parser::{
     directive::QualifiedPath,
     expr::{BinOp, UnaryOp},
+    item::Abi,
 };
 
 pub mod diags;
@@ -94,6 +95,14 @@ pub enum DsItem {
         loc: OSpan,
         /// corresponding symbol of this definition
         sym: LazySymbol,
+    },
+    /// See [`Item::ExternBlock`]
+    ///
+    /// [`Item::ExternBlock`]: lunc_parser::item::Item::ExternBlock
+    ExternBlock {
+        abi: Abi,
+        items: Vec<DsItem>,
+        loc: OSpan,
     },
     /// See [`Item::Directive`]
     ///
@@ -166,6 +175,11 @@ impl FromHigher for DsItem {
                 mutable: true,
                 typexpr: lower(typexpr),
                 value: Box::new(lower(value)),
+                loc: Some(loc),
+            },
+            Item::ExternBlock { abi, items, loc } => DsItem::ExternBlock {
+                abi,
+                items: lower(items),
                 loc: Some(loc),
             },
             Item::Directive(directive) => DsItem::Directive(lower(directive)),
@@ -499,6 +513,10 @@ pub enum DsExpr {
 impl DsExpr {
     pub fn is_fundef(&self) -> bool {
         matches!(self, Self::FunDefinition { .. })
+    }
+
+    pub fn is_fundecl(&self) -> bool {
+        matches!(self, Self::FunDeclaration { .. })
     }
 }
 
@@ -1007,7 +1025,7 @@ impl Desugarrer {
     pub fn resolve_module(&mut self, module: &mut DsModule, resolve_path: EffectivePath) {
         self.table.scope_enter(); // module scope
 
-        self.bind_global_defs(module, resolve_path);
+        self.bind_global_defs(&mut module.items, resolve_path);
 
         for item in &mut module.items {
             match self.resolve_item(item) {
@@ -1044,6 +1062,20 @@ impl Desugarrer {
                 }
 
                 self.resolve_expr(value)?;
+
+                Ok(())
+            }
+            DsItem::ExternBlock {
+                abi: _,
+                items,
+                loc: _,
+            } => {
+                for item in items {
+                    match self.resolve_item(item) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.emit(d),
+                    }
+                }
 
                 Ok(())
             }
@@ -1110,6 +1142,7 @@ impl Desugarrer {
                 *sym = LazySymbol::Sym(symref.clone());
 
                 self.table.bind(name.clone(), symref)?;
+
                 Ok(())
             }
             DsStmt::Defer { expr } | DsStmt::Expression(expr) => self.resolve_expr(expr),
@@ -1390,8 +1423,8 @@ impl Desugarrer {
     }
 
     /// Bind all the global definitions before resolving recursively the dsir
-    pub fn bind_global_defs(&mut self, module: &mut DsModule, resolve_path: EffectivePath) {
-        for item in &mut module.items {
+    pub fn bind_global_defs(&mut self, items: &mut [DsItem], resolve_path: EffectivePath) {
+        for item in items {
             match self.bind_global_def(item, resolve_path.clone()) {
                 Ok(()) => {}
                 Err(d) => {
@@ -1401,6 +1434,8 @@ impl Desugarrer {
         }
     }
 
+    /// bind symbols in the module tree and in the symbol table if we resolve in
+    /// the current path
     fn bind_global_def(
         &mut self,
         item: &mut DsItem,
@@ -1415,7 +1450,7 @@ impl Desugarrer {
                 value,
                 loc: _,
                 sym,
-            } if value.expr.is_fundef() => {
+            } if value.expr.is_fundef() || value.expr.is_fundecl() => {
                 let mut path = self.current_path.clone();
                 path.push(name.clone());
 
@@ -1508,10 +1543,23 @@ impl Desugarrer {
                 self.current_path.push(name.clone());
 
                 // start binding global defs of submodule
-                self.bind_global_defs(module, resolve_path);
+                self.bind_global_defs(&mut module.items, resolve_path);
 
                 // pop the current path to recover the path we had before
                 self.current_path.pop();
+
+                Ok(())
+            }
+            DsItem::ExternBlock {
+                abi: _,
+                items,
+                loc: _,
+            } => {
+                // NOTE: we check, its optional in theory but it should speed up
+                // a little bit
+                if self.current_path == resolve_path {
+                    self.bind_global_defs(items, resolve_path);
+                }
 
                 Ok(())
             }

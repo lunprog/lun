@@ -373,3 +373,32 @@ impl ToDiagnostic for FunDeclOutsideExternBlock {
             .with_note("consider moving the function declaration into an extern block like 'extern \"C\" { .. }'.")
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct ItemNotAllowedInExternBlock {
+    /// name of the item
+    pub item: &'static str,
+    /// optional note
+    pub note: Option<&'static str>,
+    /// location of the item
+    pub loc: Span,
+    /// location of the external block
+    pub extern_block_loc: Span,
+}
+
+impl ToDiagnostic for ItemNotAllowedInExternBlock {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::ItemNotAllowedInExternBlock)
+            .with_message(format!(
+                "a {} isn't allowed inside of an extern block.",
+                self.item
+            ))
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message("defined here."))
+            .with_label(
+                Label::secondary(self.extern_block_loc.fid, self.extern_block_loc)
+                    .with_message("inside this extern block"),
+            )
+            .with_notes_iter(self.note.map(|s| s.to_string()))
+    }
+}

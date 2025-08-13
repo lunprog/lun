@@ -3011,6 +3011,20 @@
     typexpr: none;
     value: float 12 @ 115..119 (fid = 0);
   } @ 102..120 (fid = 0),
+
+  ExternBlock {
+    abi: C;
+    items: [
+      GlobalConst {
+        name: hello @ 155..160 (fid = 0);
+        typexpr: none;
+        value: FunDeclaration {
+          args: [];
+          rettypexpr : none;
+        } @ 164..169 (fid = 0);
+      } @ 155..170 (fid = 0),
+    ];
+  } @ 138..172 (fid = 0),
 ]
 "#,
         expected_test_out: "",
@@ -6154,6 +6168,110 @@
   } @ 1792..1817 (fid = 0),
 ]
 ",
+        expected_test_out: "",
+    ),
+    "scir/extern_block": (
+        expected_compiler_out: r#"scir = [
+  ExternBlock {
+    abi: C;
+    items: [
+      GlobalDef {
+        name: puts @ 17..21 (fid = 0);
+        mutable: false;
+        typexpr: none;
+        value: Expression {
+          expr: FunDeclaration {
+            args: [
+              Expression {
+                expr: PointerType {
+                  mutable: false;
+                  typexpr: Expression {
+                    expr: Symbol {
+                      kind: global;
+                      name: str @ none;
+                      which: 0;
+                      path: ∅;
+                      typ: type;
+                      typeness: explicit;
+                      value: Type {
+                        type: str;
+                      };
+                    };
+                    typ: type;
+                  } @ 30..33 (fid = 0);
+                };
+                typ: type;
+              } @ 29..33 (fid = 0),
+            ];
+            rettypexpr: none;
+          };
+          typ: *fun (* str) -> void;
+        } @ 25..34 (fid = 0);
+        sym: Symbol {
+          kind: function;
+          name: puts @ 17..21 (fid = 0);
+          which: 0;
+          path: orb.puts;
+          typ: *fun (* str) -> void;
+          typeness: explicit;
+          value: none;
+        };
+      } @ 17..35 (fid = 0),
+    ];
+  } @ 0..37 (fid = 0),
+
+  GlobalDef {
+    name: main @ 39..43 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: Expression {
+      expr: FunDefinition {
+        args: [];
+        rettypexpr: none;
+        body: Block {
+          stmts: [
+            Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: Symbol {
+                    kind: function;
+                    name: puts @ 17..21 (fid = 0);
+                    which: 0;
+                    path: orb.puts;
+                    typ: *fun (* str) -> void;
+                    typeness: explicit;
+                    value: none;
+                  };
+                  typ: *fun (* str) -> void;
+                } @ 59..63 (fid = 0);
+                args: [
+                  Expression {
+                    expr: string "Hello world!";
+                    typ: * str;
+                  } @ 64..78 (fid = 0),
+                ];
+              };
+              typ: void;
+            } @ 59..79 (fid = 0) @ 59..79 (fid = 0),
+          ];
+          last_expr: none;
+          typ: void;
+        } @ 53..82 (fid = 0);
+      };
+      typ: *fun () -> void;
+    } @ 47..82 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: main @ 39..43 (fid = 0);
+      which: 0;
+      path: orb.main;
+      typ: *fun () -> void;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 39..82 (fid = 0),
+]
+"#,
         expected_test_out: "",
     ),
     "scir/fun_ret_ty": (

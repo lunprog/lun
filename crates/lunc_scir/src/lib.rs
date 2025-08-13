@@ -17,7 +17,7 @@ use lunc_utils::{
     target::{PtrWidth, TargetTriplet},
 };
 
-pub use lunc_dsir::{BinOp, UnaryOp};
+pub use lunc_dsir::{Abi, BinOp, UnaryOp};
 
 pub mod checking;
 pub mod diags;
@@ -88,6 +88,25 @@ pub enum ScItem {
         /// corresponding symbol of this definition
         sym: Symbol,
     },
+    /// See [`DsItem::ExternBlock`]
+    ///
+    /// [`DsItem::ExternBlock`]: lunc_dsir::DsItem::ExternBlock
+    ExternBlock {
+        abi: Abi,
+        items: Vec<ScItem>,
+        loc: OSpan,
+    },
+}
+
+impl ScItem {
+    /// Get the location of the item
+    pub fn loc(&self) -> Span {
+        match self {
+            ScItem::GlobalDef { loc, .. }
+            | ScItem::Module { loc, .. }
+            | ScItem::ExternBlock { loc, .. } => loc.clone().unwrap(),
+        }
+    }
 }
 
 impl FromHigher for ScItem {
@@ -122,6 +141,11 @@ impl FromHigher for ScItem {
                 module: lower(module),
                 loc,
                 sym: lazy.unwrap_sym(),
+            },
+            DsItem::ExternBlock { abi, items, loc } => ScItem::ExternBlock {
+                abi,
+                items: lower(items),
+                loc,
             },
             DsItem::Directive(DsDirective::Import { .. } | DsDirective::Mod { .. }) => {
                 unreachable!()
@@ -171,8 +195,19 @@ impl ScExpression {
         }
     }
 
+    /// Is the expression an underscore expression?
     pub fn is_underscore(&self) -> bool {
         matches!(self.expr, ScExpr::Underscore)
+    }
+
+    /// Is the expression a function declaration?
+    pub fn is_fundecl(&self) -> bool {
+        matches!(self.expr, ScExpr::FunDeclaration { .. })
+    }
+
+    /// Is the expression a function definition?
+    pub fn is_fundef(&self) -> bool {
+        matches!(self.expr, ScExpr::FunDefinition { .. })
     }
 }
 
@@ -561,6 +596,13 @@ pub enum ScStmt {
     Expression(ScExpression),
 }
 
+/// The thing that contains the items
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ItemContainer {
+    Module,
+    ExternBlock,
+}
+
 /// The semantic checker, it turn **DSIR** into **SCIR** and along the way it
 /// performs all the checks to ensure the program is semantically valid.
 #[derive(Debug, Clone)]
@@ -575,6 +617,8 @@ pub struct SemaChecker {
     label_stack: LabelStack,
     /// the target we are compiling to
     target: TargetTriplet,
+    /// container of the item currently being checked
+    container: ItemContainer,
 }
 
 impl SemaChecker {
@@ -585,6 +629,7 @@ impl SemaChecker {
             fun_retty_loc: None,
             label_stack: LabelStack::new(),
             target,
+            container: ItemContainer::Module,
         }
     }
 

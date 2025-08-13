@@ -12,8 +12,8 @@ use crate::diags::{
     ArityDoesntMatch, BorrowMutWhenNotDefinedMut, BreakUseAnImplicitLabelInBlock,
     BreakWithValueUnsupported, CallRequiresFuncType, CantContinueABlock, CantResolveComptimeValue,
     ExpectedPlaceExpression, ExpectedTypeFoundExpr, FunDeclOutsideExternBlock,
-    LabelKwOutsideLoopOrBlock, MismatchedTypes, TypeAnnotationsNeeded, UseOfUndefinedLabel,
-    WUnreachableCode, WUnusedLabel,
+    ItemNotAllowedInExternBlock, LabelKwOutsideLoopOrBlock, MismatchedTypes, TypeAnnotationsNeeded,
+    UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
 };
 
 use super::*;
@@ -45,13 +45,20 @@ impl SemaChecker {
     /// to global definitions and functions, but does not type check the body
     /// of functions
     pub fn pre_ck_module(&mut self, module: &mut ScModule) {
-        for item in &mut module.items {
+        self.pre_ck_items(&mut module.items);
+    }
+
+    fn pre_ck_items(&mut self, items: &mut [ScItem]) {
+        for item in items {
             match item {
                 ScItem::GlobalDef { .. } => match self.pre_ck_global_def(item) {
                     Ok(()) => {}
                     Err(d) => self.sink.emit(d),
                 },
                 ScItem::Module { module, .. } => self.pre_ck_module(module),
+                ScItem::ExternBlock { items, .. } => {
+                    self.pre_ck_items(items);
+                }
             }
         }
     }
@@ -81,7 +88,7 @@ impl SemaChecker {
                 rettypexpr,
                 body: _,
             } => {
-                // function pre ck
+                // function def pre ck
 
                 // we typecheck the type expression
                 if let Some(typexpr) = &mut **typexpr {
@@ -150,6 +157,119 @@ impl SemaChecker {
                     args_typ.push(arg_typ.clone());
 
                     symref.set_typ(arg_typ);
+                }
+
+                // evaluate the return type expression
+                let ret_typ = if let Some(ret_typexpr) = rettypexpr {
+                    match self.ck_expr(ret_typexpr, Some(Type::Type)) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.emit(d),
+                    }
+
+                    let value_typ_ret = match self.evaluate_expr(ret_typexpr) {
+                        Ok(typ) => typ,
+                        Err((loc, note)) => {
+                            self.sink.emit(CantResolveComptimeValue {
+                                note,
+                                loc_expr: ret_typexpr.loc.clone().unwrap(),
+                                loc: loc.clone(),
+                            });
+
+                            ValueExpr::Type(Type::Void)
+                        }
+                    };
+
+                    match value_typ_ret.as_type() {
+                        Some(typ) => typ,
+                        None => {
+                            self.sink.emit(ExpectedTypeFoundExpr {
+                                loc: ret_typexpr.loc.clone().unwrap(),
+                            });
+                            Type::Void
+                        }
+                    }
+                } else {
+                    Type::Void
+                };
+
+                let typ = if let Some(ref typ) = typexpr_as_type {
+                    typ.clone()
+                } else {
+                    Type::FunPtr {
+                        args: args_typ,
+                        ret: Box::new(ret_typ),
+                    }
+                };
+
+                // we finally update the type of the symbol.
+                symref.set_typ(typ);
+            }
+            ScExpr::FunDeclaration { args, rettypexpr } => {
+                // function decl pre ck
+
+                // NOTE: we don't check if the container is ExternBlock here
+                // because it will be checked later in `ck_item`.
+
+                // we typecheck the type expression
+                if let Some(typexpr) = &mut **typexpr {
+                    self.ck_expr(typexpr, Some(Type::Type))?;
+
+                    if typexpr.typ != Type::Type {
+                        self.sink.emit(ExpectedTypeFoundExpr {
+                            loc: typexpr.loc.clone().unwrap(),
+                        })
+                    }
+                }
+
+                // we evaluate the type expression
+                let typexpr_as_type = if let Some(typexpr) = &mut **typexpr {
+                    let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
+                        CantResolveComptimeValue {
+                            note,
+                            loc_expr: typexpr.loc.clone().unwrap(),
+                            loc,
+                        }
+                        .into_diag()
+                    })?;
+
+                    Some(value.as_type().unwrap_or(Type::Void))
+                } else {
+                    None
+                };
+
+                // collect the arguments types
+                let mut args_typ = Vec::new();
+
+                for arg in args {
+                    match self.ck_expr(arg, Some(Type::Type)) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.emit(d),
+                    }
+
+                    let value_typ_arg = match self.evaluate_expr(arg) {
+                        Ok(typ) => typ,
+                        Err((loc, note)) => {
+                            self.sink.emit(CantResolveComptimeValue {
+                                note,
+                                loc_expr: arg.loc.clone().unwrap(),
+                                loc: loc.clone(),
+                            });
+
+                            ValueExpr::Type(Type::Void)
+                        }
+                    };
+
+                    let arg_typ = match value_typ_arg.as_type() {
+                        Some(typ) => typ,
+                        None => {
+                            self.sink.emit(ExpectedTypeFoundExpr {
+                                loc: arg.loc.clone().unwrap(),
+                            });
+                            Type::Void
+                        }
+                    };
+
+                    args_typ.push(arg_typ.clone());
                 }
 
                 // evaluate the return type expression
@@ -428,6 +548,15 @@ impl SemaChecker {
 
                         Ok(())
                     }
+                    ScExpr::FunDeclaration {
+                        args: _,
+                        rettypexpr: _,
+                    } if self.container == ItemContainer::ExternBlock => {
+                        // assign the type of the function
+                        value.typ = symref.typ();
+
+                        Ok(())
+                    }
                     _ => {
                         let typ = symref.typ().as_option();
 
@@ -476,6 +605,67 @@ impl SemaChecker {
             }
             ScItem::Module { module, .. } => {
                 self.ck_mod(module);
+
+                Ok(())
+            }
+            ScItem::ExternBlock { abi: _, items, loc } => {
+                let container = self.container.clone();
+                self.container = ItemContainer::ExternBlock;
+
+                let old_items = items.clone();
+                let mut new_items = Vec::with_capacity(old_items.len());
+
+                for item in old_items {
+                    match item {
+                        ScItem::GlobalDef { ref value, .. } if value.is_fundecl() => {
+                            // function declaration are allowed in an extern block
+                            new_items.push(item);
+                        }
+                        ScItem::GlobalDef { ref value, .. } if value.is_fundef() => {
+                            self.sink.emit(ItemNotAllowedInExternBlock {
+                                item: "function definition",
+                                note: None,
+                                loc: item.loc(),
+                                extern_block_loc: loc.clone().unwrap(),
+                            });
+                        }
+                        ScItem::GlobalDef { .. } => {
+                            self.sink.emit(ItemNotAllowedInExternBlock {
+                                item: "global definition",
+                                note: None,
+                                loc: item.loc(),
+                                extern_block_loc: loc.clone().unwrap(),
+                            });
+                        }
+                        ScItem::Module { .. } => {
+                            self.sink.emit(ItemNotAllowedInExternBlock {
+                                item: "module",
+                                note: None,
+                                loc: item.loc(),
+                                extern_block_loc: loc.clone().unwrap(),
+                            });
+                        }
+                        ScItem::ExternBlock { .. } => {
+                            self.sink.emit(ItemNotAllowedInExternBlock {
+                                item: "extern block",
+                                note: Some("you probably want to un nest the extern block"),
+                                loc: item.loc(),
+                                extern_block_loc: loc.clone().unwrap(),
+                            });
+                        }
+                    }
+                }
+
+                *items = new_items;
+
+                for item in items {
+                    match self.ck_item(item) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.emit(d),
+                    }
+                }
+
+                self.container = container;
 
                 Ok(())
             }
@@ -1005,22 +1195,15 @@ impl SemaChecker {
                     loc: expr.loc.clone().unwrap()
                 });
 
-                // set a dummy type for this expr.
-                expr.typ = Type::FunPtr {
-                    args: Vec::new(),
-                    ret: Box::new(Type::Void),
-                };
+                // NOTE: the type is set in `pre_ck_global_def`
             }
             ScExpr::FunDeclaration { .. } => {
+                // NOTE: the type is set in `pre_ck_global_def` if the fundecl
+                // is inside of an extern block but here it isn't inside of an
+                // extern block.
                 self.sink.emit(FunDeclOutsideExternBlock {
                     loc: expr.loc.clone().unwrap(),
                 });
-
-                // set a dummy type for this expr.
-                expr.typ = Type::FunPtr {
-                    args: Vec::new(),
-                    ret: Box::new(Type::Void),
-                };
             }
             ScExpr::PointerType {
                 mutable: _,

@@ -382,7 +382,7 @@ pub fn parse_boollit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic>
 
 /// Parse a string literal expression
 pub fn parse_strlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (str, loc) = expect_token!(parser => [StringLit(s), s.clone()], "integer literal");
+    let (str, loc) = expect_token!(parser => [StringLit(s), s.clone()], "string literal");
 
     Ok(Expression {
         expr: Expr::StringLit(str),
@@ -958,10 +958,7 @@ pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
                 .unwrap_or(hi_paren);
 
             Ok(Expression {
-                expr: Expr::FunDeclaration {
-                    args: Vec::new(),
-                    rettypexpr,
-                },
+                expr: Expr::FunDeclaration { args, rettypexpr },
                 loc: Span::from_ends(lo, hi),
             })
         }

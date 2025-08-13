@@ -10,7 +10,7 @@ use lunc_utils::{
 use crate::{
     directive::{Directive, QualifiedPath},
     expr::{Arg, BinOp, Else, Expr, Expression, IfExpression, UnaryOp},
-    item::{Item, Module},
+    item::{Abi, Item, Module},
     stmt::{Block, Statement, Stmt},
 };
 
@@ -55,7 +55,24 @@ impl PrettyDump for Item {
 
                 Ok(())
             }
+            Item::ExternBlock { abi, items, loc } => {
+                ctx.pretty_struct("ExternBlock")
+                    .field("abi", abi)
+                    .field("items", items.as_slice())
+                    .finish()?;
+                ctx.print_loc(loc)?;
+
+                Ok(())
+            }
             Item::Directive(directive) => directive.try_dump(ctx),
+        }
+    }
+}
+
+impl PrettyDump for Abi {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        match self {
+            Abi::C => write!(ctx.out, "C"),
         }
     }
 }

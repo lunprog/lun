@@ -447,8 +447,12 @@ pub enum ErrorCode {
     UnknownDirective = 35,
     /// borrowed as mutable, but was not defined as mutable
     BorrowMutWhenNotDefinedMut = 36,
-    /// function declaration oustide of an extern block
+    /// function declaration outside of an extern block
     FunDeclOutsideExternBlock = 37,
+    /// unknown abi
+    UnknownAbi = 38,
+    /// item not allowed inside an extern block
+    ItemNotAllowedInExternBlock = 39,
 }
 
 impl Display for ErrorCode {

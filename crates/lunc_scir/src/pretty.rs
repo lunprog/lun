@@ -55,6 +55,16 @@ impl PrettyDump for ScItem {
 
                 Ok(())
             }
+            ScItem::ExternBlock { abi, items, loc } => {
+                ctx.pretty_struct("ExternBlock")
+                    .field("abi", abi)
+                    .field("items", items.as_slice())
+                    .finish()?;
+
+                ctx.print_loc(loc)?;
+
+                Ok(())
+            }
         }
     }
 }

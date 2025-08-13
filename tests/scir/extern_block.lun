@@ -1,0 +1,7 @@
+extern "C" {
+    puts :: fun(*str);
+}
+
+main :: fun() {
+    puts("Hello world!");
+}

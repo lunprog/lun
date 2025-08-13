@@ -119,3 +119,20 @@ impl ToDiagnostic for UnknownDirective {
             .with_notes_iter(suggestion.map(|suggested| format!("did you mean '{suggested}'?")))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct UnknownAbi {
+    /// the unknown abi
+    pub abi: String,
+    /// the loc of the string literal
+    pub loc: Span,
+}
+
+impl ToDiagnostic for UnknownAbi {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::UnknownAbi)
+            .with_message(format!("ABI '{}' isn't known", self.abi))
+            .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
