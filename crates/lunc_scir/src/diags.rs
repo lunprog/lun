@@ -335,7 +335,7 @@ impl ToDiagnostic for OverflowingLiteral {
 
 #[derive(Debug, Clone)]
 pub struct BorrowMutWhenNotDefinedMut {
-    /// location of the definition lile `a :: 12;`
+    /// location of the definition like `a :: 12;`
     pub loc_def: Span,
     /// name of the def like `a`
     pub name_def: String,
@@ -355,5 +355,21 @@ impl ToDiagnostic for BorrowMutWhenNotDefinedMut {
             .with_label(
                 Label::secondary(self.loc_def.fid, self.loc_def).with_message("defined here"),
             )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FunDeclOutsideExternBlock {
+    /// location of the fundecl
+    pub loc: Span,
+}
+
+impl ToDiagnostic for FunDeclOutsideExternBlock {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::FunDeclOutsideExternBlock)
+            .with_message("function declaration must be inside of an extern block.")
+            .with_label(Label::primary(self.loc.fid, self.loc))
+            .with_note("consider moving the function declaration into an extern block like 'extern \"C\" { .. }'.")
     }
 }

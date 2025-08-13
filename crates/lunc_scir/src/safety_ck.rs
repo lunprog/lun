@@ -198,6 +198,20 @@ impl SemaChecker {
 
                 Ok(())
             }
+            ScExpr::FunDeclaration { args, rettypexpr } => {
+                for arg in args {
+                    match self.safety_ck_expr(arg) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.emit(d),
+                    }
+                }
+
+                if let Some(retty) = rettypexpr {
+                    self.safety_ck_expr(retty)?;
+                }
+
+                Ok(())
+            }
             ScExpr::PointerType {
                 mutable: _,
                 typexpr,

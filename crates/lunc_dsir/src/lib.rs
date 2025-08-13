@@ -300,6 +300,10 @@ impl FromHigher for DsExpression {
                 rettypexpr: lower(rettypexpr),
                 body: lower(body),
             },
+            Expr::FunDeclaration { args, rettypexpr } => DsExpr::FunDeclaration {
+                args: lower(args),
+                rettypexpr: lower(rettypexpr),
+            },
             Expr::PointerType { mutable, typexpr } => DsExpr::PointerType {
                 mutable,
                 typexpr: lower(typexpr),
@@ -468,6 +472,13 @@ pub enum DsExpr {
         args: Vec<DsArg>,
         rettypexpr: Option<Box<DsExpression>>,
         body: DsBlock,
+    },
+    /// See [`Expr::FunDeclaration`]
+    ///
+    /// [`Expr::FunDeclaration`]: lunc_parser::expr::Expr::FunDeclaration
+    FunDeclaration {
+        args: Vec<DsExpression>,
+        rettypexpr: Option<Box<DsExpression>>,
     },
     /// See [`Expr::PointerType`]
     ///
@@ -1300,7 +1311,7 @@ impl Desugarrer {
             }
             DsExpr::FunDefinition {
                 args,
-                rettypexpr: rettype,
+                rettypexpr,
                 body,
             } => {
                 for DsArg {
@@ -1324,11 +1335,25 @@ impl Desugarrer {
                     self.table.bind(name.clone(), symref)?;
                 }
 
-                if let Some(ret) = rettype {
-                    self.resolve_expr(ret)?;
+                if let Some(retty) = rettypexpr {
+                    self.resolve_expr(retty)?;
                 }
 
                 self.resolve_block(body);
+
+                Ok(())
+            }
+            DsExpr::FunDeclaration { args, rettypexpr } => {
+                for arg in args {
+                    match self.resolve_expr(arg) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.emit(d),
+                    }
+                }
+
+                if let Some(retty) = rettypexpr {
+                    self.resolve_expr(retty)?;
+                }
 
                 Ok(())
             }

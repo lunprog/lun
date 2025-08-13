@@ -11,8 +11,9 @@ use lunc_utils::{
 use crate::diags::{
     ArityDoesntMatch, BorrowMutWhenNotDefinedMut, BreakUseAnImplicitLabelInBlock,
     BreakWithValueUnsupported, CallRequiresFuncType, CantContinueABlock, CantResolveComptimeValue,
-    ExpectedPlaceExpression, ExpectedTypeFoundExpr, LabelKwOutsideLoopOrBlock, MismatchedTypes,
-    TypeAnnotationsNeeded, UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
+    ExpectedPlaceExpression, ExpectedTypeFoundExpr, FunDeclOutsideExternBlock,
+    LabelKwOutsideLoopOrBlock, MismatchedTypes, TypeAnnotationsNeeded, UseOfUndefinedLabel,
+    WUnreachableCode, WUnusedLabel,
 };
 
 use super::*;
@@ -1003,6 +1004,23 @@ impl SemaChecker {
                     label: "function definition inside of a statement is not yet supported",
                     loc: expr.loc.clone().unwrap()
                 });
+
+                // set a dummy type for this expr.
+                expr.typ = Type::FunPtr {
+                    args: Vec::new(),
+                    ret: Box::new(Type::Void),
+                };
+            }
+            ScExpr::FunDeclaration { .. } => {
+                self.sink.emit(FunDeclOutsideExternBlock {
+                    loc: expr.loc.clone().unwrap(),
+                });
+
+                // set a dummy type for this expr.
+                expr.typ = Type::FunPtr {
+                    args: Vec::new(),
+                    ret: Box::new(Type::Void),
+                };
             }
             ScExpr::PointerType {
                 mutable: _,

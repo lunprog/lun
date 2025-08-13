@@ -218,6 +218,14 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
+            ScExpr::FunDeclaration { args, rettypexpr } => {
+                ctx.pretty_struct("FunDeclaration")
+                    .field("args", args.as_slice())
+                    .field("rettypexpr", rettypexpr)
+                    .finish()?;
+
+                Ok(())
+            }
             ScExpr::PointerType { mutable, typexpr } => {
                 ctx.pretty_struct("PointerType")
                     .field("mutable", mutable)

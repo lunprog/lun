@@ -205,6 +205,13 @@ pub enum Expr {
         rettypexpr: Option<Box<Expression>>,
         body: Block,
     },
+    /// function declaration expression
+    ///
+    /// `"fun" "(" ( expr ),* ")" [ "->" expr ]`
+    FunDeclaration {
+        args: Vec<Expression>,
+        rettypexpr: Option<Box<Expression>>,
+    },
     //
     // type expression
     //
@@ -275,7 +282,7 @@ pub fn parse_expr_precedence(
             _ => opt_unrecheable!(),
         },
         Some(Ident(_)) => parse!(@fn parser => parse_ident_expr),
-        Some(Kw(Keyword::Fun)) => parse!(@fn parser => parse_fundef_expr),
+        Some(Kw(Keyword::Fun)) => parse!(@fn parser => parse_funkw_expr),
         Some(Kw(Keyword::If)) => parse!(@fn parser => parse_if_else_expr, false),
         Some(Kw(Keyword::While)) => parse!(@fn parser => parse_predicate_loop_expr),
         Some(Kw(Keyword::For)) => parse!(@fn parser => parse_iterator_loop_expr),
@@ -823,54 +830,142 @@ pub fn parse_funcall_expr(
     })
 }
 
-/// parses the function definition expression
-pub fn parse_fundef_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+/// parses the function definition / declaration expression
+pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Fun), ()], Kw(Keyword::Fun));
 
     expect_token!(parser => [Punct(Punctuation::LParen), ()], Punctuation::LParen);
 
-    let mut args = Vec::new();
+    match (parser.peek_tt(), parser.nth_tt(1)) {
+        (Some(Ident(_)), Some(Punct(Punctuation::Colon))) => {
+            // function definition
 
-    loop {
-        if let Some(Punct(Punctuation::RParen)) = parser.peek_tt() {
-            break;
+            let mut args = Vec::new();
+
+            loop {
+                if let Some(Punct(Punctuation::RParen)) = parser.peek_tt() {
+                    break;
+                }
+
+                let (name, lo_arg) =
+                    expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+
+                expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
+
+                let typexpr = parse!(@fn parser => parse_typexpr);
+
+                args.push(Arg {
+                    name,
+                    name_loc: lo_arg.clone(),
+                    typexpr: typexpr.clone(),
+                    loc: Span::from_ends(lo_arg, typexpr.loc),
+                });
+
+                expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], Punct(Punctuation::Comma));
+            }
+            expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
+
+            let rettypexpr = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
+                parser.pop();
+                Some(parse!(box: @fn parser => parse_typexpr))
+            } else {
+                None
+            };
+
+            let body = parse!(parser => Block);
+            let hi = body.loc.clone();
+
+            Ok(Expression {
+                expr: Expr::FunDefinition {
+                    args,
+                    rettypexpr,
+                    body,
+                },
+                loc: Span::from_ends(lo, hi),
+            })
         }
+        (Some(Punct(Punctuation::RParen)), _) => {
+            // ambiguous
 
-        let (name, lo_arg) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+            let ((), hi_paren) = expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
 
-        expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
+            let rettypexpr = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
+                parser.pop();
+                Some(parse!(box: @fn parser => parse_typexpr))
+            } else {
+                None
+            };
 
-        let typexpr = parse!(@fn parser => parse_typexpr);
+            if parser.is_stmt_end() {
+                // function declaration
 
-        args.push(Arg {
-            name,
-            name_loc: lo_arg.clone(),
-            typexpr: typexpr.clone(),
-            loc: Span::from_ends(lo_arg, typexpr.loc),
-        });
+                let hi = rettypexpr
+                    .as_ref()
+                    .map(|typexpr| typexpr.loc.clone())
+                    .unwrap_or(hi_paren);
 
-        expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], Punct(Punctuation::Comma));
+                Ok(Expression {
+                    expr: Expr::FunDeclaration {
+                        args: Vec::new(),
+                        rettypexpr,
+                    },
+                    loc: Span::from_ends(lo, hi),
+                })
+            } else {
+                // function definition
+
+                let body = parse!(parser => Block);
+                let hi = body.loc.clone();
+
+                Ok(Expression {
+                    expr: Expr::FunDefinition {
+                        args: Vec::new(),
+                        rettypexpr,
+                        body,
+                    },
+                    loc: Span::from_ends(lo, hi),
+                })
+            }
+        }
+        _ => {
+            // function declaration
+
+            let mut args = Vec::new();
+
+            loop {
+                if let Some(Punct(Punctuation::RParen)) = parser.peek_tt() {
+                    break;
+                }
+
+                let typexpr = parse!(@fn parser => parse_typexpr);
+
+                args.push(typexpr);
+
+                expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], Punct(Punctuation::Comma));
+            }
+            let ((), hi_paren) = expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
+
+            let rettypexpr = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
+                parser.pop();
+                Some(parse!(box: @fn parser => parse_typexpr))
+            } else {
+                None
+            };
+
+            let hi = rettypexpr
+                .as_ref()
+                .map(|typexpr| typexpr.loc.clone())
+                .unwrap_or(hi_paren);
+
+            Ok(Expression {
+                expr: Expr::FunDeclaration {
+                    args: Vec::new(),
+                    rettypexpr,
+                },
+                loc: Span::from_ends(lo, hi),
+            })
+        }
     }
-    expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
-
-    let rettypexpr = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
-        parser.pop();
-        Some(parse!(box: @fn parser => parse_typexpr))
-    } else {
-        None
-    };
-
-    let body = parse!(parser => Block);
-    let hi = body.loc.clone();
-
-    Ok(Expression {
-        expr: Expr::FunDefinition {
-            args,
-            rettypexpr,
-            body,
-        },
-        loc: Span::from_ends(lo, hi),
-    })
 }
 
 /// parses the if-else expression

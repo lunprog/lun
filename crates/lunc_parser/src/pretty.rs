@@ -240,6 +240,14 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
+            Expr::FunDeclaration { args, rettypexpr } => {
+                ctx.pretty_struct("FunDeclaration")
+                    .field("args", args.as_slice())
+                    .field("rettypexpr ", rettypexpr)
+                    .finish()?;
+
+                Ok(())
+            }
             Expr::PointerType { mutable, typexpr } => {
                 ctx.pretty_struct("PointerType")
                     .field("mutable", mutable)

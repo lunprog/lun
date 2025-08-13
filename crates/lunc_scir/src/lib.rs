@@ -249,6 +249,10 @@ impl FromHigher for ScExpression {
                 rettypexpr: lower(rettypexpr),
                 body: lower(body),
             },
+            DsExpr::FunDeclaration { args, rettypexpr } => ScExpr::FunDeclaration {
+                args: lower(args),
+                rettypexpr: lower(rettypexpr),
+            },
             DsExpr::PointerType { mutable, typexpr } => ScExpr::PointerType {
                 mutable,
                 typexpr: lower(typexpr),
@@ -406,6 +410,13 @@ pub enum ScExpr {
         args: Vec<ScArg>,
         rettypexpr: Option<Box<ScExpression>>,
         body: ScBlock,
+    },
+    /// See [`DsExpr::FunDeclaration`]
+    ///
+    /// [`DsExpr::FunDeclaration`]: lunc_dsir::DsExpr::FunDeclaration
+    FunDeclaration {
+        args: Vec<ScExpression>,
+        rettypexpr: Option<Box<ScExpression>>,
     },
     /// See [`DsExpr::PointerType`]
     ///
