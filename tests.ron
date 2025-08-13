@@ -1501,118 +1501,123 @@
     lexeme: `else`;
   },
   {
+    tt: keyword 'extern';
+    loc: 61..67 (fid = 0);
+    lexeme: `extern`;
+  },
+  {
     tt: keyword 'false';
-    loc: 61..66 (fid = 0);
+    loc: 68..73 (fid = 0);
     lexeme: `false`;
   },
   {
     tt: keyword 'for';
-    loc: 67..70 (fid = 0);
+    loc: 74..77 (fid = 0);
     lexeme: `for`;
   },
   {
     tt: keyword 'fun';
-    loc: 71..74 (fid = 0);
+    loc: 78..81 (fid = 0);
     lexeme: `fun`;
   },
   {
     tt: keyword 'if';
-    loc: 75..77 (fid = 0);
+    loc: 82..84 (fid = 0);
     lexeme: `if`;
   },
   {
     tt: keyword 'impl';
-    loc: 78..82 (fid = 0);
+    loc: 85..89 (fid = 0);
     lexeme: `impl`;
   },
   {
     tt: keyword 'in';
-    loc: 83..85 (fid = 0);
+    loc: 90..92 (fid = 0);
     lexeme: `in`;
   },
   {
     tt: keyword 'let';
-    loc: 86..89 (fid = 0);
+    loc: 93..96 (fid = 0);
     lexeme: `let`;
   },
   {
     tt: keyword 'loop';
-    loc: 90..94 (fid = 0);
+    loc: 97..101 (fid = 0);
     lexeme: `loop`;
   },
   {
     tt: keyword 'mut';
-    loc: 95..98 (fid = 0);
+    loc: 102..105 (fid = 0);
     lexeme: `mut`;
   },
   {
     tt: keyword 'null';
-    loc: 99..103 (fid = 0);
+    loc: 106..110 (fid = 0);
     lexeme: `null`;
   },
   {
     tt: keyword 'or';
-    loc: 104..106 (fid = 0);
+    loc: 111..113 (fid = 0);
     lexeme: `or`;
   },
   {
     tt: keyword 'orb';
-    loc: 107..110 (fid = 0);
+    loc: 114..117 (fid = 0);
     lexeme: `orb`;
   },
   {
     tt: keyword 'pub';
-    loc: 111..114 (fid = 0);
+    loc: 118..121 (fid = 0);
     lexeme: `pub`;
   },
   {
     tt: keyword 'return';
-    loc: 115..121 (fid = 0);
+    loc: 122..128 (fid = 0);
     lexeme: `return`;
   },
   {
     tt: keyword 'self';
-    loc: 122..126 (fid = 0);
+    loc: 129..133 (fid = 0);
     lexeme: `self`;
   },
   {
     tt: keyword 'then';
-    loc: 127..131 (fid = 0);
+    loc: 134..138 (fid = 0);
     lexeme: `then`;
   },
   {
     tt: keyword 'trait';
-    loc: 132..137 (fid = 0);
+    loc: 139..144 (fid = 0);
     lexeme: `trait`;
   },
   {
     tt: keyword 'true';
-    loc: 138..142 (fid = 0);
+    loc: 145..149 (fid = 0);
     lexeme: `true`;
   },
   {
     tt: keyword 'while';
-    loc: 143..148 (fid = 0);
+    loc: 150..155 (fid = 0);
     lexeme: `while`;
   },
   {
     tt: ident 'foo';
-    loc: 176..179 (fid = 0);
+    loc: 183..186 (fid = 0);
     lexeme: `foo`;
   },
   {
     tt: ident 'bar_baz';
-    loc: 180..187 (fid = 0);
+    loc: 187..194 (fid = 0);
     lexeme: `bar_baz`;
   },
   {
     tt: ident 'FooBarBaz';
-    loc: 188..197 (fid = 0);
+    loc: 195..204 (fid = 0);
     lexeme: `FooBarBaz`;
   },
   {
     tt: end of file;
-    loc: 198..199 (fid = 0);
+    loc: 205..206 (fid = 0);
     lexeme: N/A;
   },
 }

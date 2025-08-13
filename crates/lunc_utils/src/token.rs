@@ -291,6 +291,8 @@ pub enum Keyword {
     Defer,
     /// else
     Else,
+    /// extern
+    Extern,
     /// false
     False,
     /// for
@@ -321,9 +323,11 @@ pub enum Keyword {
     Return,
     /// self
     ///
-    /// Note: here the name of this keyword is `Zelf` because we can't name it
-    /// Self because it's a keyword and neither `r#Self`.
-    Zelf,
+    /// # Note
+    ///
+    /// here the name of this keyword is `SelfVal` because we can't name it
+    /// `Self` because it's a keyword and neither `r#Self`.
+    SelfVal,
     /// then
     Then,
     /// trait
@@ -355,6 +359,9 @@ impl Keyword {
 
     /// `else` keyword.
     pub const ELSE: &str = "else";
+
+    /// `extern` keyword.
+    pub const EXTERN: &str = "extern";
 
     /// `false` keyword.
     pub const FALSE: &str = "false";
@@ -424,6 +431,7 @@ impl Display for Keyword {
             Keyword::Continue => f.write_str(Keyword::CONTINUE),
             Keyword::Defer => f.write_str(Keyword::DEFER),
             Keyword::Else => f.write_str(Keyword::ELSE),
+            Keyword::Extern => f.write_str(Keyword::EXTERN),
             Keyword::False => f.write_str(Keyword::FALSE),
             Keyword::For => f.write_str(Keyword::FOR),
             Keyword::Fun => f.write_str(Keyword::FUN),
@@ -438,7 +446,7 @@ impl Display for Keyword {
             Keyword::Orb => f.write_str(Keyword::ORB),
             Keyword::Pub => f.write_str(Keyword::PUB),
             Keyword::Return => f.write_str(Keyword::RETURN),
-            Keyword::Zelf => f.write_str(Keyword::SELF),
+            Keyword::SelfVal => f.write_str(Keyword::SELF),
             Keyword::Then => f.write_str(Keyword::THEN),
             Keyword::Trait => f.write_str(Keyword::TRAIT),
             Keyword::True => f.write_str(Keyword::TRUE),

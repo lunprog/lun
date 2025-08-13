@@ -6,6 +6,7 @@ comptime
 continue
 defer
 else
+extern
 false
 for
 fun
