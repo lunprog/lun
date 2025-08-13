@@ -117,7 +117,7 @@ impl SemaChecker {
 
                 Ok(())
             }
-            ScExpr::Unary { op: _, expr } | ScExpr::AddressOf { mutable: _, expr } => {
+            ScExpr::Unary { op: _, expr } | ScExpr::Borrow { mutable: _, expr } => {
                 self.safety_ck_expr(expr)?;
 
                 Ok(())

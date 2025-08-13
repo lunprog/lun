@@ -204,7 +204,7 @@ impl FromHigher for DsExpression {
                 op,
                 expr: lower(expr),
             },
-            Expr::AddressOf { mutable, expr } => DsExpr::AddressOf {
+            Expr::Borrow { mutable, expr } => DsExpr::Borrow {
                 mutable,
                 expr: lower(expr),
             },
@@ -382,10 +382,10 @@ pub enum DsExpr {
         op: UnaryOp,
         expr: Box<DsExpression>,
     },
-    /// See [`Expr::AddressOf`]
+    /// See [`Expr::Borrow`]
     ///
-    /// [`Expr::AddressOf`]: lunc_parser::expr::Expr::AddressOf
-    AddressOf {
+    /// [`Expr::Borrow`]: lunc_parser::expr::Expr::Borrow
+    Borrow {
         mutable: bool,
         expr: Box<DsExpression>,
     },
@@ -563,9 +563,9 @@ pub fn expr_unary(op: UnaryOp, expr: DsExpression) -> DsExpression {
 }
 
 /// Creates an address of expression without location.
-pub fn expr_addrof(mutable: bool, val: DsExpression) -> DsExpression {
+pub fn expr_borrow(mutable: bool, val: DsExpression) -> DsExpression {
     DsExpression {
-        expr: DsExpr::AddressOf {
+        expr: DsExpr::Borrow {
             mutable,
             expr: Box::new(val),
         },
@@ -1126,7 +1126,7 @@ impl Desugarrer {
                 self.resolve_expr(lhs)?;
                 self.resolve_expr(rhs)
             }
-            DsExpr::Unary { op: _, expr } | DsExpr::AddressOf { mutable: _, expr } => {
+            DsExpr::Unary { op: _, expr } | DsExpr::Borrow { mutable: _, expr } => {
                 self.resolve_expr(expr)
             }
             DsExpr::FunCall { callee, args } => {

@@ -196,7 +196,7 @@ impl FromHigher for ScExpression {
                 op,
                 expr: lower(expr),
             },
-            DsExpr::AddressOf { mutable, expr } => ScExpr::AddressOf {
+            DsExpr::Borrow { mutable, expr } => ScExpr::Borrow {
                 mutable,
                 expr: lower(expr),
             },
@@ -311,10 +311,10 @@ pub enum ScExpr {
         op: UnaryOp,
         expr: Box<ScExpression>,
     },
-    /// See [`DsExpr::AddressOf`]
+    /// See [`DsExpr::Borrow`]
     ///
-    /// [`DsExpr::AddressOf`]: lunc_dsir::DsExpr::AddressOf
-    AddressOf {
+    /// [`DsExpr::Borrow`]: lunc_dsir::DsExpr::Borrow
+    Borrow {
         mutable: bool,
         expr: Box<ScExpression>,
     },

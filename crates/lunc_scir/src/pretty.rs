@@ -101,8 +101,8 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::AddressOf { mutable, expr } => {
-                ctx.pretty_struct("AddressOf")
+            ScExpr::Borrow { mutable, expr } => {
+                ctx.pretty_struct("Borrow")
                     .field("mutable", mutable)
                     .field("expr", expr)
                     .finish()?;

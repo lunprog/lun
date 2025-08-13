@@ -109,10 +109,10 @@ pub enum Expr {
     ///
     /// `op expr`
     Unary { op: UnaryOp, expr: Box<Expression> },
-    /// Address of
+    /// Borrow operator
     ///
     /// `"&" "mut"? expression`
-    AddressOf {
+    Borrow {
         mutable: bool,
         expr: Box<Expression>,
     },
@@ -264,7 +264,7 @@ pub fn parse_expr_precedence(
         Some(CharLit(_)) => parse!(@fn parser => parse_charlit_expr),
         Some(FloatLit(_)) => parse!(@fn parser => parse_floatlit_expr),
         Some(Punct(Punctuation::LParen)) => parse!(@fn parser => parse_grouping_expr),
-        Some(Punct(Punctuation::Ampsand)) => parse!(@fn parser => parse_deref_expr),
+        Some(Punct(Punctuation::Ampsand)) => parse!(@fn parser => parse_borrow_expr),
         Some(Ident(_)) if !typexpr && parser.is_labeled_expr() => match parser.nth_tt(2) {
             Some(Kw(Keyword::Loop)) => parse!(@fn parser => parse_infinite_loop_expr),
             Some(Kw(Keyword::While)) => parse!(@fn parser => parse_predicate_loop_expr),
@@ -1289,7 +1289,7 @@ pub fn parse_unary_right_expr(
     })
 }
 
-pub fn parse_deref_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+pub fn parse_borrow_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (_, lo) = expect_token!(parser => [Punct(Punctuation::Ampsand), ()], Punctuation::Ampsand);
 
     let mutable = if let Some(Kw(Keyword::Mut)) = parser.peek_tt() {
@@ -1304,7 +1304,7 @@ pub fn parse_deref_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let hi = val.loc.clone();
 
     Ok(Expression {
-        expr: Expr::AddressOf { mutable, expr: val },
+        expr: Expr::Borrow { mutable, expr: val },
         loc: Span::from_ends(lo, hi),
     })
 }

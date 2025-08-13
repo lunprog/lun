@@ -327,7 +327,7 @@ impl SemaChecker {
                 Self::apply_typ_on_expr(lhs, typ.clone())?;
                 Self::apply_typ_on_expr(rhs, typ.clone())?;
             }
-            ScExpr::Unary { op: _, expr } | ScExpr::AddressOf { mutable: _, expr } => {
+            ScExpr::Unary { op: _, expr } | ScExpr::Borrow { mutable: _, expr } => {
                 Self::apply_typ_on_expr(expr, typ.clone())?;
             }
             ScExpr::If {
@@ -634,7 +634,7 @@ impl SemaChecker {
                     };
                 }
             },
-            ScExpr::AddressOf { mutable, expr: exp } => {
+            ScExpr::Borrow { mutable, expr: exp } => {
                 let real_coerce = if let Some(Type::Ptr { mutable: _, typ }) = &coerce_to {
                     Some((**typ).clone())
                 } else {

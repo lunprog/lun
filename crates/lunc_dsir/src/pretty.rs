@@ -121,8 +121,8 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::AddressOf { mutable, expr } => {
-                ctx.pretty_struct("AddressOf")
+            DsExpr::Borrow { mutable, expr } => {
+                ctx.pretty_struct("Borrow")
                     .field("mutable", mutable)
                     .field("expr", expr)
                     .finish()?;

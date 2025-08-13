@@ -100,8 +100,8 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::AddressOf { mutable, expr } => {
-                ctx.pretty_struct("AddressOf")
+            Expr::Borrow { mutable, expr } => {
+                ctx.pretty_struct("Borrow")
                     .field("mutable", mutable)
                     .field("expr", expr)
                     .finish()?;
