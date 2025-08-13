@@ -5,4 +5,4 @@ version.workspace = true
 license.workspace = true
 
 [dependencies]
-clap = { version = "4.5.43", features = ["derive"] }
+clap = { version = "4.5.45", features = ["derive"] }
