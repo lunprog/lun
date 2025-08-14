@@ -39,6 +39,53 @@ impl PrettyDump for ScItem {
 
                 Ok(())
             }
+            ScItem::FunDefinition {
+                name,
+                name_loc,
+                typexpr,
+                args,
+                rettypexpr,
+                body,
+                defined_mut,
+                loc,
+                sym,
+            } => {
+                ctx.pretty_struct("FunDefinition")
+                    .field("name", (name, name_loc))
+                    .field("typexpr", typexpr)
+                    .field("args", args.as_slice())
+                    .field("rettypexpr", rettypexpr)
+                    .field("body", body)
+                    .field("defined_mut", defined_mut)
+                    .field("sym", sym)
+                    .finish()?;
+
+                ctx.print_loc(loc)?;
+
+                Ok(())
+            }
+            ScItem::FunDeclaration {
+                name,
+                name_loc,
+                typexpr,
+                args,
+                rettypexpr,
+                defined_mut,
+                loc,
+                sym,
+            } => {
+                ctx.pretty_struct("FunDeclaration")
+                    .field("name", (name, name_loc))
+                    .field("typexpr", typexpr)
+                    .field("args", args.as_slice())
+                    .field("rettypexpr", rettypexpr)
+                    .field("defined_mut", defined_mut)
+                    .field("sym", sym)
+                    .finish()?;
+                ctx.print_loc(loc)?;
+
+                Ok(())
+            }
             ScItem::Module {
                 name,
                 module,
@@ -215,27 +262,6 @@ impl PrettyDump for ScExpr {
                 Ok(())
             }
             ScExpr::Underscore => write!(ctx.out, "Underscore"),
-            ScExpr::FunDefinition {
-                args,
-                rettypexpr,
-                body,
-            } => {
-                ctx.pretty_struct("FunDefinition")
-                    .field("args", args.as_slice())
-                    .field("rettypexpr", rettypexpr)
-                    .field("body", body)
-                    .finish()?;
-
-                Ok(())
-            }
-            ScExpr::FunDeclaration { args, rettypexpr } => {
-                ctx.pretty_struct("FunDeclaration")
-                    .field("args", args.as_slice())
-                    .field("rettypexpr", rettypexpr)
-                    .finish()?;
-
-                Ok(())
-            }
             ScExpr::PointerType { mutable, typexpr } => {
                 ctx.pretty_struct("PointerType")
                     .field("mutable", mutable)

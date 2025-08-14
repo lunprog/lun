@@ -453,6 +453,9 @@ pub enum ErrorCode {
     UnknownAbi = 38,
     /// item not allowed inside an extern block
     ItemNotAllowedInExternBlock = 39,
+    /// cannot have a function definition / declaration inside of a global
+    /// mutable definition
+    FunctionInGlobalMut = 40,
 }
 
 impl Display for ErrorCode {

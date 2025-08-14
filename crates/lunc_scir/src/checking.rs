@@ -11,7 +11,7 @@ use lunc_utils::{
 use crate::diags::{
     ArityDoesntMatch, BorrowMutWhenNotDefinedMut, BreakUseAnImplicitLabelInBlock,
     BreakWithValueUnsupported, CallRequiresFuncType, CantContinueABlock, CantResolveComptimeValue,
-    ExpectedPlaceExpression, ExpectedTypeFoundExpr, FunDeclOutsideExternBlock,
+    ExpectedPlaceExpression, ExpectedTypeFoundExpr, FunDeclOutsideExternBlock, FunctionInGlobalMut,
     ItemNotAllowedInExternBlock, LabelKwOutsideLoopOrBlock, MismatchedTypes, TypeAnnotationsNeeded,
     UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
 };
@@ -50,43 +50,26 @@ impl SemaChecker {
 
     fn pre_ck_items(&mut self, items: &mut [ScItem]) {
         for item in items {
-            match item {
-                ScItem::GlobalDef { .. } => match self.pre_ck_global_def(item) {
-                    Ok(()) => {}
-                    Err(d) => self.sink.emit(d),
-                },
-                ScItem::Module { module, .. } => self.pre_ck_module(module),
-                ScItem::ExternBlock { items, .. } => {
-                    self.pre_ck_items(items);
-                }
+            match self.pre_ck_item(item) {
+                Ok(()) => {}
+                Err(d) => self.sink.emit(d),
             }
         }
     }
 
-    /// # Safety
-    ///
-    /// This function must be called with a GlobalDef ScItem.
-    fn pre_ck_global_def(&mut self, global_def: &mut ScItem) -> Result<(), Diagnostic> {
-        let ScItem::GlobalDef {
-            name: _,
-            name_loc: _,
-            mutable: _,
-            typexpr,
-            value,
-            loc: _,
-            sym: symref,
-        } = global_def
-        else {
-            // SAFETY: it is the caller's responsibility to call this function
-            // with a global definition
-            opt_unrecheable!()
-        };
-
-        match &mut value.expr {
-            ScExpr::FunDefinition {
+    fn pre_ck_item(&mut self, item: &mut ScItem) -> Result<(), Diagnostic> {
+        match item {
+            ScItem::GlobalDef { .. } => self.pre_ck_global_def(item),
+            ScItem::FunDefinition {
+                name: _,
+                name_loc: _,
+                typexpr,
                 args,
                 rettypexpr,
                 body: _,
+                defined_mut: _,
+                loc: _,
+                sym,
             } => {
                 // function def pre ck
 
@@ -202,9 +185,20 @@ impl SemaChecker {
                 };
 
                 // we finally update the type of the symbol.
-                symref.set_typ(typ);
+                sym.set_typ(typ);
+
+                Ok(())
             }
-            ScExpr::FunDeclaration { args, rettypexpr } => {
+            ScItem::FunDeclaration {
+                name: _,
+                name_loc: _,
+                typexpr,
+                args,
+                rettypexpr,
+                defined_mut: _,
+                loc: _,
+                sym,
+            } => {
                 // function decl pre ck
 
                 // NOTE: we don't check if the container is ExternBlock here
@@ -315,48 +309,77 @@ impl SemaChecker {
                 };
 
                 // we finally update the type of the symbol.
-                symref.set_typ(typ);
+                sym.set_typ(typ);
+
+                Ok(())
             }
-            _ => {
-                // global def pre ck
-
-                // we typecheck the type expression
-                if let Some(typexpr) = &mut **typexpr {
-                    self.ck_expr(typexpr, Some(Type::Type))?;
-
-                    if typexpr.typ != Type::Type {
-                        self.sink.emit(ExpectedTypeFoundExpr {
-                            loc: typexpr.loc.clone().unwrap(),
-                        })
-                    }
-                }
-
-                // we evaluate the type expression
-                let typexpr_as_type = if let Some(typexpr) = &mut **typexpr {
-                    let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
-                        CantResolveComptimeValue {
-                            note,
-                            loc_expr: typexpr.loc.clone().unwrap(),
-                            loc,
-                        }
-                        .into_diag()
-                    })?;
-
-                    Some(value.as_type().unwrap_or(Type::Void))
-                } else {
-                    None
-                };
-
-                let typ = if let Some(ref typ) = typexpr_as_type {
-                    typ.clone()
-                } else {
-                    Type::Unknown
-                };
-
-                // we finally update the type of the symbol.
-                symref.set_typ(typ);
+            ScItem::Module { module, .. } => {
+                self.pre_ck_module(module);
+                Ok(())
+            }
+            ScItem::ExternBlock { items, .. } => {
+                self.pre_ck_items(items);
+                Ok(())
             }
         }
+    }
+
+    /// # Safety
+    ///
+    /// This function must be called with a [`ScItem::GlobalDef`].
+    fn pre_ck_global_def(&mut self, global_def: &mut ScItem) -> Result<(), Diagnostic> {
+        let ScItem::GlobalDef {
+            name: _,
+            name_loc: _,
+            mutable: _,
+            typexpr,
+            value: _,
+            loc: _,
+            sym: symref,
+        } = global_def
+        else {
+            // SAFETY: it is the caller's responsibility to call this function
+            // with a global definition
+            opt_unrecheable!()
+        };
+
+        // global def pre ck
+
+        // we typecheck the type expression
+        if let Some(typexpr) = &mut **typexpr {
+            self.ck_expr(typexpr, Some(Type::Type))?;
+
+            if typexpr.typ != Type::Type {
+                self.sink.emit(ExpectedTypeFoundExpr {
+                    loc: typexpr.loc.clone().unwrap(),
+                })
+            }
+        }
+
+        // we evaluate the type expression
+        let typexpr_as_type = if let Some(typexpr) = &mut **typexpr {
+            let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
+                CantResolveComptimeValue {
+                    note,
+                    loc_expr: typexpr.loc.clone().unwrap(),
+                    loc,
+                }
+                .into_diag()
+            })?;
+
+            Some(value.as_type().unwrap_or(Type::Void))
+        } else {
+            None
+        };
+
+        let typ = if let Some(ref typ) = typexpr_as_type {
+            typ.clone()
+        } else {
+            Type::Unknown
+        };
+
+        // we finally update the type of the symbol.
+        symref.set_typ(typ);
 
         Ok(())
     }
@@ -511,97 +534,126 @@ impl SemaChecker {
                 loc: _,
                 sym: symref,
             } => {
-                match &mut value.expr {
-                    ScExpr::FunDefinition {
-                        args: _,
-                        rettypexpr,
-                        body,
-                    } => {
-                        // set the function return type
-                        self.fun_retty = symref
-                            .typ()
-                            .as_fun_ptr()
-                            .expect("type should be a function pointer in a function definition")
-                            .1;
+                let typ = symref.typ().as_option();
 
-                        self.fun_retty_loc =
-                            rettypexpr.as_ref().and_then(|typexpr| typexpr.loc.clone());
+                // we check the value of the definition
+                self.ck_expr(value, typ.clone())?;
 
-                        // check the body of the function
-                        self.ck_block(body, Some(self.fun_retty.clone()))?;
-
-                        // check the type of the block of the function
-                        self.block_typeck(
-                            &self.fun_retty.clone(),
-                            body,
-                            self.fun_retty_loc.clone(),
-                            None,
-                            body.last_expr
-                                .as_ref()
-                                .map(|expr| expr.loc.clone())
-                                .unwrap_or(body.loc.clone())
-                                .unwrap(),
-                        );
-
-                        // assign the type of the function
-                        value.typ = symref.typ();
-
-                        Ok(())
-                    }
-                    ScExpr::FunDeclaration {
-                        args: _,
-                        rettypexpr: _,
-                    } if self.container == ItemContainer::ExternBlock => {
-                        // assign the type of the function
-                        value.typ = symref.typ();
-
-                        Ok(())
-                    }
-                    _ => {
-                        let typ = symref.typ().as_option();
-
-                        // we check the value of the definition
-                        self.ck_expr(value, typ.clone())?;
-
-                        // we check the type of the value
-                        if value.typ == Type::Unknown {
-                            self.sink.emit(TypeAnnotationsNeeded {
-                                loc: value.loc.clone().unwrap(),
-                            });
-                        } else if let Some(typ) = &typ
-                            && &value.typ != typ
-                        {
-                            self.expr_typeck(
-                                typ,
-                                value,
-                                (**typexpr)
-                                    .as_ref()
-                                    .map(|exp| exp.loc.as_ref().unwrap().clone()),
-                                None,
-                            );
-                        } else if typ.is_none() {
-                            // we set the type of the symbol to the type of the value as a fallback
-                            // let mut
-                            symref.set_typ(value.typ.clone());
-                        }
-
-                        // we evaluate the value of the global def
-                        let value_expr = {
-                            self.evaluate_expr(value).map_err(|(loc, note)| {
-                                CantResolveComptimeValue {
-                                    note,
-                                    loc_expr: value.loc.clone().unwrap(),
-                                    loc,
-                                }
-                                .into_diag()
-                            })?
-                        };
-
-                        symref.set_value(value_expr);
-
-                        Ok(())
-                    }
+                // we check the type of the value
+                if value.typ == Type::Unknown {
+                    self.sink.emit(TypeAnnotationsNeeded {
+                        loc: value.loc.clone().unwrap(),
+                    });
+                } else if let Some(typ) = &typ
+                    && &value.typ != typ
+                {
+                    self.expr_typeck(
+                        typ,
+                        value,
+                        (**typexpr)
+                            .as_ref()
+                            .map(|exp| exp.loc.as_ref().unwrap().clone()),
+                        None,
+                    );
+                } else if typ.is_none() {
+                    // we set the type of the symbol to the type of the value as a fallback
+                    // let mut
+                    symref.set_typ(value.typ.clone());
                 }
+
+                // we evaluate the value of the global def
+                let value_expr = {
+                    self.evaluate_expr(value).map_err(|(loc, note)| {
+                        CantResolveComptimeValue {
+                            note,
+                            loc_expr: value.loc.clone().unwrap(),
+                            loc,
+                        }
+                        .into_diag()
+                    })?
+                };
+
+                symref.set_value(value_expr);
+
+                Ok(())
+            }
+            ScItem::FunDefinition {
+                name: _,
+                name_loc: _,
+                typexpr: _,
+                args: _,
+                rettypexpr,
+                body,
+                defined_mut,
+                loc,
+                sym,
+            } => {
+                // emit an error
+                if *defined_mut {
+                    self.sink.emit(FunctionInGlobalMut {
+                        fun: "function definition",
+                        loc: loc.clone().unwrap(),
+                    })
+                }
+
+                // set the function return type
+                self.fun_retty = sym
+                    .typ()
+                    .as_fun_ptr()
+                    .expect("type should be a function pointer in a function definition")
+                    .1;
+
+                self.fun_retty_loc = rettypexpr.as_ref().and_then(|typexpr| typexpr.loc.clone());
+
+                // check the body of the function
+                self.ck_block(body, Some(self.fun_retty.clone()))?;
+
+                // check the type of the block of the function
+                self.block_typeck(
+                    &self.fun_retty.clone(),
+                    body,
+                    self.fun_retty_loc.clone(),
+                    None,
+                    body.last_expr
+                        .as_ref()
+                        .map(|expr| expr.loc.clone())
+                        .unwrap_or(body.loc.clone())
+                        .unwrap(),
+                );
+
+                Ok(())
+            }
+            ScItem::FunDeclaration {
+                defined_mut, loc, ..
+            } if self.container == ItemContainer::ExternBlock => {
+                // emit an error
+                if *defined_mut {
+                    self.sink.emit(FunctionInGlobalMut {
+                        fun: "function declaration",
+                        loc: loc.clone().unwrap(),
+                    })
+                }
+
+                Ok(())
+            }
+            ScItem::FunDeclaration {
+                defined_mut, loc, ..
+            } => {
+                // fundecl must be inside of an extern block..
+
+                self.sink.emit(FunDeclOutsideExternBlock {
+                    loc: loc.clone().unwrap(),
+                });
+
+                // emit an error
+                if *defined_mut {
+                    self.sink.emit(FunctionInGlobalMut {
+                        fun: "function declaration",
+                        loc: loc.clone().unwrap(),
+                    })
+                }
+
+                Ok(())
             }
             ScItem::Module { module, .. } => {
                 self.ck_mod(module);
@@ -617,11 +669,11 @@ impl SemaChecker {
 
                 for item in old_items {
                     match item {
-                        ScItem::GlobalDef { ref value, .. } if value.is_fundecl() => {
+                        ScItem::FunDeclaration { .. } => {
                             // function declaration are allowed in an extern block
                             new_items.push(item);
                         }
-                        ScItem::GlobalDef { ref value, .. } if value.is_fundef() => {
+                        ScItem::FunDefinition { .. } => {
                             self.sink.emit(ItemNotAllowedInExternBlock {
                                 item: "function definition",
                                 note: None,
@@ -1187,23 +1239,6 @@ impl SemaChecker {
                 // NOTE: we keep the typ unknown because the underscore
                 // expression is only valid in lhs of assignment and we
                 // have a special case for it.
-            }
-            ScExpr::FunDefinition { .. } => {
-                self.sink.emit(feature_todo! {
-                    feature: "inner function definition",
-                    label: "function definition inside of a statement is not yet supported",
-                    loc: expr.loc.clone().unwrap()
-                });
-
-                // NOTE: the type is set in `pre_ck_global_def`
-            }
-            ScExpr::FunDeclaration { .. } => {
-                // NOTE: the type is set in `pre_ck_global_def` if the fundecl
-                // is inside of an extern block but here it isn't inside of an
-                // extern block.
-                self.sink.emit(FunDeclOutsideExternBlock {
-                    loc: expr.loc.clone().unwrap(),
-                });
             }
             ScExpr::PointerType {
                 mutable: _,

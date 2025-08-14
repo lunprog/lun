@@ -196,6 +196,18 @@ pub struct DsExpression {
     pub loc: OSpan,
 }
 
+impl DsExpression {
+    /// Is the expression a function definition?
+    pub fn is_fundef(&self) -> bool {
+        matches!(self.expr, DsExpr::FunDefinition { .. })
+    }
+
+    /// Is the expression a function declaration?
+    pub fn is_fundecl(&self) -> bool {
+        matches!(self.expr, DsExpr::FunDeclaration { .. })
+    }
+}
+
 impl FromHigher for DsExpression {
     type Higher = Expression;
 

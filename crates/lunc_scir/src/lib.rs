@@ -12,7 +12,7 @@ use lunc_dsir::{
     OSpan, QualifiedPath,
 };
 use lunc_utils::{
-    FromHigher, Span, lower,
+    FromHigher, Span, lower, opt_unrecheable,
     symbol::{Symbol, Type, ValueExpr},
     target::{PtrWidth, TargetTriplet},
 };
@@ -75,6 +75,41 @@ pub enum ScItem {
         /// corresponding symbol of this definition
         sym: Symbol,
     },
+    /// A [`DsItem::GlobalDef`] and a [`DsExpr::FunDefinition`] combined.
+    ///
+    /// [`DsExpr::FunDefinition`]: lunc_dsir::DsExpr::FunDefinition
+    /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
+    FunDefinition {
+        name: String,
+        name_loc: OSpan,
+        typexpr: Box<Option<ScExpression>>,
+        args: Vec<ScArg>,
+        rettypexpr: Option<Box<ScExpression>>,
+        body: ScBlock,
+        /// set to `true` if it was defined in a mutable global def (this is to
+        /// emit E040).
+        defined_mut: bool,
+        loc: OSpan,
+        /// corresponding symbol of this definition
+        sym: Symbol,
+    },
+    /// A [`DsItem::GlobalDef`] and a [`DsExpr::FunDeclaration`] combined.
+    ///
+    /// [`DsExpr::FunDeclaration`]: lunc_dsir::DsExpr::FunDeclaration
+    /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
+    FunDeclaration {
+        name: String,
+        name_loc: OSpan,
+        typexpr: Box<Option<ScExpression>>,
+        args: Vec<ScExpression>,
+        rettypexpr: Option<Box<ScExpression>>,
+        /// set to `true` if it was defined in a mutable global def (this is to
+        /// emit E040).
+        defined_mut: bool,
+        loc: OSpan,
+        /// corresponding symbol of this definition
+        sym: Symbol,
+    },
     /// See [`DsItem::Module`]
     ///
     /// [`DsItem::Module`]: lunc_dsir::DsItem::Module
@@ -104,6 +139,8 @@ impl ScItem {
         match self {
             ScItem::GlobalDef { loc, .. }
             | ScItem::Module { loc, .. }
+            | ScItem::FunDefinition { loc, .. }
+            | ScItem::FunDeclaration { loc, .. }
             | ScItem::ExternBlock { loc, .. } => loc.clone().unwrap(),
         }
     }
@@ -114,6 +151,62 @@ impl FromHigher for ScItem {
 
     fn lower(node: Self::Higher) -> Self {
         match node {
+            DsItem::GlobalDef {
+                name,
+                name_loc,
+                mutable,
+                typexpr,
+                value,
+                loc,
+                sym,
+            } if value.is_fundef() => {
+                let DsExpr::FunDefinition {
+                    args,
+                    rettypexpr,
+                    body,
+                } = value.expr
+                else {
+                    // SAFETY: we already checked in the `if` clause of the match arm.
+                    opt_unrecheable!();
+                };
+
+                ScItem::FunDefinition {
+                    name,
+                    name_loc,
+                    typexpr: Box::new(lower(typexpr)),
+                    args: lower(args),
+                    rettypexpr: lower(rettypexpr),
+                    body: lower(body),
+                    defined_mut: mutable,
+                    loc,
+                    sym: sym.unwrap_sym(),
+                }
+            }
+            DsItem::GlobalDef {
+                name,
+                name_loc,
+                mutable,
+                typexpr,
+                value,
+                loc,
+                sym,
+            } if value.is_fundecl() => {
+                let DsExpr::FunDeclaration { args, rettypexpr } = value.expr else {
+                    // SAFETY: we already checked in the `if` clause of the match arm.
+                    opt_unrecheable!();
+                };
+
+                ScItem::FunDeclaration {
+                    name,
+                    name_loc,
+                    typexpr: Box::new(lower(typexpr)),
+                    args: lower(args),
+                    rettypexpr: lower(rettypexpr),
+                    defined_mut: mutable,
+                    loc,
+                    sym: sym.unwrap_sym(),
+                }
+            }
             DsItem::GlobalDef {
                 name,
                 name_loc,
@@ -199,16 +292,6 @@ impl ScExpression {
     pub fn is_underscore(&self) -> bool {
         matches!(self.expr, ScExpr::Underscore)
     }
-
-    /// Is the expression a function declaration?
-    pub fn is_fundecl(&self) -> bool {
-        matches!(self.expr, ScExpr::FunDeclaration { .. })
-    }
-
-    /// Is the expression a function definition?
-    pub fn is_fundef(&self) -> bool {
-        matches!(self.expr, ScExpr::FunDefinition { .. })
-    }
 }
 
 impl FromHigher for ScExpression {
@@ -275,19 +358,8 @@ impl FromHigher for ScExpression {
                 sym: lazy.unwrap_sym(),
             },
             DsExpr::Underscore => ScExpr::Underscore,
-            DsExpr::FunDefinition {
-                args,
-                rettypexpr,
-                body,
-            } => ScExpr::FunDefinition {
-                args: lower(args),
-                rettypexpr: lower(rettypexpr),
-                body: lower(body),
-            },
-            DsExpr::FunDeclaration { args, rettypexpr } => ScExpr::FunDeclaration {
-                args: lower(args),
-                rettypexpr: lower(rettypexpr),
-            },
+            DsExpr::FunDefinition { .. } => todo!("FUN DEF IN EXPR"),
+            DsExpr::FunDeclaration { .. } => todo!("FUN DECL IN EXPR"),
             DsExpr::PointerType { mutable, typexpr } => ScExpr::PointerType {
                 mutable,
                 typexpr: lower(typexpr),
@@ -438,21 +510,6 @@ pub enum ScExpr {
     /// Constructed from the lazy ident `_`, but only in certain cases, like
     /// when it's part of an assignment like so: `_ = expr`
     Underscore,
-    /// See [`DsExpr::FunDefinition`]
-    ///
-    /// [`DsExpr::FunDefinition`]: lunc_dsir::DsExpr::FunDefinition
-    FunDefinition {
-        args: Vec<ScArg>,
-        rettypexpr: Option<Box<ScExpression>>,
-        body: ScBlock,
-    },
-    /// See [`DsExpr::FunDeclaration`]
-    ///
-    /// [`DsExpr::FunDeclaration`]: lunc_dsir::DsExpr::FunDeclaration
-    FunDeclaration {
-        args: Vec<ScExpression>,
-        rettypexpr: Option<Box<ScExpression>>,
-    },
     /// See [`DsExpr::PointerType`]
     ///
     /// [`DsExpr::PointerType`]: lunc_dsir::DsExpr::PointerType

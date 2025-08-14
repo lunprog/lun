@@ -39,6 +39,63 @@ impl SemaChecker {
 
                 Ok(())
             }
+            ScItem::FunDefinition {
+                name: _,
+                name_loc: _,
+                typexpr,
+                args,
+                rettypexpr,
+                body,
+                defined_mut: _,
+                loc: _,
+                sym: _,
+            } => {
+                if let Some(typexpr) = &**typexpr {
+                    self.safety_ck_expr(typexpr)?;
+                }
+
+                for arg in args {
+                    match self.safety_ck_arg(arg) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.emit(d),
+                    }
+                }
+
+                if let Some(rettyexpr) = rettypexpr {
+                    self.safety_ck_expr(rettyexpr)?;
+                }
+
+                self.safety_ck_block(body);
+
+                Ok(())
+            }
+            ScItem::FunDeclaration {
+                name: _,
+                name_loc: _,
+                typexpr,
+                args,
+                rettypexpr,
+                defined_mut: _,
+                loc: _,
+                sym: _,
+            } => {
+                if let Some(typexpr) = &**typexpr {
+                    self.safety_ck_expr(typexpr)?;
+                }
+
+                for arg in args {
+                    match self.safety_ck_expr(arg) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.emit(d),
+                    }
+                }
+
+                if let Some(retty) = rettypexpr {
+                    self.safety_ck_expr(retty)?;
+                }
+
+                Ok(())
+            }
             ScItem::Module {
                 name: _,
                 module,
@@ -192,40 +249,6 @@ impl SemaChecker {
                 Ok(())
             }
             ScExpr::QualifiedPath { path: _, sym: _ } | ScExpr::Underscore => Ok(()),
-            ScExpr::FunDefinition {
-                args,
-                rettypexpr,
-                body,
-            } => {
-                for arg in args {
-                    match self.safety_ck_arg(arg) {
-                        Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
-                    }
-                }
-
-                if let Some(rettyexpr) = rettypexpr {
-                    self.safety_ck_expr(rettyexpr)?;
-                }
-
-                self.safety_ck_block(body);
-
-                Ok(())
-            }
-            ScExpr::FunDeclaration { args, rettypexpr } => {
-                for arg in args {
-                    match self.safety_ck_expr(arg) {
-                        Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
-                    }
-                }
-
-                if let Some(retty) = rettypexpr {
-                    self.safety_ck_expr(retty)?;
-                }
-
-                Ok(())
-            }
             ScExpr::PointerType {
                 mutable: _,
                 typexpr,

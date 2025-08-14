@@ -402,3 +402,23 @@ impl ToDiagnostic for ItemNotAllowedInExternBlock {
             .with_notes_iter(self.note.map(|s| s.to_string()))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct FunctionInGlobalMut {
+    /// either 'function definition' or 'function declaration'
+    pub fun: &'static str,
+    /// loc of the global def
+    pub loc: Span,
+}
+
+impl ToDiagnostic for FunctionInGlobalMut {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::FunctionInGlobalMut)
+            .with_message(format!(
+                "cannot define a {} inside of a mutable global definition",
+                self.fun
+            ))
+            .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
