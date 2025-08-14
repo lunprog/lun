@@ -1,0 +1,6 @@
+// EO13: error testing - UnderscoreReservedIdentifier
+_ :: 12;
+
+_ := 34;
+
+a :: fun(_: i8) {}

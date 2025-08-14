@@ -1254,6 +1254,13 @@ impl Desugarrer {
                 Ok(())
             }
             DsExpr::Ident(LazySymbol::Name(name)) => {
+                if name == "_" {
+                    return Err(UnderscoreInExpression {
+                        loc: expr.loc.clone().unwrap(),
+                    }
+                    .into_diag());
+                }
+
                 let Some(symref) = self.table.lookup(&*name) else {
                     return Err(NotFoundInScope {
                         name: name.clone(),
@@ -1261,17 +1268,6 @@ impl Desugarrer {
                     }
                     .into_diag());
                 };
-
-                symref.inspect(|sym| {
-                    if sym.name == "_" {
-                        return Err(UnderscoreInExpression {
-                            loc: expr.loc.clone().unwrap(),
-                        }
-                        .into_diag());
-                    }
-
-                    Ok(())
-                })?;
 
                 expr.expr = DsExpr::Ident(LazySymbol::Sym(symref.clone()));
 

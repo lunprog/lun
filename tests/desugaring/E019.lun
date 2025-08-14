@@ -1,0 +1,3 @@
+// EO19: error testing - NameDefinedMultipleTimes
+a :: 12;
+a := 34;

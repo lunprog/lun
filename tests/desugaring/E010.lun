@@ -1,0 +1,9 @@
+// EO10: error testing - NotFoundInScope
+#import bim.boum;
+
+#mod bim;
+
+a :: {
+    bim.boum();
+    b;
+}

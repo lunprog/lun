@@ -1,0 +1,2 @@
+// EO26: error testing - ModuleFileDoesnotExist
+#mod peekaboo;

@@ -1,4 +1,115 @@
 {
+    "desugaring/E010": (
+        compiler_out: "error[E010]: cannot find `bim.boum` in this scope
+  ┌─ ./tests/desugaring/E010.lun:2:9
+  │
+2 │ #import bim.boum;
+  │         ^^^^^^^^
+
+error[E010]: cannot find `bim.boum` in this scope
+  ┌─ ./tests/desugaring/E010.lun:7:5
+  │
+7 │     bim.boum();
+  │     ^^^^^^^^
+
+error[E010]: cannot find `b` in this scope
+  ┌─ ./tests/desugaring/E010.lun:8:5
+  │
+8 │     b;
+  │     ^
+
+error: compilation of `./tests/desugaring/E010` failed due to 3 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "desugaring/E013": (
+        compiler_out: "error[E013]: `_` is a reserved identifier
+  ┌─ ./tests/desugaring/E013.lun:2:1
+  │
+2 │ _ :: 12;
+  │ ^
+  │
+  = you can't use `_` as a symbol name
+
+error[E013]: `_` is a reserved identifier
+  ┌─ ./tests/desugaring/E013.lun:4:1
+  │
+4 │ _ := 34;
+  │ ^
+  │
+  = you can't use `_` as a symbol name
+
+error[E013]: `_` is a reserved identifier
+  ┌─ ./tests/desugaring/E013.lun:6:10
+  │
+6 │ a :: fun(_: i8) {}
+  │          ^
+  │
+  = you can't use `_` as a symbol name
+
+error: compilation of `./tests/desugaring/E013` failed due to 3 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "desugaring/E014": (
+        compiler_out: "error[E014]: `_` can only be used in left hand side of assignment not in expressions
+  ┌─ ./tests/desugaring/E014.lun:3:15
+  │
+3 │     b : usz : _;
+  │               ^
+
+error: compilation of `./tests/desugaring/E014` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "desugaring/E019": (
+        compiler_out: "error[E019]: the name `a` is defined multiple times
+  ┌─ ./tests/desugaring/E019.lun:3:1
+  │
+2 │ a :: 12;
+  │ - defined here for the first time
+3 │ a := 34;
+  │ ^ defined `a` a second time here
+
+error: compilation of `./tests/desugaring/E019` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "desugaring/E026": (
+        compiler_out: "error[E026]: file not found for module 'peekaboo'
+  ┌─ ./tests/desugaring/E026.lun:2:1
+  │
+2 │ #mod peekaboo;
+  │ ^^^^^^^^^^^^^^
+  │
+  = help: to create the module 'peekaboo', create the file at path './tests/desugaring/peekaboo.lun'
+
+error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "desugaring/bim": (
+        compiler_out: "dsir = []
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
     "desugaring/forward_use": (
         compiler_out: "dsir = [
   GlobalDef {
