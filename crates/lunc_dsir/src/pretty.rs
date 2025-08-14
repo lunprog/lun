@@ -262,6 +262,9 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
+            DsExpr::Poisoned { diag } => {
+                write!(ctx.out, "POISONED: {diag:#?}")
+            }
         }
     }
 }

@@ -368,6 +368,11 @@ impl FromHigher for ScExpression {
                 args: lower(args),
                 ret: lower(ret),
             },
+            DsExpr::Poisoned { diag: _ } => {
+                // NOTE: didn't used `opt_unreachable`, i didn't wanted to
+                // ensure it was truely unreachable
+                unreachable!()
+            }
         };
 
         ScExpression {

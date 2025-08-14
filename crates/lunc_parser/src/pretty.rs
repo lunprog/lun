@@ -181,6 +181,7 @@ impl PrettyDump for Expr {
                 variable,
                 iterator,
                 body,
+                loc: _,
             } => {
                 ctx.pretty_struct("IteratorLoop")
                     .field(

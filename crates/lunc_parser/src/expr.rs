@@ -156,6 +156,8 @@ pub enum Expr {
         variable: String,
         iterator: Box<Expression>,
         body: Block,
+        // NOTE: this is used to emit the diagnostic `feature_todo`.
+        loc: Span,
     },
     /// infinite loop
     ///
@@ -1152,14 +1154,17 @@ pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
 
     let hi = body.loc.clone();
 
+    let loc = Span::from_ends(lo, hi);
+
     Ok(Expression {
         expr: Expr::IteratorLoop {
             label,
             variable,
             iterator,
             body,
+            loc: loc.clone(),
         },
-        loc: Span::from_ends(lo, hi),
+        loc,
     })
 }
 

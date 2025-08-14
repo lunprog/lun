@@ -9,7 +9,7 @@ use diags::{
     ModuleFileDoesnotExist, NameDefinedMultipleTimes, NotFoundInScope, UnderscoreInExpression,
     UnderscoreReservedIdent,
 };
-use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic};
+use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
 use lunc_lexer::Lexer;
 use lunc_parser::{
     Parser,
@@ -300,7 +300,13 @@ impl FromHigher for DsExpression {
                     None,
                 ),
             },
-            Expr::IteratorLoop { .. } => todo!("iterator loop"),
+            Expr::IteratorLoop { loc, .. } => DsExpr::Poisoned {
+                diag: Some(feature_todo! {
+                  feature: "iterator loop",
+                  label: "traits and iterators aren't yet implemented",
+                  loc: loc
+                }),
+            },
             Expr::InfiniteLoop { label, body } => DsExpr::Loop {
                 label,
                 body: lower(body),
@@ -520,6 +526,14 @@ pub enum DsExpr {
         args: Vec<DsExpression>,
         ret: Option<Box<DsExpression>>,
     },
+    /// This is a special node, it holds a diagnostic and is emitted in lowering
+    /// (ast -> dsir) to emit error instead of panic.
+    ///
+    /// # Note
+    ///
+    /// The field `diag` must be set to `Some(..)` when you emit this node and
+    /// when we perform checking the diagnostic must be emitted asap.
+    Poisoned { diag: Option<Diagnostic> },
 }
 
 impl DsExpr {
@@ -1399,6 +1413,11 @@ impl Desugarrer {
                 if let Some(retty) = rettypexpr {
                     self.resolve_expr(retty)?;
                 }
+
+                Ok(())
+            }
+            DsExpr::Poisoned { diag } => {
+                self.sink.emit(diag.take().unwrap());
 
                 Ok(())
             }
