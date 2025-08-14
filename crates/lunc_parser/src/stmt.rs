@@ -18,6 +18,7 @@ impl AstNode for Block {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         let mut stmts = Vec::new();
 
+        // TEST: no. 1
         let (_, lo) =
             expect_token!(parser => [Punct(Punctuation::LBrace), ()], Punctuation::LBrace);
 
@@ -62,6 +63,7 @@ impl AstNode for Block {
                     // block
                     stmts.push(stmt.clone());
 
+                    // TEST: no. 2
                     expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
                 }
                 (false, true) => {
@@ -79,8 +81,10 @@ impl AstNode for Block {
 
                     stmts.push(stmt.clone());
                     if expr.is_expr_with_block() {
+                        // TEST: n/a
                         expect_token!(parser => [Punct(Punctuation::Semicolon), ()] else { continue; });
                     } else {
+                        // TEST: no. 3
                         expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
                     }
                 }
@@ -88,6 +92,7 @@ impl AstNode for Block {
                     // if the statement is a defer with a block expression
                     // inside we don't expect a semicolon
                     if !matches!(stmt.stmt, Stmt::Defer { ref expr } if expr.is_expr_with_block()) {
+                        // TEST: no. 4
                         expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
                     }
 
@@ -96,6 +101,7 @@ impl AstNode for Block {
             }
         }
 
+        // TEST: no. 5
         let (_, hi) =
             expect_token!(parser => [Punct(Punctuation::RBrace), ()], Punctuation::RBrace);
 
@@ -177,6 +183,7 @@ impl Parser {
 
 /// `"let" "mut"? ident [ ":" expr ] "=" expr`
 pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    // TEST: n/a
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Let), ()], Kw(Keyword::Let));
 
     let mutable = if let Some(Kw(Keyword::Mut)) = parser.peek_tt() {
@@ -186,6 +193,7 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
         false
     };
 
+    // TEST: no. 1
     let (name, name_loc) =
         expect_token!(parser => [Ident(name), name.clone()], Ident(String::new()));
 
@@ -196,6 +204,7 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
         None
     };
 
+    // TEST: no. 2
     expect_token!(parser => [Punct(Punctuation::Equal), ()], Punctuation::Equal);
     let value = parse!(box: parser => Expression);
 
@@ -216,8 +225,10 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
 /// `ident ":" [ expr ] ":" expr ";"`
 /// `ident ":" [ expr ] "=" expr ";"`
 pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    // TEST: n/a
     let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], [Ident(String::new())]);
 
+    // TEST: n/a
     expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);
 
     let typexpr = match parser.peek_tt() {
@@ -225,6 +236,7 @@ pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagn
         _ => Some(parse!(@fn parser => parse_typexpr)),
     };
 
+    // TEST: no. 1
     let (mutable, _) = expect_token!(
         parser => [
             Punct(Punctuation::Colon), false;
@@ -251,6 +263,7 @@ pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagn
 
 /// parses a defer statement
 pub fn parse_defer_statement(parser: &mut Parser) -> Result<Statement, Diagnostic> {
+    // TEST: n/a
     let ((), lo) = expect_token!(parser => [Kw(Keyword::Defer), ()], Kw(Keyword::Defer));
 
     let expr = parse!(parser => Expression);

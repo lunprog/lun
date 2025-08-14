@@ -1,0 +1,3 @@
+// EO06: error testing - ExpectedToken
+a :: if b {} else if c d;
+

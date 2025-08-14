@@ -309,6 +309,8 @@ pub fn parse_expr_precedence(
             let t = parser.peek_tok().unwrap().clone();
             // TODO: make the parser retry if he failed to parse lhs with a
             // loop, see parsing of statements also.
+
+            // TEST: no. 1
             return Err(ExpectedToken::new("expression", t.tt, None::<String>, t.loc).into_diag());
         }
         None => {
@@ -364,6 +366,7 @@ impl Parser {
 
 /// Parse an integer literal expression
 pub fn parse_intlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (i, loc) = expect_token!(parser => [IntLit(i), *i], "integer literal");
 
     Ok(Expression {
@@ -374,6 +377,7 @@ pub fn parse_intlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
 /// Parse a boolean literal expression
 pub fn parse_boollit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (b, loc) = expect_token!(parser => [Kw(Keyword::True), true; Kw(Keyword::False), false], "bool literal");
 
     Ok(Expression {
@@ -384,6 +388,7 @@ pub fn parse_boollit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic>
 
 /// Parse a string literal expression
 pub fn parse_strlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (str, loc) = expect_token!(parser => [StringLit(s), s.clone()], "string literal");
 
     Ok(Expression {
@@ -394,6 +399,7 @@ pub fn parse_strlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
 /// Parses a character literal expression
 pub fn parse_charlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (char, loc) = expect_token!(parser => [CharLit(c), *c], "character literal");
 
     Ok(Expression {
@@ -404,6 +410,7 @@ pub fn parse_charlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic>
 
 /// Parses a float literal expression
 pub fn parse_floatlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (float, loc) = expect_token!(parser => [FloatLit(f), *f], "float literal");
 
     Ok(Expression {
@@ -414,8 +421,10 @@ pub fn parse_floatlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic
 
 /// Parse a grouping expression
 pub fn parse_grouping_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let ((), lo) = expect_token!(parser => [Punct(Punctuation::LParen), ()], [Punctuation::LParen]);
     let expr = parse!(box: parser => Expression);
+    // TEST: yes
     let ((), hi) = expect_token!(parser => [Punct(Punctuation::RParen), ()], [Punctuation::RParen]);
 
     Ok(Expression {
@@ -426,6 +435,7 @@ pub fn parse_grouping_expr(parser: &mut Parser) -> Result<Expression, Diagnostic
 
 /// Parse an identifier expression
 pub fn parse_ident_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (id, loc) = expect_token!(parser => [Ident(s), s.clone()], Ident(String::new()));
 
     Ok(Expression {
@@ -696,6 +706,7 @@ pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> Result<Express
         }
         Some(tok) => {
             let t = tok.clone();
+            // TEST: n/a
             return Err(
                 ExpectedToken::new("binary operator", t.tt, Some("expression"), t.loc).into_diag(),
             );
@@ -785,6 +796,7 @@ pub fn parse_unary_left_expr(parser: &mut Parser) -> Result<Expression, Diagnost
             (op, loc)
         } else {
             let t = parser.peek_tok().unwrap().clone();
+            // TEST: n/a
             return Err(
                 ExpectedToken::new("unary operator", t.tt, Some("expression"), t.loc).into_diag(),
             );
@@ -807,6 +819,7 @@ pub fn parse_funcall_expr(
     called: Box<Expression>,
 ) -> Result<Expression, Diagnostic> {
     let lo = called.loc.clone();
+    // TEST: n/a
     expect_token!(parser => [Punct(Punctuation::LParen), ()], Punctuation::LParen);
 
     let mut args = Vec::new();
@@ -818,9 +831,11 @@ pub fn parse_funcall_expr(
 
         args.push(parse!(parser => Expression));
 
-        expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], [Punctuation::Colon, Punctuation::LParen]);
+        // TEST: yes
+        expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], [Punctuation::Comma, Punctuation::RParen]);
     }
 
+    // TEST: n/a
     let ((), hi) = expect_token!(parser => [Punct(Punctuation::RParen), ()], Punctuation::RParen);
 
     Ok(Expression {
@@ -834,8 +849,10 @@ pub fn parse_funcall_expr(
 
 /// parses the function definition / declaration expression
 pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Fun), ()], Kw(Keyword::Fun));
 
+    // TEST: no. 1
     expect_token!(parser => [Punct(Punctuation::LParen), ()], Punctuation::LParen);
 
     match (parser.peek_tt(), parser.nth_tt(1)) {
@@ -849,9 +866,11 @@ pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
                     break;
                 }
 
+                // TEST: n/a
                 let (name, lo_arg) =
                     expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
+                // TEST: n/a
                 expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
 
                 let typexpr = parse!(@fn parser => parse_typexpr);
@@ -863,8 +882,10 @@ pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
                     loc: Span::from_ends(lo_arg, typexpr.loc),
                 });
 
+                // TEST: no. 2
                 expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], Punct(Punctuation::Comma));
             }
+            // TEST: no. 3
             expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
 
             let rettypexpr = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
@@ -889,6 +910,7 @@ pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
         (Some(Punct(Punctuation::RParen)), _) => {
             // ambiguous
 
+            // TEST: n/a
             let ((), hi_paren) = expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
 
             let rettypexpr = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
@@ -943,8 +965,10 @@ pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
 
                 args.push(typexpr);
 
-                expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], Punct(Punctuation::Comma));
+                // TEST: no. 4
+                expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], [Punct(Punctuation::Comma), Punct(Punctuation::RParen)]);
             }
+            // TEST: n/a
             let ((), hi_paren) = expect_token!(parser => [Punct(Punctuation::RParen), ()], Punct(Punctuation::RParen));
 
             let rettypexpr = if let Some(Punct(Punctuation::MinusGt)) = parser.peek_tt() {
@@ -969,6 +993,7 @@ pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
 
 /// parses the if-else expression
 pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (_, lo) = expect_token!(parser => [Kw(Keyword::If), ()], Kw(Keyword::If));
 
     let cond = parse!(box: parser => Expression);
@@ -1007,6 +1032,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
                 Some(_) => {
                     let t = parser.peek_tok().unwrap();
 
+                    // TEST: no. 2
                     return Err(ExpectedToken::new(
                         [Punct(Punctuation::LBrace), Kw(Keyword::If)],
                         t.tt.clone(),
@@ -1038,8 +1064,10 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
         // if then else expr
         // "if" expression then expression "else" expression
 
+        // TEST: n/a
         expect_token!(parser => [Kw(Keyword::Then), ()], Kw(Keyword::Then));
         let true_val = parse!(box: parser => Expression);
+        // TEST: no. 1
         expect_token!(parser => [Kw(Keyword::Else), ()], Kw(Keyword::Else));
         let false_val = parse!(box: parser => Expression);
 
@@ -1056,6 +1084,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
     } else {
         let t = parser.peek_tok().unwrap();
 
+        // TEST: no. 3
         Err(ExpectedToken::new(
             [Punct(Punctuation::LBrace)],
             t.tt.clone(),
@@ -1077,6 +1106,7 @@ pub fn parse_block_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
 
         let label = (id, lo.clone());
 
+        // TEST: n/a
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
 
         let block = parse!(parser => Block);
@@ -1105,6 +1135,7 @@ pub fn parse_predicate_loop_expr(parser: &mut Parser) -> Result<Expression, Diag
             opt_unreachable!()
         };
 
+        // TEST: n/a
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
 
         Some((label, loc))
@@ -1112,6 +1143,7 @@ pub fn parse_predicate_loop_expr(parser: &mut Parser) -> Result<Expression, Diag
         None
     };
 
+    // TEST: n/a
     let (_, lo_while) = expect_token!(parser => [Kw(Keyword::While), ()], Kw(Keyword::While));
     let lo = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo_while);
 
@@ -1134,6 +1166,7 @@ pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
             opt_unreachable!()
         };
 
+        // TEST: n/a
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
 
         Some((label, loc))
@@ -1141,11 +1174,14 @@ pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
         None
     };
 
+    // TEST: n/a
     let (_, lo_for) = expect_token!(parser => [Kw(Keyword::For), ()], Kw(Keyword::For));
     let lo = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo_for);
 
+    // TEST: no. 1
     let (variable, _) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
+    // TEST: no. 2
     expect_token!(parser => [Kw(Keyword::In), ()], Kw(Keyword::In));
 
     let iterator = parse!(box: parser => Expression);
@@ -1176,6 +1212,7 @@ pub fn parse_infinite_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
             opt_unreachable!()
         };
 
+        // TEST: n/a
         expect_token!(parser => [Punct(Punctuation::Colon), ()], Punct(Punctuation::Colon));
 
         Some((label, loc))
@@ -1183,6 +1220,7 @@ pub fn parse_infinite_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
         None
     };
 
+    // TEST: n/a
     let (_, lo_loop) = expect_token!(parser => [Kw(Keyword::Loop), ()], Kw(Keyword::Loop));
     let lo = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo_loop);
 
@@ -1198,6 +1236,7 @@ pub fn parse_infinite_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
 
 /// parses return expression
 pub fn parse_return_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Return), ()], Kw(Keyword::Return));
     let mut hi = lo.clone();
 
@@ -1218,6 +1257,7 @@ pub fn parse_return_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
 /// parses break expression
 pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Break), ()], Kw(Keyword::Break));
 
     let mut hi = lo.clone();
@@ -1228,6 +1268,7 @@ pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
             opt_unreachable!()
         };
 
+        // TEST: no. 1
         let (label, loc) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
         hi = loc;
@@ -1254,6 +1295,7 @@ pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
 
 /// parses continue expression
 pub fn parse_continue_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Continue), ()], Kw(Keyword::Continue));
     let mut hi = lo.clone();
 
@@ -1263,6 +1305,7 @@ pub fn parse_continue_expr(parser: &mut Parser) -> Result<Expression, Diagnostic
             opt_unreachable!()
         };
 
+        // TEST: no. 1
         let (label, loc) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
         hi = loc;
 
@@ -1279,6 +1322,7 @@ pub fn parse_continue_expr(parser: &mut Parser) -> Result<Expression, Diagnostic
 
 /// parses null expression
 pub fn parse_null_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (_, loc) = expect_token!(parser => [Kw(Keyword::Null), ()], Kw(Keyword::Null));
 
     Ok(Expression {
@@ -1289,6 +1333,7 @@ pub fn parse_null_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
 
 /// parses orb expression
 pub fn parse_orb_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (_, loc) = expect_token!(parser => [Kw(Keyword::Orb), ()], Kw(Keyword::Orb));
 
     Ok(Expression {
@@ -1299,10 +1344,13 @@ pub fn parse_orb_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
 
 /// parses function pointer type
 pub fn parse_funptr_type_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (_, lo) = expect_token!(parser => [Punct(Punctuation::Star), ()], Punctuation::Star);
 
+    // TEST: n/a
     expect_token!(parser => [Kw(Keyword::Fun), ()], Kw(Keyword::Fun));
 
+    // TEST: no. 1
     expect_token!(parser => [Punct(Punctuation::LParen), ()], Punctuation::LParen);
 
     let mut args = Vec::new();
@@ -1314,9 +1362,11 @@ pub fn parse_funptr_type_expr(parser: &mut Parser) -> Result<Expression, Diagnos
 
         args.push(parse!(@fn parser => parse_typexpr));
 
-        expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], [Punctuation::Colon, Punctuation::LParen]);
+        // TEST: no. 2
+        expect_token!(parser => [Punct(Punctuation::Comma), (); Punct(Punctuation::RParen), (), in break], [Punctuation::Comma, Punctuation::RParen]);
     }
 
+    // TEST: n/a
     let ((), hi_paren) =
         expect_token!(parser => [Punct(Punctuation::RParen), ()], Punctuation::RParen);
 
@@ -1338,6 +1388,7 @@ pub fn parse_funptr_type_expr(parser: &mut Parser) -> Result<Expression, Diagnos
 
 /// parses pointer type expression
 pub fn parse_pointer_type_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (_, lo) = expect_token!(parser => [Punct(Punctuation::Star), ()], Punctuation::Star);
 
     let mutable = if let Some(Kw(Keyword::Mut)) = parser.peek_tt() {
@@ -1369,6 +1420,8 @@ pub fn parse_unary_right_expr(
             (op, loc)
         } else {
             let t = parser.peek_tok().unwrap().clone();
+
+            // TEST: n/a
             return Err(
                 ExpectedToken::new("unary operator", t.tt, Some("expression"), t.loc).into_diag(),
             );
@@ -1387,6 +1440,7 @@ pub fn parse_unary_right_expr(
 }
 
 pub fn parse_borrow_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     let (_, lo) = expect_token!(parser => [Punct(Punctuation::Ampsand), ()], Punctuation::Ampsand);
 
     let mutable = if let Some(Kw(Keyword::Mut)) = parser.peek_tt() {
@@ -1410,8 +1464,10 @@ pub fn parse_member_access_expr(
     parser: &mut Parser,
     expr: Expression,
 ) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
     expect_token!(parser => [Punct(Punctuation::Dot), ()], Punctuation::Dot);
 
+    // TEST: no. 1
     let (member, hi) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
     let loc = Span::from_ends(expr.loc.clone(), hi);

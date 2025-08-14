@@ -268,7 +268,7 @@ impl Display for TokenType {
             SpecializedIntLit { .. } => write!(f, "specialized integer literal"),
             SpecializedFloatLit { .. } => write!(f, "specialized float literal"),
             Punct(p) => write!(f, "`{p}`"),
-            EOF => write!(f, "\"<eof>\""),
+            EOF => write!(f, "<eof>"),
             __NotAToken__ => write!(f, "not a token"),
         }
     }

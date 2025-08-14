@@ -257,19 +257,21 @@ impl ToDiagnostic for Diagnostic {
 ///
 /// # Testing
 ///
-/// | Code | Test path(s)               |
-/// |------|----------------------------|
-/// |`E001`| `tests/lexer/E001.lun`     |
-/// |`E002`| `tests/lexer/E002.lun`[^1] |
-/// |`E003`| `tests/lexer/E003.lun`[^2] |
-/// |`E004`| `tests/lexer/E004.lun`     |
-/// |`E005`| `tests/lexer/E005.lun`     |
-/// | ...  | ...                        |
-/// |`E020`| `tests/lexer/E020.lun`     |
-/// |`E021`| `tests/lexer/E021.lun`     |
-/// |`E022`| `tests/lexer/E022.lun`     |
-/// |`E023`| `tests/lexer/E023.lun`     |
-/// |`E024`| `tests/lexer/E024.lun`     |
+/// | Code | Test path(s)                             |
+/// |------|------------------------------------------|
+/// |`E001`| `tests/lexer/E001.lun`                   |
+/// |`E002`| `tests/lexer/E002.lun`[^1]               |
+/// |`E003`| `tests/lexer/E003.lun`[^2]               |
+/// |`E004`| `tests/lexer/E004.lun`                   |
+/// |`E005`| `tests/lexer/E005.lun`                   |
+/// |`E006`| `tests/parser/E006_<ast node>[_nth].lun` |
+/// | ...  | ...                                      |
+/// |`E020`| `tests/lexer/E020.lun`                   |
+/// |`E021`| `tests/lexer/E021.lun`                   |
+/// |`E022`| `tests/lexer/E022.lun`                   |
+/// |`E023`| `tests/lexer/E023.lun`                   |
+/// |`E024`| `tests/lexer/E024.lun`                   |
+/// |`E025`| `tests/lexer/E025.lun`                   |
 ///
 /// # Note
 ///

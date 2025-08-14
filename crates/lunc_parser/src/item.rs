@@ -28,18 +28,18 @@ pub struct Module {
 
 impl AstNode for Module {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
-        let mut defs = Vec::new();
+        let mut items = Vec::new();
 
         loop {
             if let None | Some(TokenType::EOF) = parser.peek_tt() {
                 break;
             }
 
-            defs.push(parse!(parser => Item));
+            items.push(parse!(parser => Item));
         }
 
         Ok(Module {
-            items: defs,
+            items,
             fid: parser.fid,
         })
     }
@@ -108,6 +108,7 @@ impl AstNode for Item {
             Some(Kw(Keyword::Extern)) => parse_extern_block_item(parser),
             Some(_) => {
                 let t = parser.peek_tok().unwrap().clone();
+                // TEST: no. 1
                 Err(ExpectedToken::new("item", t.tt, None::<String>, t.loc).into_diag())
             }
             None => Err(parser.eof_diag()),
@@ -116,8 +117,10 @@ impl AstNode for Item {
 }
 
 pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
+    // TEST: n/a
     let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
+    // TEST: no. 1
     expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);
 
     let typexpr = match parser.peek_tt() {
@@ -125,6 +128,7 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
         _ => Some(parse!(@fn parser => parse_typexpr)),
     };
 
+    // TEST: no. 2
     let (is_const, _) = expect_token!(
         parser => [
             Punct(Punctuation::Colon), true;
@@ -136,6 +140,7 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
     let value = parse!(parser => Expression);
 
     let hi = if !value.is_expr_with_block() {
+        // TEST: no. 3
         expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punctuation::Semicolon).1
     } else {
         value.loc.clone()
@@ -178,6 +183,7 @@ pub fn parse_directive_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
         },
         _ => {
             let t = parser.nth_tok(1).unwrap().clone();
+            // TEST: no. 2
             Err(
                 ExpectedToken::new(TokenType::Ident(String::new()), t.tt, None::<String>, t.loc)
                     .into_diag(),
@@ -187,8 +193,10 @@ pub fn parse_directive_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
 }
 
 pub fn parse_extern_block_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
+    // TEST: n/a
     let (_, lo) = expect_token!(parser => [Kw(Keyword::Extern), ()], Kw(Keyword::Extern));
 
+    // TEST: no. 1
     let (abi_str, abi_loc) = expect_token!(parser => [StringLit(s), s.clone()], "string literal");
     let abi = match Abi::from_str(&abi_str) {
         Ok(abi) => abi,
@@ -202,6 +210,7 @@ pub fn parse_extern_block_item(parser: &mut Parser) -> Result<Item, Diagnostic> 
         }
     };
 
+    // TEST: no. 2
     expect_token!(parser => [Punct(Punctuation::LBrace), ()], Punct(Punctuation::LBrace));
 
     let mut items = Vec::new();
@@ -220,6 +229,7 @@ pub fn parse_extern_block_item(parser: &mut Parser) -> Result<Item, Diagnostic> 
         }
     }
 
+    // TEST: n/a
     let (_, hi) =
         expect_token!(parser => [Punct(Punctuation::RBrace), ()], Punct(Punctuation::RBrace));
 

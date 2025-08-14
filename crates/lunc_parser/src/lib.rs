@@ -204,5 +204,5 @@ macro_rules! parse {
     };
     (@fn $parser:expr => $parsing_fn:expr $(, $arg:expr)*) => (
         $parsing_fn($parser $(, $arg)*)?
-    )
+    );
 }
