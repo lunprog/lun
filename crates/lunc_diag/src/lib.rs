@@ -272,6 +272,12 @@ impl ToDiagnostic for Diagnostic {
 /// |`E023`| `tests/lexer/E023.lun`                   |
 /// |`E024`| `tests/lexer/E024.lun`                   |
 /// |`E025`| `tests/lexer/E025.lun`                   |
+/// | ...  | ...                                      |
+/// |`E035`| `tests/parser/E035_1.lun`,               |
+/// |  ^   | `tests/parser/E035_2.lun`,               |
+/// |  ^   | `tests/parser/E035_3.lun`                |
+/// | ...  | ...                                      |
+/// |`E038`| `tests/parser/E038.lun`                  |
 ///
 /// # Note
 ///

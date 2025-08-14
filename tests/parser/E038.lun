@@ -1,0 +1,2 @@
+// EO38: error testing - UnknownAbi
+extern "boum" {}

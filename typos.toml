@@ -5,3 +5,10 @@
 [default.extend-words]
 # we can't use `type` because it's a keyword in Rust
 typ = "typ"
+
+[files]
+extend-exclude = [
+  # ignored because there is an intetional typo mistake
+  "tests.ron",
+  "tests/parser/E035_2.lun",
+]

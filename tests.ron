@@ -3433,6 +3433,66 @@ error: compilation of `./tests/parser/E006_short_var_def_1` failed due to 1 erro
         test_out: "",
         test_code: 0,
     ),
+    "parser/E035_1": (
+        compiler_out: "error[E035]: unknown directive 'mot'
+  ┌─ ./tests/parser/E035_1.lun:2:2
+  │
+2 │ #mot
+  │  ^^^
+  │
+  = did you mean 'mod'?
+
+error: compilation of `./tests/parser/E035_1` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/E035_2": (
+        compiler_out: "error[E035]: unknown directive 'inport'
+  ┌─ ./tests/parser/E035_2.lun:2:2
+  │
+2 │ #inport
+  │  ^^^^^^
+  │
+  = did you mean 'import'?
+
+error: compilation of `./tests/parser/E035_2` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/E035_3": (
+        compiler_out: "error[E035]: unknown directive 'abracadabra'
+  ┌─ ./tests/parser/E035_3.lun:2:2
+  │
+2 │ #abracadabra
+  │  ^^^^^^^^^^^
+
+error: compilation of `./tests/parser/E035_3` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/E038": (
+        compiler_out: r#"error[E038]: ABI 'boum' isn't known
+  ┌─ ./tests/parser/E038.lun:2:8
+  │
+2 │ extern "boum" {}
+  │        ^^^^^^
+
+error: compilation of `./tests/parser/E038` failed due to 1 error and 0 warnings
+
+"#,
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
     "parser/directive": (
         compiler_out: "ast = [
   Mod {
