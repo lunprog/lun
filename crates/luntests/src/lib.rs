@@ -172,7 +172,7 @@ impl TestContext {
             let cmd_output = cmd.output()?;
             let compiler_out = String::from_utf8_lossy(&cmd_output.stderr).to_string();
 
-            if !cmd_output.status.success() {
+            if cmd_output.status.code().unwrap() as u8 != test_record.compiler_code {
                 // compiler failed to build the test
                 out.set_color(&TestContext::compiler_fail_color_spec())?;
                 writeln!(out, "BUILD FAILED")?;
@@ -183,7 +183,7 @@ impl TestContext {
                 continue;
             }
 
-            if compiler_out != test_record.expected_compiler_out {
+            if compiler_out != test_record.compiler_out {
                 // compiler outputted something different than what was expected
                 out.set_color(&TestContext::compiler_fail_color_spec())?;
                 writeln!(out, "UNEXPECTED BUILD OUT")?;
@@ -229,7 +229,8 @@ impl TestContext {
             let cmd_output = cmd.output()?;
             let compiler_out = String::from_utf8_lossy(&cmd_output.stderr).to_string();
 
-            test_record.expected_compiler_out = compiler_out;
+            test_record.compiler_out = compiler_out;
+            test_record.compiler_code = cmd_output.status.code().unwrap() as u8;
             // TODO: implement test running
         }
 
@@ -321,15 +322,23 @@ impl FromStr for TestStage {
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct TestRecord {
-    expected_compiler_out: String,
-    expected_test_out: String,
+    /// compiler stderr output
+    compiler_out: String,
+    /// compiler process exit code
+    compiler_code: u8,
+    /// test stdout output
+    test_out: String,
+    /// test process exit code
+    test_code: u8,
 }
 
 impl TestRecord {
     pub fn new() -> TestRecord {
         TestRecord {
-            expected_compiler_out: String::new(),
-            expected_test_out: String::new(),
+            compiler_out: String::new(),
+            compiler_code: 0,
+            test_out: String::new(),
+            test_code: 0,
         }
     }
 }

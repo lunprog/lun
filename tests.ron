@@ -1,6 +1,6 @@
 {
     "desugaring/forward_use": (
-        expected_compiler_out: "dsir = [
+        compiler_out: "dsir = [
   GlobalDef {
     name: main @ 79..83 (fid = 0);
     mutable: false;
@@ -169,10 +169,12 @@
   } @ 133..180 (fid = 0),
 ]
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "desugaring/global_def": (
-        expected_compiler_out: r#"dsir = [
+        compiler_out: r#"dsir = [
   GlobalDef {
     name: main @ 19..23 (fid = 0);
     mutable: false;
@@ -281,10 +283,12 @@
   },
 ]
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "desugaring/lower_expr": (
-        expected_compiler_out: r#"dsir = [
+        compiler_out: r#"dsir = [
   GlobalDef {
     name: main @ 11..15 (fid = 0);
     mutable: false;
@@ -771,10 +775,12 @@
   } @ 1183..1203 (fid = 0),
 ]
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "desugaring/my_module": (
-        expected_compiler_out: r#"dsir = [
+        compiler_out: r#"dsir = [
   Module {
     name: global_def @ 61..77 (fid = 0);
     module: [
@@ -997,15 +1003,19 @@
   },
 ]
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "desugaring/nested": (
-        expected_compiler_out: "dsir = []
+        compiler_out: "dsir = []
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "desugaring/predicate_loop": (
-        expected_compiler_out: r#"dsir = [
+        compiler_out: r#"dsir = [
   GlobalDef {
     name: println @ 138..145 (fid = 0);
     mutable: false;
@@ -1223,10 +1233,12 @@
   } @ 159..330 (fid = 0),
 ]
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "lexer/char_literal": (
-        expected_compiler_out: r#"tokenstream = {
+        compiler_out: r#"tokenstream = {
   {
     tt: character 'C';
     loc: 0..3 (fid = 0);
@@ -1304,10 +1316,12 @@
   },
 }
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "lexer/float_literal": (
-        expected_compiler_out: "tokenstream = {
+        compiler_out: "tokenstream = {
   {
     tt: float 1012.3456;
     loc: 18..31 (fid = 0);
@@ -1370,10 +1384,12 @@
   },
 }
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "lexer/integer_literals": (
-        expected_compiler_out: "tokenstream = {
+        compiler_out: "tokenstream = {
   {
     tt: integer '123456789';
     loc: 0..9 (fid = 0);
@@ -1461,10 +1477,12 @@
   },
 }
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "lexer/kw_idents": (
-        expected_compiler_out: "tokenstream = {
+        compiler_out: "tokenstream = {
   {
     tt: keyword 'and';
     loc: 19..22 (fid = 0);
@@ -1622,10 +1640,12 @@
   },
 }
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "lexer/punctuation": (
-        expected_compiler_out: "tokenstream = {
+        compiler_out: "tokenstream = {
   {
     tt: punctuation LParen;
     loc: 0..1 (fid = 0);
@@ -1783,10 +1803,12 @@
   },
 }
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "lexer/specialized_literals": (
-        expected_compiler_out: r#"tokenstream = {
+        compiler_out: r#"tokenstream = {
   {
     tt: specialized char literal;
     s12n: "a7";
@@ -1857,10 +1879,12 @@
   },
 }
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "lexer/string_literal": (
-        expected_compiler_out: r#"tokenstream = {
+        compiler_out: r#"tokenstream = {
   {
     tt: string "Hello, world\n";
     loc: 0..16 (fid = 0);
@@ -1893,10 +1917,12 @@
   },
 }
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "multifile/lib": (
-        expected_compiler_out: r#"scir = [
+        compiler_out: r#"scir = [
   Module {
     name: dbg;
     module: [
@@ -2521,10 +2547,12 @@
   } @ 223..247 (fid = 0),
 ]
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "parser/directive": (
-        expected_compiler_out: "ast = [
+        compiler_out: "ast = [
   Mod {
     name: module;
   } @ 20..32 (fid = 0),
@@ -2545,10 +2573,12 @@
   } @ 88..129 (fid = 0),
 ]
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "parser/expression": (
-        expected_compiler_out: r#"ast = [
+        compiler_out: r#"ast = [
   GlobalConst {
     name: main @ 11..15 (fid = 0);
     typexpr: none;
@@ -2950,10 +2980,12 @@
   } @ 11..1569 (fid = 0),
 ]
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "parser/item": (
-        expected_compiler_out: r#"ast = [
+        compiler_out: r#"ast = [
   GlobalConst {
     name: main @ 19..23 (fid = 0);
     typexpr: none;
@@ -3002,10 +3034,12 @@
   } @ 138..172 (fid = 0),
 ]
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "parser/statement": (
-        expected_compiler_out: "ast = [
+        compiler_out: "ast = [
   GlobalConst {
     name: main @ 0..4 (fid = 0);
     typexpr: none;
@@ -3058,10 +3092,12 @@
   } @ 0..215 (fid = 0),
 ]
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "scir/constant_evaluation": (
-        expected_compiler_out: "scir = [
+        compiler_out: "scir = [
   GlobalDef {
     name: add_i8 @ 18..24 (fid = 0);
     mutable: false;
@@ -6143,10 +6179,12 @@
   } @ 1792..1817 (fid = 0),
 ]
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "scir/extern_block": (
-        expected_compiler_out: r#"scir = [
+        compiler_out: r#"scir = [
   ExternBlock {
     abi: C;
     items: [
@@ -6237,10 +6275,12 @@
   } @ 39..82 (fid = 0),
 ]
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "scir/fun_ret_ty": (
-        expected_compiler_out: r#"scir = [
+        compiler_out: r#"scir = [
   FunDefinition {
     name: i32_return @ 0..10 (fid = 0);
     typexpr: none;
@@ -6585,10 +6625,12 @@
   } @ 353..426 (fid = 0),
 ]
 "#,
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "scir/label_kw_expr": (
-        expected_compiler_out: "scir = [
+        compiler_out: "scir = [
   FunDefinition {
     name: nested_loops @ 0..12 (fid = 0);
     typexpr: none;
@@ -6805,10 +6847,12 @@ warning[W003]: unused label 'blk'
 warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings emitted.
 
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "scir/loop_semantics": (
-        expected_compiler_out: "scir = [
+        compiler_out: "scir = [
   FunDefinition {
     name: loop_forever @ 0..12 (fid = 0);
     typexpr: none;
@@ -7017,10 +7061,12 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
   } @ 171..504 (fid = 0),
 ]
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
     "scir/noreturn_block": (
-        expected_compiler_out: "scir = [
+        compiler_out: "scir = [
   GlobalDef {
     name: cant_reach @ 0..10 (fid = 0);
     mutable: false;
@@ -7202,6 +7248,8 @@ warning[W002]: unreachable code
 warning: compilation of `./tests/scir/noreturn_block` succeeded but 2 warnings emitted.
 
 ",
-        expected_test_out: "",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
     ),
 }
