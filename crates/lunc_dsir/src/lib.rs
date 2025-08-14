@@ -302,9 +302,9 @@ impl FromHigher for DsExpression {
             },
             Expr::IteratorLoop { loc, .. } => DsExpr::Poisoned {
                 diag: Some(feature_todo! {
-                  feature: "iterator loop",
-                  label: "traits and iterators aren't yet implemented",
-                  loc: loc
+                    feature: "iterator loop",
+                    label: "traits and iterators aren't yet implemented",
+                    loc: loc,
                 }),
             },
             Expr::InfiniteLoop { label, body } => DsExpr::Loop {

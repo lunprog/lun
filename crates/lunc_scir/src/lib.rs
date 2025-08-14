@@ -6,7 +6,7 @@
 use std::fmt::Debug;
 
 use diags::{CantResolveComptimeValue, ExpectedTypeFoundExpr};
-use lunc_diag::{Diagnostic, DiagnosticSink, FileId, feature_todo};
+use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
 use lunc_dsir::{
     DsArg, DsBlock, DsDirective, DsExpr, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
     OSpan, QualifiedPath,
@@ -18,6 +18,8 @@ use lunc_utils::{
 };
 
 pub use lunc_dsir::{Abi, BinOp, UnaryOp};
+
+use crate::diags::FunDeclOutsideExternBlock;
 
 pub mod checking;
 pub mod diags;
@@ -358,8 +360,21 @@ impl FromHigher for ScExpression {
                 sym: lazy.unwrap_sym(),
             },
             DsExpr::Underscore => ScExpr::Underscore,
-            DsExpr::FunDefinition { .. } => todo!("FUN DEF IN EXPR"),
-            DsExpr::FunDeclaration { .. } => todo!("FUN DECL IN EXPR"),
+            DsExpr::FunDefinition { .. } => ScExpr::Poisoned {
+                diag: Some(feature_todo! {
+                    feature: "local function definition",
+                    label: "fundefs inside an expression isn't supported",
+                    loc: node.loc.clone().unwrap(),
+                }),
+            },
+            DsExpr::FunDeclaration { .. } => ScExpr::Poisoned {
+                diag: Some(
+                    FunDeclOutsideExternBlock {
+                        loc: node.loc.clone().unwrap(),
+                    }
+                    .into_diag(),
+                ),
+            },
             DsExpr::PointerType { mutable, typexpr } => ScExpr::PointerType {
                 mutable,
                 typexpr: lower(typexpr),
@@ -370,7 +385,7 @@ impl FromHigher for ScExpression {
             },
             DsExpr::Poisoned { diag: _ } => {
                 // NOTE: didn't used `opt_unreachable`, i didn't wanted to
-                // ensure it was truely unreachable
+                // ensure it was truly unreachable
                 unreachable!()
             }
         };
@@ -529,6 +544,15 @@ pub enum ScExpr {
         args: Vec<ScExpression>,
         ret: Option<Box<ScExpression>>,
     },
+    /// See [`DsExpr::Poisoned`]
+    ///
+    /// # Note
+    ///
+    /// This node is not emitted from the DsExpr equivalent it is emitted when
+    /// we encounter an error in the lowering.
+    ///
+    /// [`DsExpr::Poisoned`]: lunc_dsir::DsExpr::Poisoned
+    Poisoned { diag: Option<Diagnostic> },
 }
 
 /// A semantic checked argument, see the dsir version [`DsArg`]

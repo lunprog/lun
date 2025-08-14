@@ -271,6 +271,7 @@ impl SemaChecker {
 
                 Ok(())
             }
+            ScExpr::Poisoned { diag: _ } => Ok(()),
         }
     }
 

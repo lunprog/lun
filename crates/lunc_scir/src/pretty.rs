@@ -278,6 +278,9 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
+            ScExpr::Poisoned { diag } => {
+                write!(ctx.out, "POISONED: {diag:#?}")
+            }
         }
     }
 }

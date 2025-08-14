@@ -1286,6 +1286,13 @@ impl SemaChecker {
 
                 expr.typ = Type::Type;
             }
+            ScExpr::Poisoned { diag } => {
+                self.sink.emit(diag.take().unwrap());
+
+                // NOTE: set a dummy type to hopefully reduce the amount of
+                // unnecessary diags
+                expr.typ = Type::Void;
+            }
         }
 
         Ok(())

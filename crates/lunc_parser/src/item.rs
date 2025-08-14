@@ -79,7 +79,8 @@ pub enum Item {
     },
     /// Global variable.
     ///
-    /// `ident ":" expression? "=" expr ";"`
+    /// `ident ":" expression? "=" exprWithBlock`
+    /// `ident ":" expression? "=" exprWithoutBlock ";"`
     GlobalVar {
         name: String,
         name_loc: Span,
@@ -134,7 +135,7 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
 
     let value = parse!(parser => Expression);
 
-    let hi = if !value.is_expr_with_block() || !is_const {
+    let hi = if !value.is_expr_with_block() {
         expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punctuation::Semicolon).1
     } else {
         value.loc.clone()
