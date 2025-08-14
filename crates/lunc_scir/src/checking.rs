@@ -4,7 +4,7 @@ use std::iter::zip;
 
 use lunc_diag::{ToDiagnostic, feature_todo};
 use lunc_utils::{
-    opt_unrecheable,
+    opt_unreachable,
     symbol::{Signedness, Typeness},
 };
 
@@ -340,7 +340,7 @@ impl SemaChecker {
         else {
             // SAFETY: it is the caller's responsibility to call this function
             // with a global definition
-            opt_unrecheable!()
+            opt_unreachable!()
         };
 
         // global def pre ck
@@ -974,7 +974,7 @@ impl SemaChecker {
                     let Some((label, loc)) = info.name.clone() else {
                         // SAFETY: cannot be reached because we only define a
                         // label info if there is a named label.
-                        opt_unrecheable!()
+                        opt_unreachable!()
                     };
 
                     self.sink.emit(WUnusedLabel { loc, label })

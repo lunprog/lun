@@ -456,7 +456,7 @@ pub fn is_pow2(x: u32) -> bool {
 /// [`unreachable`]: std::unreachable
 #[cfg(debug_assertions)]
 #[macro_export]
-macro_rules! opt_unrecheable {
+macro_rules! opt_unreachable {
     ( $( $tt:tt )* ) => {
         std::unreachable!( $( $tt )* )
     };
@@ -473,7 +473,7 @@ macro_rules! opt_unrecheable {
 /// [`unreachable`]: std::unreachable
 #[cfg(not(debug_assertions))]
 #[macro_export]
-macro_rules! opt_unrecheable {
+macro_rules! opt_unreachable {
     ( $( $tt:tt )* ) => {
         unsafe { std::hint::unreachable_unchecked() }
     };

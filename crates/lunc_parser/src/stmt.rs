@@ -1,6 +1,6 @@
 //! Parsing of lun's statements and chunk.
 
-use lunc_utils::opt_unrecheable;
+use lunc_utils::opt_unreachable;
 
 use crate::expr::parse_typexpr;
 
@@ -49,7 +49,7 @@ impl AstNode for Block {
                     else {
                         // NOTE: here we are fine because, we checked that stmt
                         // is an expr before.
-                        opt_unrecheable!()
+                        opt_unreachable!()
                     };
 
                     last_expr = Some(Box::new(expr));
@@ -74,7 +74,7 @@ impl AstNode for Block {
                     else {
                         // SAFETY: here we are fine because, we checked that
                         // stmt is an expr before.
-                        opt_unrecheable!()
+                        opt_unreachable!()
                     };
 
                     stmts.push(stmt.clone());

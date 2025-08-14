@@ -12,7 +12,7 @@ use lunc_dsir::{
     OSpan, QualifiedPath,
 };
 use lunc_utils::{
-    FromHigher, Span, lower, opt_unrecheable,
+    FromHigher, Span, lower, opt_unreachable,
     symbol::{Symbol, Type, ValueExpr},
     target::{PtrWidth, TargetTriplet},
 };
@@ -167,7 +167,7 @@ impl FromHigher for ScItem {
                 } = value.expr
                 else {
                     // SAFETY: we already checked in the `if` clause of the match arm.
-                    opt_unrecheable!();
+                    opt_unreachable!();
                 };
 
                 ScItem::FunDefinition {
@@ -193,7 +193,7 @@ impl FromHigher for ScItem {
             } if value.is_fundecl() => {
                 let DsExpr::FunDeclaration { args, rettypexpr } = value.expr else {
                     // SAFETY: we already checked in the `if` clause of the match arm.
-                    opt_unrecheable!();
+                    opt_unreachable!();
                 };
 
                 ScItem::FunDeclaration {

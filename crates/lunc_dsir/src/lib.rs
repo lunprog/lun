@@ -19,7 +19,7 @@ use lunc_parser::{
     stmt::{Block, Statement, Stmt},
 };
 use lunc_utils::{
-    FromHigher, Span, lower, opt_unrecheable,
+    FromHigher, Span, lower, opt_unreachable,
     symbol::{EffectivePath, LazySymbol, SymKind, Symbol, Type, Typeness},
 };
 
@@ -1274,7 +1274,7 @@ impl Desugarrer {
             DsExpr::QualifiedPath { path, sym } => {
                 let LazySymbol::Name(sym_name) = sym else {
                     // SAFETY: we already matched just above, it can only be that
-                    opt_unrecheable!()
+                    opt_unreachable!()
                 };
                 let mut mod_path = path.path.clone();
 
@@ -1346,7 +1346,7 @@ impl Desugarrer {
                     else {
                         // SAFETY: we already matched this expression we know
                         // it is a member access for sure
-                        opt_unrecheable!()
+                        opt_unreachable!()
                     };
 
                     self.resolve_expr(&mut *exp)?;
