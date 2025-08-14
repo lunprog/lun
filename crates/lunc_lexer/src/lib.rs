@@ -523,10 +523,12 @@ impl Lexer {
                                     loc_c: self.loc_current_char(),
                                     loc_float: self.loc(),
                                 });
+
                                 0
                             }
                             None => {
                                 self.sink.emit(ReachedEOF { loc: self.loc() });
+
                                 0
                             }
                         };
@@ -843,7 +845,18 @@ impl Lexer {
                     });
                 }
 
-                let hex: u32 = match self.parse_u128(&hex_str, 16)?.try_into() {
+                let hex: u32 = match self
+                    .parse_u128_with_options(
+                        &hex_str,
+                        16,
+                        ParseOptions {
+                            base_bytes: self.head.prev_bytes(),
+                            int_loc: None,
+                            emit_diags: false,
+                        },
+                    )?
+                    .try_into()
+                {
                     Ok(h) => h,
                     Err(_) => {
                         self.sink.emit(InvalidUnicodeEscape {
@@ -928,6 +941,7 @@ impl Lexer {
 
                     Some(span(cur_bytes - 2, cur_bytes, self.fid))
                 },
+                emit_diags: true,
             },
         )? as u8 as char)
     }
@@ -1014,6 +1028,7 @@ impl Lexer {
             ParseOptions {
                 base_bytes: self.head.prev_bytes(),
                 int_loc: None,
+                emit_diags: true,
             },
         )
     }
@@ -1074,11 +1089,13 @@ impl Lexer {
                 _ => {
                     had_invalid_digit = true;
                     let pos = options.base_bytes + i;
-                    self.sink.emit(InvalidDigitInNumber {
-                        c,
-                        loc_c: span(pos, pos + 1, self.fid),
-                        loc_i: options.int_loc.clone().unwrap_or_else(|| self.loc()),
-                    });
+                    if options.emit_diags {
+                        self.sink.emit(InvalidDigitInNumber {
+                            c,
+                            loc_c: span(pos, pos + 1, self.fid),
+                            loc_i: options.int_loc.clone().unwrap_or_else(|| self.loc()),
+                        });
+                    }
 
                     // the poisoned value
                     0
@@ -1110,7 +1127,7 @@ impl Lexer {
             };
         }
 
-        if overflowed && !had_invalid_digit {
+        if overflowed && !had_invalid_digit && options.emit_diags {
             self.sink.emit(TooLargeIntegerLiteral { loc: self.loc() })
         }
 
@@ -1134,4 +1151,11 @@ pub struct ParseOptions {
     base_bytes: usize,
     /// location of the integer that is currently parsed
     int_loc: Option<Span>,
+    /// do we emit diagnostic while parsing the number?
+    ///
+    /// # Note
+    ///
+    /// This is useful when we need to parse a number but we already emit a
+    /// custom error when an error is occurring
+    emit_diags: bool,
 }

@@ -1,0 +1,3 @@
+// EO24: error testing - NotEnoughHexDigits
+'\x'
+"\x"

@@ -255,13 +255,43 @@ impl ToDiagnostic for Diagnostic {
 // TODO: write the docs for ErrorCode's
 /// List of all the Error Code in the lun compiling stages
 ///
-/// NOTE: until `v1.0.0` the error code may change from minor devlopement
-///       versions, do not expect them to stay the same
+/// # Testing
+///
+/// | Code | Test path(s)               |
+/// |------|----------------------------|
+/// |`E001`| `tests/lexer/E001.lun`     |
+/// |`E002`| `tests/lexer/E002.lun`[^1] |
+/// |`E003`| `tests/lexer/E003.lun`[^2] |
+/// |`E004`| `tests/lexer/E004.lun`     |
+/// |`E005`| `tests/lexer/E005.lun`     |
+/// | ...  | ...                        |
+/// |`E020`| `tests/lexer/E020.lun`     |
+/// |`E021`| `tests/lexer/E021.lun`     |
+/// |`E022`| `tests/lexer/E022.lun`     |
+/// |`E023`| `tests/lexer/E023.lun`     |
+/// |`E024`| `tests/lexer/E024.lun`     |
+///
+/// # Note
+///
+/// until `v1.0.0` the error code may change from minor devlopement versions, do
+/// not expect them to stay the same
+///
+/// [^1]: this diagnostic is technically emitted only when you have an invalid
+///       digit inside of an hexadecimal escape because when we lex numbers (int
+///       / float) we are only converting a string that contains only numeric
+///       characters.
+/// [^2]: only tested in integer literal, not tested inside float literals,
+///       and can never occur in hex escape because we are taking the next
+///       2 characters.
 #[derive(Debug, Clone, Copy)]
 pub enum ErrorCode {
     /// Unknown start of token
     ///
     /// note: indetifier do not support unicode for now.
+    ///
+    /// # Testing
+    ///
+    /// `tests/lexer/E001.lun`
     UnknownToken = 1,
     /// Invalid digit in number: in an integer or a float
     ///
@@ -276,10 +306,10 @@ pub enum ErrorCode {
     /// let i = 1234;
     /// ```
     InvalidDigitNumber = 2,
-    /// Too large integer literal, can't fit inside 64 bits.
+    /// Too large integer literal, can't fit inside 128 bits.
     ///
     /// an integer literal must fit in 64 bits, so they must not exceed
-    /// `18446744073709551615`
+    /// `340_282_366_920_938_463_463_374_607_431_768_211_455`
     TooLargeIntegerLiteral = 3,
     /// A string (") was not terminated.
     ///
@@ -300,17 +330,18 @@ pub enum ErrorCode {
     ///
     /// Existing escapes are:
     /// ```text
-    /// \0   -> 0x00, null
-    /// \n   -> 0x0A, line feed
-    /// \r   -> 0x0D, carriage return
-    /// \f   -> 0x0C, form feed
-    /// \t   -> 0x09, (horizontal) tabulation
-    /// \v   -> 0x0B, vertical tabulation
-    /// \a   -> 0x07, alert / bell
-    /// \b   -> 0x08, backspace
-    /// \e   -> 0x1B, escape [ESC]
-    /// \\   -> `\`
-    /// \xNN -> 0xNN
+    /// \0       -> 0x00, null
+    /// \n       -> 0x0A, line feed
+    /// \r       -> 0x0D, carriage return
+    /// \f       -> 0x0C, form feed
+    /// \t       -> 0x09, (horizontal) tabulation
+    /// \v       -> 0x0B, vertical tabulation
+    /// \a       -> 0x07, alert / bell
+    /// \b       -> 0x08, backspace
+    /// \e       -> 0x1B, escape [ESC]
+    /// \\       -> `\`
+    /// \xNN     -> 0xNN
+    /// \u{NN..} -> 0xNN..
     /// ```
     UnknownCharacterEscape = 5,
     /// Expected some token found something else.

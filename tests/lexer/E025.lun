@@ -1,0 +1,25 @@
+// EO25: error testing - InvalidUnicodeEscape
+
+// expected opening brace
+'\uFF}'
+"\uFF}"
+
+// empty unicode
+'\u{}'
+"\u{}"
+
+// too big too fit
+'\u{100000000000000000000000000000000}'
+"\u{100000000000000000000000000000000}"
+
+// expected closing brace
+'\u{F'
+"\u{F"
+
+// must not be a surrogate
+'\u{D800}'
+'\u{D900}'
+'\u{DFFF}'
+"\u{D800}"
+"\u{D8AB}"
+"\u{DFFF}"

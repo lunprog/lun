@@ -1237,6 +1237,314 @@
         test_out: "",
         test_code: 0,
     ),
+    "lexer/E001": (
+        compiler_out: "error[E001]: unknown start of token: 🌒
+  ┌─ ./tests/lexer/E001.lun:2:1
+  │
+2 │ 🌒
+  │ ^^
+
+error[E001]: unknown start of token: $
+  ┌─ ./tests/lexer/E001.lun:3:1
+  │
+3 │ $
+  │ ^
+
+error[E001]: unknown start of token: @
+  ┌─ ./tests/lexer/E001.lun:4:1
+  │
+4 │ @
+  │ ^
+
+error[E001]: unknown start of token: ?
+  ┌─ ./tests/lexer/E001.lun:5:1
+  │
+5 │ ?
+  │ ^
+
+error: compilation of `./tests/lexer/E001` failed due to 4 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "lexer/E002": (
+        compiler_out: r#"error[E002]: invalid digit in integer literal: Z
+  ┌─ ./tests/lexer/E002.lun:3:5
+  │
+3 │ "\xFZ"
+  │    -^
+  │    │ 
+  │    in this integer
+
+error: compilation of `./tests/lexer/E002` failed due to 1 error and 0 warnings
+
+"#,
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "lexer/E003": (
+        compiler_out: "error[E003]: integer literal is too large
+  ┌─ ./tests/lexer/E003.lun:3:1
+  │
+3 │ 340_282_366_920_938_463_463_374_607_431_768_211_456
+  │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  │
+  = integer exceeds the limit of `340282366920938463463374607431768211455`
+
+error[E003]: integer literal is too large
+  ┌─ ./tests/lexer/E003.lun:4:1
+  │
+4 │ 0x100000000000000000000000000000000
+  │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  │
+  = integer exceeds the limit of `340282366920938463463374607431768211455`
+
+error[E003]: integer literal is too large
+  ┌─ ./tests/lexer/E003.lun:5:1
+  │
+5 │ 0b100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  │
+  = integer exceeds the limit of `340282366920938463463374607431768211455`
+
+error[E003]: integer literal is too large
+  ┌─ ./tests/lexer/E003.lun:6:1
+  │
+6 │ 0o4000000000000000000000000000000000000000000
+  │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  │
+  = integer exceeds the limit of `340282366920938463463374607431768211455`
+
+error: compilation of `./tests/lexer/E003` failed due to 4 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "lexer/E004": (
+        compiler_out: r#"error[E004]: unterminated string literal
+  ┌─ ./tests/lexer/E004.lun:2:1
+  │  
+2 │ ╭ "starting but never finishing this string literal...
+3 │ │ 
+  │ ╰^
+
+error: compilation of `./tests/lexer/E004` failed due to 1 error and 0 warnings
+
+"#,
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "lexer/E005": (
+        compiler_out: r#"error[E005]: unknown character escape: z
+  ┌─ ./tests/lexer/E005.lun:2:1
+  │
+2 │ '\z'
+  │ ^^^
+
+error[E005]: unknown character escape: $
+  ┌─ ./tests/lexer/E005.lun:3:1
+  │
+3 │ "\$"
+  │ ^^^
+
+error: compilation of `./tests/lexer/E005` failed due to 2 errors and 0 warnings
+
+"#,
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "lexer/E020": (
+        compiler_out: r#"error[E020]: expected exponent part of hexadecimal floating point literal, but found '\n'
+  ┌─ ./tests/lexer/E020.lun:2:12
+  │  
+2 │   0xDEAD.BEEF
+  │   -----------
+  │ ╭───────────^
+3 │ │ 
+  │ ╰^
+
+error: compilation of `./tests/lexer/E020` failed due to 1 error and 0 warnings
+
+"#,
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "lexer/E021": (
+        compiler_out: "error[E021]: no digits found after the base
+  ┌─ ./tests/lexer/E021.lun:2:1
+  │
+2 │ 0o
+  │ ^^
+
+error[E021]: no digits found after the base
+  ┌─ ./tests/lexer/E021.lun:3:1
+  │
+3 │ 0b
+  │ ^^
+
+error[E021]: no digits found after the base
+  ┌─ ./tests/lexer/E021.lun:4:1
+  │
+4 │ 0x
+  │ ^^
+
+error: compilation of `./tests/lexer/E021` failed due to 3 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "lexer/E022": (
+        compiler_out: r#"error[E022]: too many characters in character literal, can only contain one codepoint
+  ┌─ ./tests/lexer/E022.lun:2:1
+  │
+2 │ 'aa'
+  │ ^^^^
+  │
+  = if you want to write a string literal use double quotes: "
+
+error: compilation of `./tests/lexer/E022` failed due to 1 error and 0 warnings
+
+"#,
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "lexer/E023": (
+        compiler_out: "error[E023]: empty character literal
+  ┌─ ./tests/lexer/E023.lun:2:1
+  │
+2 │ ''
+  │ ^^ expected one codepoint found zero
+
+error: compilation of `./tests/lexer/E023` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "lexer/E024": (
+        compiler_out: r#"error[E024]: not enough hexadecimal digits in escape sequence
+  ┌─ ./tests/lexer/E024.lun:2:1
+  │
+2 │ '\x'
+  │ ^^^^
+
+error[E024]: not enough hexadecimal digits in escape sequence
+  ┌─ ./tests/lexer/E024.lun:3:1
+  │
+3 │ "\x"
+  │ ^^^^
+
+error: compilation of `./tests/lexer/E024` failed due to 2 errors and 0 warnings
+
+"#,
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "lexer/E025": (
+        compiler_out: r#"error[E025]: invalid unicode escape
+  ┌─ ./tests/lexer/E025.lun:4:4
+  │
+4 │ '\uFF}'
+  │    ^ expected '{' after '\u'
+
+error[E025]: invalid unicode escape
+  ┌─ ./tests/lexer/E025.lun:5:4
+  │
+5 │ "\uFF}"
+  │    ^ expected '{' after '\u'
+
+error[E025]: invalid unicode escape
+  ┌─ ./tests/lexer/E025.lun:8:1
+  │
+8 │ '\u{}'
+  │ ^^^^^ this escape must have at least one hex digit
+
+error[E025]: invalid unicode escape
+  ┌─ ./tests/lexer/E025.lun:9:1
+  │
+9 │ "\u{}"
+  │ ^^^^^ this escape must have at least one hex digit
+
+error[E025]: invalid unicode escape
+   ┌─ ./tests/lexer/E025.lun:12:1
+   │
+12 │ '\u{100000000000000000000000000000000}'
+   │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this hex number doesn't fit in 32 bits
+
+error[E025]: invalid unicode escape
+   ┌─ ./tests/lexer/E025.lun:13:1
+   │
+13 │ "\u{100000000000000000000000000000000}"
+   │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this hex number doesn't fit in 32 bits
+
+error[E025]: invalid unicode escape
+   ┌─ ./tests/lexer/E025.lun:16:6
+   │
+16 │ '\u{F'
+   │      ^ expected '}' at the end of the unicode escape
+
+error[E025]: invalid unicode escape
+   ┌─ ./tests/lexer/E025.lun:17:6
+   │
+17 │ "\u{F"
+   │      ^ expected '}' at the end of the unicode escape
+
+error[E025]: invalid unicode escape
+   ┌─ ./tests/lexer/E025.lun:20:1
+   │
+20 │ '\u{D800}'
+   │ ^^^^^^^^^ unicode escape must not be a surrogate
+
+error[E025]: invalid unicode escape
+   ┌─ ./tests/lexer/E025.lun:21:1
+   │
+21 │ '\u{D900}'
+   │ ^^^^^^^^^ unicode escape must not be a surrogate
+
+error[E025]: invalid unicode escape
+   ┌─ ./tests/lexer/E025.lun:22:1
+   │
+22 │ '\u{DFFF}'
+   │ ^^^^^^^^^ unicode escape must not be a surrogate
+
+error[E025]: invalid unicode escape
+   ┌─ ./tests/lexer/E025.lun:23:1
+   │
+23 │ "\u{D800}"
+   │ ^^^^^^^^^ unicode escape must not be a surrogate
+
+error[E025]: invalid unicode escape
+   ┌─ ./tests/lexer/E025.lun:24:1
+   │
+24 │ "\u{D8AB}"
+   │ ^^^^^^^^^ unicode escape must not be a surrogate
+
+error[E025]: invalid unicode escape
+   ┌─ ./tests/lexer/E025.lun:25:1
+   │
+25 │ "\u{DFFF}"
+   │ ^^^^^^^^^ unicode escape must not be a surrogate
+
+error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warnings
+
+"#,
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
     "lexer/char_literal": (
         compiler_out: r#"tokenstream = {
   {
