@@ -92,6 +92,8 @@ impl TestContext {
             stage: TestStage::Multifile,
         });
 
+        self.tests.sort_by(|a, b| a.name.cmp(&b.name));
+
         Ok(())
     }
 
