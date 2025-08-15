@@ -1,6 +1,6 @@
 //! Checks for the SCIR like typechecking, safety checks etc
 
-use std::iter::zip;
+use std::iter::{self, zip};
 
 use lunc_diag::{ToDiagnostic, feature_todo};
 use lunc_utils::{
@@ -133,6 +133,7 @@ impl SemaChecker {
                             self.sink.emit(ExpectedTypeFoundExpr {
                                 loc: typexpr_arg.loc.clone().unwrap(),
                             });
+
                             Type::Void
                         }
                     };
@@ -168,6 +169,7 @@ impl SemaChecker {
                             self.sink.emit(ExpectedTypeFoundExpr {
                                 loc: ret_typexpr.loc.clone().unwrap(),
                             });
+
                             Type::Void
                         }
                     }
@@ -292,6 +294,7 @@ impl SemaChecker {
                             self.sink.emit(ExpectedTypeFoundExpr {
                                 loc: ret_typexpr.loc.clone().unwrap(),
                             });
+
                             Type::Void
                         }
                     }
@@ -597,11 +600,9 @@ impl SemaChecker {
                 }
 
                 // set the function return type
-                self.fun_retty = sym
-                    .typ()
-                    .as_fun_ptr()
-                    .expect("type should be a function pointer in a function definition")
-                    .1;
+
+                self.fun_retty = sym.typ().as_fun_ptr().map(|t| t.1).unwrap_or(Type::Void);
+                // unwrap with a dummy if the type was defined to a non-fnptr.
 
                 self.fun_retty_loc = rettypexpr.as_ref().and_then(|typexpr| typexpr.loc.clone());
 
@@ -830,6 +831,10 @@ impl SemaChecker {
                                 )],
                                 loc: exp.loc.clone().unwrap(),
                             });
+
+                            // we set the type to a dummy type to avoid having
+                            // E012 diag.
+                            expr.typ = exp.typ.clone();
                         }
                         (true, Some(Signedness::Signed), _) => {
                             expr.typ = exp.typ.clone();
@@ -837,13 +842,19 @@ impl SemaChecker {
                         (false, _, true) => {
                             expr.typ = exp.typ.clone();
                         }
-                        _ => self.sink.emit(MismatchedTypes {
-                            expected: vec!["float", "signed integer"],
-                            found: exp.typ.clone(),
-                            due_to: None,
-                            notes: vec![],
-                            loc: exp.loc.clone().unwrap(),
-                        }),
+                        _ => {
+                            self.sink.emit(MismatchedTypes {
+                                expected: vec!["float", "signed integer"],
+                                found: exp.typ.clone(),
+                                due_to: None,
+                                notes: vec![],
+                                loc: exp.loc.clone().unwrap(),
+                            });
+
+                            // we set the type to a dummy type to avoid having
+                            // E012 diag.
+                            expr.typ = exp.typ.clone();
+                        }
                     }
                 }
                 UnaryOp::Not => {
@@ -866,14 +877,16 @@ impl SemaChecker {
                     expr.typ = if let Type::Ptr { mutable: _, typ } = &exp.typ {
                         *typ.clone()
                     } else {
-                        return Err(MismatchedTypes {
+                        self.sink.emit(MismatchedTypes {
                             expected: vec!["pointer"],
                             found: exp.typ.clone(),
                             due_to: None,
                             notes: vec![format!("type '{}' cannot be dereferenced.", exp.typ)],
                             loc: exp.loc.clone().unwrap(),
-                        }
-                        .into_diag());
+                        });
+
+                        // we set a dummy type
+                        Type::Void
                     };
                 }
             },
@@ -916,18 +929,28 @@ impl SemaChecker {
                     .into_diag());
                 };
 
+                let mut args_ty: Vec<Type> = args_ty.clone();
+
                 if args_ty.len() != args.len() {
+                    // arity doesn't match
                     self.sink.emit(ArityDoesntMatch {
                         expected: args_ty.len(),
                         got: args.len(),
                         loc: callee.loc.clone().unwrap(),
                     });
+
+                    if args_ty.len() < args.len() {
+                        let missing = args.len() - args_ty.len();
+                        dbg!(missing);
+
+                        args_ty.extend(iter::repeat_n(Type::Void, missing));
+                    }
                 }
 
                 for (arg, aty) in zip(args, args_ty) {
                     self.ck_expr(arg, Some(aty.clone()))?;
 
-                    self.expr_typeck(aty, arg, None, None);
+                    self.expr_typeck(&aty, arg, None, None);
                 }
 
                 expr.typ = (**ret_ty).clone();
