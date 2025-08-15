@@ -1742,7 +1742,7 @@ impl SymbolTable {
         let sym_kind = sym.kind();
 
         if let Some(previous_sym) = self.lookup(&name)
-            && !previous_sym.kind().can_shadow()
+            && (previous_sym.kind().can_shadow() == sym.kind().can_shadow())
         {
             return Err(NameDefinedMultipleTimes {
                 name: &name,
