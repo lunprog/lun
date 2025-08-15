@@ -1,0 +1,11 @@
+// EO32: error testing - CantContinueABlock
+a :: fun() {
+    blk: {
+        if false {
+            // here to remove the W003
+            break :blk;
+        }
+
+        continue :blk;
+    }
+}

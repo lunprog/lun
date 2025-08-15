@@ -1,0 +1,8 @@
+// EO40: error testing - FunctionInGlobalMut
+a := fun() {}
+
+b := fun();
+
+extern "C" {
+    c := fun();
+}

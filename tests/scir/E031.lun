@@ -1,0 +1,11 @@
+// EO31: error testing - BreakUseAnImplicitLabelInBlock
+a :: fun() {
+    blk: {
+        if false {
+            // here to remove the W003
+            break :blk;
+        }
+
+        break;
+    };
+}

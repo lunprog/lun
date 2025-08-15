@@ -1,0 +1,4 @@
+// EO27: error testing - ExpectedPlaceExpression
+a :: fun() {
+    12 = 34;
+}

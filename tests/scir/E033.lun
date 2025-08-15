@@ -1,0 +1,6 @@
+// EO33: error testing - BreakWithValueUnsupported
+a :: fun() {
+    while true {
+        break 12;
+    }
+}

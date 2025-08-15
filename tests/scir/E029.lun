@@ -1,0 +1,19 @@
+// EO29: error testing - CantResolveComptimeValue
+a := bool;
+
+b : a : fun() {}
+c :: fun(d: a) -> a {}
+
+extern "C" {
+    e : a : fun();
+    f :: fun(a) -> a;
+}
+
+g : a : {};
+
+h :: fun() {}
+i :: h();
+
+j :: fun() {
+    k : a : {};
+}

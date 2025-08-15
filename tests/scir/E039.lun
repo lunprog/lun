@@ -1,0 +1,10 @@
+// EO39: error testing - ItemNotAllowedInExternBlock
+extern "C" {
+    a :: fun() {}
+
+    b :: 12;
+
+    // #mod empty; // See #1, tracking the fix of this UCP
+
+    extern "C" {}
+}

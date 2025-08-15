@@ -1008,6 +1008,7 @@ pub enum ValueExpr {
     Char(char),
     F32(f32),
     F64(f64),
+    Void,
 }
 
 use std::ops::{Add, Div, Mul, Rem, Sub};
@@ -1139,6 +1140,9 @@ impl PrettyDump for ValueExpr {
                 ctx.pretty_struct("F64").field("val", f).finish()?;
 
                 Ok(())
+            }
+            ValueExpr::Void => {
+                write!(ctx.out, "void")
             }
         }
     }

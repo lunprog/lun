@@ -1,0 +1,16 @@
+// EO09: error testing - ExpectedTypeFoundExpr
+a : 12 : fun(a: 34) -> 56 {}
+
+extern "C" {
+    b : 1 : fun(2) -> 3;
+}
+
+c : 1 = {}
+
+d :: *mut 12;
+
+e :: *fun(12) -> 34;
+
+f :: fun() {
+    a : 12 : {};
+}

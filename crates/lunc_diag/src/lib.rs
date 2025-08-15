@@ -253,9 +253,14 @@ impl ToDiagnostic for Diagnostic {
 // and it tells you what's wrong
 
 // TODO: write the docs for ErrorCode's
+
 /// List of all the Error Code in the lun compiling stages
 ///
 /// # Testing
+///
+/// Diagnostic emission are tested to ensure the compiler keeps the same
+/// behavior and to test the UI of the diagnostics as a secondary benefit. The
+/// tests are located in those files:
 ///
 /// | Code | Test path(s)                                      |
 /// |------|---------------------------------------------------|
@@ -265,12 +270,18 @@ impl ToDiagnostic for Diagnostic {
 /// |`E004`| `tests/lexer/E004.lun`                            |
 /// |`E005`| `tests/lexer/E005.lun`                            |
 /// |`E006`| `tests/parser/E006_<ast node>[_nth].lun`          |
-/// | ...  | ...                                               |
+/// |`E007`| n/a[^3]                                           |
+/// |`E008`| `tests/scir/E008.lun`                             |
+/// |`E009`| `tests/scir/E009.lun`                             |
 /// |`E010`| `tests/lexer/E010.lun` <br> `tests/lexer/bim.lun` |
-/// | ...  | ...                                               |
+/// |`E011`| `tests/scir/E011.lun`                             |
+/// |`E012`| n/a[^4]                                           |
 /// |`E013`| `tests/lexer/E013.lun`                            |
 /// |`E014`| `tests/lexer/E014.lun`                            |
-/// | ...  | ...                                               |
+/// |`E015`| n/a[^5]                                           |
+/// |`E016`| `tests/scir/E016.lun`                             |
+/// |`E017`| deprecated, **CAN BE REPLACED BY A NEW CODE**     |
+/// |`E018`| deprecated, **CAN BE REPLACED BY A NEW CODE**     |
 /// |`E019`| `tests/lexer/E019.lun`                            |
 /// |`E020`| `tests/lexer/E020.lun`                            |
 /// |`E021`| `tests/lexer/E021.lun`                            |
@@ -279,12 +290,22 @@ impl ToDiagnostic for Diagnostic {
 /// |`E024`| `tests/lexer/E024.lun`                            |
 /// |`E025`| `tests/lexer/E025.lun`                            |
 /// |`E026`| `tests/lexer/E026.lun`                            |
-/// | ...  | ...                                               |
+/// |`E027`| `tests/scir/E027.lun`                             |
+/// |`E028`| `tests/scir/E028.lun`                             |
+/// |`E029`| `tests/scir/E029.lun`                             |
+/// |`E030`| `tests/scir/E030.lun`                             |
+/// |`E031`| `tests/scir/E031.lun`                             |
+/// |`E032`| `tests/scir/E032.lun`                             |
+/// |`E033`| `tests/scir/E033.lun`                             |
+/// |`E034`| `tests/scir/E034.lun`                             |
 /// |`E035`| `tests/parser/E035_1.lun`,                        |
 /// |  ^   | `tests/parser/E035_2.lun`,                        |
 /// |  ^   | `tests/parser/E035_3.lun`                         |
-/// | ...  | ...                                               |
+/// |`E036`| `tests/scir/E036.lun`                             |
+/// |`E037`| `tests/scir/E037.lun`                             |
 /// |`E038`| `tests/parser/E038.lun`                           |
+/// |`E039`| `tests/scir/E039.lun`                             |
+/// |`E040`| `tests/scir/E040.lun`                             |
 ///
 /// # Note
 ///
@@ -298,6 +319,13 @@ impl ToDiagnostic for Diagnostic {
 /// [^2]: only tested in integer literal, not tested inside float literals,
 ///       and can never occur in hex escape because we are taking the next
 ///       2 characters.
+/// [^3]: in theory this diag is emited in the parser when there is no more
+///       token in the token stream, but the token stream guarantees that there
+///       is an EOF token at the end, so this diag is never truly emited.
+/// [^4]: this diag is never truly emited, because we try to use dummy types
+///       as much as possible when we encounter an error so there is no testing
+///       for it.
+/// [^5]: useless to test that a feature isn't implemented in my opinion
 #[derive(Debug, Clone, Copy)]
 pub enum ErrorCode {
     /// Unknown start of token
@@ -446,8 +474,10 @@ pub enum ErrorCode {
     /// label keywords (`break` or `continue`) outside of a loop or block.
     LabelKwOutsideLoopOrBlock = 16,
     /// unknown type
+    #[deprecated(note = "pls replace me")]
     UnknownType = 17,
     /// mutation of immutable
+    #[deprecated(note = "pls replace me")]
     MutationOfImmutable = 18,
     /// name defined multiple times
     NameDefinedMultipleTimes = 19,

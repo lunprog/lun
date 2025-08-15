@@ -1,0 +1,4 @@
+// EO11: error testing - CallRequiresFuncType
+a :: fun() {
+    12();
+}

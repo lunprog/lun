@@ -1,0 +1,26 @@
+// EO08: error testing - MismatchedTypes
+a :: fun() -> u8 {}
+
+b : u128 : true;
+
+c :: fun() {
+    d : u8 : 12;
+    e :: -d;
+    f :: -true;
+
+    g :: true.*;
+}
+
+i :: fun() -> bool {
+    return;
+}
+
+j :: fun() {
+    k :: loop {
+        if false {
+            break 12;
+        }
+
+        break;
+    };
+}

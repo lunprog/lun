@@ -1,0 +1,12 @@
+// EO30: error testing - UseOfUndefinedLabel
+a :: fun () {
+    loop {
+        break :b;
+    }
+}
+
+c :: fun () {
+    loop {
+        continue :d;
+    }
+}

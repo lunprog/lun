@@ -4149,6 +4149,678 @@ error: compilation of `./tests/parser/E038` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
+    "scir/E008": (
+        compiler_out: "error[E008]: mismatched types
+  ┌─ ./tests/scir/E008.lun:2:18
+  │
+2 │ a :: fun() -> u8 {}
+  │               -- ^^ expected `u8`, found `void`
+  │               │   
+  │               expected due to this
+
+error[E008]: mismatched types
+  ┌─ ./tests/scir/E008.lun:4:12
+  │
+4 │ b : u128 : true;
+  │     ----   ^^^^ expected `u128`, found `bool`
+  │     │       
+  │     expected due to this
+
+error[E008]: mismatched types
+  ┌─ ./tests/scir/E008.lun:8:11
+  │
+8 │     e :: -d;
+  │           ^ expected `float or signed integer`, found `u8`
+  │
+  = can't perform a negation on an unsigned type like 'u8'
+
+error[E008]: mismatched types
+  ┌─ ./tests/scir/E008.lun:9:11
+  │
+9 │     f :: -true;
+  │           ^^^^ expected `float or signed integer`, found `bool`
+
+error[E008]: mismatched types
+   ┌─ ./tests/scir/E008.lun:11:10
+   │
+11 │     g :: true.*;
+   │          ^^^^ expected `pointer`, found `bool`
+   │
+   = type 'bool' cannot be dereferenced.
+
+error[E008]: mismatched types
+   ┌─ ./tests/scir/E008.lun:15:5
+   │
+14 │ i :: fun() -> bool {
+   │               ---- expected due to this
+15 │     return;
+   │     ^^^^^^ expected `bool`, found `void`
+
+error[E008]: mismatched types
+   ┌─ ./tests/scir/E008.lun:24:9
+   │
+24 │         break;
+   │         ^^^^^ expected `i32`, found `void`
+
+error: compilation of `./tests/scir/E008` failed due to 7 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E009": (
+        compiler_out: "error[E009]: expected type found an expression
+  ┌─ ./tests/scir/E009.lun:2:5
+  │
+2 │ a : 12 : fun(a: 34) -> 56 {}
+  │     ^^
+
+error[E009]: expected type found an expression
+  ┌─ ./tests/scir/E009.lun:2:17
+  │
+2 │ a : 12 : fun(a: 34) -> 56 {}
+  │                 ^^
+
+error[E009]: expected type found an expression
+  ┌─ ./tests/scir/E009.lun:2:24
+  │
+2 │ a : 12 : fun(a: 34) -> 56 {}
+  │                        ^^
+
+error[E009]: expected type found an expression
+  ┌─ ./tests/scir/E009.lun:5:9
+  │
+5 │     b : 1 : fun(2) -> 3;
+  │         ^
+
+error[E009]: expected type found an expression
+  ┌─ ./tests/scir/E009.lun:5:17
+  │
+5 │     b : 1 : fun(2) -> 3;
+  │                 ^
+
+error[E009]: expected type found an expression
+  ┌─ ./tests/scir/E009.lun:5:23
+  │
+5 │     b : 1 : fun(2) -> 3;
+  │                       ^
+
+error[E009]: expected type found an expression
+  ┌─ ./tests/scir/E009.lun:8:5
+  │
+8 │ c : 1 = {}
+  │     ^
+
+error[E009]: expected type found an expression
+   ┌─ ./tests/scir/E009.lun:10:11
+   │
+10 │ d :: *mut 12;
+   │           ^^
+
+error[E009]: expected type found an expression
+   ┌─ ./tests/scir/E009.lun:12:11
+   │
+12 │ e :: *fun(12) -> 34;
+   │           ^^
+
+error[E009]: expected type found an expression
+   ┌─ ./tests/scir/E009.lun:12:18
+   │
+12 │ e :: *fun(12) -> 34;
+   │                  ^^
+
+error[E009]: expected type found an expression
+   ┌─ ./tests/scir/E009.lun:12:11
+   │
+12 │ e :: *fun(12) -> 34;
+   │           ^^
+
+error[E009]: expected type found an expression
+   ┌─ ./tests/scir/E009.lun:12:18
+   │
+12 │ e :: *fun(12) -> 34;
+   │                  ^^
+
+error[E009]: expected type found an expression
+   ┌─ ./tests/scir/E009.lun:15:9
+   │
+15 │     a : 12 : {};
+   │         ^^
+
+error: compilation of `./tests/scir/E009` failed due to 13 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E011": (
+        compiler_out: "error[E011]: function call requires function type
+  ┌─ ./tests/scir/E011.lun:3:5
+  │
+3 │     12();
+  │     ^^ instead found 'i32'
+
+error: compilation of `./tests/scir/E011` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E016": (
+        compiler_out: "error[E016]: `continue` outside of a loop or a labeled block
+  ┌─ ./tests/scir/E016.lun:4:9
+  │
+4 │         continue;
+  │         ^^^^^^^^
+
+error[E016]: `break` outside of a loop or a labeled block
+  ┌─ ./tests/scir/E016.lun:7:5
+  │
+7 │     break;
+  │     ^^^^^
+
+error: compilation of `./tests/scir/E016` failed due to 2 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E027": (
+        compiler_out: "error[E027]: expected this expression to be a place expression
+  ┌─ ./tests/scir/E027.lun:3:5
+  │
+3 │     12 = 34;
+  │     ^^
+  │
+  = the left-hand side of an assignment must be a place.
+
+error: compilation of `./tests/scir/E027` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E028": (
+        compiler_out: "[crates/lunc_scir/src/checking.rs:944:25] missing = 1
+error[E028]: this function takes 1 arguments but 0 were provided
+  ┌─ ./tests/scir/E028.lun:6:5
+  │
+6 │     a();
+  │     ^
+
+error[E028]: this function takes 1 arguments but 2 were provided
+  ┌─ ./tests/scir/E028.lun:7:5
+  │
+7 │     a(1, {});
+  │     ^
+
+error: compilation of `./tests/scir/E028` failed due to 2 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E029": (
+        compiler_out: "error[E009]: expected type found an expression
+  ┌─ ./tests/scir/E029.lun:4:5
+  │
+4 │ b : a : fun() {}
+  │     ^
+
+error[E029]: unable to resolve expression at comptime
+  ┌─ ./tests/scir/E029.lun:4:5
+  │
+4 │ b : a : fun() {}
+  │     ^
+  │     │
+  │     due to this expression
+
+error[E029]: unable to resolve expression at comptime
+  ┌─ ./tests/scir/E029.lun:5:13
+  │
+5 │ c :: fun(d: a) -> a {}
+  │             ^
+  │             │
+  │             due to this expression
+
+error[E029]: unable to resolve expression at comptime
+  ┌─ ./tests/scir/E029.lun:5:19
+  │
+5 │ c :: fun(d: a) -> a {}
+  │                   ^
+  │                   │
+  │                   due to this expression
+
+error[E009]: expected type found an expression
+  ┌─ ./tests/scir/E029.lun:8:9
+  │
+8 │     e : a : fun();
+  │         ^
+
+error[E029]: unable to resolve expression at comptime
+  ┌─ ./tests/scir/E029.lun:8:9
+  │
+8 │     e : a : fun();
+  │         ^
+  │         │
+  │         due to this expression
+
+error[E029]: unable to resolve expression at comptime
+  ┌─ ./tests/scir/E029.lun:9:14
+  │
+9 │     f :: fun(a) -> a;
+  │              ^
+  │              │
+  │              due to this expression
+
+error[E029]: unable to resolve expression at comptime
+  ┌─ ./tests/scir/E029.lun:9:20
+  │
+9 │     f :: fun(a) -> a;
+  │                    ^
+  │                    │
+  │                    due to this expression
+
+error[E009]: expected type found an expression
+   ┌─ ./tests/scir/E029.lun:12:5
+   │
+12 │ g : a : {};
+   │     ^
+
+error[E029]: unable to resolve expression at comptime
+   ┌─ ./tests/scir/E029.lun:12:5
+   │
+12 │ g : a : {};
+   │     ^
+   │     │
+   │     due to this expression
+
+error[E029]: unable to resolve expression at comptime
+   ┌─ ./tests/scir/E029.lun:15:6
+   │
+15 │ i :: h();
+   │      ^^^
+   │      │
+   │      due to this expression
+
+error[E029]: unable to resolve expression at comptime
+   ┌─ ./tests/scir/E029.lun:18:9
+   │
+18 │     k : a : {};
+   │         ^
+   │         │
+   │         due to this expression
+
+error: compilation of `./tests/scir/E029` failed due to 12 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E030": (
+        compiler_out: "error[E030]: use of undeclared label 'b'
+  ┌─ ./tests/scir/E030.lun:4:9
+  │
+4 │         break :b;
+  │         ^^^^^^^^
+
+error[E030]: use of undeclared label 'd'
+   ┌─ ./tests/scir/E030.lun:10:9
+   │
+10 │         continue :d;
+   │         ^^^^^^^^^^^
+
+error: compilation of `./tests/scir/E030` failed due to 2 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E031": (
+        compiler_out: "error[E031]: implicit label `break` inside of a labeled block
+  ┌─ ./tests/scir/E031.lun:9:9
+  │
+9 │         break;
+  │         ^^^^^ 'break' statement referring to a labeled block need to have a label
+
+error: compilation of `./tests/scir/E031` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E032": (
+        compiler_out: "error[E032]: a block cannot be 'continue'd
+  ┌─ ./tests/scir/E032.lun:9:9
+  │
+9 │         continue :blk;
+  │         ^^^^^^^^^^^^^
+  │
+  = you might want to use a loop instead like 'while', 'for' or 'loop'.
+
+error: compilation of `./tests/scir/E032` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E033": (
+        compiler_out: "error[E033]: 'break' from a predicate or iterator loop with a value
+  ┌─ ./tests/scir/E033.lun:4:9
+  │
+4 │         break 12;
+  │         ^^^^^^^^ can only 'break' with a value from a labeled block or an infinite loop
+
+error: compilation of `./tests/scir/E033` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E034": (
+        compiler_out: "error[E034]: literal out of range
+  ┌─ ./tests/scir/E034.lun:5:16
+  │
+5 │     bn : i8 : -128;
+  │                ^^^
+  │
+  = the literal (of value 128) does not fit in the type 'i8'
+  = the range of valid integers for this type is '-128..=127'
+
+error[E034]: literal out of range
+  ┌─ ./tests/scir/E034.lun:6:15
+  │
+6 │     bx : i8 : 128;
+  │               ^^^
+  │
+  = the literal (of value 128) does not fit in the type 'i8'
+  = the range of valid integers for this type is '-128..=127'
+
+error[E034]: literal out of range
+  ┌─ ./tests/scir/E034.lun:8:17
+  │
+8 │     cn : i16 : -32_768;
+  │                 ^^^^^^
+  │
+  = the literal (of value 32768) does not fit in the type 'i16'
+  = the range of valid integers for this type is '-32768..=32767'
+
+error[E034]: literal out of range
+  ┌─ ./tests/scir/E034.lun:9:16
+  │
+9 │     cx : i16 : 32_768;
+  │                ^^^^^^
+  │
+  = the literal (of value 32768) does not fit in the type 'i16'
+  = the range of valid integers for this type is '-32768..=32767'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:11:17
+   │
+11 │     dn : i32 : -2_147_483_648;
+   │                 ^^^^^^^^^^^^^
+   │
+   = the literal (of value 2147483648) does not fit in the type 'i32'
+   = the range of valid integers for this type is '-2147483648..=2147483647'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:12:16
+   │
+12 │     dx : i32 : 2_147_483_648;
+   │                ^^^^^^^^^^^^^
+   │
+   = the literal (of value 2147483648) does not fit in the type 'i32'
+   = the range of valid integers for this type is '-2147483648..=2147483647'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:14:17
+   │
+14 │     en : i64 : -9_223_372_036_854_775_808;
+   │                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+   │
+   = the literal (of value 9223372036854775808) does not fit in the type 'i64'
+   = the range of valid integers for this type is '-9223372036854775808..=9223372036854775807'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:15:16
+   │
+15 │     ex : i64 : 9_223_372_036_854_775_808;
+   │                ^^^^^^^^^^^^^^^^^^^^^^^^^
+   │
+   = the literal (of value 9223372036854775808) does not fit in the type 'i64'
+   = the range of valid integers for this type is '-9223372036854775808..=9223372036854775807'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:17:18
+   │
+17 │     fn : i128 : -170_141_183_460_469_231_731_687_303_715_884_105_728;
+   │                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   │
+   = the literal (of value 170141183460469231731687303715884105728) does not fit in the type 'i128'
+   = the range of valid integers for this type is '-170141183460469231731687303715884105728..=170141183460469231731687303715884105727'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:18:17
+   │
+18 │     fx : i128 : 170_141_183_460_469_231_731_687_303_715_884_105_728;
+   │                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   │
+   = the literal (of value 170141183460469231731687303715884105728) does not fit in the type 'i128'
+   = the range of valid integers for this type is '-170141183460469231731687303715884105728..=170141183460469231731687303715884105727'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:22:15
+   │
+22 │     gx : u8 : 256;
+   │               ^^^
+   │
+   = the literal (of value 256) does not fit in the type 'u8'
+   = the range of valid integers for this type is '0..=255'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:24:16
+   │
+24 │     hx : u16 : 65_536;
+   │                ^^^^^^
+   │
+   = the literal (of value 65536) does not fit in the type 'u16'
+   = the range of valid integers for this type is '0..=65535'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:26:16
+   │
+26 │     ix : u32 : 4_294_967_296;
+   │                ^^^^^^^^^^^^^
+   │
+   = the literal (of value 4294967296) does not fit in the type 'u32'
+   = the range of valid integers for this type is '0..=4294967295'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:28:16
+   │
+28 │     jx : u64 : 18_446_744_073_709_551_616;
+   │                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   │
+   = the literal (of value 18446744073709551616) does not fit in the type 'u64'
+   = the range of valid integers for this type is '0..=18446744073709551615'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:35:17
+   │
+35 │     ln : f32 : -3.402_823_48E+38;
+   │                 ^^^^^^^^^^^^^^^^
+   │
+   = the literal (of value 3.40282348e38) does not fit in the type 'f32'
+   = the range of valid integers for this type is '-3.40282347e38..=3.40282347e38'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:36:16
+   │
+36 │     lx : f32 : 3.402_823_48E+38;
+   │                ^^^^^^^^^^^^^^^^
+   │
+   = the literal (of value 3.40282348e38) does not fit in the type 'f32'
+   = the range of valid integers for this type is '-3.40282347e38..=3.40282347e38'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:38:17
+   │
+38 │     mn : f64 : -1.797_693_134_862_315_8E+308;
+   │                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   │
+   = the literal (of value inf) does not fit in the type 'f64'
+   = the range of valid integers for this type is '-1.7976931348623157e308..=1.7976931348623157e308'
+
+error[E034]: literal out of range
+   ┌─ ./tests/scir/E034.lun:39:16
+   │
+39 │     mx : f64 : 1.797_693_134_862_315_8E+308;
+   │                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   │
+   = the literal (of value inf) does not fit in the type 'f64'
+   = the range of valid integers for this type is '-1.7976931348623157e308..=1.7976931348623157e308'
+
+error: compilation of `./tests/scir/E034` failed due to 18 errors and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E036": (
+        compiler_out: "error[E036]: cannot borrow 'a' as mutable because it is not declared as mutable
+  ┌─ ./tests/scir/E036.lun:4:5
+  │
+3 │     a :: 12;
+  │     - defined here
+4 │     &mut a;
+  │     ^^^^^^ mutable borrow here
+
+error: compilation of `./tests/scir/E036` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E037": (
+        compiler_out: r#"error[E037]: function declaration must be inside of an extern block.
+  ┌─ ./tests/scir/E037.lun:2:1
+  │
+2 │ a :: fun();
+  │ ^^^^^^^^^^^
+  │
+  = consider moving the function declaration into an extern block like 'extern "C" { .. }'.
+
+error[E037]: function declaration must be inside of an extern block.
+  ┌─ ./tests/scir/E037.lun:5:5
+  │
+5 │     fun();
+  │     ^^^^^
+  │
+  = consider moving the function declaration into an extern block like 'extern "C" { .. }'.
+
+error: compilation of `./tests/scir/E037` failed due to 2 errors and 0 warnings
+
+"#,
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E039": (
+        compiler_out: r#"error[E039]: a function definition isn't allowed inside of an extern block.
+   ┌─ ./tests/scir/E039.lun:3:5
+   │  
+ 2 │ ╭ extern "C" {
+ 3 │ │     a :: fun() {}
+   │ │     ^^^^^^^^^^^^^ defined here.
+ 4 │ │ 
+ 5 │ │     b :: 12;
+   · │
+ 9 │ │     extern "C" {}
+10 │ │ }
+   │ ╰─' inside this extern block
+
+error[E039]: a global definition isn't allowed inside of an extern block.
+   ┌─ ./tests/scir/E039.lun:5:5
+   │  
+ 2 │ ╭ extern "C" {
+ 3 │ │     a :: fun() {}
+ 4 │ │ 
+ 5 │ │     b :: 12;
+   │ │     ^^^^^^^^ defined here.
+   · │
+ 9 │ │     extern "C" {}
+10 │ │ }
+   │ ╰─' inside this extern block
+
+error[E039]: a extern block isn't allowed inside of an extern block.
+   ┌─ ./tests/scir/E039.lun:9:5
+   │  
+ 2 │ ╭ extern "C" {
+ 3 │ │     a :: fun() {}
+ 4 │ │ 
+ 5 │ │     b :: 12;
+   · │
+ 9 │ │     extern "C" {}
+   │ │     ^^^^^^^^^^^^^ defined here.
+10 │ │ }
+   │ ╰─' inside this extern block
+   │  
+   = you probably want to un nest the extern block
+
+error: compilation of `./tests/scir/E039` failed due to 3 errors and 0 warnings
+
+"#,
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/E040": (
+        compiler_out: r#"error[E040]: cannot define a function definition inside of a mutable global definition
+  ┌─ ./tests/scir/E040.lun:2:1
+  │
+2 │ a := fun() {}
+  │ ^^^^^^^^^^^^^
+
+error[E037]: function declaration must be inside of an extern block.
+  ┌─ ./tests/scir/E040.lun:4:1
+  │
+4 │ b := fun();
+  │ ^^^^^^^^^^^
+  │
+  = consider moving the function declaration into an extern block like 'extern "C" { .. }'.
+
+error[E040]: cannot define a function declaration inside of a mutable global definition
+  ┌─ ./tests/scir/E040.lun:4:1
+  │
+4 │ b := fun();
+  │ ^^^^^^^^^^^
+
+error[E040]: cannot define a function declaration inside of a mutable global definition
+  ┌─ ./tests/scir/E040.lun:7:5
+  │
+7 │     c := fun();
+  │     ^^^^^^^^^^^
+
+error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
+
+"#,
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
     "scir/constant_evaluation": (
         compiler_out: "scir = [
   GlobalDef {
@@ -7231,6 +7903,13 @@ error: compilation of `./tests/parser/E038` failed due to 1 error and 0 warnings
     };
   } @ 1792..1817 (fid = 0),
 ]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "scir/empty": (
+        compiler_out: "scir = []
 ",
         compiler_code: 0,
         test_out: "",

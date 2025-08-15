@@ -1,0 +1,8 @@
+// EO28: error testing - ArityDoesntMatch
+
+a :: fun(b: u8){}
+
+b :: fun() {
+    a();
+    a(1, {});
+}

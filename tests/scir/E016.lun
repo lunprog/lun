@@ -1,0 +1,8 @@
+// EO16: error testing - LabelKwOutsideLoopOrBlock
+a :: fun() {
+    if false {
+        continue;
+    }
+
+    break;
+}
