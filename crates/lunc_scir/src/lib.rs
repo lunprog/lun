@@ -801,6 +801,14 @@ impl SemaChecker {
                     _ => Err((expr_loc, None)),
                 }
             }
+            ScExpr::Block {
+                label: _,
+                block,
+                index: _,
+            } if block.stmts.is_empty() && block.last_expr.is_none() => {
+                // minimal support for blocks evaluation
+                Ok(ValueExpr::Void)
+            }
             ScExpr::PointerType { mutable, typexpr } => {
                 let typ = self.evaluate_expr(typexpr)?.as_type().unwrap_or(Type::Void);
                 // NOTE: we do not emit a diagnostic because we already did in
