@@ -319,10 +319,10 @@ impl ToDiagnostic for Diagnostic {
 /// [^2]: only tested in integer literal, not tested inside float literals,
 ///       and can never occur in hex escape because we are taking the next
 ///       2 characters.
-/// [^3]: in theory this diag is emited in the parser when there is no more
+/// [^3]: in theory this diag is emitted in the parser when there is no more
 ///       token in the token stream, but the token stream guarantees that there
-///       is an EOF token at the end, so this diag is never truly emited.
-/// [^4]: this diag is never truly emited, because we try to use dummy types
+///       is an EOF token at the end, so this diag is never truly emitted.
+/// [^4]: this diag is never truly emitted, because we try to use dummy types
 ///       as much as possible when we encounter an error so there is no testing
 ///       for it.
 /// [^5]: useless to test that a feature isn't implemented in my opinion
