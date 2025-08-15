@@ -139,11 +139,15 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
 
     let value = parse!(parser => Expression);
 
-    let hi = if !value.is_expr_with_block() {
+    let hi = if value.is_expr_with_block() {
+        if let Some(Punct(Punctuation::Semicolon)) = parser.peek_tt() {
+            parser.pop();
+        }
+
+        value.loc.clone()
+    } else {
         // TEST: no. 3
         expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punctuation::Semicolon).1
-    } else {
-        value.loc.clone()
     };
 
     let loc = Span::from_ends(lo.clone(), hi);
