@@ -1369,6 +1369,8 @@ impl Desugarrer {
                 rettypexpr,
                 body,
             } => {
+                self.table.scope_enter(); // fundef scope
+
                 for DsArg {
                     name,
                     name_loc,
@@ -1395,6 +1397,8 @@ impl Desugarrer {
                 }
 
                 self.resolve_block(body);
+
+                self.table.scope_exit(); // fundef scope
 
                 Ok(())
             }
