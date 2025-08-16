@@ -1536,9 +1536,11 @@ impl Desugarrer {
 
                 *sym = LazySymbol::Sym(symref.clone());
 
-                match self.table.bind(name.clone(), symref) {
-                    Ok(()) => {}
-                    Err(d) => self.sink.emit(d),
+                if self.current_path == resolve_path {
+                    match self.table.bind(name.clone(), symref) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.emit(d),
+                    }
                 }
 
                 Ok(())
