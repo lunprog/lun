@@ -1,6 +1,6 @@
 use std::{
     fs,
-    path::Path,
+    path::{Path, PathBuf},
     process::{Command, ExitCode, ExitStatus},
 };
 
@@ -33,6 +33,8 @@ pub enum Cmd {
         #[arg(last = true)]
         args: Vec<String>,
     },
+    /// Compile the examples and return the return code of lunc if it failed.
+    Examples,
     /// Returns the number of line of codes in the `tests` folder
     Loc,
 }
@@ -114,6 +116,51 @@ fn main() -> ExitCode {
 
             if !watch_status.success() {
                 return ExitCode::FAILURE;
+            }
+
+            ExitCode::SUCCESS
+        }
+        Cmd::Examples => {
+            // collect the examples
+            let mut examples = Vec::new();
+
+            fn walk_dir(dir: &Path, examples: &mut Vec<PathBuf>) {
+                if let Ok(entries) = fs::read_dir(dir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        if path.is_dir() {
+                            // we only add the files at the root of the examples
+                            // folder because we might add examples with
+                            // multiple files in a separate dir
+                        } else {
+                            examples.push(path);
+                        }
+                    }
+                }
+            }
+
+            walk_dir(Path::new("examples"), &mut examples);
+
+            // build the compiler
+            let build_status = build(true, "lunc");
+
+            if !build_status.success() {
+                return ExitCode::FAILURE;
+            }
+
+            // try to build the examples
+            for example in examples {
+                eprintln!("Try to build {}..", example.display());
+                let mut cmd = Command::new("target/debug/lunc");
+
+                cmd.arg(example);
+
+                let lunc_status = cmd.status().expect("failed to run lunc");
+
+                if !lunc_status.success() {
+                    return ExitCode::FAILURE;
+                }
+                eprintln!("    SUCCESS");
             }
 
             ExitCode::SUCCESS

@@ -21,6 +21,8 @@ jobs:
         run: cargo xtask test
       - name: Run Internal Tests
         run: cargo test
+      - name: Test compilation of examples
+        run: cargo xtask examples
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
