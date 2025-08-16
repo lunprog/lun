@@ -46,6 +46,9 @@ mod re_exports {
     pub use lunc_fir as fir;
 
     #[doc(inline)]
+    pub use lunc_firgen as firgen;
+
+    #[doc(inline)]
     pub use lunc_lexer as lexer;
 
     #[doc(inline)]
@@ -137,7 +140,6 @@ Debug flags help:
                              * ast
                              * dsir-tree
                              * scir-tree
-                             * fir-tree
                              * fir
                              * asm\
 ";
@@ -206,7 +208,6 @@ pub enum DebugPrint {
     Ast,
     DsirTree,
     ScirTree,
-    FirTree,
     Fir,
     Asm,
 }
@@ -223,7 +224,6 @@ impl FromStr for DebugPrint {
             "ast" => Ok(Dp::Ast),
             "dsir-tree" => Ok(Dp::DsirTree),
             "scir-tree" => Ok(Dp::ScirTree),
-            "fir-tree" => Ok(Dp::FirTree),
             "fir" => Ok(Dp::Fir),
             "asm" => Ok(Dp::Asm),
             _ => Err(CliError::UnknownValue {
