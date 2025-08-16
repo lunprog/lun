@@ -3,6 +3,7 @@
 use std::str::FromStr;
 
 use lunc_diag::FileId;
+use lunc_utils::opt_unreachable;
 
 use crate::{
     directive::{Directive, parse_import_directive, parse_mod_directive},
@@ -88,6 +89,15 @@ pub enum Item {
         value: Expression,
         loc: Span,
     },
+    /// Global uninitialized
+    ///
+    /// `ident ":" expression ";"`
+    GlobalUninit {
+        name: String,
+        name_loc: Span,
+        typexpr: Expression,
+        loc: Span,
+    },
     /// Extern block.
     ///
     /// `"extern" ident "{" ( item )* "}"`
@@ -128,14 +138,36 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
         _ => Some(parse!(@fn parser => parse_typexpr)),
     };
 
-    // TEST: no. 2
-    let (is_const, _) = expect_token!(
-        parser => [
-            Punct(Punctuation::Colon), true;
-            Punct(Punctuation::Equal), false;
-        ],
-        [Punctuation::Colon, Punctuation::Equal]
-    );
+    let is_const = match parser.peek_tt() {
+        Some(Punct(Punctuation::Colon)) => {
+            // const global def
+            true
+        }
+        Some(Punct(Punctuation::Equal)) => {
+            // var global def
+            false
+        }
+        _ => {
+            // uninit global def
+            let Some(typexpr) = typexpr else {
+                // SAFETY: we always parse a typexpr if the token after :
+                // isn't : or =
+                opt_unreachable!()
+            };
+
+            // TEST: no. 2
+            let hi = expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punctuation::Semicolon).1;
+
+            return Ok(Item::GlobalUninit {
+                name,
+                name_loc: lo.clone(),
+                typexpr,
+                loc: Span::from_ends(lo, hi),
+            });
+        }
+    };
+
+    parser.pop();
 
     let value = parse!(parser => Expression);
 

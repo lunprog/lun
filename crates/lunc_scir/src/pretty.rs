@@ -39,6 +39,23 @@ impl PrettyDump for ScItem {
 
                 Ok(())
             }
+            ScItem::GlobalUninit {
+                name,
+                name_loc,
+                typexpr,
+                loc,
+                sym,
+            } => {
+                ctx.pretty_struct("GlobalUninit")
+                    .field("name", (name, name_loc))
+                    .field("typexpr", typexpr)
+                    .field("sym", sym)
+                    .finish()?;
+
+                ctx.print_loc(loc)?;
+
+                Ok(())
+            }
             ScItem::FunDefinition {
                 name,
                 name_loc,

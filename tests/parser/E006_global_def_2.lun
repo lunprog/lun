@@ -1,2 +1,2 @@
 // EO06: error testing - ExpectedToken
-a : b;
+a : u8

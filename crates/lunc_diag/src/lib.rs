@@ -524,7 +524,7 @@ pub enum ErrorCode {
     /// borrowed as mutable, but was not defined as mutable
     BorrowMutWhenNotDefinedMut = 36,
     /// function declaration outside of an extern block
-    FunDeclOutsideExternBlock = 37,
+    OutsideExternBlock = 37,
     /// unknown abi
     UnknownAbi = 38,
     /// item not allowed inside an extern block

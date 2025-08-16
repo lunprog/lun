@@ -9,4 +9,5 @@ globFloat := 12.0;
 // extern block
 extern "C" {
     hello :: fun();
+    some_static : *str;
 }

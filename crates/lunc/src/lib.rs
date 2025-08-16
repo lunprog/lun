@@ -444,7 +444,7 @@ pub fn run() -> Result<()> {
                 abort()
             }
         }
-        eprintln!("BUG: unexpected compiler panic.");
+        eprintln!("BUG: internal compiler error: unexpected panic.");
         eprintln!(
             "  = note: we would appreciate a bug report on https://github.com/lunprog/lun/issues/new",
         );

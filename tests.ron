@@ -3251,11 +3251,11 @@ error: compilation of `./tests/parser/E006_global_def_1` failed due to 1 error a
         test_code: 0,
     ),
     "parser/E006_global_def_2": (
-        compiler_out: "error[E006]: expected : or =, found `;`
-  ┌─ ./tests/parser/E006_global_def_2.lun:2:6
+        compiler_out: "error[E006]: expected ;, found <eof>
+  ┌─ ./tests/parser/E006_global_def_2.lun:3:1
   │
-2 │ a : b;
-  │      ^
+3 │ 
+  │ ^
 
 error: compilation of `./tests/parser/E006_global_def_2` failed due to 1 error and 0 warnings
 
@@ -3611,19 +3611,19 @@ error: compilation of `./tests/parser/E038` failed due to 1 error and 0 warnings
   } @ 20..32 (fid = 0),
 
   Import {
-    path: orb.driver.run @ 59..73 (fid = 0);
+    path: orb.driver.run @ 62..76 (fid = 0);
     alias: none;
-  } @ 51..74 (fid = 0),
+  } @ 54..77 (fid = 0),
 
   Import {
-    path: std @ 83..86 (fid = 0);
+    path: std @ 86..89 (fid = 0);
     alias: none;
-  } @ 75..87 (fid = 0),
+  } @ 78..90 (fid = 0),
 
   Import {
-    path: std.rc.Rc @ 96..105 (fid = 0);
+    path: std.rc.Rc @ 99..108 (fid = 0);
     alias: ReferenceCountedPtr;
-  } @ 88..129 (fid = 0),
+  } @ 91..132 (fid = 0),
 ]
 ",
         compiler_code: 0,
@@ -4083,8 +4083,16 @@ error: compilation of `./tests/parser/E038` failed due to 1 error and 0 warnings
           rettypexpr : none;
         } @ 164..169 (fid = 0);
       } @ 155..170 (fid = 0),
+
+      GlobalUninit {
+        name: some_static @ 175..186 (fid = 0);
+        typexpr: PointerType {
+          mutable: false;
+          typexpr: ident str @ 190..193 (fid = 0);
+        } @ 189..193 (fid = 0);
+      } @ 175..194 (fid = 0),
     ];
-  } @ 138..172 (fid = 0),
+  } @ 138..196 (fid = 0),
 ]
 "#,
         compiler_code: 0,
@@ -4346,8 +4354,7 @@ error: compilation of `./tests/scir/E027` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "scir/E028": (
-        compiler_out: "[crates/lunc_scir/src/checking.rs:944:25] missing = 1
-error[E028]: this function takes 1 arguments but 0 were provided
+        compiler_out: "error[E028]: this function takes 1 arguments but 0 were provided
   ┌─ ./tests/scir/E028.lun:6:5
   │
 6 │     a();
@@ -4428,36 +4435,48 @@ error[E029]: unable to resolve expression at comptime
   │                    due to this expression
 
 error[E009]: expected type found an expression
-   ┌─ ./tests/scir/E029.lun:12:5
+   ┌─ ./tests/scir/E029.lun:10:9
    │
-12 │ g : a : {};
-   │     ^
+10 │     g : a;
+   │         ^
 
 error[E029]: unable to resolve expression at comptime
-   ┌─ ./tests/scir/E029.lun:12:5
+   ┌─ ./tests/scir/E029.lun:10:9
    │
-12 │ g : a : {};
-   │     ^
-   │     │
-   │     due to this expression
-
-error[E029]: unable to resolve expression at comptime
-   ┌─ ./tests/scir/E029.lun:15:6
-   │
-15 │ i :: h();
-   │      ^^^
-   │      │
-   │      due to this expression
-
-error[E029]: unable to resolve expression at comptime
-   ┌─ ./tests/scir/E029.lun:18:9
-   │
-18 │     k : a : {};
+10 │     g : a;
    │         ^
    │         │
    │         due to this expression
 
-error: compilation of `./tests/scir/E029` failed due to 12 errors and 0 warnings
+error[E009]: expected type found an expression
+   ┌─ ./tests/scir/E029.lun:13:5
+   │
+13 │ h : a : {};
+   │     ^
+
+error[E029]: unable to resolve expression at comptime
+   ┌─ ./tests/scir/E029.lun:13:5
+   │
+13 │ h : a : {};
+   │     ^
+   │     │
+   │     due to this expression
+
+error[E011]: function call requires function type
+   ┌─ ./tests/scir/E029.lun:16:6
+   │
+16 │ j :: h();
+   │      ^ instead found 'void'
+
+error[E029]: unable to resolve expression at comptime
+   ┌─ ./tests/scir/E029.lun:19:9
+   │
+19 │     l : a : {};
+   │         ^
+   │         │
+   │         due to this expression
+
+error: compilation of `./tests/scir/E029` failed due to 14 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4731,7 +4750,15 @@ error[E037]: function declaration must be inside of an extern block.
   │
   = consider moving the function declaration into an extern block like 'extern "C" { .. }'.
 
-error: compilation of `./tests/scir/E037` failed due to 2 errors and 0 warnings
+error[E037]: global uninit must be inside of an extern block.
+  ┌─ ./tests/scir/E037.lun:8:1
+  │
+8 │ c : u8;
+  │ ^^^^^^^
+  │
+  = consider moving the function declaration into an extern block like 'extern "C" { .. }'.
+
+error: compilation of `./tests/scir/E037` failed due to 3 errors and 0 warnings
 
 "#,
         compiler_code: 101,

@@ -55,6 +55,20 @@ impl PrettyDump for Item {
 
                 Ok(())
             }
+            Item::GlobalUninit {
+                name,
+                name_loc,
+                typexpr,
+                loc,
+            } => {
+                ctx.pretty_struct("GlobalUninit")
+                    .field("name", (name, name_loc))
+                    .field("typexpr", typexpr)
+                    .finish()?;
+                ctx.print_loc(loc)?;
+
+                Ok(())
+            }
             Item::ExternBlock { abi, items, loc } => {
                 ctx.pretty_struct("ExternBlock")
                     .field("abi", abi)

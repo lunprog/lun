@@ -39,6 +39,17 @@ impl SemaChecker {
 
                 Ok(())
             }
+            ScItem::GlobalUninit {
+                name: _,
+                name_loc: _,
+                typexpr,
+                loc: _,
+                sym: _,
+            } => {
+                self.safety_ck_expr(typexpr)?;
+
+                Ok(())
+            }
             ScItem::FunDefinition {
                 name: _,
                 name_loc: _,

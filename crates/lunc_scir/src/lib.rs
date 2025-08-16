@@ -19,7 +19,7 @@ use lunc_utils::{
 
 pub use lunc_dsir::{Abi, BinOp, UnaryOp};
 
-use crate::diags::FunDeclOutsideExternBlock;
+use crate::diags::OutsideExternBlock;
 
 pub mod checking;
 pub mod diags;
@@ -73,6 +73,17 @@ pub enum ScItem {
         mutable: bool,
         typexpr: Box<Option<ScExpression>>,
         value: Box<ScExpression>,
+        loc: OSpan,
+        /// corresponding symbol of this definition
+        sym: Symbol,
+    },
+    /// See [`DsItem::GlobalUninit`]
+    ///
+    /// [`DsItem::GlobalUninit`]: lunc_dsir::DsItem::GlobalUninit
+    GlobalUninit {
+        name: String,
+        name_loc: OSpan,
+        typexpr: ScExpression,
         loc: OSpan,
         /// corresponding symbol of this definition
         sym: Symbol,
@@ -140,6 +151,7 @@ impl ScItem {
     pub fn loc(&self) -> Span {
         match self {
             ScItem::GlobalDef { loc, .. }
+            | ScItem::GlobalUninit { loc, .. }
             | ScItem::Module { loc, .. }
             | ScItem::FunDefinition { loc, .. }
             | ScItem::FunDeclaration { loc, .. }
@@ -225,6 +237,19 @@ impl FromHigher for ScItem {
                 value: lower(value),
                 loc,
                 sym: lazy.unwrap_sym(),
+            },
+            DsItem::GlobalUninit {
+                name,
+                name_loc,
+                typexpr,
+                loc,
+                sym,
+            } => ScItem::GlobalUninit {
+                name,
+                name_loc,
+                typexpr: lower(typexpr),
+                loc,
+                sym: sym.unwrap_sym(),
             },
             DsItem::Module {
                 name,
@@ -369,7 +394,8 @@ impl FromHigher for ScExpression {
             },
             DsExpr::FunDeclaration { .. } => ScExpr::Poisoned {
                 diag: Some(
-                    FunDeclOutsideExternBlock {
+                    OutsideExternBlock {
+                        item_name: "function declaration",
                         loc: node.loc.clone().unwrap(),
                     }
                     .into_diag(),

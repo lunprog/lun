@@ -11,9 +11,9 @@ use lunc_utils::{
 use crate::diags::{
     ArityDoesntMatch, BorrowMutWhenNotDefinedMut, BreakUseAnImplicitLabelInBlock,
     BreakWithValueUnsupported, CallRequiresFuncType, CantContinueABlock, CantResolveComptimeValue,
-    ExpectedPlaceExpression, ExpectedTypeFoundExpr, FunDeclOutsideExternBlock, FunctionInGlobalMut,
-    ItemNotAllowedInExternBlock, LabelKwOutsideLoopOrBlock, MismatchedTypes, TypeAnnotationsNeeded,
-    UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
+    ExpectedPlaceExpression, ExpectedTypeFoundExpr, FunctionInGlobalMut,
+    ItemNotAllowedInExternBlock, LabelKwOutsideLoopOrBlock, MismatchedTypes, OutsideExternBlock,
+    TypeAnnotationsNeeded, UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
 };
 
 use super::*;
@@ -60,6 +60,43 @@ impl SemaChecker {
     fn pre_ck_item(&mut self, item: &mut ScItem) -> Result<(), Diagnostic> {
         match item {
             ScItem::GlobalDef { .. } => self.pre_ck_global_def(item),
+            ScItem::GlobalUninit {
+                name: _,
+                name_loc: _,
+                typexpr,
+                loc: _,
+                sym,
+            } => {
+                // global uninit pre ckl
+
+                // NOTE: we don't check if the container is ExternBlock here
+                // because it will be checked later in `ck_item`.
+
+                self.ck_expr(typexpr, Some(Type::Type))?;
+
+                if typexpr.typ != Type::Type {
+                    self.sink.emit(ExpectedTypeFoundExpr {
+                        loc: typexpr.loc.clone().unwrap(),
+                    })
+                }
+
+                let typ = {
+                    let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
+                        CantResolveComptimeValue {
+                            note,
+                            loc_expr: typexpr.loc.clone().unwrap(),
+                            loc,
+                        }
+                        .into_diag()
+                    })?;
+
+                    value.as_type().unwrap_or(Type::Void)
+                };
+
+                sym.set_typ(typ);
+
+                Ok(())
+            }
             ScItem::FunDefinition {
                 name: _,
                 name_loc: _,
@@ -580,6 +617,27 @@ impl SemaChecker {
 
                 Ok(())
             }
+            ScItem::GlobalUninit { .. } if self.container == ItemContainer::ExternBlock => {
+                // global uninit ck
+
+                Ok(())
+            }
+            ScItem::GlobalUninit {
+                name: _,
+                name_loc: _,
+                typexpr: _,
+                loc,
+                sym: _,
+            } => {
+                // global uninit outside extern block
+
+                self.sink.emit(OutsideExternBlock {
+                    item_name: "global uninit",
+                    loc: loc.clone().unwrap(),
+                });
+
+                Ok(())
+            }
             ScItem::FunDefinition {
                 name: _,
                 name_loc: _,
@@ -642,7 +700,8 @@ impl SemaChecker {
             } => {
                 // fundecl must be inside of an extern block..
 
-                self.sink.emit(FunDeclOutsideExternBlock {
+                self.sink.emit(OutsideExternBlock {
+                    item_name: "function declaration",
                     loc: loc.clone().unwrap(),
                 });
 
@@ -670,8 +729,8 @@ impl SemaChecker {
 
                 for item in old_items {
                     match item {
-                        ScItem::FunDeclaration { .. } => {
-                            // function declaration are allowed in an extern block
+                        ScItem::FunDeclaration { .. } | ScItem::GlobalUninit { .. } => {
+                            // function declaration and global uninit are allowed in an extern block
                             new_items.push(item);
                         }
                         ScItem::FunDefinition { .. } => {
@@ -941,7 +1000,6 @@ impl SemaChecker {
 
                     if args_ty.len() < args.len() {
                         let missing = args.len() - args_ty.len();
-                        dbg!(missing);
 
                         args_ty.extend(iter::repeat_n(Type::Void, missing));
                     }

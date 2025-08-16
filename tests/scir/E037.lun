@@ -1,6 +1,8 @@
-// EO37: error testing - FunDeclOutsideExternBlock
+// EO37: error testing - OutsideExternBlock
 a :: fun();
 
 b :: fun() {
     fun();
 }
+
+c : u8;

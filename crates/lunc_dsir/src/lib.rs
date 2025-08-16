@@ -82,6 +82,17 @@ pub enum DsItem {
         /// corresponding symbol of this definition
         sym: LazySymbol,
     },
+    /// See [`Item::GlobalUninit`]
+    ///
+    /// [`Item::GlobalUninit`]: lunc_parser::item::Item::GlobalUninit
+    GlobalUninit {
+        name: String,
+        name_loc: OSpan,
+        typexpr: DsExpression,
+        loc: OSpan,
+        /// corresponding symbol of this definition
+        sym: LazySymbol,
+    },
     /// A [`Mod`], with its items inlined inside this member, constructed from
     /// the dsir directive `Mod` by the Desugarrer
     ///
@@ -175,6 +186,18 @@ impl FromHigher for DsItem {
                 mutable: true,
                 typexpr: lower(typexpr),
                 value: Box::new(lower(value)),
+                loc: Some(loc),
+            },
+            Item::GlobalUninit {
+                name,
+                name_loc,
+                typexpr,
+                loc,
+            } => DsItem::GlobalUninit {
+                sym: LazySymbol::Name(name.clone()),
+                name,
+                name_loc: Some(name_loc),
+                typexpr: lower(typexpr),
                 loc: Some(loc),
             },
             Item::ExternBlock { abi, items, loc } => DsItem::ExternBlock {
@@ -1091,6 +1114,11 @@ impl Desugarrer {
 
                 Ok(())
             }
+            DsItem::GlobalUninit { typexpr, .. } => {
+                self.resolve_expr(typexpr)?;
+
+                Ok(())
+            }
             DsItem::ExternBlock {
                 abi: _,
                 items,
@@ -1526,6 +1554,40 @@ impl Desugarrer {
                     } else {
                         Typeness::Implicit
                     },
+                    name_loc.clone(),
+                ));
+
+                self.orb
+                    .goto_mut(&self.current_path)
+                    .unwrap()
+                    .define(name.clone(), symref.clone());
+
+                *sym = LazySymbol::Sym(symref.clone());
+
+                if self.current_path == resolve_path {
+                    match self.table.bind(name.clone(), symref) {
+                        Ok(()) => {}
+                        Err(d) => self.sink.emit(d),
+                    }
+                }
+
+                Ok(())
+            }
+            DsItem::GlobalUninit {
+                name,
+                name_loc,
+                typexpr: _,
+                loc: _,
+                sym,
+            } => {
+                let mut path = self.current_path.clone();
+                path.push(name.clone());
+
+                let symref = sym.symbol().unwrap_or(Symbol::global(
+                    true,
+                    name.clone(),
+                    path,
+                    Typeness::Explicit,
                     name_loc.clone(),
                 ));
 

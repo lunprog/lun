@@ -359,16 +359,18 @@ impl ToDiagnostic for BorrowMutWhenNotDefinedMut {
 }
 
 #[derive(Debug, Clone)]
-pub struct FunDeclOutsideExternBlock {
+pub struct OutsideExternBlock {
+    /// name of the item either `function declaration` or `global uninit`
+    pub item_name: &'static str,
     /// location of the fundecl
     pub loc: Span,
 }
 
-impl ToDiagnostic for FunDeclOutsideExternBlock {
+impl ToDiagnostic for OutsideExternBlock {
     fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
-            .with_code(ErrorCode::FunDeclOutsideExternBlock)
-            .with_message("function declaration must be inside of an extern block.")
+            .with_code(ErrorCode::OutsideExternBlock)
+            .with_message(format!("{} must be inside of an extern block.", self.item_name))
             .with_label(Label::primary(self.loc.fid, self.loc))
             .with_note("consider moving the function declaration into an extern block like 'extern \"C\" { .. }'.")
     }

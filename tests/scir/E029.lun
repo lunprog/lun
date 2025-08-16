@@ -7,13 +7,14 @@ c :: fun(d: a) -> a {}
 extern "C" {
     e : a : fun();
     f :: fun(a) -> a;
+    g : a;
 }
 
-g : a : {};
+h : a : {};
 
-h :: fun() {}
-i :: h();
+i :: fun() {}
+j :: h();
 
-j :: fun() {
-    k : a : {};
+k :: fun() {
+    l : a : {};
 }
