@@ -1498,7 +1498,16 @@ impl SemaChecker {
                 // we finally update the type of the symbol.
                 symref.set_typ(typ);
             }
-            ScStmt::Defer { expr } | ScStmt::Expression(expr) => {
+            ScStmt::Defer { expr } => {
+                self.ck_expr(expr, None)?;
+
+                self.sink.emit(feature_todo! {
+                    feature: "defer statement",
+                    label: "",
+                    loc: stmt.loc.clone().unwrap()
+                });
+            }
+            ScStmt::Expression(expr) => {
                 self.ck_expr(expr, None)?;
             }
         }
