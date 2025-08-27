@@ -636,21 +636,23 @@ pub fn run() -> Result<()> {
     }
 
     // 7. generate the FIR, SCIR => FIR
-    let mut firgener = FirGen::new(opts.clone());
-    let unit = firgener.produce(scir);
+    if false {
+        let mut firgener = FirGen::new(opts.clone());
+        let unit = firgener.produce(scir);
 
-    // 8. verify the FIR
-    if !argv.debug_never_verify_fir() {
-        let mut verifier = FirUnitVerifier::new(&unit, opts.clone());
-        verifier.verify()?;
-    }
+        // 8. verify the FIR
+        if !argv.debug_never_verify_fir() {
+            let mut verifier = FirUnitVerifier::new(&unit, opts.clone());
+            verifier.verify()?;
+        }
 
-    //    maybe print the FIR
-    if argv.debug_print_at(DebugPrint::Fir) {
-        unit.dump();
-    }
-    if argv.debug_halt_at(DebugHalt::Fir) {
-        return Ok(());
+        //    maybe print the FIR
+        if argv.debug_print_at(DebugPrint::Fir) {
+            unit.dump();
+        }
+        if argv.debug_halt_at(DebugHalt::Fir) {
+            return Ok(());
+        }
     }
 
     // use output to remove the warning

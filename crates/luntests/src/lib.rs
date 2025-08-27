@@ -299,12 +299,7 @@ impl TestStage {
             TestStage::Scir => &["-Dhalt-at=scir", "-Dprint=scir-tree"],
             // NOTE: we print the dsir tree but we do not halt like the Dsir
             // stage does.
-            TestStage::Multifile => &[
-                "-Dprint=scir-tree",
-                "-Dhalt-at=scir", // NOTE: this is temporary until we can really generate FIR
-                "-orb-name",
-                "multifile",
-            ],
+            TestStage::Multifile => &["-Dprint=scir-tree", "-orb-name", "multifile"],
         }
     }
 }
