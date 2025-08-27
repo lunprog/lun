@@ -11,7 +11,7 @@ lunc_utils = { workspace = true }
 termcolor = { workspace = true }
 serde = { workspace = true }
 ron = "0.10.1"
-indexmap = { version = "2.10.0", features = ["serde"] }
+indexmap = { version = "2.11.0", features = ["serde"] }
 humantime = "2.2.0"
 thiserror = { workspace = true }
 clap = { version = "4.5.45", features = ["derive"] }
