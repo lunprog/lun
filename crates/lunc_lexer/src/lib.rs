@@ -274,6 +274,9 @@ impl Lexer {
     }
 
     pub fn lex_identifier(&mut self) -> TokenType {
+        // NOTE: if the lexing of identifiers is changed update the
+        // `is_identifier` function in lunc_utils.
+
         let word = self.lex_word();
 
         match self.peek() {

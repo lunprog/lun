@@ -945,11 +945,14 @@ pub struct Desugarrer {
 
 impl Desugarrer {
     /// Create a new desugarrer.
-    pub fn new(sink: DiagnosticSink, orb_name: String) -> Desugarrer {
+    pub fn new(sink: DiagnosticSink, orb_name: impl ToString) -> Desugarrer {
         Desugarrer {
             sink,
             table: SymbolTable::new(),
-            orb: ModuleTree::new(Some(orb_name), LazySymbol::Name("orb".to_string())),
+            orb: ModuleTree::new(
+                Some(orb_name.to_string()),
+                LazySymbol::Name("orb".to_string()),
+            ),
             current_path: EffectivePath::with_root_member("orb"),
         }
     }

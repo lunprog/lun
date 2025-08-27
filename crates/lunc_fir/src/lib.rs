@@ -36,7 +36,9 @@
 //!     verifier::FirUnitVerifier,
 //! };
 //! use lunc_utils::pretty::{PrettyDump, PrettyCtxt};
-//! use lunc_utils::target::PtrWidth;
+//! use lunc_utils::target::{PtrWidth, TargetTriplet};
+//! use lunc_utils::BuildOptions;
+//! use std::str::FromStr;
 //!
 //! let mut unit = FirUnit::new();
 //!
@@ -117,7 +119,11 @@
 //! inst.ret(FcType::S32, Arg::Constant(ConstValue::S32(1)));
 //! builder.bblock().finish();
 //!
-//! let mut verifier = FirUnitVerifier::new(&unit, PtrWidth::Ptr64);
+//! let mut verifier = FirUnitVerifier::new(
+//!     &unit,
+//!     BuildOptions::new("", TargetTriplet::from_str("x86_64-linux-gnu").unwrap())
+//! );
+//!
 //! match verifier.verify() {
 //!     Ok(()) => {}
 //!     Err(err) => {
@@ -700,13 +706,26 @@ idtype! {
         /// read-only
         ro: bool,
         /// value
-        val: ConstValue,
+        ///
+        /// if set to `None` this is a declaration of a global, and if it
+        /// `Some(..)` it is a definition.
+        val: Option<ConstValue>,
     }
 }
 
 impl Glob {
+    /// Create a global definition
+    pub fn new_def(name: impl ToString, ty: FcType, ro: bool, val: ConstValue) -> Glob {
+        Glob::new(name, ty, ro, Some(val))
+    }
+
+    /// Create a global declaration
+    pub fn new_decl(name: impl ToString, ty: FcType, ro: bool) -> Glob {
+        Glob::new(name, ty, ro, None)
+    }
+
     /// Create a new global variable
-    pub fn new(name: impl ToString, ty: FcType, ro: bool, val: ConstValue) -> Glob {
+    pub fn new(name: impl ToString, ty: FcType, ro: bool, val: Option<ConstValue>) -> Glob {
         Glob::with_internal(InternalGlob {
             name: Name::from_string(name),
             ty,
@@ -726,7 +745,7 @@ impl Glob {
                 ty: Box::new(FcType::U8),
             },
             true,
-            ConstValue::string(string),
+            Some(ConstValue::string(string)),
         )
     }
 }
@@ -743,13 +762,23 @@ impl PrettyDump for Glob {
                 val,
             } = this;
 
-            write!(out, "{name}: {typ}")?;
+            if let Some(val) = val {
+                write!(out, "{name}: {typ}")?;
 
-            if *ro {
-                write!(out, " readonly")?;
+                if *ro {
+                    write!(out, " readonly")?;
+                }
+
+                writeln!(out, " = {val};")?;
+            } else {
+                write!(out, "declare {name}: {typ}")?;
+
+                if *ro {
+                    write!(out, " readonly")?;
+                }
+
+                writeln!(out, ";")?;
             }
-
-            writeln!(out, " = {val};")?;
 
             Ok(())
         })

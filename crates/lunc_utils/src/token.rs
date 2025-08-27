@@ -274,7 +274,8 @@ impl Display for TokenType {
     }
 }
 
-// WARN: /!\ If a keyword is added change the `lex_identifier` method of the Lexer
+// WARN: /!\ If a keyword is added change the `lex_identifier` method of the
+// Lexer and add it to the list of all keywords.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Keyword {
     /// and
@@ -419,6 +420,37 @@ impl Keyword {
 
     /// `while` keyword.
     pub const WHILE: &str = "while";
+
+    /// List of all of the keywords
+    pub const ALL_KEYWORDS: [&str; 27] = [
+        Keyword::AND,
+        Keyword::AS,
+        Keyword::BREAK,
+        Keyword::COMPTIME,
+        Keyword::CONTINUE,
+        Keyword::DEFER,
+        Keyword::ELSE,
+        Keyword::EXTERN,
+        Keyword::FALSE,
+        Keyword::FOR,
+        Keyword::FUN,
+        Keyword::IF,
+        Keyword::IMPL,
+        Keyword::IN,
+        Keyword::LET,
+        Keyword::LOOP,
+        Keyword::MUT,
+        Keyword::NULL,
+        Keyword::OR,
+        Keyword::ORB,
+        Keyword::PUB,
+        Keyword::RETURN,
+        Keyword::SELF,
+        Keyword::THEN,
+        Keyword::TRAIT,
+        Keyword::TRUE,
+        Keyword::WHILE,
+    ];
 }
 
 impl Display for Keyword {

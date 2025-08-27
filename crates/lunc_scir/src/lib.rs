@@ -12,9 +12,9 @@ use lunc_dsir::{
     OSpan, QualifiedPath,
 };
 use lunc_utils::{
-    FromHigher, Span, lower, opt_unreachable,
+    BuildOptions, FromHigher, Span, lower, opt_unreachable,
     symbol::{Symbol, Type, ValueExpr},
-    target::{PtrWidth, TargetTriplet},
+    target::PtrWidth,
 };
 
 pub use lunc_dsir::{Abi, BinOp, UnaryOp};
@@ -626,6 +626,13 @@ pub struct ScBlock {
     pub typ: Type,
 }
 
+impl ScBlock {
+    /// Is the block empty? (no stmts and no last expr)
+    pub fn is_empty(&self) -> bool {
+        self.stmts.is_empty() && self.last_expr.is_none()
+    }
+}
+
 impl FromHigher for ScBlock {
     type Higher = DsBlock;
 
@@ -727,21 +734,21 @@ pub struct SemaChecker {
     fun_retty_loc: OSpan,
     /// it is used to check the types and correctness of label using expression
     label_stack: LabelStack,
-    /// the target we are compiling to
-    target: TargetTriplet,
     /// container of the item currently being checked
     container: ItemContainer,
+    /// the build options
+    opts: BuildOptions,
 }
 
 impl SemaChecker {
-    pub fn new(sink: DiagnosticSink, target: TargetTriplet) -> SemaChecker {
+    pub fn new(sink: DiagnosticSink, opts: BuildOptions) -> SemaChecker {
         SemaChecker {
             sink,
             fun_retty: Type::Unknown,
             fun_retty_loc: None,
             label_stack: LabelStack::new(),
-            target,
             container: ItemContainer::Module,
+            opts,
         }
     }
 
@@ -780,7 +787,7 @@ impl SemaChecker {
                 Type::I32 => Ok(ValueExpr::I32(*i as i32)),
                 Type::I64 => Ok(ValueExpr::I64(*i as i64)),
                 Type::I128 => Ok(ValueExpr::I128(*i as i128)),
-                Type::Isz => match self.target.ptr_width() {
+                Type::Isz => match self.opts.target().ptr_width() {
                     PtrWidth::Ptr16 => Ok(ValueExpr::I16(*i as i16)),
                     PtrWidth::Ptr32 => Ok(ValueExpr::I32(*i as i32)),
                     PtrWidth::Ptr64 => Ok(ValueExpr::I64(*i as i64)),
@@ -790,7 +797,7 @@ impl SemaChecker {
                 Type::U32 => Ok(ValueExpr::U32(*i as u32)),
                 Type::U64 => Ok(ValueExpr::U64(*i as u64)),
                 Type::U128 => Ok(ValueExpr::U128(*i /* as u128 */)),
-                Type::Usz => match self.target.ptr_width() {
+                Type::Usz => match self.opts.target().ptr_width() {
                     PtrWidth::Ptr16 => Ok(ValueExpr::U16(*i as u16)),
                     PtrWidth::Ptr32 => Ok(ValueExpr::U32(*i as u32)),
                     PtrWidth::Ptr64 => Ok(ValueExpr::U64(*i as u64)),

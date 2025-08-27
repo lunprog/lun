@@ -15,13 +15,15 @@ use std::{
     thread,
 };
 
-use lunc_diag::Diagnostic;
+use lunc_fir::verifier::{FirUnitVerifier, VerifierError};
+use lunc_utils::{BuildOptions, is_identifier};
 use termcolor::{ColorChoice, StandardStream};
 use thiserror::Error;
 
 use crate::{
-    diag::{DiagnosticSink, FileId},
+    diag::{Diagnostic, DiagnosticSink, FileId},
     dsir::Desugarrer,
+    firgen::FirGen,
     lexer::Lexer,
     parser::Parser,
     scir::SemaChecker,
@@ -102,6 +104,10 @@ pub enum CliError {
     TargetParsingError(#[from] TargetParsingError),
     #[error("unsupported target: '{target}', type 'lunc -target help' for details")]
     UnsupportedTargetTriplet { target: TargetTriplet },
+    #[error("the orb name must be a valid identifier but got {orb_name:?}.")]
+    NonIdentifierOrbName { orb_name: String },
+    #[error(transparent)]
+    FirVerify(#[from] VerifierError),
 }
 
 pub const HELP_MESSAGE: &str = "\
@@ -141,7 +147,8 @@ Debug flags help:
                              * dsir-tree
                              * scir-tree
                              * fir
-                             * asm\
+                             * asm
+-Dnever-verify-fir           Never verifies the generated FIR.\
 ";
 
 pub fn target_help(out: &mut impl Write) {
@@ -164,8 +171,12 @@ List of supported targets:\
 /// Debug flags
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DebugFlag {
+    /// Halt build at the given stage
     HaltAt(DebugHalt),
+    /// Print to stderr some of the outputs of stages
     Print(DebugPrint),
+    /// Never verifies the FIR
+    NeverVerifyFir,
     /// Prints the debug flag help message
     Help,
 }
@@ -313,6 +324,9 @@ impl CliArgs {
                         debug.push(DebugFlag::HaltAt(stage.parse()?));
                     }
                     Some(("print", value)) => debug.push(DebugFlag::Print(value.parse()?)),
+                    None if flag_value == "never-verify-fir" => {
+                        debug.push(DebugFlag::NeverVerifyFir)
+                    }
                     None if flag_value == "help" => {
                         debug.push(DebugFlag::Help);
                     }
@@ -360,7 +374,14 @@ impl CliArgs {
             return Err(CliError::NoInputFile);
         };
 
-        let orb_name = orb_name.unwrap_or(input.with_extension("").to_string_lossy().to_string());
+        let orb_name = orb_name.unwrap_or(
+            input
+                .with_extension("")
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .to_string(),
+        );
         let output = output.unwrap_or(PathBuf::from(orb_name.as_str()));
 
         Ok(CliArgs {
@@ -389,6 +410,10 @@ impl CliArgs {
     /// Return true if one of the debug flags is `-Dhalt-at=STAGE`
     pub fn debug_halt_at(&self, stage: DebugHalt) -> bool {
         self.debug.contains(&DebugFlag::HaltAt(stage))
+    }
+
+    pub fn debug_never_verify_fir(&self) -> bool {
+        self.debug.contains(&DebugFlag::NeverVerifyFir)
     }
 
     fn next_arg(args: &mut impl Iterator<Item = String>) -> Result<String> {
@@ -496,6 +521,7 @@ pub fn run() -> Result<()> {
         return Ok(());
     }
 
+    // Command line args checks
     if let TargetInput::Triplet(ref target) = argv.target
         && !TargetTriplet::SUPPORTED_TARGETS.contains(target)
     {
@@ -503,6 +529,14 @@ pub fn run() -> Result<()> {
             target: target.clone(),
         });
     }
+
+    if !is_identifier(&argv.orb_name) {
+        return Err(CliError::NonIdentifierOrbName {
+            orb_name: argv.orb_name.clone(),
+        });
+    }
+    let target = argv.target.clone().triplet().unwrap();
+    let opts = BuildOptions::new(&argv.orb_name, target);
 
     // 1. retrieve the source code, file => text
     let source_code = read_to_string(&argv.input).map_err(|err| CliError::FileIoError {
@@ -566,7 +600,7 @@ pub fn run() -> Result<()> {
     }
 
     // 5. desugarring, AST => DSIR
-    let mut desugarrer = Desugarrer::new(sink.clone(), argv.orb_name.clone());
+    let mut desugarrer = Desugarrer::new(sink.clone(), opts.orb_name());
     let dsir = desugarrer.produce(ast).ok_or_else(builderr)?;
 
     //    maybe print the DSIR
@@ -584,7 +618,7 @@ pub fn run() -> Result<()> {
     }
 
     // 6. type-checking and all the semantic analysis, DSIR => SCIR
-    let mut semacker = SemaChecker::new(sink.clone(), argv.target.clone().triplet().unwrap());
+    let mut semacker = SemaChecker::new(sink.clone(), opts.clone());
     let scir = semacker.produce(dsir).ok_or_else(builderr)?;
 
     //    maybe print the SCIR
@@ -599,6 +633,24 @@ pub fn run() -> Result<()> {
         }
 
         Err(builderr())?;
+    }
+
+    // 7. generate the FIR, SCIR => FIR
+    let mut firgener = FirGen::new(opts.clone());
+    let unit = firgener.produce(scir);
+
+    // 8. verify the FIR
+    if !argv.debug_never_verify_fir() {
+        let mut verifier = FirUnitVerifier::new(&unit, opts.clone());
+        verifier.verify()?;
+    }
+
+    //    maybe print the FIR
+    if argv.debug_print_at(DebugPrint::Fir) {
+        unit.dump();
+    }
+    if argv.debug_halt_at(DebugHalt::Fir) {
+        return Ok(());
     }
 
     // use output to remove the warning

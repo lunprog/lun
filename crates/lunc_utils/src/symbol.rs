@@ -547,6 +547,8 @@ idtype! {
         pub kind: SymKind,
         /// name when defined, it's not the full path
         pub name: String,
+        /// real, unmagled name of the symbol
+        pub realname: Option<String>,
         /// (can't be explained easily)
         ///
         /// eg:
@@ -602,6 +604,8 @@ idtype! {
 
     impl FieldGet<pub name: String> for Symbol;
 
+    impl FieldGet<pub realname: Option<String>> for Symbol;
+
     impl FieldGet<pub kind: SymKind> for Symbol;
 
     impl FieldGet<pub loc: Option<Span>> for Symbol;
@@ -628,6 +632,7 @@ impl Symbol {
         Symbol::with_internal(InternalSymbol {
             kind,
             name,
+            realname: None,
             which,
             path,
             typ: Type::Unknown,
@@ -689,6 +694,7 @@ impl Symbol {
         Symbol::with_internal(InternalSymbol {
             kind: SymKind::Global { mutable: false },
             name: name.to_string(),
+            realname: None,
             which: 0,
             path: EffectivePath::new(),
             typ: Type::Type,
@@ -740,6 +746,7 @@ impl PrettyDump for Symbol {
             let InternalSymbol {
                 kind,
                 name,
+                realname,
                 which,
                 path,
                 typ,
@@ -751,6 +758,7 @@ impl PrettyDump for Symbol {
             ctx.pretty_struct("Symbol")
                 .field("kind", kind)
                 .field("name", (name, loc))
+                .field("realname", realname)
                 .field("which", which)
                 .field("path", path)
                 .field("typ", typ)
@@ -895,6 +903,11 @@ impl EffectivePath {
         self.0.first()
     }
 
+    /// Returns a mutable reference to the first member of the effective path
+    pub fn first_mut(&mut self) -> Option<&mut String> {
+        self.0.first_mut()
+    }
+
     /// Push a new member to the path
     pub fn push(&mut self, member: String) {
         self.0.push(member)
@@ -913,6 +926,11 @@ impl EffectivePath {
     /// Append a path to this path
     pub fn append(&mut self, mut other: EffectivePath) {
         self.0.append(&mut other.0);
+    }
+
+    /// Return a slice of the members
+    pub fn members(&self) -> &[String] {
+        &self.0
     }
 }
 

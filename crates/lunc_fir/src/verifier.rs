@@ -6,7 +6,7 @@
 
 use std::{collections::HashMap, error::Error, iter::zip};
 
-use lunc_utils::is_pow2;
+use lunc_utils::{BuildOptions, is_pow2};
 use thiserror::Error;
 
 use super::*;
@@ -122,15 +122,15 @@ pub struct FirUnitVerifier<'fir> {
     current_bb: Option<BbLabel>,
     /// current backtrace.
     current_backtrace: Vec<Trace>,
-    /// pointer width
-    ptr_width: PtrWidth,
     /// the current function return type.
     funret: Option<FcType>,
+    /// build options
+    opts: BuildOptions,
 }
 
 impl<'fir> FirUnitVerifier<'fir> {
     /// Create a new FIR unit verifier
-    pub fn new(unit: &'fir FirUnit, ptr_width: PtrWidth) -> FirUnitVerifier<'fir> {
+    pub fn new(unit: &'fir FirUnit, opts: BuildOptions) -> FirUnitVerifier<'fir> {
         FirUnitVerifier {
             unit,
             items: HashMap::with_capacity(
@@ -141,8 +141,8 @@ impl<'fir> FirUnitVerifier<'fir> {
             current_fundef: None,
             current_bb: None,
             current_backtrace: Vec::new(),
-            ptr_width,
             funret: None,
+            opts,
         }
     }
 
@@ -520,7 +520,7 @@ impl<'fir> FirUnitVerifier<'fir> {
             } => {
                 inst_typ = Some(FcType::ptr(ty.clone()));
 
-                if !is_pow2(*alignment) || *alignment >= ty.align(self.ptr_width) {
+                if !is_pow2(*alignment) || *alignment >= ty.align(self.opts.target().ptr_width()) {
                     return self.error(InvalidAlignment {
                         typ: ty.clone(),
                         alignment: *alignment,
@@ -652,10 +652,12 @@ impl<'fir> FirUnitVerifier<'fir> {
 
     pub fn verify_glob(&mut self, glob: &Glob) -> Result {
         glob.inspect(|glob| -> Result {
-            let val_typ = glob.val.typ();
+            if let Some(val) = &glob.val {
+                let val_typ = val.typ();
 
-            if !val_typ.type_eq(&glob.ty) {
-                return self.error(TypeMismatch);
+                if !val_typ.type_eq(&glob.ty) {
+                    return self.error(TypeMismatch);
+                }
             }
 
             Ok(())

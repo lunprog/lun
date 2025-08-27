@@ -18,7 +18,7 @@ error[E010]: cannot find `b` in this scope
 8 │     b;
   │     ^
 
-error: compilation of `./tests/desugaring/E010` failed due to 3 errors and 0 warnings
+error: compilation of `E010` failed due to 3 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -50,7 +50,7 @@ error[E013]: `_` is a reserved identifier
   │
   = you can't use `_` as a symbol name
 
-error: compilation of `./tests/desugaring/E013` failed due to 3 errors and 0 warnings
+error: compilation of `E013` failed due to 3 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -64,7 +64,7 @@ error: compilation of `./tests/desugaring/E013` failed due to 3 errors and 0 war
 3 │     b : usz : _;
   │               ^
 
-error: compilation of `./tests/desugaring/E014` failed due to 1 error and 0 warnings
+error: compilation of `E014` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -80,7 +80,7 @@ error: compilation of `./tests/desugaring/E014` failed due to 1 error and 0 warn
 3 │ a := 34;
   │ ^ defined `a` a second time here
 
-error: compilation of `./tests/desugaring/E019` failed due to 1 error and 0 warnings
+error: compilation of `E019` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -96,7 +96,7 @@ error: compilation of `./tests/desugaring/E019` failed due to 1 error and 0 warn
   │
   = help: to create the module 'peekaboo', create the file at path './tests/desugaring/peekaboo.lun'
 
-error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warnings
+error: compilation of `E026` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -128,6 +128,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
             callee: Symbol {
               kind: function;
               name: add @ 133..136 (fid = 0);
+              realname: none;
               which: 0;
               path: orb.add;
               typ: unknown;
@@ -143,6 +144,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           sym: Symbol {
             kind: local;
             name: res @ 99..102 (fid = 0);
+            realname: none;
             which: 0;
             path: res;
             typ: unknown;
@@ -157,6 +159,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           rhs: Symbol {
             kind: local;
             name: res @ 99..102 (fid = 0);
+            realname: none;
             which: 0;
             path: res;
             typ: unknown;
@@ -171,6 +174,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: function;
       name: main @ 79..83 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.main;
       typ: unknown;
@@ -190,6 +194,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           typexpr: Symbol {
             kind: global;
             name: isz @ none;
+            realname: none;
             which: 0;
             path: ∅;
             typ: type;
@@ -201,6 +206,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           sym: Symbol {
             kind: argument;
             name: a @ 144..145 (fid = 0);
+            realname: none;
             which: 0;
             path: a;
             typ: unknown;
@@ -214,6 +220,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           typexpr: Symbol {
             kind: global;
             name: isz @ none;
+            realname: none;
             which: 0;
             path: ∅;
             typ: type;
@@ -225,6 +232,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           sym: Symbol {
             kind: argument;
             name: b @ 152..153 (fid = 0);
+            realname: none;
             which: 0;
             path: b;
             typ: unknown;
@@ -236,6 +244,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
       rettypexpr: Symbol {
         kind: global;
         name: isz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -249,6 +258,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           lhs: Symbol {
             kind: argument;
             name: a @ 144..145 (fid = 0);
+            realname: none;
             which: 0;
             path: a;
             typ: unknown;
@@ -259,6 +269,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           rhs: Symbol {
             kind: argument;
             name: b @ 152..153 (fid = 0);
+            realname: none;
             which: 0;
             path: b;
             typ: unknown;
@@ -271,6 +282,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: function;
       name: add @ 133..136 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add;
       typ: unknown;
@@ -300,6 +312,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: function;
       name: main @ 19..23 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.main;
       typ: unknown;
@@ -314,6 +327,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     typexpr: Symbol {
       kind: global;
       name: f64 @ none;
+      realname: none;
       which: 0;
       path: ∅;
       typ: type;
@@ -326,6 +340,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: global;
       name: avogadro @ 36..44 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.avogadro;
       typ: unknown;
@@ -342,6 +357,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
       typexpr: Symbol {
         kind: global;
         name: str @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -355,6 +371,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: global;
       name: hello @ 78..83 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.hello;
       typ: unknown;
@@ -371,6 +388,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: global;
       name: globFloat @ 102..111 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.globFloat;
       typ: unknown;
@@ -385,6 +403,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: module;
       name: nested @ 179..191 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.nested;
       typ: unknown;
@@ -460,6 +479,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           rhs: Symbol {
             kind: function;
             name: main @ 11..15 (fid = 0);
+            realname: none;
             which: 0;
             path: orb.main;
             typ: unknown;
@@ -503,6 +523,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
             callee: Symbol {
               kind: function;
               name: some_fun @ 1162..1170 (fid = 0);
+              realname: none;
               which: 0;
               path: orb.some_fun;
               typ: unknown;
@@ -520,6 +541,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
             callee: Symbol {
               kind: function;
               name: some_fun @ 1162..1170 (fid = 0);
+              realname: none;
               which: 0;
               path: orb.some_fun;
               typ: unknown;
@@ -539,6 +561,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
             callee: Symbol {
               kind: function;
               name: some_fun @ 1162..1170 (fid = 0);
+              realname: none;
               which: 0;
               path: orb.some_fun;
               typ: unknown;
@@ -560,6 +583,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
             callee: Symbol {
               kind: function;
               name: some_fun @ 1162..1170 (fid = 0);
+              realname: none;
               which: 0;
               path: orb.some_fun;
               typ: unknown;
@@ -583,6 +607,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                 callee: Symbol {
                   kind: function;
                   name: main @ 11..15 (fid = 0);
+                  realname: none;
                   which: 0;
                   path: orb.main;
                   typ: unknown;
@@ -602,6 +627,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                 callee: Symbol {
                   kind: function;
                   name: main @ 11..15 (fid = 0);
+                  realname: none;
                   which: 0;
                   path: orb.main;
                   typ: unknown;
@@ -646,6 +672,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                 callee: Symbol {
                   kind: function;
                   name: main @ 11..15 (fid = 0);
+                  realname: none;
                   which: 0;
                   path: orb.main;
                   typ: unknown;
@@ -700,6 +727,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
             expr: Symbol {
               kind: global;
               name: some_pointer @ 1183..1195 (fid = 0);
+              realname: none;
               which: 0;
               path: orb.some_pointer;
               typ: unknown;
@@ -717,6 +745,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
             typexpr: Symbol {
               kind: global;
               name: u32 @ none;
+              realname: none;
               which: 0;
               path: ∅;
               typ: type;
@@ -736,6 +765,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
             typexpr: Symbol {
               kind: global;
               name: u32 @ none;
+              realname: none;
               which: 0;
               path: ∅;
               typ: type;
@@ -764,6 +794,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
               Symbol {
                 kind: global;
                 name: usz @ none;
+                realname: none;
                 which: 0;
                 path: ∅;
                 typ: type;
@@ -776,6 +807,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
               Symbol {
                 kind: global;
                 name: bool @ none;
+                realname: none;
                 which: 0;
                 path: ∅;
                 typ: type;
@@ -788,6 +820,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
             ret: Symbol {
               kind: global;
               name: usz @ none;
+              realname: none;
               which: 0;
               path: ∅;
               typ: type;
@@ -807,6 +840,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
               Symbol {
                 kind: global;
                 name: usz @ none;
+                realname: none;
                 which: 0;
                 path: ∅;
                 typ: type;
@@ -819,6 +853,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
             ret: Symbol {
               kind: global;
               name: usz @ none;
+              realname: none;
               which: 0;
               path: ∅;
               typ: type;
@@ -836,6 +871,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: function;
       name: main @ 11..15 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.main;
       typ: unknown;
@@ -858,6 +894,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: function;
       name: some_fun @ 1162..1170 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.some_fun;
       typ: unknown;
@@ -877,6 +914,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: global;
       name: some_pointer @ 1183..1195 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.some_pointer;
       typ: unknown;
@@ -909,6 +947,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
         sym: Symbol {
           kind: function;
           name: main @ 19..23 (fid = 1);
+          realname: none;
           which: 0;
           path: orb.global_def.main;
           typ: unknown;
@@ -923,6 +962,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
         typexpr: Symbol {
           kind: global;
           name: f64 @ none;
+          realname: none;
           which: 0;
           path: ∅;
           typ: type;
@@ -935,6 +975,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
         sym: Symbol {
           kind: global;
           name: avogadro @ 36..44 (fid = 1);
+          realname: none;
           which: 0;
           path: orb.global_def.avogadro;
           typ: unknown;
@@ -951,6 +992,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           typexpr: Symbol {
             kind: global;
             name: str @ none;
+            realname: none;
             which: 0;
             path: ∅;
             typ: type;
@@ -964,6 +1006,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
         sym: Symbol {
           kind: global;
           name: hello @ 78..83 (fid = 1);
+          realname: none;
           which: 0;
           path: orb.global_def.hello;
           typ: unknown;
@@ -980,6 +1023,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
         sym: Symbol {
           kind: global;
           name: globFloat @ 102..111 (fid = 1);
+          realname: none;
           which: 0;
           path: orb.global_def.globFloat;
           typ: unknown;
@@ -1002,6 +1046,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                   typexpr: Symbol {
                     kind: global;
                     name: usz @ none;
+                    realname: none;
                     which: 0;
                     path: ∅;
                     typ: type;
@@ -1013,6 +1058,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                   sym: Symbol {
                     kind: argument;
                     name: a @ 76..77 (fid = 2);
+                    realname: none;
                     which: 0;
                     path: a;
                     typ: unknown;
@@ -1026,6 +1072,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                   typexpr: Symbol {
                     kind: global;
                     name: usz @ none;
+                    realname: none;
                     which: 0;
                     path: ∅;
                     typ: type;
@@ -1037,6 +1084,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                   sym: Symbol {
                     kind: argument;
                     name: b @ 84..85 (fid = 2);
+                    realname: none;
                     which: 0;
                     path: b;
                     typ: unknown;
@@ -1048,6 +1096,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
               rettypexpr: Symbol {
                 kind: global;
                 name: usz @ none;
+                realname: none;
                 which: 0;
                 path: ∅;
                 typ: type;
@@ -1061,6 +1110,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                   lhs: Symbol {
                     kind: argument;
                     name: a @ 76..77 (fid = 2);
+                    realname: none;
                     which: 0;
                     path: a;
                     typ: unknown;
@@ -1071,6 +1121,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                   rhs: Symbol {
                     kind: argument;
                     name: b @ 84..85 (fid = 2);
+                    realname: none;
                     which: 0;
                     path: b;
                     typ: unknown;
@@ -1083,6 +1134,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
             sym: Symbol {
               kind: function;
               name: add @ 65..68 (fid = 2);
+              realname: none;
               which: 0;
               path: orb.global_def.nested.add;
               typ: unknown;
@@ -1094,6 +1146,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
         sym: Symbol {
           kind: module;
           name: nested @ 179..191 (fid = 1);
+          realname: none;
           which: 0;
           path: orb.global_def.nested;
           typ: unknown;
@@ -1105,6 +1158,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: module;
       name: global_def @ 61..77 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.global_def;
       typ: unknown;
@@ -1141,6 +1195,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: function;
       name: println @ 138..145 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.println;
       typ: unknown;
@@ -1165,6 +1220,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           sym: Symbol {
             kind: local;
             name: i @ 179..180 (fid = 0);
+            realname: none;
             which: 0;
             path: i;
             typ: unknown;
@@ -1183,6 +1239,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                   lhs: Symbol {
                     kind: local;
                     name: i @ 179..180 (fid = 0);
+                    realname: none;
                     which: 0;
                     path: i;
                     typ: unknown;
@@ -1207,6 +1264,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                   callee: Symbol {
                     kind: function;
                     name: println @ 138..145 (fid = 0);
+                    realname: none;
                     which: 0;
                     path: orb.println;
                     typ: unknown;
@@ -1219,6 +1277,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                     Symbol {
                       kind: local;
                       name: i @ 179..180 (fid = 0);
+                      realname: none;
                       which: 0;
                       path: i;
                       typ: unknown;
@@ -1244,6 +1303,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
           sym: Symbol {
             kind: local;
             name: j @ 248..249 (fid = 0);
+            realname: none;
             which: 1;
             path: j;
             typ: unknown;
@@ -1263,6 +1323,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                     lhs: Symbol {
                       kind: local;
                       name: j @ 248..249 (fid = 0);
+                      realname: none;
                       which: 1;
                       path: j;
                       typ: unknown;
@@ -1277,6 +1338,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                     lhs: Symbol {
                       kind: local;
                       name: j @ 248..249 (fid = 0);
+                      realname: none;
                       which: 1;
                       path: j;
                       typ: unknown;
@@ -1302,6 +1364,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                   callee: Symbol {
                     kind: function;
                     name: println @ 138..145 (fid = 0);
+                    realname: none;
                     which: 0;
                     path: orb.println;
                     typ: unknown;
@@ -1314,6 +1377,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
                     Symbol {
                       kind: local;
                       name: j @ 248..249 (fid = 0);
+                      realname: none;
                       which: 1;
                       path: j;
                       typ: unknown;
@@ -1335,6 +1399,7 @@ error: compilation of `./tests/desugaring/E026` failed due to 1 error and 0 warn
     sym: Symbol {
       kind: function;
       name: main @ 159..163 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.main;
       typ: unknown;
@@ -1373,7 +1438,7 @@ error[E001]: unknown start of token: ?
 5 │ ?
   │ ^
 
-error: compilation of `./tests/lexer/E001` failed due to 4 errors and 0 warnings
+error: compilation of `E001` failed due to 4 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -1389,7 +1454,7 @@ error: compilation of `./tests/lexer/E001` failed due to 4 errors and 0 warnings
   │    │ 
   │    in this integer
 
-error: compilation of `./tests/lexer/E002` failed due to 1 error and 0 warnings
+error: compilation of `E002` failed due to 1 error and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -1429,7 +1494,7 @@ error[E003]: integer literal is too large
   │
   = integer exceeds the limit of `340282366920938463463374607431768211455`
 
-error: compilation of `./tests/lexer/E003` failed due to 4 errors and 0 warnings
+error: compilation of `E003` failed due to 4 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -1444,7 +1509,7 @@ error: compilation of `./tests/lexer/E003` failed due to 4 errors and 0 warnings
 3 │ │ 
   │ ╰^
 
-error: compilation of `./tests/lexer/E004` failed due to 1 error and 0 warnings
+error: compilation of `E004` failed due to 1 error and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -1464,7 +1529,7 @@ error[E005]: unknown character escape: $
 3 │ "\$"
   │ ^^^
 
-error: compilation of `./tests/lexer/E005` failed due to 2 errors and 0 warnings
+error: compilation of `E005` failed due to 2 errors and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -1481,7 +1546,7 @@ error: compilation of `./tests/lexer/E005` failed due to 2 errors and 0 warnings
 3 │ │ 
   │ ╰^
 
-error: compilation of `./tests/lexer/E020` failed due to 1 error and 0 warnings
+error: compilation of `E020` failed due to 1 error and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -1507,7 +1572,7 @@ error[E021]: no digits found after the base
 4 │ 0x
   │ ^^
 
-error: compilation of `./tests/lexer/E021` failed due to 3 errors and 0 warnings
+error: compilation of `E021` failed due to 3 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -1523,7 +1588,7 @@ error: compilation of `./tests/lexer/E021` failed due to 3 errors and 0 warnings
   │
   = if you want to write a string literal use double quotes: "
 
-error: compilation of `./tests/lexer/E022` failed due to 1 error and 0 warnings
+error: compilation of `E022` failed due to 1 error and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -1537,7 +1602,7 @@ error: compilation of `./tests/lexer/E022` failed due to 1 error and 0 warnings
 2 │ ''
   │ ^^ expected one codepoint found zero
 
-error: compilation of `./tests/lexer/E023` failed due to 1 error and 0 warnings
+error: compilation of `E023` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -1557,7 +1622,7 @@ error[E024]: not enough hexadecimal digits in escape sequence
 3 │ "\x"
   │ ^^^^
 
-error: compilation of `./tests/lexer/E024` failed due to 2 errors and 0 warnings
+error: compilation of `E024` failed due to 2 errors and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -1649,7 +1714,7 @@ error[E025]: invalid unicode escape
 25 │ "\u{DFFF}"
    │ ^^^^^^^^^ unicode escape must not be a surrogate
 
-error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warnings
+error: compilation of `E025` failed due to 14 errors and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -2358,6 +2423,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                   expr: Symbol {
                     kind: global;
                     name: i32 @ none;
+                    realname: none;
                     which: 0;
                     path: ∅;
                     typ: type;
@@ -2371,6 +2437,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                 sym: Symbol {
                   kind: argument;
                   name: n @ 11..12 (fid = 2);
+                  realname: none;
                   which: 0;
                   path: n;
                   typ: i32;
@@ -2383,6 +2450,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
               expr: Symbol {
                 kind: global;
                 name: i32 @ none;
+                realname: none;
                 which: 0;
                 path: ∅;
                 typ: type;
@@ -2403,6 +2471,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                         expr: Symbol {
                           kind: argument;
                           name: n @ 11..12 (fid = 2);
+                          realname: none;
                           which: 0;
                           path: n;
                           typ: i32;
@@ -2428,6 +2497,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                           expr: Symbol {
                             kind: argument;
                             name: n @ 11..12 (fid = 2);
+                            realname: none;
                             which: 0;
                             path: n;
                             typ: i32;
@@ -2455,6 +2525,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                                   expr: Symbol {
                                     kind: function;
                                     name: fib @ 0..3 (fid = 2);
+                                    realname: none;
                                     which: 0;
                                     path: orb.dbg.nested.fib;
                                     typ: *fun (i32) -> i32;
@@ -2470,6 +2541,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                                         expr: Symbol {
                                           kind: argument;
                                           name: n @ 11..12 (fid = 2);
+                                          realname: none;
                                           which: 0;
                                           path: n;
                                           typ: i32;
@@ -2497,6 +2569,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                                   expr: Symbol {
                                     kind: function;
                                     name: fib @ 0..3 (fid = 2);
+                                    realname: none;
                                     which: 0;
                                     path: orb.dbg.nested.fib;
                                     typ: *fun (i32) -> i32;
@@ -2512,6 +2585,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                                         expr: Symbol {
                                           kind: argument;
                                           name: n @ 11..12 (fid = 2);
+                                          realname: none;
                                           which: 0;
                                           path: n;
                                           typ: i32;
@@ -2550,6 +2624,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
             sym: Symbol {
               kind: function;
               name: fib @ 0..3 (fid = 2);
+              realname: none;
               which: 0;
               path: orb.dbg.nested.fib;
               typ: *fun (i32) -> i32;
@@ -2561,6 +2636,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
         sym: Symbol {
           kind: module;
           name: nested @ 21..33 (fid = 1);
+          realname: none;
           which: 0;
           path: orb.dbg.nested;
           typ: unknown;
@@ -2582,6 +2658,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                   expr: Symbol {
                     kind: global;
                     name: str @ none;
+                    realname: none;
                     which: 0;
                     path: ∅;
                     typ: type;
@@ -2598,6 +2675,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
             sym: Symbol {
               kind: argument;
               name: msg @ 70..73 (fid = 1);
+              realname: none;
               which: 0;
               path: msg;
               typ: * str;
@@ -2620,6 +2698,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                   expr: Symbol {
                     kind: argument;
                     name: msg @ 70..73 (fid = 1);
+                    realname: none;
                     which: 0;
                     path: msg;
                     typ: * str;
@@ -2639,6 +2718,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
         sym: Symbol {
           kind: function;
           name: puts @ 58..62 (fid = 1);
+          realname: none;
           which: 0;
           path: orb.dbg.puts;
           typ: *fun (* str) -> void;
@@ -2664,6 +2744,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                     expr: Symbol {
                       kind: function;
                       name: divide @ 163..169 (fid = 0);
+                      realname: none;
                       which: 0;
                       path: orb.divide;
                       typ: *fun (f32, f32) -> f32;
@@ -2689,6 +2770,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
               sym: Symbol {
                 kind: local;
                 name: half @ 159..163 (fid = 1);
+                realname: none;
                 which: 0;
                 path: half;
                 typ: f32;
@@ -2704,6 +2786,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
         sym: Symbol {
           kind: function;
           name: some_other_thing @ 127..143 (fid = 1);
+          realname: none;
           which: 0;
           path: orb.dbg.some_other_thing;
           typ: *fun () -> void;
@@ -2715,6 +2798,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
     sym: Symbol {
       kind: module;
       name: dbg @ 24..33 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.dbg;
       typ: unknown;
@@ -2738,6 +2822,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                 sym: Symbol {
                   kind: function;
                   name: puts @ 58..62 (fid = 1);
+                  realname: none;
                   which: 0;
                   path: orb.dbg.puts;
                   typ: *fun (* str) -> void;
@@ -2765,6 +2850,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                 sym: Symbol {
                   kind: function;
                   name: puts @ 58..62 (fid = 1);
+                  realname: none;
                   which: 0;
                   path: orb.dbg.puts;
                   typ: *fun (* str) -> void;
@@ -2792,6 +2878,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
                 sym: Symbol {
                   kind: function;
                   name: fib @ 0..3 (fid = 2);
+                  realname: none;
                   which: 0;
                   path: orb.dbg.nested.fib;
                   typ: *fun (i32) -> i32;
@@ -2818,6 +2905,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
     sym: Symbol {
       kind: function;
       name: run @ 60..63 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.run;
       typ: *fun () -> void;
@@ -2836,6 +2924,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
           expr: Symbol {
             kind: global;
             name: f32 @ none;
+            realname: none;
             which: 0;
             path: ∅;
             typ: type;
@@ -2849,6 +2938,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
         sym: Symbol {
           kind: argument;
           name: lhs @ 177..180 (fid = 0);
+          realname: none;
           which: 0;
           path: lhs;
           typ: f32;
@@ -2863,6 +2953,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
           expr: Symbol {
             kind: global;
             name: f32 @ none;
+            realname: none;
             which: 0;
             path: ∅;
             typ: type;
@@ -2876,6 +2967,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
         sym: Symbol {
           kind: argument;
           name: rhs @ 187..190 (fid = 0);
+          realname: none;
           which: 0;
           path: rhs;
           typ: f32;
@@ -2888,6 +2980,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
       expr: Symbol {
         kind: global;
         name: f32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -2906,6 +2999,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
             expr: Symbol {
               kind: argument;
               name: lhs @ 177..180 (fid = 0);
+              realname: none;
               which: 0;
               path: lhs;
               typ: f32;
@@ -2919,6 +3013,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
             expr: Symbol {
               kind: argument;
               name: rhs @ 187..190 (fid = 0);
+              realname: none;
               which: 0;
               path: rhs;
               typ: f32;
@@ -2936,6 +3031,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
     sym: Symbol {
       kind: function;
       name: divide @ 163..169 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.divide;
       typ: *fun (f32, f32) -> f32;
@@ -2955,6 +3051,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
     sym: Symbol {
       kind: global;
       name: MY_LIL_CONSTANT @ 223..238 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.MY_LIL_CONSTANT;
       typ: i32;
@@ -2965,8 +3062,15 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
     };
   } @ 223..247 (fid = 0),
 ]
+panicked at crates/lunc_firgen/src/lib.rs:91:18:
+not yet implemented
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+BUG: internal compiler error: unexpected panic.
+  = note: we would appreciate a bug report on https://github.com/lunprog/lun/issues/new
+  = note: lunc 0.1.0 (2ae0bbeb 2025-08-17)
 "#,
-        compiler_code: 0,
+        compiler_code: 101,
         test_out: "",
         test_code: 0,
     ),
@@ -2977,7 +3081,7 @@ error: compilation of `./tests/lexer/E025` failed due to 14 errors and 0 warning
 2 │ a :: while true b;
   │                 ^
 
-error: compilation of `./tests/parser/E006_block_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_block_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -2991,7 +3095,7 @@ error: compilation of `./tests/parser/E006_block_1` failed due to 1 error and 0 
 4 │ };
   │ ^
 
-error: compilation of `./tests/parser/E006_block_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_block_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3005,7 +3109,7 @@ error: compilation of `./tests/parser/E006_block_2` failed due to 1 error and 0 
 4 │     b
   │     ^
 
-error: compilation of `./tests/parser/E006_block_3` failed due to 1 error and 0 warnings
+error: compilation of `E006_block_3` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3019,7 +3123,7 @@ error: compilation of `./tests/parser/E006_block_3` failed due to 1 error and 0 
 4 │     b
   │     ^
 
-error: compilation of `./tests/parser/E006_block_4` failed due to 1 error and 0 warnings
+error: compilation of `E006_block_4` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3033,7 +3137,7 @@ error: compilation of `./tests/parser/E006_block_4` failed due to 1 error and 0 
 3 │ 
   │ ^
 
-error: compilation of `./tests/parser/E006_block_5` failed due to 1 error and 0 warnings
+error: compilation of `E006_block_5` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3047,7 +3151,7 @@ error: compilation of `./tests/parser/E006_block_5` failed due to 1 error and 0 
 2 │ a :: break :12;
   │             ^^
 
-error: compilation of `./tests/parser/E006_break` failed due to 1 error and 0 warnings
+error: compilation of `E006_break` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3061,7 +3165,7 @@ error: compilation of `./tests/parser/E006_break` failed due to 1 error and 0 wa
 2 │ a :: continue :"";
   │                ^^
 
-error: compilation of `./tests/parser/E006_continue` failed due to 1 error and 0 warnings
+error: compilation of `E006_continue` failed due to 1 error and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -3075,7 +3179,7 @@ error: compilation of `./tests/parser/E006_continue` failed due to 1 error and 0
 2 │ a :: defer;
   │      ^^^^^
 
-error: compilation of `./tests/parser/E006_expr_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_expr_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3089,7 +3193,7 @@ error: compilation of `./tests/parser/E006_expr_1` failed due to 1 error and 0 w
 2 │ extern 12
   │        ^^
 
-error: compilation of `./tests/parser/E006_extern_block_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_extern_block_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3103,7 +3207,7 @@ error: compilation of `./tests/parser/E006_extern_block_1` failed due to 1 error
 2 │ extern "C" a
   │            ^
 
-error: compilation of `./tests/parser/E006_extern_block_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_extern_block_2` failed due to 1 error and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -3117,7 +3221,7 @@ error: compilation of `./tests/parser/E006_extern_block_2` failed due to 1 error
 3 │ 
   │ ^
 
-error: compilation of `./tests/parser/E006_extern_block_3` failed due to 1 error and 0 warnings
+error: compilation of `E006_extern_block_3` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3131,7 +3235,7 @@ error: compilation of `./tests/parser/E006_extern_block_3` failed due to 1 error
 2 │ a :: call(12 12)
   │              ^^
 
-error: compilation of `./tests/parser/E006_funcall_expr` failed due to 1 error and 0 warnings
+error: compilation of `E006_funcall_expr` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3145,7 +3249,7 @@ error: compilation of `./tests/parser/E006_funcall_expr` failed due to 1 error a
 2 │ a :: fun 12;
   │          ^^
 
-error: compilation of `./tests/parser/E006_funkw_expr_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_funkw_expr_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3159,7 +3263,7 @@ error: compilation of `./tests/parser/E006_funkw_expr_1` failed due to 1 error a
 2 │ a :: fun (a: b c);
   │                ^
 
-error: compilation of `./tests/parser/E006_funkw_expr_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_funkw_expr_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3173,7 +3277,7 @@ error: compilation of `./tests/parser/E006_funkw_expr_2` failed due to 1 error a
 2 │ a :: fun (a: b;
   │               ^
 
-error: compilation of `./tests/parser/E006_funkw_expr_3` failed due to 1 error and 0 warnings
+error: compilation of `E006_funkw_expr_3` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3187,7 +3291,7 @@ error: compilation of `./tests/parser/E006_funkw_expr_3` failed due to 1 error a
 2 │ a :: fun (b b);
   │             ^
 
-error: compilation of `./tests/parser/E006_funkw_expr_4` failed due to 1 error and 0 warnings
+error: compilation of `E006_funkw_expr_4` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3215,7 +3319,7 @@ error: compilation of `./tests/parser/E006_funkw_expr_5` failed due to 1 error a
 2 │ a :: *fun b;
   │           ^
 
-error: compilation of `./tests/parser/E006_funptr_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_funptr_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3229,7 +3333,7 @@ error: compilation of `./tests/parser/E006_funptr_1` failed due to 1 error and 0
 2 │ a :: *fun (a a;
   │              ^
 
-error: compilation of `./tests/parser/E006_funptr_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_funptr_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3243,7 +3347,7 @@ error: compilation of `./tests/parser/E006_funptr_2` failed due to 1 error and 0
 2 │ a;
   │  ^
 
-error: compilation of `./tests/parser/E006_global_def_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_global_def_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3257,7 +3361,7 @@ error: compilation of `./tests/parser/E006_global_def_1` failed due to 1 error a
 3 │ 
   │ ^
 
-error: compilation of `./tests/parser/E006_global_def_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_global_def_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3271,7 +3375,7 @@ error: compilation of `./tests/parser/E006_global_def_2` failed due to 1 error a
 3 │ 
   │ ^
 
-error: compilation of `./tests/parser/E006_global_def_3` failed due to 1 error and 0 warnings
+error: compilation of `E006_global_def_3` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3285,7 +3389,7 @@ error: compilation of `./tests/parser/E006_global_def_3` failed due to 1 error a
 2 │ a :: (12;
   │         ^
 
-error: compilation of `./tests/parser/E006_grouping_expr` failed due to 1 error and 0 warnings
+error: compilation of `E006_grouping_expr` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3299,7 +3403,7 @@ error: compilation of `./tests/parser/E006_grouping_expr` failed due to 1 error 
 2 │ a :: if a then b c;
   │                  ^
 
-error: compilation of `./tests/parser/E006_if_else_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_if_else_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3313,7 +3417,7 @@ error: compilation of `./tests/parser/E006_if_else_1` failed due to 1 error and 
 2 │ a :: if b {} else a;
   │                   ^
 
-error: compilation of `./tests/parser/E006_if_else_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_if_else_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3327,7 +3431,7 @@ error: compilation of `./tests/parser/E006_if_else_2` failed due to 1 error and 
 2 │ a :: if b {} else if c d;
   │                        ^
 
-error: compilation of `./tests/parser/E006_if_else_3` failed due to 1 error and 0 warnings
+error: compilation of `E006_if_else_3` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3341,7 +3445,7 @@ error: compilation of `./tests/parser/E006_if_else_3` failed due to 1 error and 
 2 │ #import a as 12;
   │              ^^
 
-error: compilation of `./tests/parser/E006_import_directive_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_import_directive_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3355,7 +3459,7 @@ error: compilation of `./tests/parser/E006_import_directive_1` failed due to 1 e
 3 │ 
   │ ^
 
-error: compilation of `./tests/parser/E006_import_directive_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_import_directive_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3369,7 +3473,7 @@ error: compilation of `./tests/parser/E006_import_directive_2` failed due to 1 e
 2 │ break
   │ ^^^^^
 
-error: compilation of `./tests/parser/E006_item_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_item_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3383,7 +3487,7 @@ error: compilation of `./tests/parser/E006_item_1` failed due to 1 error and 0 w
 2 │ #break
   │  ^^^^^
 
-error: compilation of `./tests/parser/E006_item_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_item_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3411,7 +3515,7 @@ error: compilation of `./tests/parser/E006_iterator_loop` failed due to 1 error 
 2 │ a :: for 12;
   │          ^^
 
-error: compilation of `./tests/parser/E006_iterator_loop_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_iterator_loop_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3425,7 +3529,7 @@ error: compilation of `./tests/parser/E006_iterator_loop_1` failed due to 1 erro
 2 │ a :: for i a;
   │            ^
 
-error: compilation of `./tests/parser/E006_iterator_loop_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_iterator_loop_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3439,7 +3543,7 @@ error: compilation of `./tests/parser/E006_iterator_loop_2` failed due to 1 erro
 3 │     let 12 = 2;
   │         ^^
 
-error: compilation of `./tests/parser/E006_let_stmt_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_let_stmt_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3453,7 +3557,7 @@ error: compilation of `./tests/parser/E006_let_stmt_1` failed due to 1 error and
 3 │     let a - b;
   │           ^
 
-error: compilation of `./tests/parser/E006_let_stmt_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_let_stmt_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3467,7 +3571,7 @@ error: compilation of `./tests/parser/E006_let_stmt_2` failed due to 1 error and
 2 │ a :: b.12;
   │        ^^
 
-error: compilation of `./tests/parser/E006_member_access_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_member_access_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3481,7 +3585,7 @@ error: compilation of `./tests/parser/E006_member_access_1` failed due to 1 erro
 2 │ #mod 12;
   │      ^^
 
-error: compilation of `./tests/parser/E006_mod_directive_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_mod_directive_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3495,7 +3599,7 @@ error: compilation of `./tests/parser/E006_mod_directive_1` failed due to 1 erro
 3 │ 
   │ ^
 
-error: compilation of `./tests/parser/E006_mod_directive_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_mod_directive_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3509,7 +3613,7 @@ error: compilation of `./tests/parser/E006_mod_directive_2` failed due to 1 erro
 2 │ #import 1;
   │         ^
 
-error: compilation of `./tests/parser/E006_qualified_path_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_qualified_path_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3523,7 +3627,7 @@ error: compilation of `./tests/parser/E006_qualified_path_1` failed due to 1 err
 2 │ #import a.1;
   │           ^
 
-error: compilation of `./tests/parser/E006_qualified_path_2` failed due to 1 error and 0 warnings
+error: compilation of `E006_qualified_path_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3537,7 +3641,7 @@ error: compilation of `./tests/parser/E006_qualified_path_2` failed due to 1 err
 3 │     a : b c;
   │           ^
 
-error: compilation of `./tests/parser/E006_short_var_def_1` failed due to 1 error and 0 warnings
+error: compilation of `E006_short_var_def_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3553,7 +3657,7 @@ error: compilation of `./tests/parser/E006_short_var_def_1` failed due to 1 erro
   │
   = did you mean 'mod'?
 
-error: compilation of `./tests/parser/E035_1` failed due to 1 error and 0 warnings
+error: compilation of `E035_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3569,7 +3673,7 @@ error: compilation of `./tests/parser/E035_1` failed due to 1 error and 0 warnin
   │
   = did you mean 'import'?
 
-error: compilation of `./tests/parser/E035_2` failed due to 1 error and 0 warnings
+error: compilation of `E035_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3583,7 +3687,7 @@ error: compilation of `./tests/parser/E035_2` failed due to 1 error and 0 warnin
 2 │ #abracadabra
   │  ^^^^^^^^^^^
 
-error: compilation of `./tests/parser/E035_3` failed due to 1 error and 0 warnings
+error: compilation of `E035_3` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -3597,7 +3701,7 @@ error: compilation of `./tests/parser/E035_3` failed due to 1 error and 0 warnin
 2 │ extern "boum" {}
   │        ^^^^^^
 
-error: compilation of `./tests/parser/E038` failed due to 1 error and 0 warnings
+error: compilation of `E038` failed due to 1 error and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -4210,7 +4314,7 @@ error[E008]: mismatched types
 24 │         break;
    │         ^^^^^ expected `i32`, found `void`
 
-error: compilation of `./tests/scir/E008` failed due to 7 errors and 0 warnings
+error: compilation of `E008` failed due to 7 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4296,7 +4400,7 @@ error[E009]: expected type found an expression
 15 │     a : 12 : {};
    │         ^^
 
-error: compilation of `./tests/scir/E009` failed due to 13 errors and 0 warnings
+error: compilation of `E009` failed due to 13 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4310,7 +4414,7 @@ error: compilation of `./tests/scir/E009` failed due to 13 errors and 0 warnings
 3 │     12();
   │     ^^ instead found 'i32'
 
-error: compilation of `./tests/scir/E011` failed due to 1 error and 0 warnings
+error: compilation of `E011` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4330,7 +4434,7 @@ error[E016]: `break` outside of a loop or a labeled block
 7 │     break;
   │     ^^^^^
 
-error: compilation of `./tests/scir/E016` failed due to 2 errors and 0 warnings
+error: compilation of `E016` failed due to 2 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4346,7 +4450,7 @@ error: compilation of `./tests/scir/E016` failed due to 2 errors and 0 warnings
   │
   = the left-hand side of an assignment must be a place.
 
-error: compilation of `./tests/scir/E027` failed due to 1 error and 0 warnings
+error: compilation of `E027` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4366,7 +4470,7 @@ error[E028]: this function takes 1 arguments but 2 were provided
 7 │     a(1, {});
   │     ^
 
-error: compilation of `./tests/scir/E028` failed due to 2 errors and 0 warnings
+error: compilation of `E028` failed due to 2 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4476,7 +4580,7 @@ error[E029]: unable to resolve expression at comptime
    │         │
    │         due to this expression
 
-error: compilation of `./tests/scir/E029` failed due to 14 errors and 0 warnings
+error: compilation of `E029` failed due to 14 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4496,7 +4600,7 @@ error[E030]: use of undeclared label 'd'
 10 │         continue :d;
    │         ^^^^^^^^^^^
 
-error: compilation of `./tests/scir/E030` failed due to 2 errors and 0 warnings
+error: compilation of `E030` failed due to 2 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4510,7 +4614,7 @@ error: compilation of `./tests/scir/E030` failed due to 2 errors and 0 warnings
 9 │         break;
   │         ^^^^^ 'break' statement referring to a labeled block need to have a label
 
-error: compilation of `./tests/scir/E031` failed due to 1 error and 0 warnings
+error: compilation of `E031` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4526,7 +4630,7 @@ error: compilation of `./tests/scir/E031` failed due to 1 error and 0 warnings
   │
   = you might want to use a loop instead like 'while', 'for' or 'loop'.
 
-error: compilation of `./tests/scir/E032` failed due to 1 error and 0 warnings
+error: compilation of `E032` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4540,7 +4644,7 @@ error: compilation of `./tests/scir/E032` failed due to 1 error and 0 warnings
 4 │         break 12;
   │         ^^^^^^^^ can only 'break' with a value from a labeled block or an infinite loop
 
-error: compilation of `./tests/scir/E033` failed due to 1 error and 0 warnings
+error: compilation of `E033` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4710,7 +4814,7 @@ error[E034]: literal out of range
    = the literal (of value inf) does not fit in the type 'f64'
    = the range of valid integers for this type is '-1.7976931348623157e308..=1.7976931348623157e308'
 
-error: compilation of `./tests/scir/E034` failed due to 18 errors and 0 warnings
+error: compilation of `E034` failed due to 18 errors and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4726,7 +4830,7 @@ error: compilation of `./tests/scir/E034` failed due to 18 errors and 0 warnings
 4 │     &mut a;
   │     ^^^^^^ mutable borrow here
 
-error: compilation of `./tests/scir/E036` failed due to 1 error and 0 warnings
+error: compilation of `E036` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 101,
@@ -4758,7 +4862,7 @@ error[E037]: global uninit must be inside of an extern block.
   │
   = consider moving the function declaration into an extern block like 'extern "C" { .. }'.
 
-error: compilation of `./tests/scir/E037` failed due to 3 errors and 0 warnings
+error: compilation of `E037` failed due to 3 errors and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -4807,7 +4911,7 @@ error[E039]: a extern block isn't allowed inside of an extern block.
    │  
    = you probably want to un nest the extern block
 
-error: compilation of `./tests/scir/E039` failed due to 3 errors and 0 warnings
+error: compilation of `E039` failed due to 3 errors and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -4841,7 +4945,7 @@ error[E040]: cannot define a function declaration inside of a mutable global def
 7 │     c := fun();
   │     ^^^^^^^^^^^
 
-error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
+error: compilation of `E040` failed due to 4 errors and 0 warnings
 
 "#,
         compiler_code: 101,
@@ -4857,6 +4961,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i8 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -4884,6 +4989,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_i8 @ 18..24 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_i8;
       typ: i8;
@@ -4901,6 +5007,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i16 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -4928,6 +5035,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_i16 @ 41..48 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_i16;
       typ: i16;
@@ -4945,6 +5053,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -4972,6 +5081,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_i32 @ 66..73 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_i32;
       typ: i32;
@@ -4989,6 +5099,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5016,6 +5127,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_i64 @ 91..98 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_i64;
       typ: i64;
@@ -5033,6 +5145,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i128 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5060,6 +5173,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_i128 @ 116..124 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_i128;
       typ: i128;
@@ -5077,6 +5191,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: isz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5104,6 +5219,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_isz @ 143..150 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_isz;
       typ: isz;
@@ -5121,6 +5237,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u8 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5148,6 +5265,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_u8 @ 169..175 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_u8;
       typ: u8;
@@ -5165,6 +5283,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u16 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5192,6 +5311,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_u16 @ 192..199 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_u16;
       typ: u16;
@@ -5209,6 +5329,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5236,6 +5357,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_u32 @ 217..224 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_u32;
       typ: u32;
@@ -5253,6 +5375,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5280,6 +5403,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_u64 @ 242..249 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_u64;
       typ: u64;
@@ -5297,6 +5421,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u128 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5324,6 +5449,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_u128 @ 267..275 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_u128;
       typ: u128;
@@ -5341,6 +5467,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: usz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5368,6 +5495,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_usz @ 294..301 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_usz;
       typ: usz;
@@ -5385,6 +5513,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: f32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5412,6 +5541,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_f32 @ 320..327 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_f32;
       typ: f32;
@@ -5429,6 +5559,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: f64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5456,6 +5587,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: add_f64 @ 347..354 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.add_f64;
       typ: f64;
@@ -5473,6 +5605,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i8 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5500,6 +5633,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_i8 @ 393..399 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_i8;
       typ: i8;
@@ -5517,6 +5651,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i16 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5544,6 +5679,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_i16 @ 416..423 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_i16;
       typ: i16;
@@ -5561,6 +5697,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5588,6 +5725,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_i32 @ 441..448 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_i32;
       typ: i32;
@@ -5605,6 +5743,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5632,6 +5771,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_i64 @ 466..473 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_i64;
       typ: i64;
@@ -5649,6 +5789,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i128 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5676,6 +5817,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_i128 @ 491..499 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_i128;
       typ: i128;
@@ -5693,6 +5835,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: isz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5720,6 +5863,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_isz @ 518..525 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_isz;
       typ: isz;
@@ -5737,6 +5881,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u8 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5764,6 +5909,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_u8 @ 544..550 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_u8;
       typ: u8;
@@ -5781,6 +5927,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u16 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5808,6 +5955,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_u16 @ 567..574 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_u16;
       typ: u16;
@@ -5825,6 +5973,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5852,6 +6001,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_u32 @ 592..599 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_u32;
       typ: u32;
@@ -5869,6 +6019,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5896,6 +6047,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_u64 @ 617..624 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_u64;
       typ: u64;
@@ -5913,6 +6065,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u128 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5940,6 +6093,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_u128 @ 642..650 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_u128;
       typ: u128;
@@ -5957,6 +6111,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: usz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -5984,6 +6139,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_usz @ 669..676 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_usz;
       typ: usz;
@@ -6001,6 +6157,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: f32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6028,6 +6185,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_f32 @ 695..702 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_f32;
       typ: f32;
@@ -6045,6 +6203,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: f64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6072,6 +6231,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: sub_f64 @ 722..729 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.sub_f64;
       typ: f64;
@@ -6089,6 +6249,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i8 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6116,6 +6277,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_i8 @ 768..774 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_i8;
       typ: i8;
@@ -6133,6 +6295,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i16 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6160,6 +6323,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_i16 @ 789..796 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_i16;
       typ: i16;
@@ -6177,6 +6341,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6204,6 +6369,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_i32 @ 812..819 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_i32;
       typ: i32;
@@ -6221,6 +6387,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6248,6 +6415,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_i64 @ 835..842 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_i64;
       typ: i64;
@@ -6265,6 +6433,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i128 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6292,6 +6461,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_i128 @ 858..866 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_i128;
       typ: i128;
@@ -6309,6 +6479,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: isz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6336,6 +6507,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_isz @ 883..890 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_isz;
       typ: isz;
@@ -6353,6 +6525,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u8 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6380,6 +6553,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_u8 @ 907..913 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_u8;
       typ: u8;
@@ -6397,6 +6571,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u16 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6424,6 +6599,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_u16 @ 928..935 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_u16;
       typ: u16;
@@ -6441,6 +6617,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6468,6 +6645,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_u32 @ 951..958 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_u32;
       typ: u32;
@@ -6485,6 +6663,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6512,6 +6691,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_u64 @ 974..981 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_u64;
       typ: u64;
@@ -6529,6 +6709,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u128 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6556,6 +6737,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_u128 @ 997..1005 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_u128;
       typ: u128;
@@ -6573,6 +6755,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: usz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6600,6 +6783,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_usz @ 1022..1029 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_usz;
       typ: usz;
@@ -6617,6 +6801,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: f32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6644,6 +6829,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_f32 @ 1046..1053 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_f32;
       typ: f32;
@@ -6661,6 +6847,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: f64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6688,6 +6875,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: mul_f64 @ 1071..1078 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.mul_f64;
       typ: f64;
@@ -6705,6 +6893,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i8 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6732,6 +6921,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_i8 @ 1115..1121 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_i8;
       typ: i8;
@@ -6749,6 +6939,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i16 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6776,6 +6967,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_i16 @ 1137..1144 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_i16;
       typ: i16;
@@ -6793,6 +6985,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6820,6 +7013,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_i32 @ 1161..1168 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_i32;
       typ: i32;
@@ -6837,6 +7031,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6864,6 +7059,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_i64 @ 1185..1192 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_i64;
       typ: i64;
@@ -6881,6 +7077,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i128 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6908,6 +7105,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_i128 @ 1209..1217 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_i128;
       typ: i128;
@@ -6925,6 +7123,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: isz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6952,6 +7151,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_isz @ 1235..1242 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_isz;
       typ: isz;
@@ -6969,6 +7169,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u8 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -6996,6 +7197,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_u8 @ 1260..1266 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_u8;
       typ: u8;
@@ -7013,6 +7215,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u16 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7040,6 +7243,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_u16 @ 1282..1289 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_u16;
       typ: u16;
@@ -7057,6 +7261,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7084,6 +7289,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_u32 @ 1306..1313 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_u32;
       typ: u32;
@@ -7101,6 +7307,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7128,6 +7335,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_u64 @ 1330..1337 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_u64;
       typ: u64;
@@ -7145,6 +7353,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u128 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7172,6 +7381,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_u128 @ 1354..1362 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_u128;
       typ: u128;
@@ -7189,6 +7399,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: usz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7216,6 +7427,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_usz @ 1380..1387 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_usz;
       typ: usz;
@@ -7233,6 +7445,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: f32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7260,6 +7473,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_f32 @ 1405..1412 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_f32;
       typ: f32;
@@ -7277,6 +7491,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: f64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7304,6 +7519,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: div_f64 @ 1431..1438 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.div_f64;
       typ: f64;
@@ -7321,6 +7537,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i8 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7348,6 +7565,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_i8 @ 1476..1482 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_i8;
       typ: i8;
@@ -7365,6 +7583,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i16 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7392,6 +7611,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_i16 @ 1498..1505 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_i16;
       typ: i16;
@@ -7409,6 +7629,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7436,6 +7657,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_i32 @ 1522..1529 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_i32;
       typ: i32;
@@ -7453,6 +7675,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7480,6 +7703,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_i64 @ 1546..1553 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_i64;
       typ: i64;
@@ -7497,6 +7721,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i128 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7524,6 +7749,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_i128 @ 1570..1578 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_i128;
       typ: i128;
@@ -7541,6 +7767,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: isz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7568,6 +7795,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_isz @ 1596..1603 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_isz;
       typ: isz;
@@ -7585,6 +7813,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u8 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7612,6 +7841,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_u8 @ 1621..1627 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_u8;
       typ: u8;
@@ -7629,6 +7859,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u16 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7656,6 +7887,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_u16 @ 1643..1650 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_u16;
       typ: u16;
@@ -7673,6 +7905,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7700,6 +7933,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_u32 @ 1667..1674 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_u32;
       typ: u32;
@@ -7717,6 +7951,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7744,6 +7979,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_u64 @ 1691..1698 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_u64;
       typ: u64;
@@ -7761,6 +7997,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: u128 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7788,6 +8025,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_u128 @ 1715..1723 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_u128;
       typ: u128;
@@ -7805,6 +8043,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: usz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7832,6 +8071,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_usz @ 1741..1748 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_usz;
       typ: usz;
@@ -7849,6 +8089,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: f32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7876,6 +8117,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_f32 @ 1766..1773 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_f32;
       typ: f32;
@@ -7893,6 +8135,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: f64 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -7920,6 +8163,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: global;
       name: rem_f64 @ 1792..1799 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.rem_f64;
       typ: f64;
@@ -7958,6 +8202,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
                 expr: Symbol {
                   kind: global;
                   name: str @ none;
+                  realname: none;
                   which: 0;
                   path: ∅;
                   typ: type;
@@ -7977,6 +8222,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
         sym: Symbol {
           kind: function;
           name: puts @ 17..21 (fid = 0);
+          realname: none;
           which: 0;
           path: orb.puts;
           typ: *fun (* str) -> void;
@@ -8000,6 +8246,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
               expr: Symbol {
                 kind: function;
                 name: puts @ 17..21 (fid = 0);
+                realname: none;
                 which: 0;
                 path: orb.puts;
                 typ: *fun (* str) -> void;
@@ -8025,6 +8272,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: function;
       name: main @ 39..43 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.main;
       typ: *fun () -> void;
@@ -8048,6 +8296,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: i32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -8103,6 +8352,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: function;
       name: i32_return @ 0..10 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.i32_return;
       typ: *fun () -> i32;
@@ -8119,6 +8369,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: f32 @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -8174,6 +8425,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: function;
       name: f32_return @ 81..91 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.f32_return;
       typ: *fun () -> f32;
@@ -8190,6 +8442,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
       expr: Symbol {
         kind: global;
         name: char @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -8243,6 +8496,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: function;
       name: char_return @ 164..175 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.char_return;
       typ: *fun () -> char;
@@ -8262,6 +8516,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
           expr: Symbol {
             kind: global;
             name: str @ none;
+            realname: none;
             which: 0;
             path: ∅;
             typ: type;
@@ -8318,6 +8573,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: function;
       name: string_return @ 247..260 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.string_return;
       typ: *fun () -> * str;
@@ -8375,6 +8631,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: function;
       name: void_return @ 353..364 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.void_return;
       typ: *fun () -> void;
@@ -8460,6 +8717,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: function;
       name: nested_loops @ 0..12 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.nested_loops;
       typ: *fun () -> void;
@@ -8482,6 +8740,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
             expr: Symbol {
               kind: global;
               name: i32 @ none;
+              realname: none;
               which: 0;
               path: ∅;
               typ: type;
@@ -8522,6 +8781,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
           sym: Symbol {
             kind: local;
             name: a @ 193..194 (fid = 0);
+            realname: none;
             which: 0;
             path: a;
             typ: i32;
@@ -8537,6 +8797,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: function;
       name: block_label @ 166..177 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.block_label;
       typ: *fun () -> void;
@@ -8572,6 +8833,7 @@ error: compilation of `./tests/scir/E040` failed due to 4 errors and 0 warnings
     sym: Symbol {
       kind: function;
       name: unused_label_block @ 254..272 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.unused_label_block;
       typ: *fun () -> void;
@@ -8603,7 +8865,7 @@ warning[W003]: unused label 'blk'
 21 │     blk: {};
    │     ^^^
 
-warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings emitted.
+warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
 
 ",
         compiler_code: 0,
@@ -8620,6 +8882,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
       expr: Symbol {
         kind: global;
         name: usz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -8650,6 +8913,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
     sym: Symbol {
       kind: function;
       name: loop_forever @ 0..12 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.loop_forever;
       typ: *fun () -> noreturn;
@@ -8666,6 +8930,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
       expr: Symbol {
         kind: global;
         name: usz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -8716,6 +8981,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
     sym: Symbol {
       kind: function;
       name: still_loop_forever @ 51..69 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.still_loop_forever;
       typ: *fun () -> noreturn;
@@ -8742,6 +9008,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
           sym: Symbol {
             kind: local;
             name: reachable @ 405..414 (fid = 0);
+            realname: none;
             which: 0;
             path: reachable;
             typ: i32;
@@ -8795,6 +9062,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
           expr: Symbol {
             kind: local;
             name: reachable @ 405..414 (fid = 0);
+            realname: none;
             which: 0;
             path: reachable;
             typ: i32;
@@ -8811,6 +9079,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
     sym: Symbol {
       kind: function;
       name: loop_forever_in_practice @ 171..195 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.loop_forever_in_practice;
       typ: *fun () -> void;
@@ -8837,6 +9106,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
     sym: Symbol {
       kind: global;
       name: cant_reach @ 0..10 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.cant_reach;
       typ: usz;
@@ -8855,6 +9125,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
       expr: Symbol {
         kind: global;
         name: usz @ none;
+        realname: none;
         which: 0;
         path: ∅;
         typ: type;
@@ -8874,6 +9145,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
             expr: Symbol {
               kind: global;
               name: usz @ none;
+              realname: none;
               which: 0;
               path: ∅;
               typ: type;
@@ -8893,6 +9165,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
                     expr: Symbol {
                       kind: global;
                       name: cant_reach @ 0..10 (fid = 0);
+                      realname: none;
                       which: 0;
                       path: orb.cant_reach;
                       typ: usz;
@@ -8920,6 +9193,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
                   expr: Symbol {
                     kind: global;
                     name: cant_reach @ 0..10 (fid = 0);
+                    realname: none;
                     which: 0;
                     path: orb.cant_reach;
                     typ: usz;
@@ -8939,6 +9213,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
           sym: Symbol {
             kind: local;
             name: a @ 45..46 (fid = 0);
+            realname: none;
             which: 0;
             path: a;
             typ: usz;
@@ -8961,6 +9236,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
           expr: Symbol {
             kind: global;
             name: cant_reach @ 0..10 (fid = 0);
+            realname: none;
             which: 0;
             path: orb.cant_reach;
             typ: usz;
@@ -8979,6 +9255,7 @@ warning: compilation of `./tests/scir/label_kw_expr` succeeded but 3 warnings em
     sym: Symbol {
       kind: function;
       name: main @ 18..22 (fid = 0);
+      realname: none;
       which: 0;
       path: orb.main;
       typ: *fun () -> usz;
@@ -9004,7 +9281,7 @@ warning[W002]: unreachable code
 15 │     cant_reach;
    │     ^^^^^^^^^^ the unreachable code
 
-warning: compilation of `./tests/scir/noreturn_block` succeeded but 2 warnings emitted.
+warning: compilation of `noreturn_block` succeeded but 2 warnings emitted.
 
 ",
         compiler_code: 0,

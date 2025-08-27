@@ -136,7 +136,7 @@ impl SemaChecker {
                     return Ok(());
                 }
 
-                let range = expr.typ.integer_range(&self.target).unwrap();
+                let range = expr.typ.integer_range(self.opts.target()).unwrap();
 
                 let int: i128 = match (*int).try_into() {
                     Ok(i) => i,

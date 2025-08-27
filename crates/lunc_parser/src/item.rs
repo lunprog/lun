@@ -47,7 +47,7 @@ impl AstNode for Module {
 }
 
 /// ABI names usable in an extern block
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub enum Abi {
     /// `C`
     #[default]
