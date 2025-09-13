@@ -6,7 +6,7 @@ use lunc_fir::{
     ConstValue, FcType, FirUnit, FunDecl, FunDef, Glob,
     builder::{FundefBuilder, InstBuilder},
 };
-use lunc_scir::{Abi, ScItem, ScModule};
+use lunc_scir::{Abi, ScBlock, ScItem, ScModule};
 use lunc_utils::{
     BuildOptions, opt_unreachable,
     symbol::{EffectivePath, Symbol, Type, ValueExpr},
@@ -126,7 +126,7 @@ impl FirGen {
                 builder.create_entry();
 
                 if !body.is_empty() {
-                    todo!("implement generation of stmts and exprs")
+                    self.gen_block(body, builder);
                 } else {
                     let mut inst = builder.inst();
                     inst.ret(FcType::Void, None);
@@ -196,6 +196,25 @@ impl FirGen {
                 // only contain fundecl and global uninit.
                 _ => opt_unreachable!(),
             }
+        }
+    }
+
+    /// Generate FIR for a block, inside of a function
+    ///
+    /// ## Note
+    ///
+    /// This function does not create a bb.
+    pub fn gen_block(&self, block: &ScBlock, builder: FundefBuilder) {
+        _ = builder;
+
+        for stmt in &block.stmts {
+            _ = stmt;
+            // gen stmt.
+        }
+
+        if let Some(last_expr) = &block.last_expr {
+            _ = last_expr;
+            // gen expr.
         }
     }
 
