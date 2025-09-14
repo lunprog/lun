@@ -213,7 +213,11 @@ impl<'w> PrettyCtxt<'w> {
     /// is a struct
     pub fn pretty_struct<'ctx>(&'ctx mut self, name: &str) -> StructDump<'ctx, 'w> {
         let res = (|| {
-            writeln!(self.out, "{name} {{")?;
+            if name == "" {
+                writeln!(self.out, "{{")?;
+            } else {
+                writeln!(self.out, "{name} {{")?;
+            }
             self.indent();
 
             Ok(())

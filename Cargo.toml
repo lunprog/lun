@@ -3,6 +3,7 @@ resolver = "2"
 members = [
   "xtask",
   "crates/lunc",
+  "crates/lunc_clifgen",
   "crates/lunc_codegen",
   "crates/lunc_diag",
   "crates/lunc_dsir",
@@ -20,6 +21,7 @@ version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
+lunc_clifgen = { path = "crates/lunc_clifgen" }
 lunc_codegen = { path = "crates/lunc_codegen" }
 lunc_diag = { path = "crates/lunc_diag" }
 lunc_dsir = { path = "crates/lunc_dsir" }

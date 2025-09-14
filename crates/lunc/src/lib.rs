@@ -39,6 +39,9 @@ mod re_exports {
     pub use lunc_codegen as codegen;
 
     #[doc(inline)]
+    pub use lunc_clifgen as clifgen;
+
+    #[doc(inline)]
     pub use lunc_diag as diag;
 
     #[doc(inline)]

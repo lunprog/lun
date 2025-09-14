@@ -1,0 +1,13 @@
+[package]
+name = "lunc_clifgen"
+description = "Cranelift IR Generator, SCIR -> CLIF"
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]
+lunc_utils = { workspace = true }
+lunc_scir = { workspace = true }
+
+# other dependencies
+cranelift = { version = "0.123.2" }

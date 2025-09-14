@@ -9,7 +9,7 @@ use std::{
     sync::Arc,
 };
 
-use crate::{target::TargetTriplet, token::Keyword};
+use crate::{symbol::EffectivePath, target::TargetTriplet, token::Keyword};
 
 pub mod idtype;
 pub mod pretty;
@@ -539,6 +539,51 @@ impl BuildOptions {
 pub struct BuildOptionsInternal {
     orb_name: String,
     target: TargetTriplet,
+}
+/// Mangles an effective path into a realname.
+///
+/// An effective path `std.mem.transmute` is mangled like so:
+///
+/// ## 1. The prefix `_L`
+///
+/// We append a prefix to the result, it's always `_L` and the `L` is for `Lun`.
+///
+/// result = `_L`
+///
+/// ## 2. For each member
+///
+/// We append the length of a member in decimal form is taking and the member
+/// like so
+///
+/// ### For `std`
+///
+/// result = `_L3std`
+///
+/// ### For `mem`
+///
+/// result = `_L3std3mem`
+///
+/// ### For `transmute`
+///
+/// result = `_L3std3mem9transmute`
+///
+/// ### If we had another long member, like `hello_world_im_so_long`
+///
+/// we just append `22hello_world_im_so_long` to the result.
+///
+/// ## 3. Finished
+///
+/// This is super simple mangling.
+pub fn mangle(path: &EffectivePath) -> String {
+    let mut result = String::from("_L");
+
+    for member in path.members() {
+        let mangled = format!("{}{member}", member.len());
+
+        result.push_str(&mangled);
+    }
+
+    result
 }
 
 #[cfg(test)]
