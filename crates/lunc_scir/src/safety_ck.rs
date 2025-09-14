@@ -1,4 +1,4 @@
-//! Safety checks for the SCIR, checks for literals overflow and more
+use std::cell::RefCell;
 
 use lunc_diag::ToDiagnostic;
 
@@ -6,12 +6,16 @@ use crate::diags::{Idk128, OverflowingLiteral};
 
 use super::*;
 
+/// Safety checks for the SCIR, checks for literals overflow and more
+///
+/// *It also populate the variables info of function definitions, see
+/// [`FunDefInfo::variables`].*
 impl SemaChecker {
-    pub fn safety_ck_mod(&mut self, module: &ScModule) {
-        self.safety_ck_items(&module.items);
+    pub fn safety_ck_mod(&mut self, module: &mut ScModule) {
+        self.safety_ck_items(&mut module.items);
     }
 
-    pub fn safety_ck_items(&mut self, items: &[ScItem]) {
+    pub fn safety_ck_items(&mut self, items: &mut [ScItem]) {
         for item in items {
             match self.safety_ck_item(item) {
                 Ok(()) => {}
@@ -20,7 +24,7 @@ impl SemaChecker {
         }
     }
 
-    pub fn safety_ck_item(&mut self, item: &ScItem) -> Result<(), Diagnostic> {
+    pub fn safety_ck_item(&mut self, item: &mut ScItem) -> Result<(), Diagnostic> {
         match item {
             ScItem::GlobalDef {
                 name: _,
@@ -32,10 +36,10 @@ impl SemaChecker {
                 sym: _,
             } => {
                 if let Some(typexpr) = &**typexpr {
-                    self.safety_ck_expr(typexpr)?;
+                    self.safety_ck_expr(typexpr, None)?;
                 }
 
-                self.safety_ck_expr(value)?;
+                self.safety_ck_expr(value, None)?;
 
                 Ok(())
             }
@@ -46,7 +50,7 @@ impl SemaChecker {
                 loc: _,
                 sym: _,
             } => {
-                self.safety_ck_expr(typexpr)?;
+                self.safety_ck_expr(typexpr, None)?;
 
                 Ok(())
             }
@@ -57,12 +61,16 @@ impl SemaChecker {
                 args,
                 rettypexpr,
                 body,
-                defined_mut: _,
+                info:
+                    FunDefInfo {
+                        defined_mut: _,
+                        variables,
+                    },
                 loc: _,
                 sym: _,
             } => {
                 if let Some(typexpr) = &**typexpr {
-                    self.safety_ck_expr(typexpr)?;
+                    self.safety_ck_expr(typexpr, None)?;
                 }
 
                 for arg in args {
@@ -73,10 +81,12 @@ impl SemaChecker {
                 }
 
                 if let Some(rettyexpr) = rettypexpr {
-                    self.safety_ck_expr(rettyexpr)?;
+                    self.safety_ck_expr(rettyexpr, None)?;
                 }
 
-                self.safety_ck_block(body);
+                let vars = RefCell::new(Vec::new());
+                self.safety_ck_block(body, Some(&vars));
+                *variables = vars.into_inner();
 
                 Ok(())
             }
@@ -91,18 +101,18 @@ impl SemaChecker {
                 sym: _,
             } => {
                 if let Some(typexpr) = &**typexpr {
-                    self.safety_ck_expr(typexpr)?;
+                    self.safety_ck_expr(typexpr, None)?;
                 }
 
                 for arg in args {
-                    match self.safety_ck_expr(arg) {
+                    match self.safety_ck_expr(arg, None) {
                         Ok(()) => {}
                         Err(d) => self.sink.emit(d),
                     }
                 }
 
                 if let Some(retty) = rettypexpr {
-                    self.safety_ck_expr(retty)?;
+                    self.safety_ck_expr(retty, None)?;
                 }
 
                 Ok(())
@@ -129,7 +139,11 @@ impl SemaChecker {
         }
     }
 
-    pub fn safety_ck_expr(&mut self, expr: &ScExpression) -> Result<(), Diagnostic> {
+    pub fn safety_ck_expr(
+        &mut self,
+        expr: &ScExpression,
+        variables: Option<&RefCell<Vec<Symbol>>>,
+    ) -> Result<(), Diagnostic> {
         match &expr.expr {
             ScExpr::IntLit(int) => {
                 if expr.typ == Type::U128 {
@@ -194,21 +208,22 @@ impl SemaChecker {
                 Ok(())
             }
             ScExpr::Binary { lhs, op: _, rhs } => {
-                self.safety_ck_expr(lhs)?;
-                self.safety_ck_expr(rhs)?;
+                self.safety_ck_expr(lhs, variables)?;
+
+                self.safety_ck_expr(rhs, variables)?;
 
                 Ok(())
             }
             ScExpr::Unary { op: _, expr } | ScExpr::Borrow { mutable: _, expr } => {
-                self.safety_ck_expr(expr)?;
+                self.safety_ck_expr(expr, variables)?;
 
                 Ok(())
             }
             ScExpr::FunCall { callee, args } => {
-                self.safety_ck_expr(callee)?;
+                self.safety_ck_expr(callee, variables)?;
 
                 for arg in args {
-                    self.safety_ck_expr(arg)?;
+                    self.safety_ck_expr(arg, variables)?;
                 }
 
                 Ok(())
@@ -218,11 +233,11 @@ impl SemaChecker {
                 then_br,
                 else_br,
             } => {
-                self.safety_ck_expr(cond)?;
+                self.safety_ck_expr(cond, variables)?;
 
-                self.safety_ck_expr(then_br)?;
+                self.safety_ck_expr(then_br, variables)?;
                 if let Some(else_br) = else_br {
-                    self.safety_ck_expr(else_br)?;
+                    self.safety_ck_expr(else_br, variables)?;
                 }
 
                 Ok(())
@@ -237,7 +252,7 @@ impl SemaChecker {
                 body: block,
                 index: _,
             } => {
-                self.safety_ck_block(block);
+                self.safety_ck_block(block, variables);
 
                 Ok(())
             }
@@ -248,14 +263,14 @@ impl SemaChecker {
                 index: _,
             } => {
                 if let Some(expr) = expr {
-                    self.safety_ck_expr(expr)?;
+                    self.safety_ck_expr(expr, variables)?;
                 }
 
                 Ok(())
             }
             ScExpr::Continue { label: _, index: _ } | ScExpr::Null => Ok(()),
             ScExpr::MemberAccess { expr, member: _ } => {
-                self.safety_ck_expr(expr)?;
+                self.safety_ck_expr(expr, variables)?;
 
                 Ok(())
             }
@@ -264,20 +279,20 @@ impl SemaChecker {
                 mutable: _,
                 typexpr,
             } => {
-                self.safety_ck_expr(typexpr)?;
+                self.safety_ck_expr(typexpr, variables)?;
 
                 Ok(())
             }
             ScExpr::FunPtrType { args, ret } => {
                 for arg in args {
-                    match self.safety_ck_expr(arg) {
+                    match self.safety_ck_expr(arg, variables) {
                         Ok(()) => {}
                         Err(d) => self.sink.emit(d),
                     }
                 }
 
                 if let Some(ret) = ret {
-                    self.safety_ck_expr(ret)?;
+                    self.safety_ck_expr(ret, variables)?;
                 }
 
                 Ok(())
@@ -286,22 +301,26 @@ impl SemaChecker {
         }
     }
 
-    pub fn safety_ck_block(&mut self, block: &ScBlock) {
+    pub fn safety_ck_block(&mut self, block: &ScBlock, variables: Option<&RefCell<Vec<Symbol>>>) {
         for stmt in &block.stmts {
-            match self.safety_ck_stmt(stmt) {
+            match self.safety_ck_stmt(stmt, variables) {
                 Ok(()) => {}
                 Err(d) => self.sink.emit(d),
             }
         }
 
         if let Some(last) = &block.last_expr
-            && let Err(d) = self.safety_ck_expr(last)
+            && let Err(d) = self.safety_ck_expr(last, variables)
         {
             self.sink.emit(d);
         }
     }
 
-    pub fn safety_ck_stmt(&mut self, stmt: &ScStatement) -> Result<(), Diagnostic> {
+    pub fn safety_ck_stmt(
+        &mut self,
+        stmt: &ScStatement,
+        variables: Option<&RefCell<Vec<Symbol>>>,
+    ) -> Result<(), Diagnostic> {
         match &stmt.stmt {
             ScStmt::VariableDef {
                 name: _,
@@ -309,18 +328,23 @@ impl SemaChecker {
                 mutable: _,
                 typexpr,
                 value,
-                sym: _,
+                sym,
             } => {
                 if let Some(typexpr) = typexpr {
-                    self.safety_ck_expr(typexpr)?;
+                    self.safety_ck_expr(typexpr, variables)?;
                 }
 
-                self.safety_ck_expr(value)?;
+                self.safety_ck_expr(value, variables)?;
+
+                if let Some(variables) = variables {
+                    let mut variables = variables.borrow_mut();
+                    variables.push(sym.clone());
+                }
 
                 Ok(())
             }
             ScStmt::Defer { expr } | ScStmt::Expression(expr) => {
-                self.safety_ck_expr(expr)?;
+                self.safety_ck_expr(expr, variables)?;
 
                 Ok(())
             }
@@ -336,7 +360,7 @@ impl SemaChecker {
             sym: _,
         } = arg;
 
-        self.safety_ck_expr(typexpr)?;
+        self.safety_ck_expr(typexpr, None)?;
 
         Ok(())
     }

@@ -7,7 +7,9 @@ use lunc_utils::{
     pretty::{PrettyCtxt, PrettyDump},
 };
 
-use crate::{ScArg, ScBlock, ScExpr, ScExpression, ScItem, ScModule, ScStatement, ScStmt};
+use crate::{
+    FunDefInfo, ScArg, ScBlock, ScExpr, ScExpression, ScItem, ScModule, ScStatement, ScStmt,
+};
 
 impl PrettyDump for ScModule {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
@@ -63,7 +65,7 @@ impl PrettyDump for ScItem {
                 args,
                 rettypexpr,
                 body,
-                defined_mut,
+                info,
                 loc,
                 sym,
             } => {
@@ -73,7 +75,7 @@ impl PrettyDump for ScItem {
                     .field("args", args.as_slice())
                     .field("rettypexpr", rettypexpr)
                     .field("body", body)
-                    .field("defined_mut", defined_mut)
+                    .field("info", info)
                     .field("sym", sym)
                     .finish()?;
 
@@ -130,6 +132,22 @@ impl PrettyDump for ScItem {
                 Ok(())
             }
         }
+    }
+}
+
+impl PrettyDump for FunDefInfo {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        let FunDefInfo {
+            defined_mut,
+            variables,
+        } = self;
+
+        ctx.pretty_struct("")
+            .field("defined_mut", defined_mut)
+            .field("variables", variables.as_slice())
+            .finish()?;
+
+        Ok(())
     }
 }
 

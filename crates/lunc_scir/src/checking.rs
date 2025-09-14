@@ -1,5 +1,3 @@
-//! Checks for the SCIR like typechecking, safety checks etc
-
 use std::iter::{self, zip};
 
 use lunc_diag::{ToDiagnostic, feature_todo};
@@ -18,19 +16,7 @@ use crate::diags::{
 
 use super::*;
 
-/// Used to emit the `unreachable_code` warning in block.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum NoreturnPos {
-    /// The noreturn was in the statements of the block
-    Statements {
-        /// the position of the following statement that follows the first
-        /// 'noreturn' statement
-        pos: usize,
-    },
-    /// The noreturn is the last expression
-    LastExpr,
-}
-
+/// Checks for the SCIR like typechecking, safety checks etc
 impl SemaChecker {
     pub fn ck_mod(&mut self, module: &mut ScModule) {
         for item in &mut module.items {
@@ -104,7 +90,7 @@ impl SemaChecker {
                 args,
                 rettypexpr,
                 body: _,
-                defined_mut: _,
+                info: _,
                 loc: _,
                 sym,
             } => {
@@ -645,12 +631,12 @@ impl SemaChecker {
                 args: _,
                 rettypexpr,
                 body,
-                defined_mut,
+                info,
                 loc,
                 sym,
             } => {
                 // emit an error
-                if *defined_mut {
+                if info.defined_mut {
                     self.sink.emit(FunctionInGlobalMut {
                         fun: "function definition",
                         loc: loc.clone().unwrap(),
@@ -1379,6 +1365,8 @@ impl SemaChecker {
         Ok(())
     }
 
+    /// check the block, its content and assign it a type, note it will also
+    /// remove unreachable code. So for example if a block has type `usz` but
     pub fn ck_block(
         &mut self,
         block: &mut ScBlock,
@@ -1399,36 +1387,36 @@ impl SemaChecker {
 
         // compute if one of the statements or the last expression has
         // `noreturn` type.
-        let is_noreturn = block
-            .stmts
-            .iter()
-            .position(|stmt| match &stmt.stmt {
-                ScStmt::VariableDef { value, .. } if value.typ == Type::Noreturn => true,
-                ScStmt::Expression(expr) if expr.typ == Type::Noreturn => true,
-                _ => false,
-            })
-            .map(|pos| NoreturnPos::Statements { pos })
-            .map(|noret_pos| match block.last_expr.as_ref() {
-                Some(expr) if expr.typ == Type::Unknown => NoreturnPos::LastExpr,
-                _ => noret_pos,
-            });
+        let is_noreturn = block.stmts.iter().position(|stmt| match &stmt.stmt {
+            ScStmt::VariableDef { value, .. } if value.typ == Type::Noreturn => true,
+            ScStmt::Expression(expr) if expr.typ == Type::Noreturn => true,
+            _ => false,
+        });
 
-        block.typ = if let Some(noret_pos) = is_noreturn {
-            if let NoreturnPos::Statements { pos } = noret_pos
-                && pos + 1 < block.stmts.len()
-            {
+        block.typ = if let Some(pos) = is_noreturn {
+            // emit the unreachable code warning when
+            if pos + 1 < block.stmts.len() {
+                // ... the code following is also a statement
                 let noret_loc = block.stmts.get(pos).unwrap().loc.clone().unwrap();
                 let loc = block.stmts.get(pos + 1).unwrap().loc.clone().unwrap();
 
                 self.sink.emit(WUnreachableCode { noret_loc, loc });
-            } else if let NoreturnPos::Statements { pos } = noret_pos
-                && let Some(last) = &block.last_expr
+            } else if let Some(last) = &block.last_expr
                 && let Some(noret_loc) = block.stmts.get(pos).unwrap().loc.clone()
             {
+                // ... the code following is the last expression
                 let loc = last.loc.clone().unwrap();
 
                 self.sink.emit(WUnreachableCode { noret_loc, loc });
+
+                block.last_expr = None;
             }
+            // the nth reachable stmts in the block
+            let reachable_stmts = pos + 1;
+
+            // remove dead code
+            block.stmts.truncate(reachable_stmts);
+            block.last_expr = None;
 
             Type::Noreturn
         } else if let Some(expr) = &mut block.last_expr {

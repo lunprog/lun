@@ -2620,7 +2620,10 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
               } @ 32..104 (fid = 2);
               typ: i32;
             } @ 26..106 (fid = 2);
-            defined_mut: false;
+            info: {
+              defined_mut: false;
+              variables: [];
+            };
             sym: Symbol {
               kind: function;
               name: fib @ 0..3 (fid = 2);
@@ -2714,7 +2717,10 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           last_expr: none;
           typ: void;
         } @ 81..125 (fid = 1);
-        defined_mut: false;
+        info: {
+          defined_mut: false;
+          variables: [];
+        };
         sym: Symbol {
           kind: function;
           name: puts @ 58..62 (fid = 1);
@@ -2782,7 +2788,21 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           last_expr: none;
           typ: void;
         } @ 153..184 (fid = 1);
-        defined_mut: false;
+        info: {
+          defined_mut: false;
+          variables: [
+            Symbol {
+              kind: local;
+              name: half @ 159..163 (fid = 1);
+              realname: none;
+              which: 0;
+              path: half;
+              typ: f32;
+              typeness: implicit;
+              value: none;
+            },
+          ];
+        };
         sym: Symbol {
           kind: function;
           name: some_other_thing @ 127..143 (fid = 1);
@@ -2901,7 +2921,10 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
       last_expr: none;
       typ: void;
     } @ 74..161 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: run @ 60..63 (fid = 0);
@@ -3027,7 +3050,10 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
       } @ 210..219 (fid = 0);
       typ: f32;
     } @ 204..221 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: divide @ 163..169 (fid = 0);
@@ -8261,7 +8287,10 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
       last_expr: none;
       typ: void;
     } @ 53..82 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: main @ 39..43 (fid = 0);
@@ -8341,7 +8370,10 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
       } @ 74..77 (fid = 0);
       typ: i32;
     } @ 27..79 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: i32_return @ 0..10 (fid = 0);
@@ -8414,7 +8446,10 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
       } @ 156..160 (fid = 0);
       typ: f32;
     } @ 108..162 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: f32_return @ 81..91 (fid = 0);
@@ -8485,7 +8520,10 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
       } @ 240..243 (fid = 0);
       typ: char;
     } @ 193..245 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: char_return @ 164..175 (fid = 0);
@@ -8562,7 +8600,10 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
       } @ 336..349 (fid = 0);
       typ: * str;
     } @ 278..351 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: string_return @ 247..260 (fid = 0);
@@ -8620,7 +8661,10 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
       last_expr: none;
       typ: noreturn;
     } @ 374..426 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: void_return @ 353..364 (fid = 0);
@@ -8665,31 +8709,6 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
                       };
                       typ: noreturn;
                     } @ 67..72 (fid = 0) @ 67..72 (fid = 0),
-
-                    Expression {
-                      expr: Break {
-                        label: lab;
-                        expr: none;
-                        index: 0;
-                      };
-                      typ: noreturn;
-                    } @ 86..96 (fid = 0) @ 86..96 (fid = 0),
-
-                    Expression {
-                      expr: Continue {
-                        label: none;
-                        index: 1;
-                      };
-                      typ: noreturn;
-                    } @ 110..118 (fid = 0) @ 110..118 (fid = 0),
-
-                    Expression {
-                      expr: Continue {
-                        label: lab;
-                        index: 0;
-                      };
-                      typ: noreturn;
-                    } @ 132..145 (fid = 0) @ 132..145 (fid = 0),
                   ];
                   last_expr: none;
                   typ: noreturn;
@@ -8706,7 +8725,10 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
       } @ 28..162 (fid = 0);
       typ: void;
     } @ 22..164 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: nested_loops @ 0..12 (fid = 0);
@@ -8761,10 +8783,7 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
                     typ: noreturn;
                   } @ 218..231 (fid = 0) @ 218..231 (fid = 0),
                 ];
-                last_expr: Expression {
-                  expr: integer 2;
-                  typ: i32;
-                } @ 242..243 (fid = 0);
+                last_expr: none;
                 typ: noreturn;
               } @ 208..249 (fid = 0);
               index: 0;
@@ -8786,7 +8805,21 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
       last_expr: none;
       typ: void;
     } @ 187..252 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [
+        Symbol {
+          kind: local;
+          name: a @ 193..194 (fid = 0);
+          realname: none;
+          which: 0;
+          path: a;
+          typ: i32;
+          typeness: explicit;
+          value: none;
+        },
+      ];
+    };
     sym: Symbol {
       kind: function;
       name: block_label @ 166..177 (fid = 0);
@@ -8822,7 +8855,10 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
       last_expr: none;
       typ: void;
     } @ 282..298 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: unused_label_block @ 254..272 (fid = 0);
@@ -8902,7 +8938,10 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       } @ 40..47 (fid = 0);
       typ: noreturn;
     } @ 34..49 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: loop_forever @ 0..12 (fid = 0);
@@ -8970,7 +9009,10 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       } @ 97..167 (fid = 0);
       typ: noreturn;
     } @ 91..169 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [];
+    };
     sym: Symbol {
       kind: function;
       name: still_loop_forever @ 51..69 (fid = 0);
@@ -9068,7 +9110,21 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       last_expr: none;
       typ: void;
     } @ 205..504 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [
+        Symbol {
+          kind: local;
+          name: reachable @ 405..414 (fid = 0);
+          realname: none;
+          which: 0;
+          path: reachable;
+          typ: i32;
+          typeness: implicit;
+          value: none;
+        },
+      ];
+    };
     sym: Symbol {
       kind: function;
       name: loop_forever_in_practice @ 171..195 (fid = 0);
@@ -9102,8 +9158,8 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       realname: none;
       which: 0;
       path: orb.cant_reach;
-      typ: usz;
-      typeness: explicit;
+      typ: i32;
+      typeness: implicit;
       value: I32 {
         val: 1;
       };
@@ -9161,8 +9217,8 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
                       realname: none;
                       which: 0;
                       path: orb.cant_reach;
-                      typ: usz;
-                      typeness: explicit;
+                      typ: i32;
+                      typeness: implicit;
                       value: I32 {
                         val: 1;
                       };
@@ -9182,21 +9238,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
                     typ: noreturn;
                   } @ 149..162 (fid = 0) @ 149..162 (fid = 0),
                 ];
-                last_expr: Expression {
-                  expr: Symbol {
-                    kind: global;
-                    name: cant_reach @ 0..10 (fid = 0);
-                    realname: none;
-                    which: 0;
-                    path: orb.cant_reach;
-                    typ: usz;
-                    typeness: explicit;
-                    value: I32 {
-                      val: 1;
-                    };
-                  };
-                  typ: usz;
-                } @ 173..183 (fid = 0);
+                last_expr: none;
                 typ: noreturn;
               } @ 60..189 (fid = 0);
               index: 0;
@@ -9224,27 +9266,25 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
           };
           typ: noreturn;
         } @ 237..246 (fid = 0) @ 237..246 (fid = 0),
-
-        Expression {
-          expr: Symbol {
-            kind: global;
-            name: cant_reach @ 0..10 (fid = 0);
-            realname: none;
-            which: 0;
-            path: orb.cant_reach;
-            typ: usz;
-            typeness: explicit;
-            value: I32 {
-              val: 1;
-            };
-          };
-          typ: usz;
-        } @ 252..262 (fid = 0) @ 252..262 (fid = 0),
       ];
       last_expr: none;
       typ: noreturn;
     } @ 39..265 (fid = 0);
-    defined_mut: false;
+    info: {
+      defined_mut: false;
+      variables: [
+        Symbol {
+          kind: local;
+          name: a @ 45..46 (fid = 0);
+          realname: none;
+          which: 0;
+          path: a;
+          typ: usz;
+          typeness: explicit;
+          value: none;
+        },
+      ];
+    };
     sym: Symbol {
       kind: function;
       name: main @ 18..22 (fid = 0);

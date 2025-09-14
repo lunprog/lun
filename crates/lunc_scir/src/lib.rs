@@ -21,10 +21,10 @@ pub use lunc_dsir::{Abi, BinOp, UnaryOp};
 
 use crate::diags::OutsideExternBlock;
 
-pub mod checking;
+mod checking;
 pub mod diags;
 pub mod pretty;
-pub mod safety_ck;
+mod safety_ck;
 
 /// A semantic checked module, see the dsir version [`DsModule`]
 ///
@@ -99,9 +99,7 @@ pub enum ScItem {
         args: Vec<ScArg>,
         rettypexpr: Option<Box<ScExpression>>,
         body: ScBlock,
-        /// set to `true` if it was defined in a mutable global def (this is to
-        /// emit E040).
-        defined_mut: bool,
+        info: FunDefInfo,
         loc: OSpan,
         /// corresponding symbol of this definition
         sym: Symbol,
@@ -191,7 +189,10 @@ impl FromHigher for ScItem {
                     args: lower(args),
                     rettypexpr: lower(rettypexpr),
                     body: lower(body),
-                    defined_mut: mutable,
+                    info: FunDefInfo {
+                        defined_mut: mutable,
+                        variables: Vec::new(),
+                    },
                     loc,
                     sym: sym.unwrap_sym(),
                 }
@@ -272,6 +273,18 @@ impl FromHigher for ScItem {
             }
         }
     }
+}
+
+/// Infos, used across the compiler to emit errors later, ease the lowering of
+/// SCIR to CLIF.
+#[derive(Debug, Clone)]
+pub struct FunDefInfo {
+    /// set to `true` if it was defined in a mutable global def (this is
+    /// used to emit E040).
+    pub defined_mut: bool,
+    /// a list of all defined variables that are reachable, used in SCIR to CLIF
+    /// generation.
+    pub variables: Vec<Symbol>,
 }
 
 /// A semantic checked expression, see the dsir version [`DsExpression`]
@@ -762,7 +775,7 @@ impl SemaChecker {
         self.ck_mod(&mut root);
 
         // check the safety of the SCIR, we check if there is no integer literal overflow, float literal overflow..
-        self.safety_ck_mod(&root);
+        self.safety_ck_mod(&mut root);
 
         if self.sink.failed() {
             return None;
