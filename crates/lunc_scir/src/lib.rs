@@ -13,7 +13,7 @@ use lunc_dsir::{
 };
 use lunc_utils::{
     BuildOptions, FromHigher, Span, lower, opt_unreachable,
-    symbol::{Symbol, Type, ValueExpr},
+    symbol::{Symbol, Type, Typeness, ValueExpr},
     target::PointerWidth,
 };
 
@@ -327,6 +327,51 @@ impl ScExpression {
     /// Is the expression an underscore expression?
     pub fn is_underscore(&self) -> bool {
         matches!(self.expr, ScExpr::Underscore)
+    }
+
+    /// Returns the typeness of an expression
+    pub fn typeness(&self) -> Typeness {
+        match &self.expr {
+            ScExpr::IntLit(_) | ScExpr::FloatLit(_) => Typeness::Implicit,
+            ScExpr::BoolLit(_) | ScExpr::StringLit(_) | ScExpr::CharLit(_) => Typeness::Explicit,
+            ScExpr::Ident(symref) => symref.typeness(),
+            ScExpr::Binary { lhs, op: _, rhs } => {
+                if lhs.typeness() == Typeness::Explicit || rhs.typeness() == Typeness::Explicit {
+                    Typeness::Explicit
+                } else {
+                    Typeness::Implicit
+                }
+            }
+            ScExpr::Unary { op: _, expr } | ScExpr::Borrow { mutable: _, expr } => expr.typeness(),
+            ScExpr::FunCall { .. } => Typeness::Explicit,
+            ScExpr::If {
+                cond: _,
+                then_br,
+                else_br,
+            } => {
+                if then_br.typeness() == Typeness::Explicit {
+                    Typeness::Explicit
+                } else if let Some(else_br) = else_br
+                    && else_br.typeness() == Typeness::Explicit
+                {
+                    Typeness::Explicit
+                } else {
+                    Typeness::Implicit
+                }
+            }
+            ScExpr::Block { .. }
+            | ScExpr::Loop { .. }
+            | ScExpr::Return { .. }
+            | ScExpr::Break { .. }
+            | ScExpr::Continue { .. }
+            | ScExpr::Null
+            | ScExpr::MemberAccess { .. }
+            | ScExpr::QualifiedPath { .. }
+            | ScExpr::Underscore
+            | ScExpr::PointerType { .. }
+            | ScExpr::FunPtrType { .. } => Typeness::Explicit,
+            ScExpr::Poisoned { .. } => unreachable!("poisoned expr"),
+        }
     }
 }
 

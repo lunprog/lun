@@ -420,7 +420,10 @@ impl SemaChecker {
         other_loc: impl Into<OSpan>,
     ) {
         if *expected != found.typ {
-            if found.typ.can_coerce(expected) {
+            if found.typ.can_coerce(expected)
+                && let Some(last_expr) = &mut found.last_expr
+                && Self::apply_typ_on_expr(last_expr, expected.clone()).is_some()
+            {
                 // NOTE: here unlike `expr_typeck` we don't need to apply the type.
                 return;
             }
@@ -487,12 +490,15 @@ impl SemaChecker {
         match &mut expr.expr {
             ScExpr::IntLit(_) => {}
             ScExpr::FloatLit(_) => {}
-            ScExpr::Ident(symref) if symref.typeness() == Typeness::Implicit => {
-                symref.inspect_mut(|sym| {
-                    sym.typ = typ.clone();
-                    sym.typeness = Typeness::Explicit;
-                });
-            }
+            ScExpr::Ident(symref) => match symref.typeness() {
+                Typeness::Implicit => {
+                    symref.inspect_mut(|sym| {
+                        sym.typ = typ.clone();
+                        sym.typeness = Typeness::Explicit;
+                    });
+                }
+                Typeness::Explicit => return None,
+            },
             ScExpr::Binary { lhs, op: _, rhs } => {
                 Self::apply_typ_on_expr(lhs, typ.clone())?;
                 Self::apply_typ_on_expr(rhs, typ.clone())?;
@@ -838,6 +844,20 @@ impl SemaChecker {
                         lhs_assign: true,
                         loc: lhs.loc.clone().unwrap(),
                     });
+                }
+
+                if let ScExpr::Ident(symref) = &lhs.expr
+                    && lhs.typeness() == Typeness::Implicit
+                    && rhs.typeness() == Typeness::Explicit
+                {
+                    symref.inspect_mut(|sym| {
+                        sym.typeness = Typeness::Explicit;
+                        sym.typ = rhs.typ.clone();
+                    })
+                } else if lhs.typ != Type::Unknown && lhs.typ != rhs.typ {
+                    self.expr_typeck(&lhs.typ, rhs, None, None);
+                } else if lhs.typ != rhs.typ {
+                    self.expr_typeck(&rhs.typ, lhs, None, None);
                 }
 
                 expr.typ = Type::Void;
