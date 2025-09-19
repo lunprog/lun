@@ -135,13 +135,14 @@ macro_rules! idtype {
     {impl Hash for $name:ident; $($rest:tt)*} => {
         impl std::hash::Hash for $name {
             fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-                let db = Self::database().lock();
+                // let db = Self::database().lock();
 
-                let entry = db.get_entry(self.0);
+                // let entry = db.get_entry(self.0);
 
-                let guard = entry.value.read().unwrap();
+                // let guard = entry.value.read().unwrap();
 
-                <<Self as $crate::idtype::InternalType>::Internal as std::hash::Hash>::hash(&*guard, state);
+                // <<Self as $crate::idtype::InternalType>::Internal as std::hash::Hash>::hash(&*guard, state);
+                state.write_usize(self.0.get());
             }
         }
 
@@ -159,19 +160,21 @@ macro_rules! idtype {
             /// see
             #[doc = concat!("[`", stringify!($name), "::object_eq`]")]
             fn eq(&self, other: &Self) -> bool {
-                // NOTE: we cannot use the `object_eq` method here because we
-                // don't know if the internal value implements `Eq`
-                let db = Self::database().lock();
+                // // NOTE: we cannot use the `object_eq` method here because we
+                // // don't know if the internal value implements `Eq`
+                // let db = Self::database().lock();
 
-                let self_entry = db.get_entry(self.0);
+                // let self_entry = db.get_entry(self.0);
 
-                let self_guard = self_entry.value.read().unwrap();
+                // let self_guard = self_entry.value.read().unwrap();
 
-                let other_entry = db.get_entry(other.0);
+                // let other_entry = db.get_entry(other.0);
 
-                let other_guard = other_entry.value.read().unwrap();
+                // let other_guard = other_entry.value.read().unwrap();
 
-                PartialEq::eq(&*self_guard, &*other_guard)
+                // PartialEq::eq(&*self_guard, &*other_guard)
+
+                self.object_eq(other)
             }
         }
 
@@ -799,14 +802,7 @@ pub mod tests {
     // NOTE: this module is marked as public so that the functions we do not use
     // do no emit the `dead_code` lint
 
-    use std::{
-        collections::HashSet,
-        error::Error,
-        hash::{Hash, Hasher},
-        panic::catch_unwind,
-        ptr,
-        sync::Mutex,
-    };
+    use std::{error::Error, panic::catch_unwind, ptr, sync::Mutex};
 
     use super::*;
 
@@ -977,54 +973,6 @@ pub mod tests {
         assert_eq!(a.alive(), 2);
 
         assert!(a.object_eq(&b));
-
-        Ok(())
-    }
-
-    #[test]
-    fn partial_eq_vs_object_eq() -> TestRes {
-        let _lock = LOCK.lock()?;
-        clear_test_id_db();
-
-        let a = TestId::with_internal("same");
-        let b = TestId::with_internal("same");
-
-        // object_eq compares identity
-        assert!(!a.object_eq(&b));
-        // PartialEq compares underlying data
-        assert_eq!(a, b);
-
-        Ok(())
-    }
-
-    #[test]
-    fn hash_and_hashset_behavior() -> TestRes {
-        let _lock = LOCK.lock()?;
-
-        clear_test_id_db();
-
-        let a = TestId::with_internal("foo");
-        let b = TestId::with_internal("foo");
-
-        // They should hash the same
-        let hash_a = {
-            let mut h = std::collections::hash_map::DefaultHasher::new();
-            a.hash(&mut h);
-            h.finish()
-        };
-
-        let hash_b = {
-            let mut h = std::collections::hash_map::DefaultHasher::new();
-            b.hash(&mut h);
-            h.finish()
-        };
-        assert_eq!(hash_a, hash_b);
-
-        // Inserting both into a HashSet yields length 1
-        let mut set = HashSet::new();
-        set.insert(a);
-        set.insert(b);
-        assert_eq!(set.len(), 1);
 
         Ok(())
     }

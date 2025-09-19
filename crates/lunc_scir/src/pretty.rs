@@ -137,14 +137,10 @@ impl PrettyDump for ScItem {
 
 impl PrettyDump for FunDefInfo {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        let FunDefInfo {
-            defined_mut,
-            variables,
-        } = self;
+        let FunDefInfo { defined_mut } = self;
 
         ctx.pretty_struct("")
             .field("defined_mut", defined_mut)
-            .field("variables", variables.as_slice())
             .finish()?;
 
         Ok(())

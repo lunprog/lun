@@ -36,7 +36,7 @@
 //!     verifier::FirUnitVerifier,
 //! };
 //! use lunc_utils::pretty::{PrettyDump, PrettyCtxt};
-//! use lunc_utils::target::{PtrWidth, TargetTriplet};
+//! use lunc_utils::target::{PointerWidth, Triple};
 //! use lunc_utils::BuildOptions;
 //! use std::str::FromStr;
 //!
@@ -121,7 +121,7 @@
 //!
 //! let mut verifier = FirUnitVerifier::new(
 //!     &unit,
-//!     BuildOptions::new("", TargetTriplet::from_str("x86_64-linux-gnu").unwrap())
+//!     BuildOptions::new("", Triple::from_str("x86_64-linux-gnu").unwrap())
 //! );
 //!
 //! match verifier.verify() {
@@ -177,7 +177,7 @@ use std::{
 use lunc_utils::{
     idtype,
     pretty::{PrettyCtxt, PrettyDump},
-    target::PtrWidth,
+    target::PointerWidth,
 };
 
 pub mod builder;
@@ -369,7 +369,7 @@ impl FcType {
     }
 
     /// Returns the alignment of this type.
-    pub fn align(&self, ptr: PtrWidth) -> Alignment {
+    pub fn align(&self, ptr: PointerWidth) -> Alignment {
         match self {
             FcType::S8 | FcType::U8 => 1,
             FcType::S16 | FcType::U16 => 2,
@@ -378,7 +378,9 @@ impl FcType {
             FcType::S128 | FcType::U128 => 16,
             FcType::Bool => 1,
             FcType::Void => 1,
-            FcType::FunPtr { .. } | FcType::Ptr { .. } | FcType::Array { .. } => ptr.align(),
+            FcType::FunPtr { .. } | FcType::Ptr { .. } | FcType::Array { .. } => {
+                ptr.bytes() as Alignment
+            }
         }
     }
 }

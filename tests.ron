@@ -2622,7 +2622,6 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
             } @ 26..106 (fid = 2);
             info: {
               defined_mut: false;
-              variables: [];
             };
             sym: Symbol {
               kind: function;
@@ -2719,7 +2718,6 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
         } @ 81..125 (fid = 1);
         info: {
           defined_mut: false;
-          variables: [];
         };
         sym: Symbol {
           kind: function;
@@ -2790,18 +2788,6 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
         } @ 153..184 (fid = 1);
         info: {
           defined_mut: false;
-          variables: [
-            Symbol {
-              kind: local;
-              name: half @ 159..163 (fid = 1);
-              realname: none;
-              which: 0;
-              path: half;
-              typ: f32;
-              typeness: implicit;
-              value: none;
-            },
-          ];
         };
         sym: Symbol {
           kind: function;
@@ -2923,7 +2909,6 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     } @ 74..161 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -3052,7 +3037,6 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     } @ 204..221 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -8289,7 +8273,6 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
     } @ 53..82 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -8372,7 +8355,6 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
     } @ 27..79 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -8448,7 +8430,6 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
     } @ 108..162 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -8522,7 +8503,6 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
     } @ 193..245 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -8602,7 +8582,6 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
     } @ 278..351 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -8663,7 +8642,6 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
     } @ 374..426 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -8727,7 +8705,6 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
     } @ 22..164 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -8807,18 +8784,6 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
     } @ 187..252 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [
-        Symbol {
-          kind: local;
-          name: a @ 193..194 (fid = 0);
-          realname: none;
-          which: 0;
-          path: a;
-          typ: i32;
-          typeness: explicit;
-          value: none;
-        },
-      ];
     };
     sym: Symbol {
       kind: function;
@@ -8857,7 +8822,6 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
     } @ 282..298 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -8940,7 +8904,6 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
     } @ 34..49 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -9011,7 +8974,6 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
     } @ 91..169 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [];
     };
     sym: Symbol {
       kind: function;
@@ -9112,18 +9074,6 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
     } @ 205..504 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [
-        Symbol {
-          kind: local;
-          name: reachable @ 405..414 (fid = 0);
-          realname: none;
-          which: 0;
-          path: reachable;
-          typ: i32;
-          typeness: implicit;
-          value: none;
-        },
-      ];
     };
     sym: Symbol {
       kind: function;
@@ -9272,18 +9222,6 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
     } @ 39..265 (fid = 0);
     info: {
       defined_mut: false;
-      variables: [
-        Symbol {
-          kind: local;
-          name: a @ 45..46 (fid = 0);
-          realname: none;
-          which: 0;
-          path: a;
-          typ: usz;
-          typeness: explicit;
-          value: none;
-        },
-      ];
     };
     sym: Symbol {
       kind: function;

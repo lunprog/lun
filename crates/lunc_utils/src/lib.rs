@@ -9,13 +9,29 @@ use std::{
     sync::Arc,
 };
 
-use crate::{symbol::EffectivePath, target::TargetTriplet, token::Keyword};
+use crate::{symbol::EffectivePath, token::Keyword};
 
 pub mod idtype;
 pub mod pretty;
 pub mod symbol;
-pub mod target;
 pub mod token;
+
+pub mod target {
+    pub use target_lexicon::*;
+
+    /// Supported targets
+    pub const SUPPORTED_TARGETS: [Triple; 1] = [X86_64_LINUX_GNU];
+
+    /// `x86_64-unknown-linux-gnu` target
+    pub const X86_64_LINUX_GNU: Triple = Triple {
+        architecture: Architecture::X86_64,
+        vendor: Vendor::Unknown,
+        operating_system: OperatingSystem::Linux,
+        environment: Environment::Gnu,
+        binary_format: BinaryFormat::Elf,
+    };
+}
+use target_lexicon::Triple;
 
 /// Location of something in a file.
 ///
@@ -403,8 +419,8 @@ pub fn levenshtein_distance(a: &str, b: &str) -> usize {
     dp[n][m]
 }
 
-/// Default distance allowed for suggestions, currently `3`
-pub const DEFAULT_MAX_LEVENSHTEIN_DISTANCE: usize = 2;
+/// Default distance allowed for suggestions.
+pub const DEFAULT_MAX_LEVENSHTEIN_DISTANCE: usize = 3;
 
 /// Suggests the closest match from a dictionary to a given input word,
 /// using the Levenshtein distance. Returns `Some(suggestion)` if the
@@ -515,7 +531,7 @@ pub struct BuildOptions {
 
 impl BuildOptions {
     /// Create a new build options
-    pub fn new(orb_name: impl ToString, target: TargetTriplet) -> BuildOptions {
+    pub fn new(orb_name: impl ToString, target: Triple) -> BuildOptions {
         BuildOptions {
             inner: Arc::new(BuildOptionsInternal {
                 orb_name: orb_name.to_string(),
@@ -530,7 +546,7 @@ impl BuildOptions {
     }
 
     /// Get the target triplet
-    pub fn target(&self) -> &TargetTriplet {
+    pub fn target(&self) -> &Triple {
         &self.inner.target
     }
 }
@@ -538,8 +554,9 @@ impl BuildOptions {
 #[derive(Debug, Clone)]
 pub struct BuildOptionsInternal {
     orb_name: String,
-    target: TargetTriplet,
+    target: Triple,
 }
+
 /// Mangles an effective path into a realname.
 ///
 /// An effective path `std.mem.transmute` is mangled like so:

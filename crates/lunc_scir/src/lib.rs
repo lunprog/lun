@@ -1,4 +1,4 @@
-//! Typed High-level Intermediate Representation of Lun.
+//! Semantic Checked Intermediate Representation of Lun.
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/logo/logo_no_bg_black.png"
 )]
@@ -14,7 +14,7 @@ use lunc_dsir::{
 use lunc_utils::{
     BuildOptions, FromHigher, Span, lower, opt_unreachable,
     symbol::{Symbol, Type, ValueExpr},
-    target::PtrWidth,
+    target::PointerWidth,
 };
 
 pub use lunc_dsir::{Abi, BinOp, UnaryOp};
@@ -191,7 +191,6 @@ impl FromHigher for ScItem {
                     body: lower(body),
                     info: FunDefInfo {
                         defined_mut: mutable,
-                        variables: Vec::new(),
                     },
                     loc,
                     sym: sym.unwrap_sym(),
@@ -282,9 +281,6 @@ pub struct FunDefInfo {
     /// set to `true` if it was defined in a mutable global def (this is
     /// used to emit E040).
     pub defined_mut: bool,
-    /// a list of all defined variables that are reachable, used in SCIR to CLIF
-    /// generation.
-    pub variables: Vec<Symbol>,
 }
 
 /// A semantic checked expression, see the dsir version [`DsExpression`]
@@ -800,20 +796,20 @@ impl SemaChecker {
                 Type::I32 => Ok(ValueExpr::I32(*i as i32)),
                 Type::I64 => Ok(ValueExpr::I64(*i as i64)),
                 Type::I128 => Ok(ValueExpr::I128(*i as i128)),
-                Type::Isz => match self.opts.target().ptr_width() {
-                    PtrWidth::Ptr16 => Ok(ValueExpr::I16(*i as i16)),
-                    PtrWidth::Ptr32 => Ok(ValueExpr::I32(*i as i32)),
-                    PtrWidth::Ptr64 => Ok(ValueExpr::I64(*i as i64)),
+                Type::Isz => match self.opts.target().pointer_width().unwrap() {
+                    PointerWidth::U16 => Ok(ValueExpr::I16(*i as i16)),
+                    PointerWidth::U32 => Ok(ValueExpr::I32(*i as i32)),
+                    PointerWidth::U64 => Ok(ValueExpr::I64(*i as i64)),
                 },
                 Type::U8 => Ok(ValueExpr::U8(*i as u8)),
                 Type::U16 => Ok(ValueExpr::U16(*i as u16)),
                 Type::U32 => Ok(ValueExpr::U32(*i as u32)),
                 Type::U64 => Ok(ValueExpr::U64(*i as u64)),
                 Type::U128 => Ok(ValueExpr::U128(*i /* as u128 */)),
-                Type::Usz => match self.opts.target().ptr_width() {
-                    PtrWidth::Ptr16 => Ok(ValueExpr::U16(*i as u16)),
-                    PtrWidth::Ptr32 => Ok(ValueExpr::U32(*i as u32)),
-                    PtrWidth::Ptr64 => Ok(ValueExpr::U64(*i as u64)),
+                Type::Usz => match self.opts.target().pointer_width().unwrap() {
+                    PointerWidth::U16 => Ok(ValueExpr::U16(*i as u16)),
+                    PointerWidth::U32 => Ok(ValueExpr::U32(*i as u32)),
+                    PointerWidth::U64 => Ok(ValueExpr::U64(*i as u64)),
                 },
                 _ => Ok(ValueExpr::I32(*i as i32)),
             },

@@ -520,7 +520,9 @@ impl<'fir> FirUnitVerifier<'fir> {
             } => {
                 inst_typ = Some(FcType::ptr(ty.clone()));
 
-                if !is_pow2(*alignment) || *alignment >= ty.align(self.opts.target().ptr_width()) {
+                if !is_pow2(*alignment)
+                    || *alignment >= ty.align(self.opts.target().pointer_width().unwrap())
+                {
                     return self.error(InvalidAlignment {
                         typ: ty.clone(),
                         alignment: *alignment,

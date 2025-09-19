@@ -33,7 +33,7 @@ fn main() -> Result<(), TestError> {
     tctx.load_or_create_records()?;
 
     match args.cmd {
-        Some(Cmd::Record) => record_tests(&mut tctx)?,
+        Some(Cmd::Record) => record_tests(&mut tctx, &mut out)?,
         None => match run_tests(&mut tctx, &mut out) {
             Ok(()) => {}
             Err(()) => process::exit(1),
@@ -43,9 +43,9 @@ fn main() -> Result<(), TestError> {
     Ok(())
 }
 
-fn record_tests(tctx: &mut TestContext) -> Result<(), TestError> {
+fn record_tests(tctx: &mut TestContext, out: &mut StandardStream) -> Result<(), TestError> {
     // TODO: be able to record only one test case
-    tctx.record_tests()?;
+    tctx.record_tests(out)?;
     tctx.write_test_records()?;
 
     Ok(())

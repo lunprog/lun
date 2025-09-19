@@ -10,7 +10,7 @@ use lunc_scir::{Abi, ScBlock, ScItem, ScModule};
 use lunc_utils::{
     BuildOptions, mangle, opt_unreachable,
     symbol::{Symbol, Type, ValueExpr},
-    target::PtrWidth,
+    target::PointerWidth,
 };
 
 /// The [FIR] Generator from [SCIR].
@@ -172,7 +172,8 @@ impl FirGen {
         }
     }
 
-    /// Computes the realname of a symbol, and replaces `orb` with the given orb name in the build options
+    /// Computes the realname of a symbol, and replaces `orb` with the given orb
+    /// name in the build options
     pub fn realname(&self, sym: &Symbol) {
         let mut path = sym.path();
 
@@ -191,20 +192,20 @@ impl FirGen {
             Type::I32 => FcType::S32,
             Type::I64 => FcType::S64,
             Type::I128 => FcType::S128,
-            Type::Isz => match self.opts.target().ptr_width() {
-                PtrWidth::Ptr16 => FcType::S16,
-                PtrWidth::Ptr32 => FcType::S32,
-                PtrWidth::Ptr64 => FcType::S64,
+            Type::Isz => match self.opts.target().pointer_width().unwrap() {
+                PointerWidth::U16 => FcType::S16,
+                PointerWidth::U32 => FcType::S32,
+                PointerWidth::U64 => FcType::S64,
             },
             Type::U8 => FcType::U8,
             Type::U16 => FcType::U16,
             Type::U32 => FcType::U32,
             Type::U64 => FcType::U64,
             Type::U128 => FcType::U128,
-            Type::Usz => match self.opts.target().ptr_width() {
-                PtrWidth::Ptr16 => FcType::U16,
-                PtrWidth::Ptr32 => FcType::U32,
-                PtrWidth::Ptr64 => FcType::U64,
+            Type::Usz => match self.opts.target().pointer_width().unwrap() {
+                PointerWidth::U16 => FcType::U16,
+                PointerWidth::U32 => FcType::U32,
+                PointerWidth::U64 => FcType::U64,
             },
             Type::F32 => FcType::F32,
             Type::F64 => FcType::F64,

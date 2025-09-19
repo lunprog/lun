@@ -6,10 +6,11 @@ use std::{
     ops::RangeInclusive,
 };
 
+use target_lexicon::{PointerWidth, Triple};
+
 use crate::{
     Span, idtype,
     pretty::{PrettyCtxt, PrettyDump},
-    target::{PtrWidth, TargetTriplet},
 };
 
 /// The underlying type of an expression
@@ -276,26 +277,26 @@ impl Type {
     ///
     /// This function doesn't work to get the maximum value of a u128, because
     /// it cannot be represented as a i128
-    pub const fn integer_max(&self, target: &TargetTriplet) -> Option<i128> {
+    pub fn integer_max(&self, target: &Triple) -> Option<i128> {
         match self {
             Type::I8 => Some(Type::MAX_I8),
             Type::I16 => Some(Type::MAX_I16),
             Type::I32 => Some(Type::MAX_I32),
             Type::I64 => Some(Type::MAX_I64),
             Type::I128 => Some(Type::MAX_I128),
-            Type::Isz => match target.ptr_width() {
-                PtrWidth::Ptr16 => Some(Type::MAX_I16),
-                PtrWidth::Ptr32 => Some(Type::MAX_I32),
-                PtrWidth::Ptr64 => Some(Type::MAX_I64),
+            Type::Isz => match target.pointer_width().unwrap() {
+                PointerWidth::U16 => Some(Type::MAX_I16),
+                PointerWidth::U32 => Some(Type::MAX_I32),
+                PointerWidth::U64 => Some(Type::MAX_I64),
             },
             Type::U8 => Some(Type::MAX_U8),
             Type::U16 => Some(Type::MAX_U16),
             Type::U32 => Some(Type::MAX_U32),
             Type::U64 => Some(Type::MAX_U64),
-            Type::Usz => match target.ptr_width() {
-                PtrWidth::Ptr16 => Some(Type::MAX_U16),
-                PtrWidth::Ptr32 => Some(Type::MAX_U32),
-                PtrWidth::Ptr64 => Some(Type::MAX_U64),
+            Type::Usz => match target.pointer_width().unwrap() {
+                PointerWidth::U16 => Some(Type::MAX_U16),
+                PointerWidth::U32 => Some(Type::MAX_U32),
+                PointerWidth::U64 => Some(Type::MAX_U64),
             },
             _ => None,
         }
@@ -303,27 +304,27 @@ impl Type {
 
     /// Returns the minimum integer this integer type can store, returns None if
     /// it is not an integer type
-    pub const fn integer_min(&self, target: &TargetTriplet) -> Option<i128> {
+    pub fn integer_min(&self, target: &Triple) -> Option<i128> {
         match self {
             Type::I8 => Some(Type::MIN_I8),
             Type::I16 => Some(Type::MIN_I16),
             Type::I32 => Some(Type::MIN_I32),
             Type::I64 => Some(Type::MIN_I64),
             Type::I128 => Some(Type::MIN_I128),
-            Type::Isz => match target.ptr_width() {
-                PtrWidth::Ptr16 => Some(Type::MIN_I16),
-                PtrWidth::Ptr32 => Some(Type::MIN_I32),
-                PtrWidth::Ptr64 => Some(Type::MIN_I64),
+            Type::Isz => match target.pointer_width().unwrap() {
+                PointerWidth::U16 => Some(Type::MIN_I16),
+                PointerWidth::U32 => Some(Type::MIN_I32),
+                PointerWidth::U64 => Some(Type::MIN_I64),
             },
             Type::U8 => Some(Type::MIN_U8),
             Type::U16 => Some(Type::MIN_U16),
             Type::U32 => Some(Type::MIN_U32),
             Type::U64 => Some(Type::MIN_U64),
             Type::U128 => Some(Type::MIN_U128),
-            Type::Usz => match target.ptr_width() {
-                PtrWidth::Ptr16 => Some(Type::MIN_U16),
-                PtrWidth::Ptr32 => Some(Type::MIN_U32),
-                PtrWidth::Ptr64 => Some(Type::MIN_U64),
+            Type::Usz => match target.pointer_width().unwrap() {
+                PointerWidth::U16 => Some(Type::MIN_U16),
+                PointerWidth::U32 => Some(Type::MIN_U32),
+                PointerWidth::U64 => Some(Type::MIN_U64),
             },
             _ => None,
         }
@@ -336,18 +337,9 @@ impl Type {
     ///
     /// Because we can't represent the maximum value of a `u128` inside a `i128`
     /// this function does not work for `u128`.
-    pub const fn integer_range(&self, target: &TargetTriplet) -> Option<RangeInclusive<i128>> {
-        // NOTE: we are not using `?` operator here because it's not supported
-        // in const evaluation
-        let min = match self.integer_min(target) {
-            Some(min) => min,
-            None => return None,
-        };
-
-        let max = match self.integer_max(target) {
-            Some(max) => max,
-            None => return None,
-        };
+    pub fn integer_range(&self, target: &Triple) -> Option<RangeInclusive<i128>> {
+        let min = self.integer_min(target)?;
+        let max = self.integer_max(target)?;
 
         Some(min..=max)
     }
@@ -402,6 +394,28 @@ impl Type {
         };
 
         Some(min..=max)
+    }
+
+    /// Get the size of a type in bytes
+    pub fn size(&self, width: PointerWidth) -> u8 {
+        match self {
+            Type::Unknown => 0,
+            Type::I8 | Type::U8 => 1,
+            Type::I16 | Type::U16 => 2,
+            Type::I32 | Type::U32 => 4,
+            Type::I64 | Type::U64 => 8,
+            Type::I128 | Type::U128 => 16,
+            Type::F16 => 2,
+            Type::F32 => 4,
+            Type::F64 => 8,
+            Type::F128 => 16,
+            Type::Bool => 1,
+            Type::Void | Type::Noreturn => 0,
+            Type::Isz | Type::Usz | Type::FunPtr { .. } | Type::Ptr { .. } => width.bytes(),
+            Type::Str => todo!("string slice"),
+            Type::Char => 4,
+            Type::Type => unreachable!(),
+        }
     }
 }
 
@@ -470,6 +484,12 @@ impl Display for Type {
             Type::Type => write!(f, "type"),
         }
     }
+}
+
+/// Converts a boolean into an i8
+#[inline]
+pub const fn bool_to_i8(b: bool) -> i8 {
+    if b { 1 } else { 0 }
 }
 
 /// Signedness of an Integer [`Type`].
@@ -597,6 +617,10 @@ idtype! {
     impl clone_methods for Symbol;
 
     impl PartialEq for Symbol;
+
+    impl Hash for Symbol;
+
+    impl Eq for Symbol;
 
     impl FieldSet<typ: Type> for Symbol;
 

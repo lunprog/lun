@@ -6,7 +6,7 @@
 use std::{
     backtrace::{Backtrace, BacktraceStatus},
     env,
-    fs::read_to_string,
+    fs::{self, read_to_string},
     io::{self, Write, stderr, stdout},
     panic,
     path::PathBuf,
@@ -15,23 +15,18 @@ use std::{
     thread,
 };
 
-use lunc_fir::verifier::{FirUnitVerifier, VerifierError};
-use lunc_utils::{BuildOptions, is_identifier};
 use termcolor::{ColorChoice, StandardStream};
 use thiserror::Error;
 
 use crate::{
+    clifgen::{ClifGen, ClifGenContext},
     diag::{Diagnostic, DiagnosticSink, FileId},
     dsir::Desugarrer,
-    firgen::FirGen,
+    fir::verifier::VerifierError,
     lexer::Lexer,
     parser::Parser,
     scir::SemaChecker,
-    utils::{
-        pluralize,
-        pretty::PrettyDump,
-        target::{TargetParsingError, TargetTriplet},
-    },
+    utils::{BuildOptions, is_identifier, pluralize, pretty::PrettyDump, target},
 };
 
 mod re_exports {
@@ -104,9 +99,9 @@ pub enum CliError {
     #[error("{path}: {err}")]
     FileIoError { path: PathBuf, err: io::Error },
     #[error(transparent)]
-    TargetParsingError(#[from] TargetParsingError),
+    TargetParsingError(#[from] target::ParseError),
     #[error("unsupported target: '{target}', type 'lunc -target help' for details")]
-    UnsupportedTargetTriplet { target: TargetTriplet },
+    UnsupportedTargetTriplet { target: target::Triple },
     #[error("the orb name must be a valid identifier but got {orb_name:?}.")]
     NonIdentifierOrbName { orb_name: String },
     #[error(transparent)]
@@ -141,7 +136,7 @@ Debug flags help:
                              * parser
                              * dsir
                              * scir
-                             * fir
+                             * ssa
                              * codegen
 -Dprint=<value>              Prints to the standard error, one or more of:
                              * inputfile
@@ -149,24 +144,30 @@ Debug flags help:
                              * ast
                              * dsir-tree
                              * scir-tree
-                             * fir
+                             * ssa
                              * asm
 -Dnever-verify-fir           Never verifies the generated FIR.\
 ";
 
 pub fn target_help(out: &mut impl Write) {
     const TARGET_HELP: &str = "\
-Target format: <arch><[sub]>-<sys>-<env> where:
-- arch = `x86_64`, `x86`, `arm`, `aarch64`, `riscv64`, `riscv32`
-- sub  = for eg, riscv64 = `imaf`, `g`, `gc`
-- sys  = `linux`, `windows`, `android`, `macos`, `none`
-- env  = `gnu`, `msvc`, `elf`, `macho`
+Target format:
+
+ARCHITECTURE-VENDOR-OPERATING_SYSTEM
+ARCHITECTURE-VENDOR-OPERATING_SYSTEM-ENVIRONMENT
+
+where for example:
+
+- ARCHITECTURE = `x86_64`, `x86`, `arm`, `aarch64`, `riscv64`, `riscv32`
+- VENDOR = `unknown`, `apple`, `pc`
+- OPERATING_SYSTEM = `linux`, `windows`, `darwin`, `unknown`
+- ENVIRONMENT = `gnu`, `msvc`, `android`
 
 List of supported targets:\
 ";
     writeln!(out, "{TARGET_HELP}").unwrap();
 
-    for target in TargetTriplet::SUPPORTED_TARGETS {
+    for target in target::SUPPORTED_TARGETS {
         writeln!(out, "{target}").unwrap();
     }
 }
@@ -190,7 +191,7 @@ pub enum DebugHalt {
     Parser,
     Dsir,
     Scir,
-    Fir,
+    Ssa,
     Codegen,
 }
 
@@ -205,7 +206,7 @@ impl FromStr for DebugHalt {
             "parser" => Ok(Hs::Parser),
             "dsir" => Ok(Hs::Dsir),
             "scir" => Ok(Hs::Scir),
-            "fir" => Ok(Hs::Fir),
+            "ssa" => Ok(Hs::Ssa),
             "codegen" => Ok(Hs::Codegen),
             _ => Err(CliError::UnknownValue {
                 value: s.to_string(),
@@ -222,7 +223,7 @@ pub enum DebugPrint {
     Ast,
     DsirTree,
     ScirTree,
-    Fir,
+    Ssa,
     Asm,
 }
 
@@ -238,7 +239,7 @@ impl FromStr for DebugPrint {
             "ast" => Ok(Dp::Ast),
             "dsir-tree" => Ok(Dp::DsirTree),
             "scir-tree" => Ok(Dp::ScirTree),
-            "fir" => Ok(Dp::Fir),
+            "ssa" => Ok(Dp::Ssa),
             "asm" => Ok(Dp::Asm),
             _ => Err(CliError::UnknownValue {
                 value: s.to_string(),
@@ -256,13 +257,13 @@ pub enum TargetInput {
     /// the user wants to print the help message for the targets
     Help,
     /// there is a specified target
-    Triplet(TargetTriplet),
+    Triplet(target::Triple),
 }
 
 impl TargetInput {
-    pub fn triplet(self) -> Option<TargetTriplet> {
+    pub fn triplet(self) -> Option<target::Triple> {
         match self {
-            Self::Unspecified => Some(TargetTriplet::host_target()),
+            Self::Unspecified => Some(target::Triple::host()),
             Self::Help => None,
             Self::Triplet(triplet) => Some(triplet),
         }
@@ -339,7 +340,7 @@ impl CliArgs {
                 let target_str = CliArgs::next_arg(&mut args)?;
                 match target_str.as_str() {
                     "help" => target = TargetInput::Help,
-                    s => target = TargetInput::Triplet(TargetTriplet::from_str(s)?),
+                    s => target = TargetInput::Triplet(target::Triple::from_str(s)?),
                 }
             } else if arg == "-orb-name" {
                 // TODO: check that the name can be a Lun identifier.
@@ -502,7 +503,7 @@ pub fn run() -> Result<()> {
         );
 
         if argv.verbose {
-            eprintln!("host: {}", TargetTriplet::host_target());
+            eprintln!("host: {}", target::Triple::host());
             eprintln!("commit-hash: {}", build::COMMIT_HASH);
             eprintln!("commit-date: {}", build::COMMIT_DATE);
             eprintln!("rustc-version: {}", build::RUST_VERSION);
@@ -526,7 +527,7 @@ pub fn run() -> Result<()> {
 
     // Command line args checks
     if let TargetInput::Triplet(ref target) = argv.target
-        && !TargetTriplet::SUPPORTED_TARGETS.contains(target)
+        && !target::SUPPORTED_TARGETS.contains(target)
     {
         return Err(CliError::UnsupportedTargetTriplet {
             target: target.clone(),
@@ -638,28 +639,25 @@ pub fn run() -> Result<()> {
         Err(builderr())?;
     }
 
-    // 7. generate the FIR, SCIR => FIR
-    if false {
-        let mut firgener = FirGen::new(opts.clone());
-        let unit = firgener.produce(scir);
+    // 7. generate the clif, SCIR => SSA (CLIF) => ASM at the same time.
+    let cliftxt = argv.debug_print_at(DebugPrint::Ssa);
+    let mut clifgen = ClifGen::new(opts.clone(), cliftxt);
+    clifgen.produce(&mut ClifGenContext::default(), scir);
 
-        // 8. verify the FIR
-        if !argv.debug_never_verify_fir() {
-            let mut verifier = FirUnitVerifier::new(&unit, opts.clone());
-            verifier.verify()?;
-        }
-
-        //    maybe print the FIR
-        if argv.debug_print_at(DebugPrint::Fir) {
-            unit.dump();
-        }
-        if argv.debug_halt_at(DebugHalt::Fir) {
-            return Ok(());
-        }
+    //    maybe print the SSA
+    if argv.debug_print_at(DebugPrint::Ssa) {
+        eprintln!("; SSA of orb {:?}", opts.orb_name());
+        eprint!("{}", clifgen.textrepr());
+    }
+    if argv.debug_halt_at(DebugHalt::Ssa) {
+        // NOTE: we do not emit diags anymore.
+        return Ok(());
     }
 
-    // use output to remove the warning
-    _ = argv.output;
+    // write the object to file
+    let obj = clifgen.finish_obj();
+    let obj_bytes = obj.emit().unwrap();
+    fs::write(argv.output.with_extension("o"), obj_bytes).unwrap();
 
     if sink.is_empty() {
         Ok(())

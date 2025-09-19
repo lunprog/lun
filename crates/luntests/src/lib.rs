@@ -216,7 +216,7 @@ impl TestContext {
         Ok(())
     }
 
-    pub fn record_tests(&mut self) -> Result<(), TestError> {
+    pub fn record_tests(&mut self, out: &mut StandardStream) -> Result<(), TestError> {
         for Test { name, path, stage } in &self.tests {
             let test_record = self.records.get_mut(name).unwrap();
             let mut cmd = Command::new("./target/debug/lunc");
@@ -232,7 +232,20 @@ impl TestContext {
             let compiler_out = String::from_utf8_lossy(&cmd_output.stderr).to_string();
 
             test_record.compiler_out = compiler_out;
+            let old_compcode = test_record.compiler_code;
             test_record.compiler_code = cmd_output.status.code().unwrap() as u8;
+
+            if old_compcode != test_record.compiler_code {
+                out.set_color(&TestContext::compiler_fail_color_spec())?;
+                write!(out, "NOTE: ")?;
+                out.reset()?;
+                writeln!(
+                    out,
+                    "test {}, compiler code {old_compcode} -> {}",
+                    name, test_record.compiler_code
+                )?;
+            }
+
             // TODO: implement test running
         }
 
@@ -299,7 +312,12 @@ impl TestStage {
             TestStage::Scir => &["-Dhalt-at=scir", "-Dprint=scir-tree"],
             // NOTE: we print the dsir tree but we do not halt like the Dsir
             // stage does.
-            TestStage::Multifile => &["-Dprint=scir-tree", "-orb-name", "multifile"],
+            TestStage::Multifile => &[
+                "-Dprint=scir-tree",
+                "-Dhalt-at=scir",
+                "-orb-name",
+                "multifile",
+            ],
         }
     }
 }
