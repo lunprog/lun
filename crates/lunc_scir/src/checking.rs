@@ -420,10 +420,13 @@ impl SemaChecker {
         other_loc: impl Into<OSpan>,
     ) {
         if *expected != found.typ {
-            if found.typ.can_coerce(expected)
-                && let Some(last_expr) = &mut found.last_expr
-                && Self::apply_typ_on_expr(last_expr, expected.clone()).is_some()
-            {
+            if found.typ.can_coerce(expected) {
+                if let Some(last_expr) = &mut found.last_expr
+                    && last_expr.typeness() == Typeness::Implicit
+                {
+                    _ = Self::apply_typ_on_expr(last_expr, expected.clone());
+                }
+
                 // NOTE: here unlike `expr_typeck` we don't need to apply the type.
                 return;
             }
@@ -497,7 +500,7 @@ impl SemaChecker {
                         sym.typeness = Typeness::Explicit;
                     });
                 }
-                Typeness::Explicit => return None,
+                Typeness::Explicit => {}
             },
             ScExpr::Binary { lhs, op: _, rhs } => {
                 Self::apply_typ_on_expr(lhs, typ.clone())?;
