@@ -4873,7 +4873,7 @@ error: compilation of `E037` failed due to 3 errors and 0 warnings
         test_code: 0,
     ),
     "scir/E039": (
-        compiler_out: r#"error[E039]: a function definition isn't allowed inside of an extern block.
+        compiler_out: r##"error[E039]: a function definition isn't allowed inside of an extern block.
    ┌─ ./tests/scir/E039.lun:3:5
    │  
  2 │ ╭ extern "C" {
@@ -4899,6 +4899,21 @@ error[E039]: a global definition isn't allowed inside of an extern block.
 10 │ │ }
    │ ╰─' inside this extern block
 
+error[E039]: a module isn't allowed inside of an extern block.
+   ┌─ ./tests/scir/E039.lun:7:5
+   │  
+ 2 │ ╭ extern "C" {
+ 3 │ │     a :: fun() {}
+ 4 │ │ 
+ 5 │ │     b :: 12;
+ 6 │ │ 
+ 7 │ │     #mod empty;
+   │ │     ^^^^^^^^^^^ defined here.
+ 8 │ │ 
+ 9 │ │     extern "C" {}
+10 │ │ }
+   │ ╰─' inside this extern block
+
 error[E039]: a extern block isn't allowed inside of an extern block.
    ┌─ ./tests/scir/E039.lun:9:5
    │  
@@ -4914,9 +4929,9 @@ error[E039]: a extern block isn't allowed inside of an extern block.
    │  
    = you probably want to un nest the extern block
 
-error: compilation of `E039` failed due to 3 errors and 0 warnings
+error: compilation of `E039` failed due to 4 errors and 0 warnings
 
-"#,
+"##,
         compiler_code: 101,
         test_out: "",
         test_code: 0,

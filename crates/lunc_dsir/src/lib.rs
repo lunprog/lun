@@ -994,73 +994,94 @@ impl Desugarrer {
     /// 3. parse this token stream
     /// 4. desugar this ast
     /// 5. put the items of the module inside the parent module, in a `DsItem::Module`
+    ///
+    /// # Note
+    ///
+    /// We are inlining module directives in EVERY item container even tho the
+    /// only accepted item container for it is a module it self, because we get
+    /// rid of the directive when we convert it to SCIR. The diagnostic about
+    /// module not being in a module is emitted in the SCIR.
     pub fn inline_modules(&mut self, parent: &mut DsModule) {
         let parent_path = PathBuf::from(self.sink.name(parent.fid).unwrap());
 
-        for item in &mut parent.items {
-            if let DsItem::Directive(DsDirective::Mod { name, loc }) = item {
-                // 1. compute the path of the submodule
-                let submodule_path = if parent.fid.is_root() {
-                    // root module's path
-                    parent_path
-                        .with_file_name(name.clone())
-                        .with_extension("lun")
-                } else {
-                    // submodule module's path
-                    parent_path
-                        .with_extension("")
-                        .join(name.clone())
-                        .with_extension("lun")
-                };
+        self.inline_modules_in_item_container(&mut parent.items, parent.fid, parent_path);
+    }
 
-                if !submodule_path.exists() {
-                    self.sink.emit(ModuleFileDoesnotExist {
+    fn inline_modules_in_item_container(
+        &mut self,
+        items: &mut Vec<DsItem>,
+        parent_fid: FileId,
+        parent_path: PathBuf,
+    ) {
+        for item in items {
+            match item {
+                DsItem::Directive(DsDirective::Mod { name, loc }) => {
+                    // 1. compute the path of the submodule
+                    let submodule_path = if parent_fid.is_root() {
+                        // root module's path
+                        parent_path
+                            .with_file_name(name.clone())
+                            .with_extension("lun")
+                    } else {
+                        // submodule module's path
+                        parent_path
+                            .with_extension("")
+                            .join(name.clone())
+                            .with_extension("lun")
+                    };
+
+                    if !submodule_path.exists() {
+                        self.sink.emit(ModuleFileDoesnotExist {
+                            name: name.clone(),
+                            expected_path: submodule_path,
+                            loc: loc.clone().unwrap(),
+                        });
+                        continue;
+                    }
+
+                    // 2. retrieve the source code of the submodule
+                    let source_code = fs::read_to_string(&submodule_path).unwrap();
+
+                    // 3. add it to the sink
+                    let submodule_fid = self.sink.register_file(
+                        submodule_path.to_string_lossy().to_string(),
+                        source_code.clone(),
+                    );
+
+                    // 4. lex the submodule
+                    let mut lexer =
+                        Lexer::new(self.sink.clone(), source_code.clone(), submodule_fid);
+                    let tokenstream = match lexer.produce() {
+                        Some(toks) => toks,
+                        None => continue,
+                    };
+
+                    // 5. parse the submodule
+                    let mut parser = Parser::new(tokenstream, self.sink.clone(), submodule_fid);
+                    let ast = match parser.produce() {
+                        Some(ast) => ast,
+                        None => continue,
+                    };
+
+                    // 6. desugar it.
+                    let submodule_dsir = match self.produce(ast) {
+                        Some(dsir) => dsir,
+                        None => continue,
+                    };
+
+                    *item = DsItem::Module {
                         name: name.clone(),
-                        expected_path: submodule_path,
-                        loc: loc.clone().unwrap(),
-                    });
-                    continue;
+                        module: submodule_dsir,
+                        loc: loc.clone(),
+                        sym: LazySymbol::Name(name.clone()),
+                    };
                 }
-
-                // 2. retrieve the source code of the submodule
-                let source_code = fs::read_to_string(&submodule_path).unwrap();
-
-                // 3. add it to the sink
-                let submodule_fid = self.sink.register_file(
-                    submodule_path.to_string_lossy().to_string(),
-                    source_code.clone(),
-                );
-
-                // 4. lex the submodule
-                let mut lexer = Lexer::new(self.sink.clone(), source_code.clone(), submodule_fid);
-                let tokenstream = match lexer.produce() {
-                    Some(toks) => toks,
-                    None => continue,
-                };
-
-                // 5. parse the submodule
-                let mut parser = Parser::new(tokenstream, self.sink.clone(), submodule_fid);
-                let ast = match parser.produce() {
-                    Some(ast) => ast,
-                    None => continue,
-                };
-
-                // 6. desugar it.
-                let submodule_dsir = match self.produce(ast) {
-                    Some(dsir) => dsir,
-                    None => continue,
-                };
-
-                *item = DsItem::Module {
-                    name: name.clone(),
-                    module: submodule_dsir,
-                    loc: loc.clone(),
-                    sym: LazySymbol::Name(name.clone()),
-                };
+                DsItem::ExternBlock { items, .. } => {
+                    self.inline_modules_in_item_container(items, parent_fid, parent_path.clone());
+                }
+                _ => {}
             }
         }
-
-        // we successfully inlined all modules :)
     }
 
     /// Resolve names in module
