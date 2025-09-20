@@ -2,12 +2,12 @@
   <picture>
     <!-- white logo for dark mode -->
     <source
-      srcset="https://raw.githubusercontent.com/lunprog/lun/main/logo/logo_no_bg_white.png"
+      srcset="https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_white.png"
       media="(prefers-color-scheme: dark)"
     >
     <!-- black logo for light mode (fallback) -->
     <img
-      src="https://raw.githubusercontent.com/lunprog/lun/main/logo/logo_no_bg_black.png"
+      src="https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
       alt="The Lun Programming Language"
       style="width: 50%;"
     >

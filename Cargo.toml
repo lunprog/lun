@@ -1,19 +1,19 @@
 [workspace]
 resolver = "2"
 members = [
-  "xtask",
-  "crates/lunc",
-  "crates/lunc_clifgen",
-  "crates/lunc_codegen",
-  "crates/lunc_diag",
-  "crates/lunc_dsir",
-  "crates/lunc_fir",
-  "crates/lunc_firgen",
-  "crates/lunc_lexer",
-  "crates/lunc_parser",
-  "crates/lunc_scir",
-  "crates/lunc_utils",
-  "crates/luntests",
+  "compiler/lunc",
+  "compiler/lunc_clifgen",
+  "compiler/lunc_codegen",
+  "compiler/lunc_diag",
+  "compiler/lunc_dsir",
+  "compiler/lunc_fir",
+  "compiler/lunc_firgen",
+  "compiler/lunc_lexer",
+  "compiler/lunc_parser",
+  "compiler/lunc_scir",
+  "compiler/lunc_utils",
+  "src/tools/xtask",
+  "src/tools/luntests",
 ]
 
 [workspace.package]
@@ -21,16 +21,16 @@ version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
-lunc_clifgen = { path = "crates/lunc_clifgen" }
-lunc_codegen = { path = "crates/lunc_codegen" }
-lunc_diag = { path = "crates/lunc_diag" }
-lunc_dsir = { path = "crates/lunc_dsir" }
-lunc_fir = { path = "crates/lunc_fir" }
-lunc_firgen = { path = "crates/lunc_firgen" }
-lunc_lexer = { path = "crates/lunc_lexer" }
-lunc_parser = { path = "crates/lunc_parser" }
-lunc_scir = { path = "crates/lunc_scir" }
-lunc_utils = { path = "crates/lunc_utils" }
+lunc_clifgen = { path = "compiler/lunc_clifgen" }
+lunc_codegen = { path = "compiler/lunc_codegen" }
+lunc_diag = { path = "compiler/lunc_diag" }
+lunc_dsir = { path = "compiler/lunc_dsir" }
+lunc_fir = { path = "compiler/lunc_fir" }
+lunc_firgen = { path = "compiler/lunc_firgen" }
+lunc_lexer = { path = "compiler/lunc_lexer" }
+lunc_parser = { path = "compiler/lunc_parser" }
+lunc_scir = { path = "compiler/lunc_scir" }
+lunc_utils = { path = "compiler/lunc_utils" }
 
 # other dependencies
 thiserror = "2.0.16"
