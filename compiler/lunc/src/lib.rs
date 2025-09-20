@@ -19,17 +19,11 @@
 )]
 
 use clap::{ArgAction, Parser as ArgParser, ValueEnum};
-use lunc_clifgen::{ClifGen, ClifGenContext, OptLevel};
-use lunc_diag::{DiagnosticSink, FileId};
-use lunc_dsir::Desugarrer;
-use lunc_lexer::Lexer;
-use lunc_parser::Parser;
-use lunc_scir::SemaChecker;
 use std::{
     backtrace::{Backtrace, BacktraceStatus},
     env,
     error::Error,
-    fmt::Write,
+    fmt::{self, Write},
     fs::{self, read_to_string},
     io::{self, Write as IoWrite, stderr},
     panic,
@@ -37,10 +31,17 @@ use std::{
     process::{ExitCode, abort},
     str::FromStr,
     thread,
+    time::{Duration, Instant},
 };
 use termcolor::{ColorChoice, ColorChoiceParseError, StandardStream};
 use thiserror::Error;
 
+use lunc_clifgen::{ClifGen, ClifGenContext, OptLevel};
+use lunc_diag::{DiagnosticSink, FileId};
+use lunc_dsir::Desugarrer;
+use lunc_lexer::Lexer;
+use lunc_parser::Parser;
+use lunc_scir::SemaChecker;
 use lunc_utils::{
     BuildOptions, is_identifier,
     pretty::PrettyDump,
@@ -416,6 +417,52 @@ pub enum InterRes {
     Asm,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct Timings {
+    /// duration of setup:
+    /// - reading the file to a String
+    /// - creating the diagnostic sink
+    /// - ..
+    setup: Duration,
+    /// duration of lexer
+    lexer: Duration,
+    /// duration of parser
+    parser: Duration,
+    /// duration of dsir
+    dsir: Duration,
+    /// duration of scir
+    scir: Duration,
+    /// duration of the ssa generation
+    ssa: Duration,
+    /// duration of the entire build
+    total: Duration,
+}
+
+impl fmt::Display for Timings {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Timings {
+            setup,
+            lexer,
+            parser,
+            dsir,
+            scir,
+            ssa,
+            total,
+        } = self.clone();
+
+        writeln!(f, "Timings:")?;
+        writeln!(f, "  setup: {}", humantime::format_duration(setup))?;
+        writeln!(f, "  lexer: {}", humantime::format_duration(lexer))?;
+        writeln!(f, " parser: {}", humantime::format_duration(parser))?;
+        writeln!(f, "   dsir: {}", humantime::format_duration(dsir))?;
+        writeln!(f, "   scir: {}", humantime::format_duration(scir))?;
+        writeln!(f, "    ssa: {}", humantime::format_duration(ssa))?;
+        writeln!(f, "= Total: {}", humantime::format_duration(total))?;
+
+        Ok(())
+    }
+}
+
 pub fn run() -> Result<()> {
     panic::set_hook(Box::new(|panic_info| {
         let thread = thread::current();
@@ -608,6 +655,10 @@ pub fn run() -> Result<()> {
 }
 
 pub fn build_with_argv(argv: Argv) -> Result<()> {
+    let mut timings = Timings::default();
+
+    let top_instant = Instant::now();
+
     let opts = BuildOptions::new(&argv.orb_name, argv.target.clone());
 
     // 1. retrieve the source code, file => text
@@ -636,6 +687,9 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
         }
     };
 
+    timings.setup = top_instant.elapsed();
+    let lexer_instant = Instant::now();
+
     // 3. lexing, text => token stream
     let mut lexer = Lexer::new(sink.clone(), source_code.clone(), root_fid);
     let tokenstream = lexer.produce().ok_or_else(builderr)?;
@@ -652,6 +706,9 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
         Err(builderr())?;
     }
+
+    timings.lexer = lexer_instant.elapsed();
+    let parser_instant = Instant::now();
 
     // 4. parsing, token stream => AST
     let mut parser = Parser::new(tokenstream, sink.clone(), root_fid);
@@ -671,6 +728,9 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
         Err(builderr())?;
     }
 
+    timings.parser = parser_instant.elapsed();
+    let dsir_instant = Instant::now();
+
     // 5. desugarring, AST => DSIR
     let mut desugarrer = Desugarrer::new(sink.clone(), opts.orb_name());
     let dsir = desugarrer.produce(ast).ok_or_else(builderr)?;
@@ -689,6 +749,9 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
         Err(builderr())?;
     }
 
+    timings.dsir = dsir_instant.elapsed();
+    let scir_instant = Instant::now();
+
     // 6. type-checking and all the semantic analysis, DSIR => SCIR
     let mut semacker = SemaChecker::new(sink.clone(), opts.clone());
     let scir = semacker.produce(dsir).ok_or_else(builderr)?;
@@ -706,6 +769,9 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
         Err(builderr())?;
     }
+
+    timings.scir = scir_instant.elapsed();
+    let ssa_instant = Instant::now();
 
     // 7. generate the clif, SCIR => SSA (CLIF) => ASM at the same time.
     let cliftxt = argv.debug.print(InterRes::Ssa);
@@ -727,6 +793,13 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
         let obj = clifgen.finish_obj();
         let obj_bytes = obj.emit().unwrap();
         fs::write(argv.output.with_extension("o"), obj_bytes).unwrap();
+    }
+
+    timings.ssa = ssa_instant.elapsed();
+    timings.total = top_instant.elapsed();
+
+    if argv.debug.timings {
+        eprint!("\n{timings}");
     }
 
     if sink.is_empty() {

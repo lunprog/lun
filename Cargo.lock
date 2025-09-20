@@ -705,6 +705,7 @@ name = "lunc"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "humantime",
  "lunc_clifgen",
  "lunc_codegen",
  "lunc_diag",
