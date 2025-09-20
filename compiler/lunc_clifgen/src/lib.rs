@@ -57,12 +57,16 @@ impl Default for ClifGenContext {
 
 impl ClifGen {
     /// Create a new CLIF generator
-    pub fn new(opts: BuildOptions, textrepr: bool) -> ClifGen {
+    pub fn new(opts: BuildOptions, textrepr: bool, opt_level: OptLevel) -> ClifGen {
         // 1. configure the ISA-independent settings
         let mut shared_builder = settings::builder();
         // TODO: make those parameters configurable
         shared_builder.enable("is_pic").unwrap();
+        let opt_level_str = format!("{opt_level}");
+        shared_builder.set("opt_level", &opt_level_str).unwrap();
+
         let shared_flags = settings::Flags::new(shared_builder);
+        debug_assert_eq!(shared_flags.opt_level(), opt_level);
 
         // 2. create our ISA ≃ target, and maybe configure ISA-dependant settings
         let isa_builder = isa::lookup(opts.target().clone()).unwrap();

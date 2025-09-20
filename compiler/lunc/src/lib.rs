@@ -775,7 +775,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
     // 7. generate the clif, SCIR => SSA (CLIF) => ASM at the same time.
     let cliftxt = argv.debug.print(InterRes::Ssa);
-    let mut clifgen = ClifGen::new(opts.clone(), cliftxt);
+    let mut clifgen = ClifGen::new(opts.clone(), cliftxt, argv.codegen.opt_level);
     clifgen.produce(&mut ClifGenContext::default(), scir);
 
     //    maybe print the SSA
