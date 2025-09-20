@@ -1,6 +1,6 @@
 //! Diagnostic reporting system for the Lun Compiler.
 #![doc(
-    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/logo/logo_no_bg_black.png"
+    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
 use codespan_reporting::{
@@ -118,6 +118,18 @@ impl DiagnosticSink {
     pub fn emit(&mut self, diag: impl ToDiagnostic) {
         let mut inner = self.0.write().unwrap();
         inner.push(diag);
+    }
+
+    /// Emit a summary diagnostic
+    pub fn emit_summary(&mut self, orb_name: &str) {
+        self.emit(
+            if self.failed() {
+                Diagnostic::error()
+            } else {
+                Diagnostic::warning()
+            }
+            .with_message(self.summary(orb_name).unwrap()),
+        );
     }
 
     /// Return the name of the current file

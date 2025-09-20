@@ -1,68 +1,51 @@
 //! Lun is a statically typed programming language.
+//!
+//! Related crates of the compiler:
+//! - [lunc_lexer], lexes the text into [Tokens]
+//! - [lunc_parser], parses the [Tokens] into an [Ast]
+//! - [lunc_dsir], desugars the [Ast] to [Dsir] and resolve names
+//! - [lunc_scir], lowers [Dsir] to [Scir] and perform various semantic checks
+//!   and add types
+//! - [lunc_clifgen], generates the Cranelift IR from [Scir]
+//! - [lunc_diag], the error handling, the diagnostic system, with the Sink.
+//! - [lunc_utils], various internal utilities of the compiler
+//!
+//! [Tokens]: lunc_utils::token::TokenStream
+//! [Ast]: lunc_parser::item::Module
+//! [Dsir]: lunc_dsir::DsModule
+//! [Scir]: lunc_scir::ScModule
 #![doc(
-    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/logo/logo_no_bg_black.png"
+    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
+use clap::{ArgAction, Parser as ArgParser, ValueEnum};
+use lunc_clifgen::{ClifGen, ClifGenContext, OptLevel};
+use lunc_diag::{DiagnosticSink, FileId};
+use lunc_dsir::Desugarrer;
+use lunc_lexer::Lexer;
+use lunc_parser::Parser;
+use lunc_scir::SemaChecker;
 use std::{
     backtrace::{Backtrace, BacktraceStatus},
     env,
+    error::Error,
+    fmt::Write,
     fs::{self, read_to_string},
-    io::{self, Write, stderr, stdout},
+    io::{self, Write as IoWrite, stderr},
     panic,
     path::PathBuf,
     process::{ExitCode, abort},
     str::FromStr,
     thread,
 };
-
-use termcolor::{ColorChoice, StandardStream};
+use termcolor::{ColorChoice, ColorChoiceParseError, StandardStream};
 use thiserror::Error;
 
-use crate::{
-    clifgen::{ClifGen, ClifGenContext},
-    diag::{Diagnostic, DiagnosticSink, FileId},
-    dsir::Desugarrer,
-    fir::verifier::VerifierError,
-    lexer::Lexer,
-    parser::Parser,
-    scir::SemaChecker,
-    utils::{BuildOptions, is_identifier, pluralize, pretty::PrettyDump, target},
+use lunc_utils::{
+    BuildOptions, is_identifier,
+    pretty::PrettyDump,
+    target::{self, Triple},
 };
-
-mod re_exports {
-    #[doc(inline)]
-    pub use lunc_codegen as codegen;
-
-    #[doc(inline)]
-    pub use lunc_clifgen as clifgen;
-
-    #[doc(inline)]
-    pub use lunc_diag as diag;
-
-    #[doc(inline)]
-    pub use lunc_dsir as dsir;
-
-    #[doc(inline)]
-    pub use lunc_fir as fir;
-
-    #[doc(inline)]
-    pub use lunc_firgen as firgen;
-
-    #[doc(inline)]
-    pub use lunc_lexer as lexer;
-
-    #[doc(inline)]
-    pub use lunc_parser as parser;
-
-    #[doc(inline)]
-    pub use lunc_scir as scir;
-
-    #[doc(inline)]
-    pub use lunc_utils as utils;
-}
-
-#[doc(inline)]
-pub use re_exports::*;
 
 mod build {
     use shadow_rs::shadow;
@@ -74,7 +57,7 @@ mod build {
 type Result<T, E = CliError> = std::result::Result<T, E>;
 
 pub fn exit_code_compilation_failed() -> ExitCode {
-    ExitCode::from(101)
+    ExitCode::from(255)
 }
 
 #[derive(Debug, Error)]
@@ -83,74 +66,256 @@ pub enum CliError {
     /// It is guaranteed to contains at least one diag
     #[error("build diagnostic(s)")]
     BuildDiagnostics { failed: bool },
-    #[error(
-        "argument to '{name}' is missing, expected {expected} value{}",
-        pluralize(*expected)
-    )]
-    ArgumentsMissing { name: String, expected: usize },
-    #[error("unrecognized command-line option `{arg}`")]
-    UnreochizedOption { arg: String },
-    #[error("no input file")]
-    NoInputFile,
-    #[error("the argument '{arg}' is used multiple times")]
-    ArgumentUsedMultipleTimes { arg: String },
-    #[error("unknown value '{value}' for argument '{arg}'")]
-    UnknownValue { arg: String, value: String },
     #[error("{path}: {err}")]
     FileIoError { path: PathBuf, err: io::Error },
     #[error(transparent)]
     TargetParsingError(#[from] target::ParseError),
-    #[error("unsupported target: '{target}', type 'lunc -target help' for details")]
-    UnsupportedTargetTriplet { target: target::Triple },
+    #[error("unsupported target: '{target}', type 'lunc --target help' for details")]
+    UnsupportedTriple { target: target::Triple },
     #[error("the orb name must be a valid identifier but got {orb_name:?}.")]
     NonIdentifierOrbName { orb_name: String },
     #[error(transparent)]
-    FirVerify(#[from] VerifierError),
+    Dyn(#[from] Box<dyn Error>),
+    #[error(transparent)]
+    ColorChoiceParseError(#[from] ColorChoiceParseError),
+    #[error("no input file")]
+    NoInputFile,
+    #[error("the argument '{0}' is used multiple times")]
+    ArgumentUsedMultipleTimes(String),
+    #[error(transparent)]
+    ClapError(#[from] clap::Error),
+    #[error("invalid value ({0}) for -Z halt, for more details `lunc -Z help`")]
+    InvalidHaltVal(String),
+    #[error("invalid value ({0}) for -Z timings, possible values: `true`,`false`")]
+    InvalidTimingsVal(String),
+    #[error("invalid value ({0}) for -Z print, for more details `lunc -Z help`")]
+    InvalidPrintVal(String),
+    #[error("invalid value ({0}) for -C opt-level, for more details `lunc -C help`")]
+    InvalidOptLevelVal(String),
+    #[error("invalid value ({0}) for -C output-obj, for more details `lunc -C help`")]
+    InvalidOutputObjVal(String),
 }
 
-pub const HELP_MESSAGE: &str = "\
-Compiler for the Lun Programming Language.
+pub fn flush_outs() {
+    io::stderr().flush().expect("can't flush stderr");
+    io::stdout().flush().expect("can't flush stdout");
+}
 
-Usage: lunc [OPTIONS] INPUT
+/// Lunc Cli args.
+#[derive(ArgParser, Debug)]
+#[command(
+    about = "Compiler for the Lun Programming Language.",
+    disable_version_flag = true
+)]
+pub struct RawLuncCli {
+    /// Specify the name of the orb being built, defaults to the input file
+    /// name with the extension
+    #[arg(short = 'o', long)]
+    output: Option<PathBuf>,
 
-Options:
-    -h, -help                Display this help message
-    -o <file>                Place the output into <file>, defaults to the orb's
-                             name with the correct file extension for the target.
-    -D<flag>[=value]         Debug flags, type `lunc -Dhelp` for details
-        -target <triplet>    Build for the given target triplet, type `lunc
-                             -target help` for details
-        -orb-name <name>     Specify the name of the orb being built, defaults
-                             to the input file name with the extension
-        -color <choice>      Coloring possible values: 'always', 'always-ansi',
-                             'never' and 'auto'
-    -V, -version             Print version information
-    -v, -verbose             Make the output verbose\
-";
+    /// The root file of the orb to build.
+    input: Option<PathBuf>,
 
-pub const DEBUG_FLAGS_HELP: &str = "\
-Debug flags help:
--Dhelp                       Display this message
--Dhalt-at=<stage>            Halts the compilation after <stage>, one of:
-                             * lexer
-                             * parser
-                             * dsir
-                             * scir
-                             * ssa
-                             * codegen
--Dprint=<value>              Prints to the standard error, one or more of:
-                             * inputfile
-                             * tokenstream
-                             * ast
-                             * dsir-tree
-                             * scir-tree
-                             * ssa
-                             * asm
--Dnever-verify-fir           Never verifies the generated FIR.\
-";
+    /// Debug options, type `lunc -Z help` for some help.
+    #[arg(short = 'Z', value_name = "OPT=VAL")]
+    debug: Vec<Kv<DebugKey, String>>,
 
-pub fn target_help(out: &mut impl Write) {
-    const TARGET_HELP: &str = "\
+    /// Build for the given target triplet, type `lunc --target help` for more
+    /// details
+    #[arg(long)]
+    target: Option<String>,
+
+    /// Name of the orb, defaults to the input file name with the extension
+    #[arg(long)]
+    orb_name: Option<String>,
+
+    /// Coloring possible values: 'always', 'always-ansi', 'never' and 'auto'
+    #[arg(long, default_value_t = String::from("auto"))]
+    color: String,
+
+    /// Codegen options, type `lunc -Z help` for some help.
+    #[arg(short = 'C', long, value_name = "OPT=VAL")]
+    codegen: Vec<Kv<CodegenKey, String>>,
+
+    /// Print version info and exit
+    #[arg(short = 'V', long, action = ArgAction::SetTrue)]
+    version: bool,
+
+    /// Verbosity flag
+    #[arg(short = 'v', long, action = ArgAction::SetTrue)]
+    verbose: bool,
+}
+
+/// Key-value pair for `-Z` like options
+#[derive(Debug, Clone)]
+pub struct Kv<K: ValueEnumExt, V: FromStr> {
+    pub key: K,
+    pub val: V,
+}
+
+impl<K: ValueEnumExt> FromStr for Kv<K, String> {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut splits = s.split('=');
+
+        let key = splits.next().ok_or_else(|| "expected a key".to_string())?;
+        if key == "help" {
+            return Ok(Kv {
+                key: K::help(),
+                val: String::new(),
+            });
+        }
+
+        let val = splits
+            .next()
+            .ok_or_else(|| "missing `=` in OPT=VAL".to_string())?
+            .to_string();
+
+        Ok(Kv {
+            key: K::from_str(key, false)?,
+            val,
+        })
+    }
+}
+
+pub trait ValueEnumExt: ValueEnum + PartialEq {
+    /// Create a new help variant
+    fn help() -> Self;
+
+    /// Name of the value enum
+    fn name() -> &'static str;
+
+    /// Get the rest of the help message for variant if any.
+    fn help_extended(variant: &str) -> Option<&'static str>;
+
+    fn is_help(&self) -> bool {
+        *self == Self::help()
+    }
+
+    fn help_msg() -> String {
+        let mut help = String::new();
+
+        writeln!(help, "{} options help:", Self::name()).unwrap();
+
+        let mut width = 0;
+
+        for variant in Self::value_variants() {
+            let val = variant.to_possible_value().unwrap();
+            width = val.get_name().len().max(width);
+        }
+
+        for variant in Self::value_variants() {
+            let val = variant.to_possible_value().unwrap();
+
+            write!(
+                help,
+                " {:>width$} - {}",
+                val.get_name(),
+                val.get_help().unwrap()
+            )
+            .unwrap();
+            if let Some(rest) = Self::help_extended(val.get_name()) {
+                let spacing = format!("\n{:width$}", "", width = width + 4);
+
+                let rest = rest.replace('\n', &spacing);
+                writeln!(help, "{spacing}{rest}").unwrap();
+            } else {
+                writeln!(help).unwrap();
+            }
+        }
+
+        help
+    }
+}
+
+#[derive(Debug, Clone, ValueEnum, PartialEq, Eq)]
+pub enum DebugKey {
+    /// Print the help message
+    Help,
+    /// Halt the compilation at a specified stage.
+    Halt,
+    /// Print the timings in a summary, of all stages of the compiler. `true` /
+    /// `false` [default: false]
+    Timings,
+    /// Prints to the standard error, one or more of:
+    Print,
+}
+
+impl ValueEnumExt for DebugKey {
+    fn help() -> Self {
+        Self::Help
+    }
+
+    fn name() -> &'static str {
+        "Debug (-Z)"
+    }
+
+    fn help_extended(variant: &str) -> Option<&'static str> {
+        match variant {
+            "halt" => Some(
+                "
+Note that if you provide multiple halt kv, only the last will remain.
+
+Stages:
+* lexer
+* parser
+* dsir
+* scir
+* ssa
+* codegen\
+                ",
+            ),
+            "print" => Some(
+                "\
+* inputfile
+* tokenstream
+* ast
+* dsir
+* scir
+* ssa
+* asm\
+                ",
+            ),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, ValueEnum, PartialEq, Eq)]
+pub enum CodegenKey {
+    /// Prints this help message
+    Help,
+    /// Optimization level `none`, `speed` and `speed_and_size` [default: none]
+    OptLevel,
+    /// Output the object file of the orb.`true` / `false` [default: false]
+    OutputObj,
+}
+
+impl ValueEnumExt for CodegenKey {
+    fn help() -> Self {
+        Self::Help
+    }
+
+    fn name() -> &'static str {
+        "Codegen"
+    }
+
+    fn help_extended(variant: &str) -> Option<&'static str> {
+        _ = variant;
+
+        None
+    }
+}
+
+pub fn print_help_kvs<K: ValueEnumExt, V: FromStr>(kvs: &[Kv<K, V>]) -> bool {
+    kvs.iter().any(|Kv { key, val: _ }| key.is_help())
+}
+
+/// Prints the target help message to stdout.
+pub fn target_help() {
+    println!(
+        "\
 Target format:
 
 ARCHITECTURE-VENDOR-OPERATING_SYSTEM
@@ -164,29 +329,73 @@ where for example:
 - ENVIRONMENT = `gnu`, `msvc`, `android`
 
 List of supported targets:\
-";
-    writeln!(out, "{TARGET_HELP}").unwrap();
+"
+    );
 
     for target in target::SUPPORTED_TARGETS {
-        writeln!(out, "{target}").unwrap();
+        println!("{target}");
     }
 }
 
-/// Debug flags
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum DebugFlag {
-    /// Halt build at the given stage
-    HaltAt(DebugHalt),
-    /// Print to stderr some of the outputs of stages
-    Print(DebugPrint),
-    /// Never verifies the FIR
-    NeverVerifyFir,
-    /// Prints the debug flag help message
-    Help,
+/// Computed-args of lunc
+#[derive(Debug)]
+pub struct Argv {
+    input: PathBuf,
+    output: PathBuf,
+    debug: DebugOptions,
+    target: Triple,
+    orb_name: String,
+    color: ColorChoice,
+    codegen: CodegenOptions,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum DebugHalt {
+impl Argv {
+    pub fn dump_sink(&self, sink: &mut DiagnosticSink) {
+        sink.emit_summary(&self.orb_name);
+        let mut stream = StandardStream::stderr(self.color);
+
+        sink.dump_with(&mut stream)
+            .expect("failed to emit the diagnostics");
+    }
+}
+
+/// Debug options
+#[derive(Default, Debug)]
+pub struct DebugOptions {
+    halt: Option<CompStage>,
+    timings: bool,
+    print: Vec<InterRes>,
+}
+
+impl DebugOptions {
+    pub fn print(&self, ir: InterRes) -> bool {
+        self.print.contains(&ir)
+    }
+
+    pub fn halt(&self, stage: CompStage) -> bool {
+        self.halt.as_ref().is_some_and(|s| *s == stage)
+    }
+}
+
+/// Codegen options
+#[derive(Debug)]
+pub struct CodegenOptions {
+    opt_level: OptLevel,
+    output_obj: bool,
+}
+
+impl Default for CodegenOptions {
+    fn default() -> Self {
+        CodegenOptions {
+            opt_level: OptLevel::None,
+            output_obj: false,
+        }
+    }
+}
+
+/// Compilation stage
+#[derive(Debug, Clone, ValueEnum, PartialEq, Eq)]
+pub enum CompStage {
     Lexer,
     Parser,
     Dsir,
@@ -195,257 +404,16 @@ pub enum DebugHalt {
     Codegen,
 }
 
-impl FromStr for DebugHalt {
-    type Err = CliError;
-
-    fn from_str(s: &str) -> Result<Self> {
-        use DebugHalt as Hs;
-
-        match s {
-            "lexer" => Ok(Hs::Lexer),
-            "parser" => Ok(Hs::Parser),
-            "dsir" => Ok(Hs::Dsir),
-            "scir" => Ok(Hs::Scir),
-            "ssa" => Ok(Hs::Ssa),
-            "codegen" => Ok(Hs::Codegen),
-            _ => Err(CliError::UnknownValue {
-                value: s.to_string(),
-                arg: "-Dhalt-at".to_string(),
-            }),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DebugPrint {
+/// Intermediate result
+#[derive(Debug, Clone, ValueEnum, PartialEq, Eq)]
+pub enum InterRes {
     InputFile,
     TokenStream,
     Ast,
-    DsirTree,
-    ScirTree,
+    Dsir,
+    Scir,
     Ssa,
     Asm,
-}
-
-impl FromStr for DebugPrint {
-    type Err = CliError;
-
-    fn from_str(s: &str) -> Result<Self> {
-        use DebugPrint as Dp;
-
-        match s {
-            "inputfile" => Ok(Dp::InputFile),
-            "tokenstream" => Ok(Dp::TokenStream),
-            "ast" => Ok(Dp::Ast),
-            "dsir-tree" => Ok(Dp::DsirTree),
-            "scir-tree" => Ok(Dp::ScirTree),
-            "ssa" => Ok(Dp::Ssa),
-            "asm" => Ok(Dp::Asm),
-            _ => Err(CliError::UnknownValue {
-                value: s.to_string(),
-                arg: "-Dprint".to_string(),
-            }),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub enum TargetInput {
-    /// the user specified nothing
-    #[default]
-    Unspecified,
-    /// the user wants to print the help message for the targets
-    Help,
-    /// there is a specified target
-    Triplet(target::Triple),
-}
-
-impl TargetInput {
-    pub fn triplet(self) -> Option<target::Triple> {
-        match self {
-            Self::Unspecified => Some(target::Triple::host()),
-            Self::Help => None,
-            Self::Triplet(triplet) => Some(triplet),
-        }
-    }
-}
-
-// TODO: add -orb-type <type> arg
-/// Arguments to the `lunc` binary
-#[derive(Debug, Clone, Default)]
-pub struct CliArgs {
-    /// print the help message?
-    help: bool,
-    /// input file
-    input: PathBuf,
-    /// output file
-    output: PathBuf,
-    /// debug flags
-    debug: Vec<DebugFlag>,
-    /// target
-    target: TargetInput,
-    /// the name of the orb you are building
-    orb_name: String,
-    /// color choice
-    color: ColorChoice,
-    /// true if we want to print the version
-    version: bool,
-    /// verbosity
-    verbose: bool,
-}
-
-impl CliArgs {
-    /// Parse the arguments
-    pub fn parse_args(mut args: impl Iterator<Item = String>) -> Result<CliArgs> {
-        // skip program name
-        _ = args.next();
-
-        let mut input = None;
-        let mut help = false;
-        let mut output = None;
-        let mut debug = Vec::new();
-        let mut target = TargetInput::default();
-        let mut orb_name = None;
-        let mut color = ColorChoice::Auto;
-        let mut version = false;
-        let mut verbose = false;
-
-        while let Some(arg) = args.next() {
-            if arg == "-h" || arg == "-help" {
-                help = true;
-            } else if arg == "-o" {
-                output = Some(PathBuf::from(CliArgs::next_arg(&mut args)?));
-            } else if let Some(flag_value) = arg.strip_prefix("-D") {
-                // Debug flags
-                let splits = flag_value.rsplit_once("=");
-                match splits {
-                    Some(("halt-at", stage)) => {
-                        for dbg in &debug {
-                            if let DebugFlag::HaltAt(_) = dbg {
-                                return Err(CliError::ArgumentUsedMultipleTimes { arg });
-                            }
-                        }
-                        debug.push(DebugFlag::HaltAt(stage.parse()?));
-                    }
-                    Some(("print", value)) => debug.push(DebugFlag::Print(value.parse()?)),
-                    None if flag_value == "never-verify-fir" => {
-                        debug.push(DebugFlag::NeverVerifyFir)
-                    }
-                    None if flag_value == "help" => {
-                        debug.push(DebugFlag::Help);
-                    }
-                    _ => return Err(CliError::UnreochizedOption { arg }),
-                }
-            } else if arg == "-target" {
-                let target_str = CliArgs::next_arg(&mut args)?;
-                match target_str.as_str() {
-                    "help" => target = TargetInput::Help,
-                    s => target = TargetInput::Triplet(target::Triple::from_str(s)?),
-                }
-            } else if arg == "-orb-name" {
-                // TODO: check that the name can be a Lun identifier.
-                orb_name = Some(CliArgs::next_arg(&mut args)?);
-            } else if arg == "-color" {
-                let choice = CliArgs::next_arg(&mut args)?;
-
-                color = ColorChoice::from_str(&choice)
-                    .map_err(|_| CliError::UnreochizedOption { arg: choice })?;
-            } else if arg == "-V" || arg == "-version" {
-                version = true;
-            } else if arg == "-v" || arg == "-verbose" {
-                verbose = true;
-            } else if input.is_none() && !arg.starts_with("-") {
-                input = Some(PathBuf::from(arg));
-            } else {
-                return Err(CliError::UnreochizedOption { arg });
-            }
-        }
-
-        let Some(input) = input else {
-            if version || help || target == TargetInput::Help || debug.contains(&DebugFlag::Help) {
-                return Ok(CliArgs {
-                    help,
-                    input: Default::default(),
-                    output: output.unwrap_or_default(),
-                    debug,
-                    target,
-                    orb_name: Default::default(),
-                    color,
-                    version,
-                    verbose,
-                });
-            }
-            return Err(CliError::NoInputFile);
-        };
-
-        let orb_name = orb_name.unwrap_or(
-            input
-                .with_extension("")
-                .file_name()
-                .unwrap()
-                .to_string_lossy()
-                .to_string(),
-        );
-        let output = output.unwrap_or(PathBuf::from(orb_name.as_str()));
-
-        Ok(CliArgs {
-            help,
-            input,
-            output,
-            debug,
-            target,
-            orb_name,
-            color,
-            version,
-            verbose,
-        })
-    }
-
-    /// Return true if one of the debug flags is `-Dhelp`
-    pub fn debug_flag_help(&self) -> bool {
-        self.debug.contains(&DebugFlag::Help)
-    }
-
-    /// Return true if one of the debug flags is `-Dprint=VALUE`
-    pub fn debug_print_at(&self, value: DebugPrint) -> bool {
-        self.debug.contains(&DebugFlag::Print(value))
-    }
-
-    /// Return true if one of the debug flags is `-Dhalt-at=STAGE`
-    pub fn debug_halt_at(&self, stage: DebugHalt) -> bool {
-        self.debug.contains(&DebugFlag::HaltAt(stage))
-    }
-
-    pub fn debug_never_verify_fir(&self) -> bool {
-        self.debug.contains(&DebugFlag::NeverVerifyFir)
-    }
-
-    fn next_arg(args: &mut impl Iterator<Item = String>) -> Result<String> {
-        args.next().ok_or_else(|| CliError::ArgumentsMissing {
-            name: String::from("-o"),
-            expected: 1,
-        })
-    }
-
-    pub fn dump_sink(&self, sink: &mut DiagnosticSink) {
-        sink.emit(
-            if sink.failed() {
-                Diagnostic::error()
-            } else {
-                Diagnostic::warning()
-            }
-            .with_message(sink.summary(&self.orb_name).unwrap()),
-        );
-        let mut stream = StandardStream::stderr(self.color);
-
-        sink.dump_with(&mut stream)
-            .expect("failed to emit the diagnostics");
-    }
-}
-
-pub fn flush_outs() {
-    stderr().flush().expect("can't flush stderr");
-    stdout().flush().expect("can't flush stdout");
 }
 
 pub fn run() -> Result<()> {
@@ -485,16 +453,9 @@ pub fn run() -> Result<()> {
         );
     }));
 
-    let argv = CliArgs::parse_args(env::args())?;
+    let raw_argv = RawLuncCli::try_parse()?;
 
-    // maybe print help message
-    if argv.help {
-        eprintln!("{HELP_MESSAGE}");
-        return Ok(());
-    }
-
-    // maybe print version
-    if argv.version {
+    if raw_argv.version {
         eprintln!(
             "lunc {version} ({commit} {date})",
             version = env!("CARGO_PKG_VERSION"),
@@ -502,7 +463,7 @@ pub fn run() -> Result<()> {
             date = &build::COMMIT_DATE[..10]
         );
 
-        if argv.verbose {
+        if raw_argv.verbose {
             eprintln!("host: {}", target::Triple::host());
             eprintln!("commit-hash: {}", build::COMMIT_HASH);
             eprintln!("commit-date: {}", build::COMMIT_DATE);
@@ -513,34 +474,141 @@ pub fn run() -> Result<()> {
         return Ok(());
     }
 
-    // maybe print debug flag help
-    if argv.debug_flag_help() {
-        eprintln!("{DEBUG_FLAGS_HELP}");
+    if print_help_kvs(&raw_argv.debug) {
+        eprint!("{}", DebugKey::help_msg());
+
         return Ok(());
     }
 
-    // maybe print the target help message
-    if argv.target == TargetInput::Help {
-        target_help(&mut stderr());
+    if print_help_kvs(&raw_argv.codegen) {
+        eprint!("{}", CodegenKey::help_msg());
+
         return Ok(());
     }
 
-    // Command line args checks
-    if let TargetInput::Triplet(ref target) = argv.target
-        && !target::SUPPORTED_TARGETS.contains(target)
-    {
-        return Err(CliError::UnsupportedTargetTriplet {
-            target: target.clone(),
-        });
+    if let Some("help") = raw_argv.target.as_deref() {
+        target_help();
+
+        return Ok(());
     }
 
+    let Some(input) = raw_argv.input else {
+        return Err(CliError::NoInputFile);
+    };
+
+    let orb_name = raw_argv.orb_name.unwrap_or_else(|| {
+        input
+            .with_extension("")
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .to_string()
+    });
+    let output = raw_argv.output.unwrap_or(PathBuf::from(orb_name.as_str()));
+
+    let target = if let Some(target_str) = raw_argv.target {
+        Triple::from_str(&target_str)?
+    } else {
+        Triple::host()
+    };
+
+    let mut debug = DebugOptions::default();
+
+    // here to know if we have defined multiple times one option
+    let mut debug_halt_def = false;
+    let mut debug_timings_def = false;
+
+    for Kv { key, val } in raw_argv.debug {
+        match key {
+            DebugKey::Help => unreachable!(),
+            DebugKey::Halt => {
+                if debug_halt_def {
+                    return Err(CliError::ArgumentUsedMultipleTimes("-Z halt".to_string()));
+                }
+
+                debug.halt = Some(
+                    CompStage::from_str(&val, false).map_err(|_| CliError::InvalidHaltVal(val))?,
+                );
+                debug_halt_def = true;
+            }
+            DebugKey::Timings => {
+                if debug_timings_def {
+                    return Err(CliError::ArgumentUsedMultipleTimes(
+                        "-Z timings".to_string(),
+                    ));
+                }
+
+                debug.timings = val.parse().map_err(|_| CliError::InvalidTimingsVal(val))?;
+                debug_timings_def = true;
+            }
+            DebugKey::Print => {
+                debug.print.push(
+                    InterRes::from_str(&val, false).map_err(|_| CliError::InvalidPrintVal(val))?,
+                );
+            }
+        }
+    }
+
+    let mut codegen = CodegenOptions::default();
+
+    // here to know if we have defined multiple times one option
+    let mut codegen_optlevel_def = false;
+    let mut codegen_outputobj_def = false;
+
+    for Kv { key, val } in raw_argv.codegen {
+        match key {
+            CodegenKey::Help => unreachable!(),
+            CodegenKey::OptLevel => {
+                if codegen_optlevel_def {
+                    return Err(CliError::ArgumentUsedMultipleTimes(
+                        "-C opt-level".to_string(),
+                    ));
+                }
+
+                codegen.opt_level = val.parse().map_err(|_| CliError::InvalidOptLevelVal(val))?;
+                codegen_optlevel_def = true;
+            }
+            CodegenKey::OutputObj => {
+                if codegen_outputobj_def {
+                    return Err(CliError::ArgumentUsedMultipleTimes(
+                        "-C output-obj".to_string(),
+                    ));
+                }
+
+                codegen.output_obj = val
+                    .parse()
+                    .map_err(|_| CliError::InvalidOutputObjVal(val))?;
+                codegen_outputobj_def = true;
+            }
+        }
+    }
+
+    let color = raw_argv.color.parse()?;
+
+    let argv = Argv {
+        input,
+        output,
+        debug,
+        target,
+        orb_name,
+        color,
+        codegen,
+    };
+
+    // ensure orb name can be an identifier
     if !is_identifier(&argv.orb_name) {
         return Err(CliError::NonIdentifierOrbName {
             orb_name: argv.orb_name.clone(),
         });
     }
-    let target = argv.target.clone().triplet().unwrap();
-    let opts = BuildOptions::new(&argv.orb_name, target);
+
+    build_with_argv(argv)?;
+
+    Ok(())
+}
+
+pub fn build_with_argv(argv: Argv) -> Result<()> {
+    let opts = BuildOptions::new(&argv.orb_name, argv.target.clone());
 
     // 1. retrieve the source code, file => text
     let source_code = read_to_string(&argv.input).map_err(|err| CliError::FileIoError {
@@ -549,7 +617,7 @@ pub fn run() -> Result<()> {
     })?;
 
     //    maybe print source code
-    if argv.debug_print_at(DebugPrint::InputFile) {
+    if argv.debug.print(InterRes::InputFile) {
         eprintln!("{source_code}");
     }
 
@@ -573,11 +641,11 @@ pub fn run() -> Result<()> {
     let tokenstream = lexer.produce().ok_or_else(builderr)?;
 
     //    maybe print the token stream
-    if argv.debug_print_at(DebugPrint::TokenStream) {
+    if argv.debug.print(InterRes::TokenStream) {
         eprint!("tokenstream = ");
         tokenstream.fmt(&mut stderr(), &source_code).unwrap();
     }
-    if argv.debug_halt_at(DebugHalt::Lexer) {
+    if argv.debug.halt(CompStage::Lexer) {
         if sink.is_empty() {
             return Ok(());
         }
@@ -590,12 +658,12 @@ pub fn run() -> Result<()> {
     let ast = parser.produce().ok_or_else(builderr)?;
 
     //    maybe print the ast
-    if argv.debug_print_at(DebugPrint::Ast) {
+    if argv.debug.print(InterRes::Ast) {
         eprint!("ast = ");
         ast.dump();
         eprintln!();
     }
-    if argv.debug_halt_at(DebugHalt::Parser) {
+    if argv.debug.halt(CompStage::Parser) {
         if sink.is_empty() {
             return Ok(());
         }
@@ -608,12 +676,12 @@ pub fn run() -> Result<()> {
     let dsir = desugarrer.produce(ast).ok_or_else(builderr)?;
 
     //    maybe print the DSIR
-    if argv.debug_print_at(DebugPrint::DsirTree) {
+    if argv.debug.print(InterRes::Dsir) {
         eprint!("dsir = ");
         dsir.dump();
         eprintln!();
     }
-    if argv.debug_halt_at(DebugHalt::Dsir) {
+    if argv.debug.halt(CompStage::Dsir) {
         if sink.is_empty() {
             return Ok(());
         }
@@ -626,12 +694,12 @@ pub fn run() -> Result<()> {
     let scir = semacker.produce(dsir).ok_or_else(builderr)?;
 
     //    maybe print the SCIR
-    if argv.debug_print_at(DebugPrint::ScirTree) {
+    if argv.debug.print(InterRes::Scir) {
         eprint!("scir = ");
         scir.dump();
         eprintln!();
     }
-    if argv.debug_halt_at(DebugHalt::Scir) {
+    if argv.debug.halt(CompStage::Scir) {
         if sink.is_empty() {
             return Ok(());
         }
@@ -640,24 +708,26 @@ pub fn run() -> Result<()> {
     }
 
     // 7. generate the clif, SCIR => SSA (CLIF) => ASM at the same time.
-    let cliftxt = argv.debug_print_at(DebugPrint::Ssa);
+    let cliftxt = argv.debug.print(InterRes::Ssa);
     let mut clifgen = ClifGen::new(opts.clone(), cliftxt);
     clifgen.produce(&mut ClifGenContext::default(), scir);
 
     //    maybe print the SSA
-    if argv.debug_print_at(DebugPrint::Ssa) {
+    if argv.debug.print(InterRes::Ssa) {
         eprintln!("; SSA of orb {:?}", opts.orb_name());
         eprint!("{}", clifgen.textrepr());
     }
-    if argv.debug_halt_at(DebugHalt::Ssa) {
+    if argv.debug.halt(CompStage::Ssa) || argv.debug.halt(CompStage::Codegen) {
         // NOTE: we do not emit diags anymore.
         return Ok(());
     }
 
-    // write the object to file
-    let obj = clifgen.finish_obj();
-    let obj_bytes = obj.emit().unwrap();
-    fs::write(argv.output.with_extension("o"), obj_bytes).unwrap();
+    if argv.codegen.output_obj {
+        // write the object to file
+        let obj = clifgen.finish_obj();
+        let obj_bytes = obj.emit().unwrap();
+        fs::write(argv.output.with_extension("o"), obj_bytes).unwrap();
+    }
 
     if sink.is_empty() {
         Ok(())

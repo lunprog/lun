@@ -1,5 +1,5 @@
 #![doc(
-    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/logo/logo_no_bg_black.png"
+    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
 use std::{
@@ -159,7 +159,7 @@ impl TestContext {
             let extra_args = stage.to_compiler_args();
             cmd.args(extra_args);
 
-            cmd.args(["-color", "never"]);
+            cmd.args(["--color", "never"]);
             cmd.arg(path);
 
             write!(
@@ -224,7 +224,7 @@ impl TestContext {
             let extra_args = stage.to_compiler_args();
             cmd.args(extra_args);
 
-            cmd.args(["-color", "never"]);
+            cmd.args(["--color", "never"]);
 
             cmd.arg(path);
 
@@ -244,6 +244,14 @@ impl TestContext {
                     "test {}, compiler code {old_compcode} -> {}",
                     name, test_record.compiler_code
                 )?;
+            }
+
+            if test_record.compiler_code == 101 {
+                out.set_color(&TestContext::compiler_fail_color_spec())?;
+                write!(out, "FATAL: ")?;
+                out.reset()?;
+                writeln!(out, "test {}, has code 101, it is an ICE", name)?;
+                writeln!(out)?;
             }
 
             // TODO: implement test running
@@ -306,16 +314,14 @@ impl TestStage {
     pub fn to_compiler_args(&self) -> &[&str] {
         match self {
             TestStage::None => &[],
-            TestStage::Lexer => &["-Dhalt-at=lexer", "-Dprint=tokenstream"],
-            TestStage::Parser => &["-Dhalt-at=parser", "-Dprint=ast"],
-            TestStage::Dsir => &["-Dhalt-at=dsir", "-Dprint=dsir-tree"],
-            TestStage::Scir => &["-Dhalt-at=scir", "-Dprint=scir-tree"],
-            // NOTE: we print the dsir tree but we do not halt like the Dsir
-            // stage does.
+            TestStage::Lexer => &["-Zhalt=lexer", "-Zprint=token-stream"],
+            TestStage::Parser => &["-Zhalt=parser", "-Zprint=ast"],
+            TestStage::Dsir => &["-Zhalt=dsir", "-Zprint=dsir"],
+            TestStage::Scir => &["-Zhalt=scir", "-Zprint=scir"],
             TestStage::Multifile => &[
-                "-Dprint=scir-tree",
-                "-Dhalt-at=scir",
-                "-orb-name",
+                "-Zprint=scir",
+                "-Zhalt=scir", // remove after cranelift gen is fully implemented
+                "--orb-name",
                 "multifile",
             ],
         }

@@ -3,7 +3,10 @@ use std::process::ExitCode;
 
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
 
-use lunc::{CliError::BuildDiagnostics, flush_outs};
+use lunc::{
+    CliError::{self, BuildDiagnostics},
+    flush_outs,
+};
 
 fn main() -> ExitCode {
     let mut out = StandardStream::stderr(termcolor::ColorChoice::Auto);
@@ -26,11 +29,17 @@ fn main() -> ExitCode {
         Err(e) => {
             out.set_color(ColorSpec::new().set_bold(true)).unwrap();
             write!(out, "lunc: ").unwrap();
-            out.set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true))
-                .unwrap();
-            write!(out, "error: ").unwrap();
             out.reset().unwrap();
-            writeln!(out, "{e}").unwrap();
+
+            if let CliError::ClapError(err) = e {
+                err.print().unwrap();
+            } else {
+                out.set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true))
+                    .unwrap();
+                write!(out, "error: ").unwrap();
+                out.reset().unwrap();
+                writeln!(out, "{e}").unwrap();
+            }
 
             flush_outs();
 

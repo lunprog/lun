@@ -16,12 +16,14 @@ use lunc_utils::{BuildOptions, mangle, opt_unreachable, symbol};
 use crate::textual::TextualClif;
 use crate::translator::FunDefTranslator;
 
+pub use cranelift_codegen::settings::OptLevel;
+
 pub mod textual;
 pub mod translator;
 
 /// [Cranelift IR] generator from [SCIR].
 ///
-/// [Cranelift IR]: cranelift
+/// [Cranelift IR]: cranelift_codegen
 /// [SCIR]: lunc_scir
 pub struct ClifGen {
     /// same as funbuilder_ctx but for data
@@ -84,7 +86,7 @@ impl ClifGen {
         }
     }
 
-    /// Produces a [`FirUnit`] from the [`ScModule`].
+    /// Produces Cranelift IR from the [`ScModule`].
     pub fn produce(&mut self, ctx: &mut ClifGenContext, root: ScModule) {
         _ = self.data_desc;
 

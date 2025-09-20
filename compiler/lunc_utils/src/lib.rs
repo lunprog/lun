@@ -1,6 +1,6 @@
 //! Common useful types, functions and traits across the Lun Compiler.
 #![doc(
-    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/logo/logo_no_bg_black.png"
+    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
 use std::{

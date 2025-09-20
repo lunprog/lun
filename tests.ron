@@ -21,7 +21,7 @@ error[E010]: cannot find `b` in this scope
 error: compilation of `E010` failed due to 3 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -53,7 +53,7 @@ error[E013]: `_` is a reserved identifier
 error: compilation of `E013` failed due to 3 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -67,7 +67,7 @@ error: compilation of `E013` failed due to 3 errors and 0 warnings
 error: compilation of `E014` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -83,7 +83,7 @@ error: compilation of `E014` failed due to 1 error and 0 warnings
 error: compilation of `E019` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -99,7 +99,7 @@ error: compilation of `E019` failed due to 1 error and 0 warnings
 error: compilation of `E026` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -1441,7 +1441,7 @@ error[E001]: unknown start of token: ?
 error: compilation of `E001` failed due to 4 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -1457,7 +1457,7 @@ error: compilation of `E001` failed due to 4 errors and 0 warnings
 error: compilation of `E002` failed due to 1 error and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -1497,7 +1497,7 @@ error[E003]: integer literal is too large
 error: compilation of `E003` failed due to 4 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -1512,7 +1512,7 @@ error: compilation of `E003` failed due to 4 errors and 0 warnings
 error: compilation of `E004` failed due to 1 error and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -1532,7 +1532,7 @@ error[E005]: unknown character escape: $
 error: compilation of `E005` failed due to 2 errors and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -1549,7 +1549,7 @@ error: compilation of `E005` failed due to 2 errors and 0 warnings
 error: compilation of `E020` failed due to 1 error and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -1575,7 +1575,7 @@ error[E021]: no digits found after the base
 error: compilation of `E021` failed due to 3 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -1591,7 +1591,7 @@ error: compilation of `E021` failed due to 3 errors and 0 warnings
 error: compilation of `E022` failed due to 1 error and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -1605,7 +1605,7 @@ error: compilation of `E022` failed due to 1 error and 0 warnings
 error: compilation of `E023` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -1625,7 +1625,7 @@ error[E024]: not enough hexadecimal digits in escape sequence
 error: compilation of `E024` failed due to 2 errors and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -1717,7 +1717,7 @@ error[E025]: invalid unicode escape
 error: compilation of `E025` failed due to 14 errors and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3087,7 +3087,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
 error: compilation of `E006_block_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3101,7 +3101,7 @@ error: compilation of `E006_block_1` failed due to 1 error and 0 warnings
 error: compilation of `E006_block_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3115,7 +3115,7 @@ error: compilation of `E006_block_2` failed due to 1 error and 0 warnings
 error: compilation of `E006_block_3` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3129,7 +3129,7 @@ error: compilation of `E006_block_3` failed due to 1 error and 0 warnings
 error: compilation of `E006_block_4` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3143,7 +3143,7 @@ error: compilation of `E006_block_4` failed due to 1 error and 0 warnings
 error: compilation of `E006_block_5` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3157,7 +3157,7 @@ error: compilation of `E006_block_5` failed due to 1 error and 0 warnings
 error: compilation of `E006_break` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3171,7 +3171,7 @@ error: compilation of `E006_break` failed due to 1 error and 0 warnings
 error: compilation of `E006_continue` failed due to 1 error and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3185,7 +3185,7 @@ error: compilation of `E006_continue` failed due to 1 error and 0 warnings
 error: compilation of `E006_expr_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3199,7 +3199,7 @@ error: compilation of `E006_expr_1` failed due to 1 error and 0 warnings
 error: compilation of `E006_extern_block_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3213,7 +3213,7 @@ error: compilation of `E006_extern_block_1` failed due to 1 error and 0 warnings
 error: compilation of `E006_extern_block_2` failed due to 1 error and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3227,7 +3227,7 @@ error: compilation of `E006_extern_block_2` failed due to 1 error and 0 warnings
 error: compilation of `E006_extern_block_3` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3241,7 +3241,7 @@ error: compilation of `E006_extern_block_3` failed due to 1 error and 0 warnings
 error: compilation of `E006_funcall_expr` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3255,7 +3255,7 @@ error: compilation of `E006_funcall_expr` failed due to 1 error and 0 warnings
 error: compilation of `E006_funkw_expr_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3269,7 +3269,7 @@ error: compilation of `E006_funkw_expr_1` failed due to 1 error and 0 warnings
 error: compilation of `E006_funkw_expr_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3283,7 +3283,7 @@ error: compilation of `E006_funkw_expr_2` failed due to 1 error and 0 warnings
 error: compilation of `E006_funkw_expr_3` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3297,7 +3297,7 @@ error: compilation of `E006_funkw_expr_3` failed due to 1 error and 0 warnings
 error: compilation of `E006_funkw_expr_4` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3325,7 +3325,7 @@ error: compilation of `./tests/parser/E006_funkw_expr_5` failed due to 1 error a
 error: compilation of `E006_funptr_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3339,7 +3339,7 @@ error: compilation of `E006_funptr_1` failed due to 1 error and 0 warnings
 error: compilation of `E006_funptr_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3353,7 +3353,7 @@ error: compilation of `E006_funptr_2` failed due to 1 error and 0 warnings
 error: compilation of `E006_global_def_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3367,7 +3367,7 @@ error: compilation of `E006_global_def_1` failed due to 1 error and 0 warnings
 error: compilation of `E006_global_def_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3381,7 +3381,7 @@ error: compilation of `E006_global_def_2` failed due to 1 error and 0 warnings
 error: compilation of `E006_global_def_3` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3395,7 +3395,7 @@ error: compilation of `E006_global_def_3` failed due to 1 error and 0 warnings
 error: compilation of `E006_grouping_expr` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3409,7 +3409,7 @@ error: compilation of `E006_grouping_expr` failed due to 1 error and 0 warnings
 error: compilation of `E006_if_else_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3423,7 +3423,7 @@ error: compilation of `E006_if_else_1` failed due to 1 error and 0 warnings
 error: compilation of `E006_if_else_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3437,7 +3437,7 @@ error: compilation of `E006_if_else_2` failed due to 1 error and 0 warnings
 error: compilation of `E006_if_else_3` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3451,7 +3451,7 @@ error: compilation of `E006_if_else_3` failed due to 1 error and 0 warnings
 error: compilation of `E006_import_directive_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3465,7 +3465,7 @@ error: compilation of `E006_import_directive_1` failed due to 1 error and 0 warn
 error: compilation of `E006_import_directive_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3479,7 +3479,7 @@ error: compilation of `E006_import_directive_2` failed due to 1 error and 0 warn
 error: compilation of `E006_item_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3493,7 +3493,7 @@ error: compilation of `E006_item_1` failed due to 1 error and 0 warnings
 error: compilation of `E006_item_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3521,7 +3521,7 @@ error: compilation of `./tests/parser/E006_iterator_loop` failed due to 1 error 
 error: compilation of `E006_iterator_loop_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3535,7 +3535,7 @@ error: compilation of `E006_iterator_loop_1` failed due to 1 error and 0 warning
 error: compilation of `E006_iterator_loop_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3549,7 +3549,7 @@ error: compilation of `E006_iterator_loop_2` failed due to 1 error and 0 warning
 error: compilation of `E006_let_stmt_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3563,7 +3563,7 @@ error: compilation of `E006_let_stmt_1` failed due to 1 error and 0 warnings
 error: compilation of `E006_let_stmt_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3577,7 +3577,7 @@ error: compilation of `E006_let_stmt_2` failed due to 1 error and 0 warnings
 error: compilation of `E006_member_access_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3591,7 +3591,7 @@ error: compilation of `E006_member_access_1` failed due to 1 error and 0 warning
 error: compilation of `E006_mod_directive_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3605,7 +3605,7 @@ error: compilation of `E006_mod_directive_1` failed due to 1 error and 0 warning
 error: compilation of `E006_mod_directive_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3619,7 +3619,7 @@ error: compilation of `E006_mod_directive_2` failed due to 1 error and 0 warning
 error: compilation of `E006_qualified_path_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3633,7 +3633,7 @@ error: compilation of `E006_qualified_path_1` failed due to 1 error and 0 warnin
 error: compilation of `E006_qualified_path_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3647,7 +3647,7 @@ error: compilation of `E006_qualified_path_2` failed due to 1 error and 0 warnin
 error: compilation of `E006_short_var_def_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3663,7 +3663,7 @@ error: compilation of `E006_short_var_def_1` failed due to 1 error and 0 warning
 error: compilation of `E035_1` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3679,7 +3679,7 @@ error: compilation of `E035_1` failed due to 1 error and 0 warnings
 error: compilation of `E035_2` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3693,7 +3693,7 @@ error: compilation of `E035_2` failed due to 1 error and 0 warnings
 error: compilation of `E035_3` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -3707,7 +3707,7 @@ error: compilation of `E035_3` failed due to 1 error and 0 warnings
 error: compilation of `E038` failed due to 1 error and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4320,7 +4320,7 @@ error[E008]: mismatched types
 error: compilation of `E008` failed due to 7 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4406,7 +4406,7 @@ error[E009]: expected type found an expression
 error: compilation of `E009` failed due to 13 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4420,7 +4420,7 @@ error: compilation of `E009` failed due to 13 errors and 0 warnings
 error: compilation of `E011` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4440,7 +4440,7 @@ error[E016]: `break` outside of a loop or a labeled block
 error: compilation of `E016` failed due to 2 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4456,7 +4456,7 @@ error: compilation of `E016` failed due to 2 errors and 0 warnings
 error: compilation of `E027` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4476,7 +4476,7 @@ error[E028]: this function takes 1 arguments but 2 were provided
 error: compilation of `E028` failed due to 2 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4586,7 +4586,7 @@ error[E029]: unable to resolve expression at comptime
 error: compilation of `E029` failed due to 14 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4606,7 +4606,7 @@ error[E030]: use of undeclared label 'd'
 error: compilation of `E030` failed due to 2 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4620,7 +4620,7 @@ error: compilation of `E030` failed due to 2 errors and 0 warnings
 error: compilation of `E031` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4636,7 +4636,7 @@ error: compilation of `E031` failed due to 1 error and 0 warnings
 error: compilation of `E032` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4650,7 +4650,7 @@ error: compilation of `E032` failed due to 1 error and 0 warnings
 error: compilation of `E033` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4820,7 +4820,7 @@ error[E034]: literal out of range
 error: compilation of `E034` failed due to 18 errors and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4836,7 +4836,7 @@ error: compilation of `E034` failed due to 18 errors and 0 warnings
 error: compilation of `E036` failed due to 1 error and 0 warnings
 
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4868,7 +4868,7 @@ error[E037]: global uninit must be inside of an extern block.
 error: compilation of `E037` failed due to 3 errors and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4932,7 +4932,7 @@ error[E039]: a extern block isn't allowed inside of an extern block.
 error: compilation of `E039` failed due to 4 errors and 0 warnings
 
 "##,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
@@ -4966,7 +4966,7 @@ error[E040]: cannot define a function declaration inside of a mutable global def
 error: compilation of `E040` failed due to 4 errors and 0 warnings
 
 "#,
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),

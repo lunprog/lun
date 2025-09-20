@@ -154,7 +154,7 @@ fn main() -> ExitCode {
                 let mut cmd = Command::new("target/debug/lunc");
 
                 cmd.arg(example);
-                cmd.arg("-Dhalt-at=scir"); // TODO: remove this when clif gen will be fully implemented
+                cmd.arg("-Zhalt=scir"); // TODO: remove this when clif gen will be fully implemented
 
                 let lunc_status = cmd.status().expect("failed to run lunc");
 
