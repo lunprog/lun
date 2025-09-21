@@ -1,7 +1,0 @@
-foo :: fun(a: void, b: void) -> void {
-    a + b
-}
-
-bar :: fun(a: noreturn, b: noreturn) -> noreturn {
-    a + b
-}

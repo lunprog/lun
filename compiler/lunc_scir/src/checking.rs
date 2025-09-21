@@ -7,11 +7,11 @@ use lunc_utils::{
 };
 
 use crate::diags::{
-    ArityDoesntMatch, BinOpUnsupportedType, BorrowMutWhenNotDefinedMut,
-    BreakUseAnImplicitLabelInBlock, BreakWithValueUnsupported, CallRequiresFuncType,
-    CantContinueABlock, CantResolveComptimeValue, ExpectedPlaceExpression, ExpectedTypeFoundExpr,
-    FunctionInGlobalMut, ItemNotAllowedInExternBlock, LabelKwOutsideLoopOrBlock, MismatchedTypes,
-    OutsideExternBlock, TypeAnnotationsNeeded, UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
+    ArityDoesntMatch, BorrowMutWhenNotDefinedMut, BreakUseAnImplicitLabelInBlock,
+    BreakWithValueUnsupported, CallRequiresFuncType, CantContinueABlock, CantResolveComptimeValue,
+    ExpectedPlaceExpression, ExpectedTypeFoundExpr, FunctionInGlobalMut,
+    ItemNotAllowedInExternBlock, LabelKwOutsideLoopOrBlock, MismatchedTypes, OutsideExternBlock,
+    TypeAnnotationsNeeded, UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
 };
 
 use super::*;
@@ -873,12 +873,6 @@ impl SemaChecker {
                     self.expr_typeck(&lhs.typ, rhs, None, None);
                 } else if lhs.typ != rhs.typ {
                     self.expr_typeck(&rhs.typ, lhs, None, None);
-                } else if !(lhs.typ.is_int() || lhs.typ.is_float()) {
-                    self.sink.emit(BinOpUnsupportedType {
-                        op: op.clone(),
-                        typ: lhs.typ.clone(),
-                        loc: expr.loc.clone().unwrap(),
-                    })
                 }
 
                 expr.typ = if op.is_relational() || op.is_logical() {
@@ -888,6 +882,55 @@ impl SemaChecker {
                 } else {
                     lhs.typ.clone()
                 };
+
+                match op {
+                    BinOp::Add
+                    | BinOp::Sub
+                    | BinOp::Mul
+                    | BinOp::Div
+                    | BinOp::CompLT
+                    | BinOp::CompLE
+                    | BinOp::CompGT
+                    | BinOp::CompGE
+                    | BinOp::CompEq
+                    | BinOp::CompNe
+                        if !(lhs.typ.is_int() || lhs.typ.is_float()) =>
+                    {
+                        self.sink.emit(MismatchedTypes {
+                            expected: vec!["float", "integer"],
+                            found: expr.typ.clone(),
+                            due_to: None,
+                            notes: vec![format!("can't perform '{op}' on type '{}'", lhs.typ)],
+                            loc: expr.loc.clone().unwrap(),
+                        });
+                    }
+                    BinOp::Rem
+                    | BinOp::BitwiseAnd
+                    | BinOp::BitwiseXor
+                    | BinOp::BitwiseOr
+                    | BinOp::Shr
+                    | BinOp::Shl
+                        if !lhs.typ.is_int() =>
+                    {
+                        self.sink.emit(MismatchedTypes {
+                            expected: vec!["integer"],
+                            found: expr.typ.clone(),
+                            due_to: None,
+                            notes: vec![format!("can't perform '{op}' on type '{}'", lhs.typ)],
+                            loc: expr.loc.clone().unwrap(),
+                        });
+                    }
+                    BinOp::LogicalAnd | BinOp::LogicalOr if lhs.typ != Type::Bool => {
+                        self.sink.emit(MismatchedTypes {
+                            expected: vec![Type::Bool],
+                            found: expr.typ.clone(),
+                            due_to: None,
+                            notes: vec![format!("can't perform '{op}' on type '{}'", lhs.typ)],
+                            loc: expr.loc.clone().unwrap(),
+                        });
+                    }
+                    _ => {}
+                }
             }
             ScExpr::Unary { op, expr: exp } => match op {
                 UnaryOp::Negation => {

@@ -4317,7 +4317,55 @@ error[E008]: mismatched types
 24 │         break;
    │         ^^^^^ expected `i32`, found `void`
 
-error: compilation of `E008` failed due to 7 errors and 0 warnings
+error[E008]: mismatched types
+   ┌─ ./tests/scir/E008.lun:30:10
+   │
+30 │     a :: 1.0 << 1.0;
+   │          ^^^^^^^^^^ expected `integer`, found `f32`
+   │
+   = can't perform '<<' on type 'f32'
+
+error[E008]: mismatched types
+   ┌─ ./tests/scir/E008.lun:31:10
+   │
+31 │     b :: v * v;
+   │          ^^^^^ expected `float or integer`, found `void`
+   │
+   = can't perform '*' on type 'void'
+
+error[E008]: mismatched types
+   ┌─ ./tests/scir/E008.lun:32:10
+   │
+32 │     c :: v and v;
+   │          ^^^^^^^ expected `bool`, found `bool`
+   │
+   = can't perform 'and' on type 'void'
+
+error[E008]: mismatched types
+   ┌─ ./tests/scir/E008.lun:33:10
+   │
+33 │     d :: 0.0 or 0.2;
+   │          ^^^^^^^^^^ expected `bool`, found `bool`
+   │
+   = can't perform 'or' on type 'f32'
+
+error[E008]: mismatched types
+   ┌─ ./tests/scir/E008.lun:34:10
+   │
+34 │     e :: 1 or 2;
+   │          ^^^^^^ expected `bool`, found `bool`
+   │
+   = can't perform 'or' on type 'i32'
+
+error[E008]: mismatched types
+   ┌─ ./tests/scir/E008.lun:35:10
+   │
+35 │     f :: 1.0 % 2.0;
+   │          ^^^^^^^^^ expected `integer`, found `f32`
+   │
+   = can't perform '%' on type 'f32'
+
+error: compilation of `E008` failed due to 13 errors and 0 warnings
 
 ",
         compiler_code: 255,
@@ -8119,98 +8167,6 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       };
     };
   } @ 1741..1764 (fid = 0),
-
-  GlobalDef {
-    name: rem_f32 @ 1766..1773 (fid = 0);
-    mutable: false;
-    typexpr: Expression {
-      expr: Symbol {
-        kind: global;
-        name: f32 @ none;
-        realname: none;
-        which: 0;
-        path: ∅;
-        typ: type;
-        typeness: explicit;
-        value: Type {
-          type: f32;
-        };
-      };
-      typ: type;
-    } @ 1776..1779 (fid = 0);
-    value: Expression {
-      expr: Binary {
-        lhs: Expression {
-          expr: float 15;
-          typ: f32;
-        } @ 1782..1785 (fid = 0);
-        op: Rem;
-        rhs: Expression {
-          expr: float 4;
-          typ: f32;
-        } @ 1788..1790 (fid = 0);
-      };
-      typ: f32;
-    } @ 1782..1790 (fid = 0);
-    sym: Symbol {
-      kind: global;
-      name: rem_f32 @ 1766..1773 (fid = 0);
-      realname: none;
-      which: 0;
-      path: orb.rem_f32;
-      typ: f32;
-      typeness: explicit;
-      value: F32 {
-        val: 3;
-      };
-    };
-  } @ 1766..1791 (fid = 0),
-
-  GlobalDef {
-    name: rem_f64 @ 1792..1799 (fid = 0);
-    mutable: false;
-    typexpr: Expression {
-      expr: Symbol {
-        kind: global;
-        name: f64 @ none;
-        realname: none;
-        which: 0;
-        path: ∅;
-        typ: type;
-        typeness: explicit;
-        value: Type {
-          type: f64;
-        };
-      };
-      typ: type;
-    } @ 1802..1805 (fid = 0);
-    value: Expression {
-      expr: Binary {
-        lhs: Expression {
-          expr: float 15;
-          typ: f64;
-        } @ 1808..1811 (fid = 0);
-        op: Rem;
-        rhs: Expression {
-          expr: float 4;
-          typ: f64;
-        } @ 1814..1816 (fid = 0);
-      };
-      typ: f64;
-    } @ 1808..1816 (fid = 0);
-    sym: Symbol {
-      kind: global;
-      name: rem_f64 @ 1792..1799 (fid = 0);
-      realname: none;
-      which: 0;
-      path: orb.rem_f64;
-      typ: f64;
-      typeness: explicit;
-      value: F64 {
-        val: 3;
-      };
-    };
-  } @ 1792..1817 (fid = 0),
 ]
 ",
         compiler_code: 0,

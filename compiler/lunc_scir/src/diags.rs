@@ -424,22 +424,3 @@ impl ToDiagnostic for FunctionInGlobalMut {
             .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
-
-#[derive(Debug, Clone)]
-pub struct BinOpUnsupportedType {
-    pub op: BinOp,
-    pub typ: Type,
-    pub loc: Span,
-}
-
-impl ToDiagnostic for BinOpUnsupportedType {
-    fn into_diag(self) -> Diagnostic {
-        Diagnostic::error()
-            .with_code(ErrorCode::BinOpUnsupportedType)
-            .with_message(format!(
-                "binary operation {} isn't supported for type {}",
-                self.op, self.typ
-            ))
-            .with_label(Label::primary(self.loc.fid, self.loc))
-    }
-}
