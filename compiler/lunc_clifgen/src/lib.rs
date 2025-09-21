@@ -144,16 +144,29 @@ impl ClifGen {
         // set the signature of the function
         let mut sig = self.module.make_signature();
         sig.call_conv = self.isa.default_call_conv();
-        for argtyp in arg_types {
-            let param = self.type_to_param(&argtyp);
 
-            sig.params.push(param);
+        // maps the `which` of the arg symbol to the index of the param in the
+        // Clif function
+        let mut arg_map: Vec<Option<u32>> = Vec::with_capacity(arg_types.len());
+
+        for argtyp in arg_types {
+            let arg = self.type_to_fundef_arg(&argtyp);
+
+            match arg {
+                FundefArg::Zst => {
+                    arg_map.push(None);
+                }
+                FundefArg::Param(param) => {
+                    arg_map.push(Some(sig.params.len() as u32));
+                    sig.params.push(param);
+                }
+            }
         }
 
-        if ret_type != symbol::Type::Void {
-            let param = self.type_to_param(&ret_type);
-
-            sig.returns.push(param);
+        let ret_arg = self.type_to_fundef_arg(&ret_type);
+        match ret_arg {
+            FundefArg::Zst => {}
+            FundefArg::Param(param) => sig.returns.push(param),
         }
 
         // create the function
@@ -174,10 +187,23 @@ impl ClifGen {
         fb.switch_to_block(entry_block);
         fb.seal_block(entry_block);
 
+        let mut args = vec![None; arg_map.len()];
+
+        for (i, arg) in arg_map.iter().enumerate() {
+            if let Some(arg) = *arg {
+                let val = fb.block_params(entry_block)[arg as usize];
+                let var = fb.declare_var(fb.func.signature.params[arg as usize].value_type);
+
+                fb.def_var(var, val);
+                args[i] = Some(var);
+            }
+        }
+
         // now translate the body
         let mut fundef_t = FunDefTranslator {
             fb,
-            stackslots: HashMap::new(),
+            slots: HashMap::new(),
+            args,
             cgen: self,
         };
 
@@ -203,7 +229,7 @@ impl ClifGen {
         use symbol::Type as SType;
 
         match typ {
-            SType::Unknown | SType::Type => unreachable!(),
+            SType::Unknown | SType::Type | SType::Void | SType::Noreturn => unreachable!(),
             SType::I8 => AbiParam::new(types::I8).sext(),
             SType::I16 => AbiParam::new(types::I16).sext(),
             SType::I32 => AbiParam::new(types::I32).sext(),
@@ -221,10 +247,20 @@ impl ClifGen {
             SType::F64 => AbiParam::new(types::F64),
             SType::F128 => AbiParam::new(types::F128),
             // NOTE: i8 is a placeholder type for noreturn and void, it is never lowered in practice
-            SType::Bool | SType::Void | SType::Noreturn => AbiParam::new(types::I8),
+            SType::Bool => AbiParam::new(types::I8),
             SType::FunPtr { .. } | SType::Ptr { .. } => AbiParam::new(self.isa.pointer_type()),
             SType::Str => todo!("fat-pointers"),
             SType::Char => AbiParam::new(types::I32),
+        }
+    }
+
+    fn type_to_fundef_arg(&self, typ: &symbol::Type) -> FundefArg {
+        use symbol::Type as SType;
+
+        match typ {
+            SType::Unknown | SType::Type => unreachable!(),
+            SType::Void | SType::Noreturn => FundefArg::Zst,
+            _ => FundefArg::Param(self.type_to_param(typ)),
         }
     }
 
@@ -254,4 +290,13 @@ impl ClifGen {
     pub fn finish_obj(self) -> ObjectProduct {
         self.module.finish()
     }
+}
+
+/// Fundef arg.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FundefArg {
+    /// Zero sized type
+    Zst,
+    /// Regular fundef abi param
+    Param(AbiParam),
 }

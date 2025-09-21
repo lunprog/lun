@@ -630,6 +630,8 @@ idtype! {
 
     impl FieldGet<pub realname: Option<String>> for Symbol;
 
+    impl FieldGet<pub which: usize> for Symbol;
+
     impl FieldGet<pub kind: SymKind> for Symbol;
 
     impl FieldGet<pub loc: Option<Span>> for Symbol;

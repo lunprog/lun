@@ -2,21 +2,30 @@
 
 use std::collections::HashMap;
 
-use cranelift_codegen::ir::{InstBuilder, StackSlot, StackSlotData, StackSlotKind, Value, types};
-use cranelift_frontend::FunctionBuilder;
+use cranelift_codegen::ir::{
+    BlockArg, InstBuilder, StackSlot, StackSlotData, StackSlotKind, Value,
+    condcodes::{FloatCC, IntCC},
+    types,
+};
+use cranelift_frontend::{FunctionBuilder, Variable};
 
-use lunc_scir::{ScBlock, ScExpr, ScExpression, ScStatement, ScStmt};
+use lunc_scir::{BinOp, ScBlock, ScExpr, ScExpression, ScStatement, ScStmt};
 use lunc_utils::{
     opt_unreachable,
-    symbol::{self, SymKind},
+    symbol::{self, Signedness, SymKind},
 };
 
 use crate::ClifGen;
 
 /// function definition translator
 pub struct FunDefTranslator<'a> {
+    /// function builder
     pub(crate) fb: FunctionBuilder<'a>,
-    pub(crate) stackslots: HashMap<symbol::Symbol, (StackSlot, types::Type)>,
+    /// stack slots for the local variables
+    pub(crate) slots: HashMap<symbol::Symbol, (StackSlot, types::Type)>,
+    /// arg map. Maps the `which` of an argument symbol to the variable in the
+    /// function
+    pub(crate) args: Vec<Option<Variable>>,
     pub(crate) cgen: &'a mut ClifGen,
 }
 
@@ -73,15 +82,271 @@ impl<'a> FunDefTranslator<'a> {
             }
             ScExpr::Ident(sym) => match sym.kind() {
                 SymKind::Local { .. } => {
-                    let (ss, typ) = *self.stackslots.get(sym).expect("undefined var");
+                    let (ss, typ) = *self.slots.get(sym).expect("undefined var");
 
                     self.fb.ins().stack_load(typ, ss, 0)
+                }
+                SymKind::Arg => {
+                    if let Some(var) = self.args[sym.which()] {
+                        self.fb.use_var(var)
+                    } else {
+                        todo!("add support for ZST args")
+                    }
                 }
                 kind => {
                     todo!("add support for symbol kind: {kind}")
                 }
             },
+            ScExpr::Binary {
+                op: BinOp::Assignment,
+                ..
+            } => todo!("assignments"),
+            ScExpr::Binary { lhs, op, rhs } => match lhs.typ {
+                symbol::Type::I8
+                | symbol::Type::I16
+                | symbol::Type::I32
+                | symbol::Type::I64
+                | symbol::Type::I128
+                | symbol::Type::Isz => {
+                    self.translate_integer_binop(lhs, op.clone(), rhs, Signedness::Signed)
+                }
+                symbol::Type::U8
+                | symbol::Type::U16
+                | symbol::Type::U32
+                | symbol::Type::U64
+                | symbol::Type::U128
+                | symbol::Type::Usz => {
+                    self.translate_integer_binop(lhs, op.clone(), rhs, Signedness::Unsigned)
+                }
+                symbol::Type::F16 | symbol::Type::F32 | symbol::Type::F64 | symbol::Type::F128 => {
+                    self.translate_float_binop(lhs, op.clone(), rhs)
+                }
+                symbol::Type::Bool => self.translate_bool_binop(lhs, op.clone(), rhs),
+                // SAFETY: type checking ensure it can only be int / float types
+                _ => opt_unreachable!(),
+            },
             _ => todo!(),
+        }
+    }
+
+    pub fn translate_bool_binop(
+        &mut self,
+        lhs: &ScExpression,
+        op: BinOp,
+        rhs: &ScExpression,
+    ) -> Value {
+        match op {
+            BinOp::LogicalAnd => {
+                // create BBs.
+                let eval_y_bb = self.fb.create_block();
+                let join_bb = self.fb.create_block();
+
+                // evaluate lhs in current block.
+                let x = self.translate_expr(lhs);
+
+                // branch to `eval_y`(then) bb if x != 0
+                // or to `join`(else) bb if x == 0
+                let false_i8 = self.fb.ins().iconst(types::I8, 0);
+                self.fb
+                    .ins()
+                    .brif(x, eval_y_bb, &[], join_bb, &[BlockArg::Value(false_i8)]);
+
+                // build eval_y bb.
+                {
+                    self.fb.switch_to_block(eval_y_bb);
+
+                    // evaluate rhs
+                    let y = self.translate_expr(rhs);
+
+                    // jump to join
+                    self.fb.ins().jump(join_bb, &[BlockArg::Value(y)]);
+
+                    // seal bb, we know it has no more predecessors
+                    self.fb.seal_block(eval_y_bb);
+                }
+
+                // build join bb
+                self.fb.switch_to_block(join_bb);
+                self.fb.append_block_param(join_bb, types::I8);
+
+                // seal bb, no more predecessors
+                self.fb.seal_block(join_bb);
+
+                self.fb.block_params(join_bb)[0]
+            }
+            BinOp::LogicalOr => {
+                // create BBs.
+                let eval_y_bb = self.fb.create_block();
+                let join_bb = self.fb.create_block();
+
+                // evaluate lhs in current block.
+                let x = self.translate_expr(lhs);
+
+                // branch to `eval_y`(then) bb if x != 0
+                // or to `join`(else) bb if x == 0
+                let true_i8 = self.fb.ins().iconst(types::I8, 1);
+                self.fb
+                    .ins()
+                    .brif(x, eval_y_bb, &[], join_bb, &[BlockArg::Value(true_i8)]);
+
+                // build eval_y bb.
+                {
+                    self.fb.switch_to_block(eval_y_bb);
+
+                    // evaluate rhs
+                    let y = self.translate_expr(rhs);
+
+                    // jump to join
+                    self.fb.ins().jump(join_bb, &[BlockArg::Value(y)]);
+
+                    // seal bb, we know it has no more predecessors
+                    self.fb.seal_block(eval_y_bb);
+                }
+
+                // build join bb
+                self.fb.switch_to_block(join_bb);
+                self.fb.append_block_param(join_bb, types::I8);
+
+                // seal bb, no more predecessors
+                self.fb.seal_block(join_bb);
+
+                self.fb.block_params(join_bb)[0]
+            }
+            // SAFETY: it's up to the caller to guarantee that
+            _ => opt_unreachable!(),
+        }
+    }
+
+    pub fn translate_integer_binop(
+        &mut self,
+        lhs: &ScExpression,
+        op: BinOp,
+        rhs: &ScExpression,
+        sign: Signedness,
+    ) -> Value {
+        let x = self.translate_expr(lhs);
+        let y = self.translate_expr(rhs);
+
+        match op {
+            BinOp::Add => self.fb.ins().iadd(x, y),
+            BinOp::Sub => self.fb.ins().isub(x, y),
+            BinOp::Mul => self.fb.ins().imul(x, y),
+            BinOp::Div => match sign {
+                Signedness::Unsigned => self.fb.ins().udiv(x, y),
+                Signedness::Signed => self.fb.ins().sdiv(x, y),
+            },
+            BinOp::Rem => match sign {
+                Signedness::Unsigned => self.fb.ins().urem(x, y),
+                Signedness::Signed => self.fb.ins().srem(x, y),
+            },
+            BinOp::CompLT
+            | BinOp::CompLE
+            | BinOp::CompGT
+            | BinOp::CompGE
+            | BinOp::CompEq
+            | BinOp::CompNe => {
+                let cond = Self::translate_comp_op_to_int_cc(op, sign);
+
+                self.fb.ins().icmp(cond, x, y)
+            }
+            // SAFETY: translated before.
+            BinOp::Assignment => opt_unreachable!(),
+            BinOp::LogicalAnd | BinOp::LogicalOr => unimplemented!("{op} unsupport for integers"),
+            BinOp::BitwiseAnd => self.fb.ins().band(x, y),
+            BinOp::BitwiseXor => self.fb.ins().bxor(x, y),
+            BinOp::BitwiseOr => self.fb.ins().bor(x, y),
+            BinOp::Shr => match sign {
+                Signedness::Unsigned => self.fb.ins().ushr(x, y),
+                Signedness::Signed => self.fb.ins().sshr(x, y),
+            },
+            BinOp::Shl => self.fb.ins().ishl(x, y),
+        }
+    }
+
+    /// translates a comparison operator to an IntCC.
+    ///
+    /// # UB
+    ///
+    /// if `op` is something else than `Comp*`
+    pub fn translate_comp_op_to_int_cc(op: BinOp, sign: Signedness) -> IntCC {
+        match op {
+            BinOp::CompLT => match sign {
+                Signedness::Unsigned => IntCC::UnsignedLessThan,
+                Signedness::Signed => IntCC::SignedLessThan,
+            },
+            BinOp::CompLE => match sign {
+                Signedness::Unsigned => IntCC::UnsignedLessThanOrEqual,
+                Signedness::Signed => IntCC::SignedLessThanOrEqual,
+            },
+            BinOp::CompGT => match sign {
+                Signedness::Unsigned => IntCC::UnsignedGreaterThan,
+                Signedness::Signed => IntCC::SignedGreaterThan,
+            },
+            BinOp::CompGE => match sign {
+                Signedness::Unsigned => IntCC::UnsignedGreaterThanOrEqual,
+                Signedness::Signed => IntCC::SignedGreaterThanOrEqual,
+            },
+            BinOp::CompEq => IntCC::Equal,
+            BinOp::CompNe => IntCC::NotEqual,
+            // SAFETY: caller is ensuring it is ok
+            _ => opt_unreachable!(),
+        }
+    }
+
+    pub fn translate_float_binop(
+        &mut self,
+        lhs: &ScExpression,
+        op: BinOp,
+        rhs: &ScExpression,
+    ) -> Value {
+        let x = self.translate_expr(lhs);
+        let y = self.translate_expr(rhs);
+
+        match op {
+            BinOp::Add => self.fb.ins().fadd(x, y),
+            BinOp::Sub => self.fb.ins().fsub(x, y),
+            BinOp::Mul => self.fb.ins().fmul(x, y),
+            BinOp::Div => self.fb.ins().fdiv(x, y),
+            BinOp::CompLT
+            | BinOp::CompLE
+            | BinOp::CompGT
+            | BinOp::CompGE
+            | BinOp::CompEq
+            | BinOp::CompNe => {
+                let cond = Self::translate_comp_op_to_float_cc(op);
+
+                self.fb.ins().fcmp(cond, x, y)
+            }
+            // SAFETY: translated before.
+            BinOp::Assignment => opt_unreachable!(),
+            BinOp::Rem
+            | BinOp::LogicalAnd
+            | BinOp::LogicalOr
+            | BinOp::BitwiseAnd
+            | BinOp::BitwiseXor
+            | BinOp::BitwiseOr
+            | BinOp::Shr
+            | BinOp::Shl => {
+                unimplemented!("{op} unsupport for floats")
+            }
+        }
+    }
+
+    /// translates a comparison operator to a FloatCC.
+    ///
+    /// # UB
+    ///
+    /// if `op` is something else than `Comp*`
+    pub fn translate_comp_op_to_float_cc(op: BinOp) -> FloatCC {
+        match op {
+            BinOp::CompLT => FloatCC::LessThan,
+            BinOp::CompLE => FloatCC::LessThanOrEqual,
+            BinOp::CompGT => FloatCC::GreaterThan,
+            BinOp::CompGE => FloatCC::GreaterThanOrEqual,
+            BinOp::CompEq => FloatCC::Equal,
+            BinOp::CompNe => FloatCC::NotEqual,
+            // SAFETY: caller is ensuring it is ok
+            _ => opt_unreachable!(),
         }
     }
 
@@ -104,7 +369,7 @@ impl<'a> FunDefTranslator<'a> {
                 ));
 
                 // 3. add it to the stackslots map
-                self.stackslots.insert(sym.clone(), (ss, clif_typ));
+                self.slots.insert(sym.clone(), (ss, clif_typ));
 
                 // 4. store the value into the ss
                 self.fb.ins().stack_store(value, ss, 0);
