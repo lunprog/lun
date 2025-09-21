@@ -7,11 +7,11 @@ use lunc_utils::{
 };
 
 use crate::diags::{
-    ArityDoesntMatch, BorrowMutWhenNotDefinedMut, BreakUseAnImplicitLabelInBlock,
-    BreakWithValueUnsupported, CallRequiresFuncType, CantContinueABlock, CantResolveComptimeValue,
-    ExpectedPlaceExpression, ExpectedTypeFoundExpr, FunctionInGlobalMut,
-    ItemNotAllowedInExternBlock, LabelKwOutsideLoopOrBlock, MismatchedTypes, OutsideExternBlock,
-    TypeAnnotationsNeeded, UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
+    ArityDoesntMatch, BinOpUnsupportedType, BorrowMutWhenNotDefinedMut,
+    BreakUseAnImplicitLabelInBlock, BreakWithValueUnsupported, CallRequiresFuncType,
+    CantContinueABlock, CantResolveComptimeValue, ExpectedPlaceExpression, ExpectedTypeFoundExpr,
+    FunctionInGlobalMut, ItemNotAllowedInExternBlock, LabelKwOutsideLoopOrBlock, MismatchedTypes,
+    OutsideExternBlock, TypeAnnotationsNeeded, UseOfUndefinedLabel, WUnreachableCode, WUnusedLabel,
 };
 
 use super::*;
@@ -873,6 +873,12 @@ impl SemaChecker {
                     self.expr_typeck(&lhs.typ, rhs, None, None);
                 } else if lhs.typ != rhs.typ {
                     self.expr_typeck(&rhs.typ, lhs, None, None);
+                } else if !(lhs.typ.is_int() || lhs.typ.is_float()) {
+                    self.sink.emit(BinOpUnsupportedType {
+                        op: op.clone(),
+                        typ: lhs.typ.clone(),
+                        loc: expr.loc.clone().unwrap(),
+                    })
                 }
 
                 expr.typ = if op.is_relational() || op.is_logical() {

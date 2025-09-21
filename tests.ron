@@ -4970,6 +4970,26 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
         test_out: "",
         test_code: 0,
     ),
+    "scir/E041": (
+        compiler_out: "error[E041]: binary operation + isn't supported for type void
+  ┌─ ./tests/scir/E041.lun:2:5
+  │
+2 │     a + b
+  │     ^^^^^
+
+error[E041]: binary operation + isn't supported for type noreturn
+  ┌─ ./tests/scir/E041.lun:6:5
+  │
+6 │     a + b
+  │     ^^^^^
+
+error: compilation of `E041` failed due to 2 errors and 0 warnings
+
+",
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
     "scir/constant_evaluation": (
         compiler_out: "scir = [
   GlobalDef {
