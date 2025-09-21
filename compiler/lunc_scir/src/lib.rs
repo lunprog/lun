@@ -294,7 +294,8 @@ pub struct ScExpression {
 }
 
 impl ScExpression {
-    /// Is the expression a place expression kind? Returns
+    /// Is the expression a place expression kind? Returns `None`, if it is a
+    /// place, or returns `Some("..")` with a note explaining why
     ///
     /// # Definition
     ///

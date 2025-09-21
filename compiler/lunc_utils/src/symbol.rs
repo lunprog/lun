@@ -417,6 +417,19 @@ impl Type {
             Type::Type => unreachable!(),
         }
     }
+
+    /// Returns the pointee type of a pointer, eg: `*T` -> `T`, `*mut T` -> `T`.
+    ///
+    /// # Panic
+    ///
+    /// If it's not a pointer
+    pub fn pointee(&self) -> Type {
+        let Type::Ptr { mutable: _, typ } = self else {
+            panic!("expected a pointer type, but got a {self}.");
+        };
+
+        (**typ).clone()
+    }
 }
 
 impl PrettyDump for Type {

@@ -3,13 +3,13 @@
 use std::collections::HashMap;
 
 use cranelift_codegen::ir::{
-    BlockArg, InstBuilder, StackSlot, StackSlotData, StackSlotKind, Value,
+    BlockArg, InstBuilder, MemFlags, StackSlot, StackSlotData, StackSlotKind, Value,
     condcodes::{FloatCC, IntCC},
     types,
 };
 use cranelift_frontend::{FunctionBuilder, Variable};
 
-use lunc_scir::{BinOp, ScBlock, ScExpr, ScExpression, ScStatement, ScStmt};
+use lunc_scir::{BinOp, ScBlock, ScExpr, ScExpression, ScStatement, ScStmt, UnaryOp};
 use lunc_utils::{
     opt_unreachable,
     symbol::{self, Signedness, SymKind},
@@ -46,32 +46,53 @@ impl<'a> FunDefTranslator<'a> {
     }
 
     /// Translate the expression and return the value containing it.
+    ///
+    /// # Panic
+    ///
+    /// This function will panic if called on an expression that can have a
+    /// ZST type (like void or noreturn). So calling [try_translate_expr] is
+    /// preffered if the expr may return a ZST.
+    ///
+    /// [try_translate_expr]: Self::try_translate_expr
+    #[track_caller]
     pub fn translate_expr(&mut self, expr: &ScExpression) -> Value {
+        self.try_translate_expr(expr)
+            .expect("shouldn't be a ZST expression's type")
+    }
+
+    /// Translate the expression and return the value containing it.
+    ///
+    /// Returns `Some(..)` with the value, or `None` if the expression's type is
+    /// a ZST like void or noreturn.
+    pub fn try_translate_expr(&mut self, expr: &ScExpression) -> Option<Value> {
         match &expr.expr {
             ScExpr::IntLit(i) => {
                 let imm = *i as i64;
-                self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm)
+
+                Some(self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm))
             }
             ScExpr::BoolLit(b) => {
                 let imm = symbol::bool_to_i8(*b) as i64;
-                self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm)
+
+                Some(self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm))
             }
             ScExpr::StringLit(_) => {
                 todo!("STRING LIT")
             }
             ScExpr::CharLit(c) => {
                 let imm = *c as i64;
-                self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm)
+
+                Some(self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm))
             }
             ScExpr::FloatLit(f) => {
                 match expr.typ {
                     symbol::Type::F32 => {
                         let imm = *f as f32;
-                        self.fb.ins().f32const(imm)
+                        Some(self.fb.ins().f32const(imm))
                     }
                     symbol::Type::F64 => {
                         let imm = *f;
-                        self.fb.ins().f64const(imm)
+                        Some(self.fb.ins().f64const(imm))
                     }
                     symbol::Type::F16 | symbol::Type::F128 => {
                         todo!("float types are unstable")
@@ -84,13 +105,13 @@ impl<'a> FunDefTranslator<'a> {
                 SymKind::Local { .. } => {
                     let (ss, typ) = *self.slots.get(sym).expect("undefined var");
 
-                    self.fb.ins().stack_load(typ, ss, 0)
+                    Some(self.fb.ins().stack_load(typ, ss, 0))
                 }
                 SymKind::Arg => {
                     if let Some(var) = self.args[sym.which()] {
-                        self.fb.use_var(var)
+                        Some(self.fb.use_var(var))
                     } else {
-                        todo!("add support for ZST args")
+                        None
                     }
                 }
                 kind => {
@@ -98,9 +119,17 @@ impl<'a> FunDefTranslator<'a> {
                 }
             },
             ScExpr::Binary {
+                lhs,
                 op: BinOp::Assignment,
-                ..
-            } => todo!("assignments"),
+                rhs,
+            } => {
+                let place = self.translate_place_expr(lhs);
+                let val = self.translate_expr(rhs);
+
+                self.fb.ins().store(MemFlags::new(), val, place, 0);
+
+                None
+            }
             ScExpr::Binary { lhs, op, rhs } => match lhs.typ {
                 symbol::Type::I8
                 | symbol::Type::I16
@@ -108,7 +137,7 @@ impl<'a> FunDefTranslator<'a> {
                 | symbol::Type::I64
                 | symbol::Type::I128
                 | symbol::Type::Isz => {
-                    self.translate_integer_binop(lhs, op.clone(), rhs, Signedness::Signed)
+                    Some(self.translate_integer_binop(lhs, op.clone(), rhs, Signedness::Signed))
                 }
                 symbol::Type::U8
                 | symbol::Type::U16
@@ -116,12 +145,12 @@ impl<'a> FunDefTranslator<'a> {
                 | symbol::Type::U64
                 | symbol::Type::U128
                 | symbol::Type::Usz => {
-                    self.translate_integer_binop(lhs, op.clone(), rhs, Signedness::Unsigned)
+                    Some(self.translate_integer_binop(lhs, op.clone(), rhs, Signedness::Unsigned))
                 }
                 symbol::Type::F16 | symbol::Type::F32 | symbol::Type::F64 | symbol::Type::F128 => {
-                    self.translate_float_binop(lhs, op.clone(), rhs)
+                    Some(self.translate_float_binop(lhs, op.clone(), rhs))
                 }
-                symbol::Type::Bool => self.translate_bool_binop(lhs, op.clone(), rhs),
+                symbol::Type::Bool => Some(self.translate_bool_binop(lhs, op.clone(), rhs)),
                 // SAFETY: type checking ensure it can only be int / float types
                 _ => opt_unreachable!(),
             },
@@ -129,6 +158,45 @@ impl<'a> FunDefTranslator<'a> {
         }
     }
 
+    /// Translates a [`ScExpression`] into a `Value` that **MUST** be a pointer
+    /// to the place of the expression. It is used to translate for example,
+    /// assignments.
+    ///
+    /// # UB
+    ///
+    /// `expr` must be a place, see [`ScExpression::is_place`]
+    pub fn translate_place_expr(&mut self, expr: &ScExpression) -> Value {
+        let ptr_t = self.cgen.isa.pointer_type();
+
+        match &expr.expr {
+            ScExpr::Ident(sym) => match sym.kind() {
+                SymKind::Local { .. } => {
+                    let (ss, _) = *self.slots.get(sym).expect("undefined var");
+
+                    self.fb.ins().stack_addr(ptr_t, ss, 0)
+                }
+                SymKind::Global { .. } => {
+                    todo!("global place expr translation");
+                }
+                // SAFETY: ensured to be a place by the caller
+                _ => opt_unreachable!(),
+            },
+            ScExpr::Unary {
+                op: UnaryOp::Dereference,
+                expr,
+            } => {
+                // expr evaluates to a (mutable) pointer so we just translate
+                // it like usual, note that here we know it will not be a ZST so
+                // calling translate_expr is fine.
+
+                self.translate_expr(expr)
+            }
+            // SAFETY: ensured to be a place by the caller
+            _ => opt_unreachable!(),
+        }
+    }
+
+    /// Translates a [`ScExpr::Binary`] for `bool` type.
     pub fn translate_bool_binop(
         &mut self,
         lhs: &ScExpression,
@@ -217,6 +285,8 @@ impl<'a> FunDefTranslator<'a> {
         }
     }
 
+    /// Translates a [`ScExpr::Binary`] for an integer type with the given
+    /// [`Signedness`].
     pub fn translate_integer_binop(
         &mut self,
         lhs: &ScExpression,
@@ -293,6 +363,7 @@ impl<'a> FunDefTranslator<'a> {
         }
     }
 
+    /// Translates a [`ScExpr::Binary`] for floats types.
     pub fn translate_float_binop(
         &mut self,
         lhs: &ScExpression,
@@ -378,7 +449,8 @@ impl<'a> FunDefTranslator<'a> {
                 todo!("DEFER")
             }
             ScStmt::Expression(expr) => {
-                _ = self.translate_expr(expr);
+                // it can be a ZST
+                _ = self.try_translate_expr(expr);
             }
         }
     }
