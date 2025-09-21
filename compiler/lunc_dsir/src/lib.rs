@@ -1437,7 +1437,7 @@ impl Desugarrer {
                     }
 
                     let symref =
-                        Symbol::arg(name.clone(), self.table.local_count(), name_loc.clone());
+                        Symbol::arg(name.clone(), self.table.arg_count(), name_loc.clone());
 
                     *sym = LazySymbol::Sym(symref.clone());
 

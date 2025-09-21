@@ -233,7 +233,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             kind: argument;
             name: b @ 152..153 (fid = 0);
             realname: none;
-            which: 0;
+            which: 1;
             path: b;
             typ: unknown;
             typeness: explicit;
@@ -270,7 +270,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             kind: argument;
             name: b @ 152..153 (fid = 0);
             realname: none;
-            which: 0;
+            which: 1;
             path: b;
             typ: unknown;
             typeness: explicit;
@@ -1085,7 +1085,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                     kind: argument;
                     name: b @ 84..85 (fid = 2);
                     realname: none;
-                    which: 0;
+                    which: 1;
                     path: b;
                     typ: unknown;
                     typeness: explicit;
@@ -1122,7 +1122,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                     kind: argument;
                     name: b @ 84..85 (fid = 2);
                     realname: none;
-                    which: 0;
+                    which: 1;
                     path: b;
                     typ: unknown;
                     typeness: explicit;
@@ -2976,7 +2976,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           kind: argument;
           name: rhs @ 187..190 (fid = 0);
           realname: none;
-          which: 0;
+          which: 1;
           path: rhs;
           typ: f32;
           typeness: explicit;
@@ -3022,7 +3022,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
               kind: argument;
               name: rhs @ 187..190 (fid = 0);
               realname: none;
-              which: 0;
+              which: 1;
               path: rhs;
               typ: f32;
               typeness: explicit;
