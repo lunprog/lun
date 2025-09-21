@@ -134,7 +134,7 @@ pub struct RawLuncCli {
     #[arg(long, default_value_t = String::from("auto"))]
     color: String,
 
-    /// Codegen options, type `lunc -Z help` for some help.
+    /// Codegen options, type `lunc -C help` for some help.
     #[arg(short = 'C', long, value_name = "OPT=VAL")]
     codegen: Vec<Kv<CodegenKey, String>>,
 
@@ -780,7 +780,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
     //    maybe print the SSA
     if argv.debug.print(InterRes::Ssa) {
-        eprintln!("; SSA of orb {:?}", opts.orb_name());
+        eprintln!("; SSA of orb {}\n", opts.orb_name());
         eprint!("{}", clifgen.textrepr());
     }
     if argv.debug.halt(CompStage::Ssa) || argv.debug.halt(CompStage::Codegen) {

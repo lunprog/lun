@@ -81,6 +81,10 @@ pub enum Expr {
     ///
     /// `string`
     StringLit(String),
+    /// C string literal expression
+    ///
+    /// *specialized string, with prefix 'c'*
+    CStrLit(String),
     /// character literal expression
     ///
     /// `char`
@@ -270,6 +274,10 @@ pub fn parse_expr_precedence(
         Some(IntLit(_)) => parse!(@fn parser => parse_intlit_expr),
         Some(Kw(Keyword::True | Keyword::False)) => parse!(@fn parser => parse_boollit_expr),
         Some(StringLit(_)) => parse!(@fn parser => parse_strlit_expr),
+        Some(SpecializedStringLit {
+            specialization,
+            str: _,
+        }) if specialization == "c" => parse!(@fn parser => parse_cstrlit_expr),
         Some(CharLit(_)) => parse!(@fn parser => parse_charlit_expr),
         Some(FloatLit(_)) => parse!(@fn parser => parse_floatlit_expr),
         Some(Punct(Punctuation::LParen)) => parse!(@fn parser => parse_grouping_expr),
@@ -393,6 +401,22 @@ pub fn parse_strlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 
     Ok(Expression {
         expr: Expr::StringLit(str),
+        loc,
+    })
+}
+
+/// Parse a C string literal expression
+pub fn parse_cstrlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+    // TEST: n/a
+    let (str, loc) = expect_token!(parser =>
+        [
+            SpecializedStringLit { specialization, str},
+            str.clone(),
+            if specialization == "c"
+        ], "c string literal");
+
+    Ok(Expression {
+        expr: Expr::CStrLit(str),
         loc,
     })
 }

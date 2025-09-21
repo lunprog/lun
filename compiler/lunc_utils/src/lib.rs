@@ -197,6 +197,15 @@ pub fn list_fmt_with_word(list: &[impl Display], word: &str) -> String {
     res
 }
 
+/// Formats a list with commas between
+pub fn join_display<T: Display>(items: &[T]) -> String {
+    items
+        .iter()
+        .map(|item| item.to_string())
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 /// Compute the number of "digits" needed to represent `n` in the given radix (`RADIX`).
 ///
 /// This function supports exactly four radices: 2 (binary), 8 (octal), 10 (decimal), and 16 (hexadecimal).

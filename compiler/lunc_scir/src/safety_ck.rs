@@ -189,9 +189,11 @@ impl SemaChecker {
 
                 Ok(())
             }
-            ScExpr::BoolLit(_) | ScExpr::StringLit(_) | ScExpr::CharLit(_) | ScExpr::Ident(_) => {
-                Ok(())
-            }
+            ScExpr::BoolLit(_)
+            | ScExpr::StringLit(_)
+            | ScExpr::CStrLit(_)
+            | ScExpr::CharLit(_)
+            | ScExpr::Ident(_) => Ok(()),
             ScExpr::Binary { lhs, op: _, rhs } => {
                 self.safety_ck_expr(lhs)?;
 

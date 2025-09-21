@@ -239,6 +239,7 @@ impl FromHigher for DsExpression {
             Expr::IntLit(i) => DsExpr::IntLit(i),
             Expr::BoolLit(b) => DsExpr::BoolLit(b),
             Expr::StringLit(str) => DsExpr::StringLit(str),
+            Expr::CStrLit(cstr) => DsExpr::CStrLit(cstr),
             Expr::CharLit(c) => DsExpr::CharLit(c),
             Expr::FloatLit(f) => DsExpr::FloatLit(f),
             // we remove the parenthesis we don't need them anymore
@@ -414,6 +415,10 @@ pub enum DsExpr {
     ///
     /// [`Expr::StringLit`]: lunc_parser::expr::Expr::StringLit
     StringLit(String),
+    /// See [`Expr::CStrLit`]
+    ///
+    /// [`Expr::CStrLit`]: lunc_parser::expr::Expr::CStrLit
+    CStrLit(String),
     /// See [`Expr::CharLit`]
     ///
     /// [`Expr::CharLit`]: lunc_parser::expr::Expr::CharLit
@@ -1233,6 +1238,7 @@ impl Desugarrer {
             DsExpr::IntLit(_)
             | DsExpr::BoolLit(_)
             | DsExpr::StringLit(_)
+            | DsExpr::CStrLit(_)
             | DsExpr::CharLit(_)
             | DsExpr::FloatLit(_) => Ok(()),
             DsExpr::Binary {

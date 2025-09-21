@@ -9,9 +9,10 @@ use cranelift_codegen::ir::{
 };
 use cranelift_frontend::{FunctionBuilder, Variable};
 
+use cranelift_module::{Linkage, Module};
 use lunc_scir::{BinOp, ScBlock, ScExpr, ScExpression, ScStatement, ScStmt, UnaryOp};
 use lunc_utils::{
-    opt_unreachable,
+    Span, opt_unreachable,
     symbol::{self, Signedness, SymKind},
 };
 
@@ -51,7 +52,7 @@ impl<'a> FunDefTranslator<'a> {
     ///
     /// This function will panic if called on an expression that can have a
     /// ZST type (like void or noreturn). So calling [try_translate_expr] is
-    /// preffered if the expr may return a ZST.
+    /// preferred if the expr may return a ZST.
     ///
     /// [try_translate_expr]: Self::try_translate_expr
     #[track_caller]
@@ -78,6 +79,29 @@ impl<'a> FunDefTranslator<'a> {
             }
             ScExpr::StringLit(_) => {
                 todo!("STRING LIT")
+            }
+            ScExpr::CStrLit(s) => {
+                // build bytes for cstring, with a ZERO byte at the end.
+                let mut bytes = Vec::with_capacity(s.len() + 1);
+                bytes.extend_from_slice(s.as_bytes());
+                bytes.push(0);
+
+                // create a name for the symbol (should be unique)
+                let Span { lo, hi, fid } = expr.loc.clone().unwrap();
+                let name = format!(
+                    "__cstr_{}_{}_{}_{}",
+                    self.cgen.opts.orb_name(),
+                    lo,
+                    hi,
+                    fid.as_usize()
+                );
+
+                // create the data
+                let data_id = self.cgen.create_data(&name, Linkage::Local, false, bytes);
+                let gv = self.cgen.module.declare_data_in_func(data_id, self.fb.func);
+
+                let ptr_t = self.cgen.isa.pointer_type();
+                Some(self.fb.ins().global_value(ptr_t, gv))
             }
             ScExpr::CharLit(c) => {
                 let imm = *c as i64;
@@ -321,7 +345,7 @@ impl<'a> FunDefTranslator<'a> {
             }
             // SAFETY: translated before.
             BinOp::Assignment => opt_unreachable!(),
-            BinOp::LogicalAnd | BinOp::LogicalOr => unimplemented!("{op} unsupport for integers"),
+            BinOp::LogicalAnd | BinOp::LogicalOr => unimplemented!("{op} unsupported for integers"),
             BinOp::BitwiseAnd => self.fb.ins().band(x, y),
             BinOp::BitwiseXor => self.fb.ins().bxor(x, y),
             BinOp::BitwiseOr => self.fb.ins().bor(x, y),
@@ -398,7 +422,7 @@ impl<'a> FunDefTranslator<'a> {
             | BinOp::BitwiseOr
             | BinOp::Shr
             | BinOp::Shl => {
-                unimplemented!("{op} unsupport for floats")
+                unimplemented!("{op} unsupported for floats")
             }
         }
     }

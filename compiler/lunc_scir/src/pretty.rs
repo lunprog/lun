@@ -169,6 +169,7 @@ impl PrettyDump for ScExpr {
             ScExpr::IntLit(i) => write!(out, "integer {i}"),
             ScExpr::BoolLit(b) => write!(out, "boolean {b}"),
             ScExpr::StringLit(s) => write!(out, "string {s:?}"),
+            ScExpr::CStrLit(s) => write!(out, "c_str {s:?}"),
             ScExpr::CharLit(c) => write!(out, "character {c:?}"),
             ScExpr::FloatLit(f) => write!(out, "float {f:.}"),
             ScExpr::Ident(sym) => sym.try_dump(ctx),

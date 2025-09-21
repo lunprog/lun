@@ -334,7 +334,9 @@ impl ScExpression {
     pub fn typeness(&self) -> Typeness {
         match &self.expr {
             ScExpr::IntLit(_) | ScExpr::FloatLit(_) => Typeness::Implicit,
-            ScExpr::BoolLit(_) | ScExpr::StringLit(_) | ScExpr::CharLit(_) => Typeness::Explicit,
+            ScExpr::BoolLit(_) | ScExpr::StringLit(_) | ScExpr::CStrLit(_) | ScExpr::CharLit(_) => {
+                Typeness::Explicit
+            }
             ScExpr::Ident(symref) => symref.typeness(),
             ScExpr::Binary { lhs, op: _, rhs } => {
                 if lhs.typeness() == Typeness::Explicit || rhs.typeness() == Typeness::Explicit {
@@ -384,6 +386,7 @@ impl FromHigher for ScExpression {
             DsExpr::IntLit(i) => ScExpr::IntLit(i),
             DsExpr::BoolLit(b) => ScExpr::BoolLit(b),
             DsExpr::StringLit(str) => ScExpr::StringLit(str),
+            DsExpr::CStrLit(str) => ScExpr::CStrLit(str),
             DsExpr::CharLit(c) => ScExpr::CharLit(c),
             DsExpr::FloatLit(f) => ScExpr::FloatLit(f),
             DsExpr::Ident(lazy) => ScExpr::Ident(lazy.unwrap_sym()),
@@ -496,6 +499,10 @@ pub enum ScExpr {
     ///
     /// [`DsExpr::StringLit`]: lunc_dsir::DsExpr::StringLit
     StringLit(String),
+    /// See [`DsExpr::CStrLit`]
+    ///
+    /// [`DsExpr::CStrLit`]: lunc_dsir::DsExpr::CStrLit
+    CStrLit(String),
     /// See [`DsExpr::CharLit`]
     ///
     /// [`DsExpr::CharLit`]: lunc_dsir::DsExpr::CharLit

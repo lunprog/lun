@@ -129,6 +129,7 @@ impl PrettyDump for DsExpr {
             DsExpr::IntLit(i) => write!(out, "integer {i}"),
             DsExpr::BoolLit(b) => write!(out, "boolean {b}"),
             DsExpr::StringLit(s) => write!(out, "string {s:?}"),
+            DsExpr::CStrLit(s) => write!(out, "c_str {s:?}"),
             DsExpr::CharLit(c) => write!(out, "character {c:?}"),
             DsExpr::FloatLit(f) => write!(out, "float {f:.}"),
             DsExpr::Ident(lazysym) => lazysym.try_dump(ctx),

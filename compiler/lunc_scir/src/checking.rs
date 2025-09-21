@@ -809,6 +809,14 @@ impl SemaChecker {
                     typ: Box::new(Type::Str),
                 };
             }
+            ScExpr::CStrLit(_) => {
+                // NOTE: c_str literals have a `*i8` type.
+
+                expr.typ = Type::Ptr {
+                    mutable: false,
+                    typ: Box::new(Type::I8),
+                }
+            }
             ScExpr::CharLit(_) => {
                 expr.typ = Type::Char;
             }

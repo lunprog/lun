@@ -7,7 +7,7 @@ use cranelift_codegen::isa::{self, OwnedTargetIsa};
 use cranelift_codegen::settings::{self, Configurable};
 use cranelift_codegen::{self as codegen};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_module::{DataDescription, Linkage, Module};
+use cranelift_module::{DataDescription, DataId, Linkage, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
 
 use lunc_scir::{ScItem, ScModule};
@@ -222,6 +222,35 @@ impl ClifGen {
         self.module.define_function(func_id, &mut ctx.cg).unwrap();
 
         self.module.clear_context(&mut ctx.cg);
+    }
+
+    /// Create a data in the current CLIF.
+    pub fn create_data(
+        &mut self,
+        name: &str,
+        linkage: Linkage,
+        writable: bool,
+        data: Vec<u8>,
+    ) -> DataId {
+        let align = self.isa.pointer_bytes() as u64;
+
+        // write to textual format
+        self.textual.write_data(name, align, &data);
+
+        // define the data.
+        self.data_desc.define(data.into_boxed_slice());
+        self.data_desc.set_align(align);
+
+        // declare a data symbol
+        let data_id = self
+            .module
+            .declare_data(name, linkage, writable, false)
+            .unwrap();
+
+        // define the data in the module
+        self.module.define_data(data_id, &self.data_desc).unwrap();
+
+        data_id
     }
 
     /// Converts a SCIR type to an Abi Param

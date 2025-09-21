@@ -36,4 +36,16 @@ impl TextualClif {
             write!(self.res, "{}", fundef.display()).unwrap();
         }
     }
+
+    /// Write a data to the textual repr if enabled
+    pub fn write_data(&mut self, name: &str, align: u64, data: &[u8]) {
+        if self.enabled {
+            writeln!(
+                self.res,
+                "data %{name} = align({align}) {{ {} }}",
+                lunc_utils::join_display(data)
+            )
+            .unwrap();
+        }
+    }
 }

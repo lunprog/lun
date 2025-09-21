@@ -1,0 +1,3 @@
+hello :: fun() -> *i8 {
+    c"Hello from Lun!"
+}

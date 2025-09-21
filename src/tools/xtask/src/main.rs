@@ -159,10 +159,24 @@ fn main() -> ExitCode {
                 let lunc_status = cmd.status().expect("failed to run lunc");
 
                 if !lunc_status.success() {
+                    eprintln!("    FAILED");
                     return ExitCode::FAILURE;
                 }
                 eprintln!("    SUCCESS");
             }
+
+            // try to build the hello_c_ffi example
+            eprintln!("Try to build hello_c_ffi..");
+            let mut cmd = Command::new("make");
+            cmd.current_dir("examples/hello_c_ffi");
+            cmd.arg("run");
+            let lunc_status = cmd.status().expect("failed to run lunc");
+
+            if !lunc_status.success() {
+                eprintln!("    FAILED");
+                return ExitCode::FAILURE;
+            }
+            eprintln!("    SUCCESS");
 
             ExitCode::SUCCESS
         }

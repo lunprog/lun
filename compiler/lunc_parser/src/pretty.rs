@@ -106,6 +106,7 @@ impl PrettyDump for Expr {
             Expr::IntLit(i) => write!(out, "integer {i}"),
             Expr::BoolLit(b) => write!(out, "boolean {b}"),
             Expr::StringLit(s) => write!(out, "string {s:?}"),
+            Expr::CStrLit(cstr) => write!(out, "c_str {cstr:?}"),
             Expr::CharLit(c) => write!(out, "character {c:?}"),
             Expr::FloatLit(f) => write!(out, "float {f:.}"),
             Expr::Grouping(e) => {
