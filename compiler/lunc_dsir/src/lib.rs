@@ -342,7 +342,7 @@ impl FromHigher for DsExpression {
             },
             Expr::Continue { label } => DsExpr::Continue { label },
             Expr::Null => DsExpr::Null,
-            Expr::MemberAccess { expr, member } => DsExpr::MemberAccess {
+            Expr::Field { expr, member } => DsExpr::Field {
                 expr: lower(expr),
                 member,
             },
@@ -504,11 +504,11 @@ pub enum DsExpr {
     ///
     /// [`Expr::Null`]: lunc_parser::expr::Expr::Null
     Null,
-    /// See [`Expr::MemberAccess`]
+    /// See [`Expr::Field`]
     ///
     /// After the name resolution, member access of modules are converted to [`EffectivePath`]
-    /// [`Expr::MemberAccess`]: lunc_parser::expr::Expr::MemberAccess
-    MemberAccess {
+    /// [`Expr::Field`]: lunc_parser::expr::Expr::Field
+    Field {
         expr: Box<DsExpression>,
         member: String,
     },
@@ -742,7 +742,7 @@ pub fn expr_null() -> DsExpression {
 /// Creates a member access expression without location.
 pub fn expr_member_access(expr: DsExpression, member: impl ToString) -> DsExpression {
     DsExpression {
-        expr: DsExpr::MemberAccess {
+        expr: DsExpr::Field {
             expr: Box::new(expr),
             member: member.to_string(),
         },
@@ -1392,7 +1392,7 @@ impl Desugarrer {
                     .into_diag())
                 }
             }
-            DsExpr::MemberAccess { .. } => {
+            DsExpr::Field { .. } => {
                 if let Some(path) = self.flatten_member_access(expr) {
                     *expr = DsExpression {
                         expr: DsExpr::QualifiedPath {
@@ -1407,7 +1407,7 @@ impl Desugarrer {
 
                     self.resolve_expr(expr)
                 } else {
-                    let DsExpr::MemberAccess {
+                    let DsExpr::Field {
                         expr: exp,
                         member: _,
                     } = &mut expr.expr
@@ -1488,7 +1488,7 @@ impl Desugarrer {
         let mut path = Vec::new();
         let mut current = expr;
 
-        while let DsExpr::MemberAccess { expr, member } = &current.expr {
+        while let DsExpr::Field { expr, member } = &current.expr {
             path.push(member.as_str());
             current = &**expr;
         }

@@ -189,10 +189,10 @@ pub enum Expr {
     ///
     /// `"null"`
     Null,
-    /// member access expression
+    /// field expression
     ///
     /// `expr "." ident`
-    MemberAccess {
+    Field {
         expr: Box<Expression>,
         member: String,
     },
@@ -345,7 +345,7 @@ pub fn parse_expr_precedence(
                 parse!(@fn parser => parse_funcall_expr, Box::new(lhs))
             }
             Some(Punct(Punctuation::Dot)) => {
-                parse!(@fn parser => parse_member_access_expr, lhs)
+                parse!(@fn parser => parse_field_expr, lhs)
             }
             Some(maybe_bin_op) if BinOp::from_tt(maybe_bin_op.clone()).is_some() => {
                 parse!(@fn parser => parse_binary_expr, lhs)
@@ -1484,10 +1484,7 @@ pub fn parse_borrow_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
     })
 }
 
-pub fn parse_member_access_expr(
-    parser: &mut Parser,
-    expr: Expression,
-) -> Result<Expression, Diagnostic> {
+pub fn parse_field_expr(parser: &mut Parser, expr: Expression) -> Result<Expression, Diagnostic> {
     // TEST: n/a
     expect_token!(parser => [Punct(Punctuation::Dot), ()], Punctuation::Dot);
 
@@ -1497,7 +1494,7 @@ pub fn parse_member_access_expr(
     let loc = Span::from_ends(expr.loc.clone(), hi);
 
     Ok(Expression {
-        expr: Expr::MemberAccess {
+        expr: Expr::Field {
             expr: Box::new(expr),
             member,
         },

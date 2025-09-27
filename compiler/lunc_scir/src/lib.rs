@@ -368,7 +368,7 @@ impl ScExpression {
             | ScExpr::Break { .. }
             | ScExpr::Continue { .. }
             | ScExpr::Null
-            | ScExpr::MemberAccess { .. }
+            | ScExpr::Field { .. }
             | ScExpr::QualifiedPath { .. }
             | ScExpr::Underscore
             | ScExpr::PointerType { .. }
@@ -434,7 +434,7 @@ impl FromHigher for ScExpression {
             },
             DsExpr::Continue { label } => ScExpr::Continue { label, index: None },
             DsExpr::Null => ScExpr::Null,
-            DsExpr::MemberAccess { expr, member } => ScExpr::MemberAccess {
+            DsExpr::Field { expr, member } => ScExpr::Field {
                 expr: lower(expr),
                 member,
             },
@@ -601,7 +601,7 @@ pub enum ScExpr {
     ///
     /// [`DsExpr::MemberAccess`]: lunc_dsir::DsExpr::MemberAccess
     /// [`EffectivePath`]: lunc_utils::symbol::EffectivePath
-    MemberAccess {
+    Field {
         expr: Box<ScExpression>,
         member: String,
     },

@@ -277,8 +277,8 @@ impl PrettyDump for ScExpr {
             ScExpr::Null => {
                 write!(ctx.out, "Null")
             }
-            ScExpr::MemberAccess { expr, member } => {
-                ctx.pretty_struct("MemberAccess")
+            ScExpr::Field { expr, member } => {
+                ctx.pretty_struct("Field")
                     .field("expr", expr)
                     .field("member", member)
                     .finish()?;

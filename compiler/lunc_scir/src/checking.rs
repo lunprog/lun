@@ -1367,7 +1367,7 @@ impl SemaChecker {
 
                 expr.typ = Type::Void;
             }
-            ScExpr::MemberAccess { expr: _, member: _ } => {
+            ScExpr::Field { expr: _, member: _ } => {
                 self.sink.emit(feature_todo! {
                     feature: "field access",
                     label: "field access and struct type definition",

@@ -4060,7 +4060,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           lhs: ident _ @ 1349..1350 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            callee: MemberAccess {
+            callee: Field {
               expr: string "Hello" @ 1353..1360 (fid = 0);
               member: len;
             } @ 1353..1364 (fid = 0);
@@ -4072,8 +4072,8 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           lhs: ident _ @ 1373..1374 (fid = 0);
           op: Assignment;
           rhs: FunCall {
-            callee: MemberAccess {
-              expr: MemberAccess {
+            callee: Field {
+              expr: Field {
                 expr: Orb @ 1377..1380 (fid = 0);
                 member: driver;
               } @ 1377..1387 (fid = 0);

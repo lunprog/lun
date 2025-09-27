@@ -249,8 +249,8 @@ impl PrettyDump for Expr {
             Expr::Null => {
                 write!(ctx.out, "Null")
             }
-            Expr::MemberAccess { expr, member } => {
-                ctx.pretty_struct("MemberAccess")
+            Expr::Field { expr, member } => {
+                ctx.pretty_struct("Field")
                     .field("expr", expr)
                     .field("member", member)
                     .finish()?;

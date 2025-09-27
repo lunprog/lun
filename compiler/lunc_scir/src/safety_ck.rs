@@ -256,7 +256,7 @@ impl SemaChecker {
                 Ok(())
             }
             ScExpr::Continue { label: _, index: _ } | ScExpr::Null => Ok(()),
-            ScExpr::MemberAccess { expr, member: _ } => {
+            ScExpr::Field { expr, member: _ } => {
                 self.safety_ck_expr(expr)?;
 
                 Ok(())

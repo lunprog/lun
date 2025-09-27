@@ -228,8 +228,8 @@ impl PrettyDump for DsExpr {
             DsExpr::Null => {
                 write!(ctx.out, "Null")
             }
-            DsExpr::MemberAccess { expr, member } => {
-                ctx.pretty_struct("MemberAccess")
+            DsExpr::Field { expr, member } => {
+                ctx.pretty_struct("Field")
                     .field("expr", expr)
                     .field("member", member)
                     .finish()?;
