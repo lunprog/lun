@@ -16,7 +16,7 @@ use lunc_utils::{
     symbol::{self, Signedness, SymKind},
 };
 
-use crate::ClifGen;
+use crate::{ClifGen, ClifId};
 
 /// function definition translator
 pub struct FunDefTranslator<'a> {
@@ -138,6 +138,24 @@ impl<'a> FunDefTranslator<'a> {
                         None
                     }
                 }
+                SymKind::Function => {
+                    let Some(ClifId::Func {
+                        id,
+                        sig: _,
+                        arg_map: _,
+                    }) = self.cgen.defs.get(&sym)
+                    else {
+                        // SAFETY: should be a function.
+                        opt_unreachable!()
+                    };
+
+                    let fun = self
+                        .cgen
+                        .module
+                        .declare_func_in_func(id.clone(), self.fb.func);
+
+                    Some(self.fb.ins().func_addr(self.cgen.isa.pointer_type(), fun))
+                }
                 kind => {
                     todo!("add support for symbol kind: {kind}")
                 }
@@ -177,6 +195,67 @@ impl<'a> FunDefTranslator<'a> {
                 symbol::Type::Bool => Some(self.translate_bool_binop(lhs, op.clone(), rhs)),
                 // SAFETY: type checking ensure it can only be int / float types
                 _ => opt_unreachable!(),
+            },
+            ScExpr::FunCall { callee, args } => match &callee.expr {
+                ScExpr::Ident(sym) if sym.kind() == SymKind::Function => {
+                    let Some(ClifId::Func {
+                        id,
+                        sig: _,
+                        arg_map: _,
+                    }) = self.cgen.defs.get(&sym)
+                    else {
+                        // SAFETY: should be a function.
+                        opt_unreachable!()
+                    };
+
+                    let callee = self
+                        .cgen
+                        .module
+                        .declare_func_in_func(id.clone(), self.fb.func);
+
+                    let mut arg_vals = Vec::new();
+
+                    for arg in args {
+                        match self.try_translate_expr(arg) {
+                            Some(val) => arg_vals.push(val),
+                            None => {
+                                // ZST arg we do nothing
+                            }
+                        }
+                    }
+
+                    let call = self.fb.ins().call(callee, &arg_vals);
+                    let call_res = self.fb.inst_results(call);
+
+                    debug_assert!(call_res.len() <= 1);
+
+                    call_res.first().cloned()
+                }
+                _ => {
+                    let fnptr = self.translate_expr(&callee);
+                    let (args_t, ret_t) = callee.typ.clone().as_fun_ptr().unwrap();
+
+                    let (sig, _) = self.cgen.make_sig(&args_t, &ret_t);
+                    let sigref = self.fb.import_signature(sig);
+
+                    let mut arg_vals = Vec::new();
+
+                    for arg in args {
+                        match self.try_translate_expr(arg) {
+                            Some(val) => arg_vals.push(val),
+                            None => {
+                                // ZST arg we do nothing
+                            }
+                        }
+                    }
+
+                    let call = self.fb.ins().call_indirect(sigref, fnptr, &arg_vals);
+                    let call_res = self.fb.inst_results(call);
+
+                    debug_assert!(call_res.len() <= 1);
+
+                    call_res.first().cloned()
+                }
             },
             _ => todo!(),
         }

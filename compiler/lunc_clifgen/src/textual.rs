@@ -42,7 +42,7 @@ impl TextualClif {
         if self.enabled {
             writeln!(
                 self.res,
-                "data %{name} = align({align}) {{ {} }}",
+                "\ndata %{name} = align({align}) {{ {} }}",
                 lunc_utils::join_display(data)
             )
             .unwrap();

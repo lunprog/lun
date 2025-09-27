@@ -2,12 +2,12 @@
 
 use std::collections::HashMap;
 
-use cranelift_codegen::ir::{AbiParam, Function, InstBuilder, UserFuncName, types};
+use cranelift_codegen::ir::{AbiParam, Function, InstBuilder, Signature, UserFuncName, types};
 use cranelift_codegen::isa::{self, OwnedTargetIsa};
 use cranelift_codegen::settings::{self, Configurable};
 use cranelift_codegen::{self as codegen};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_module::{DataDescription, DataId, Linkage, Module};
+use cranelift_module::{DataDescription, DataId, FuncId, Linkage, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
 
 use lunc_scir::{ScItem, ScModule};
@@ -36,6 +36,8 @@ pub struct ClifGen {
     opts: BuildOptions,
     /// textual format of Clif
     textual: TextualClif,
+    /// map of function or global symbol to a func or data id
+    defs: HashMap<symbol::Symbol, ClifId>,
 }
 
 /// Cranelift generator context.
@@ -87,6 +89,7 @@ impl ClifGen {
             isa,
             opts,
             textual: TextualClif::new(textrepr),
+            defs: HashMap::new(),
         }
     }
 
@@ -94,13 +97,41 @@ impl ClifGen {
     pub fn produce(&mut self, ctx: &mut ClifGenContext, root: ScModule) {
         _ = self.data_desc;
 
+        self.record_module(ctx, &root);
         self.gen_module(ctx, &root);
+    }
+
+    /// Record definitions in CLIF for a Module
+    pub fn record_module(&mut self, ctx: &mut ClifGenContext, module: &ScModule) {
+        for item in &module.items {
+            self.record_item_in_module(ctx, item);
+        }
     }
 
     /// Generate CLIF for a Module
     pub fn gen_module(&mut self, ctx: &mut ClifGenContext, module: &ScModule) {
         for item in &module.items {
             self.gen_item_in_module(ctx, item);
+        }
+    }
+
+    /// Record definition for an Item contained inside of a module.
+    pub fn record_item_in_module(&mut self, ctx: &mut ClifGenContext, item: &ScItem) {
+        match item {
+            ScItem::GlobalDef { .. } => {
+                todo!("record global def")
+            }
+            // SAFETY: a global uninit or a fundecl can't be contained inside of a module
+            ScItem::GlobalUninit { .. } | ScItem::FunDeclaration { .. } => opt_unreachable!(),
+            ScItem::FunDefinition { .. } => {
+                self.record_fundef_in_mod(item);
+            }
+            ScItem::ExternBlock { .. } => {
+                todo!("extern block")
+            }
+            ScItem::Module { module, .. } => {
+                self.record_module(ctx, module);
+            }
         }
     }
 
@@ -124,23 +155,12 @@ impl ClifGen {
         }
     }
 
-    /// Generate a function definition defined in a module
-    ///
-    /// # Note
-    ///
-    /// `fundef` must be a `ScItem::FunDefinition`
-    fn gen_fundef_in_mod(&mut self, ctx: &mut ClifGenContext, fundef: &ScItem) {
-        let ScItem::FunDefinition { body, sym, .. } = fundef else {
-            // SAFETY: it's up to the caller.
-            opt_unreachable!()
-        };
-        self.realname(sym);
-
-        let (arg_types, ret_type) = sym
-            .typ()
-            .as_fun_ptr()
-            .expect("function pointer type for fundef item");
-
+    /// Makes a signature for those arg and ret types
+    pub fn make_sig(
+        &mut self,
+        arg_types: &[symbol::Type],
+        ret_type: &symbol::Type,
+    ) -> (Signature, Vec<Option<u32>>) {
         // set the signature of the function
         let mut sig = self.module.make_signature();
         sig.call_conv = self.isa.default_call_conv();
@@ -169,13 +189,57 @@ impl ClifGen {
             FundefArg::Param(param) => sig.returns.push(param),
         }
 
+        (sig, arg_map)
+    }
+
+    /// Record a function definition defined in a module
+    ///
+    /// # Note
+    ///
+    /// `fundef` must be a `ScItem::FunDefinition`
+    fn record_fundef_in_mod(&mut self, fundef: &ScItem) {
+        let ScItem::FunDefinition { sym, .. } = fundef else {
+            // SAFETY: it's up to the caller.
+            opt_unreachable!()
+        };
+
+        self.realname(sym);
+
+        let (arg_types, ret_type) = sym
+            .typ()
+            .as_fun_ptr()
+            .expect("function pointer type for fundef item");
+
+        // make the signature of the function
+        let (sig, arg_map) = self.make_sig(&arg_types, &ret_type);
+
         // create the function
-        let func_id = self
+        let id = self
             .module
             .declare_function(sym.realname().unwrap().as_str(), Linkage::Export, &sig)
             .unwrap();
 
-        ctx.cg.func = Function::with_name_signature(UserFuncName::user(0, func_id.as_u32()), sig);
+        self.defs
+            .insert(sym.clone(), ClifId::Func { id, sig, arg_map });
+    }
+
+    /// Generate a function definition defined in a module
+    ///
+    /// # Note
+    ///
+    /// `fundef` must be a `ScItem::FunDefinition`
+    fn gen_fundef_in_mod(&mut self, ctx: &mut ClifGenContext, fundef: &ScItem) {
+        let ScItem::FunDefinition { body, sym, .. } = fundef else {
+            // SAFETY: it's up to the caller.
+            opt_unreachable!()
+        };
+
+        let Some(ClifId::Func { id, sig, arg_map }) = self.defs.get(&sym).cloned() else {
+            // SAFETY: the function should've already been defined
+            opt_unreachable!()
+        };
+
+        ctx.cg.func = Function::with_name_signature(UserFuncName::user(0, id.as_u32()), sig);
 
         // create the helping struct to build the function
         let mut fb = FunctionBuilder::new(&mut ctx.cg.func, &mut ctx.fb);
@@ -219,7 +283,7 @@ impl ClifGen {
         // write the fundef to the textrepr
         self.textual.write_fundef(&ctx.cg.func, sym);
 
-        self.module.define_function(func_id, &mut ctx.cg).unwrap();
+        self.module.define_function(id, &mut ctx.cg).unwrap();
 
         self.module.clear_context(&mut ctx.cg);
     }
@@ -283,7 +347,8 @@ impl ClifGen {
         }
     }
 
-    fn type_to_fundef_arg(&self, typ: &symbol::Type) -> FundefArg {
+    /// Converts a SCIR type to a fundef arg.
+    pub fn type_to_fundef_arg(&self, typ: &symbol::Type) -> FundefArg {
         use symbol::Type as SType;
 
         match typ {
@@ -328,4 +393,15 @@ pub enum FundefArg {
     Zst,
     /// Regular fundef abi param
     Param(AbiParam),
+}
+
+/// A declared function or data ID, of cranelift.
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub enum ClifId {
+    Func {
+        id: FuncId,
+        sig: Signature,
+        arg_map: Vec<Option<u32>>,
+    },
+    Data(DataId),
 }
