@@ -143,16 +143,13 @@ impl<'a> FunDefTranslator<'a> {
                         id,
                         sig: _,
                         arg_map: _,
-                    }) = self.cgen.defs.get(&sym)
+                    }) = self.cgen.defs.get(sym)
                     else {
                         // SAFETY: should be a function.
                         opt_unreachable!()
                     };
 
-                    let fun = self
-                        .cgen
-                        .module
-                        .declare_func_in_func(id.clone(), self.fb.func);
+                    let fun = self.cgen.module.declare_func_in_func(*id, self.fb.func);
 
                     Some(self.fb.ins().func_addr(self.cgen.isa.pointer_type(), fun))
                 }
@@ -202,16 +199,13 @@ impl<'a> FunDefTranslator<'a> {
                         id,
                         sig: _,
                         arg_map: _,
-                    }) = self.cgen.defs.get(&sym)
+                    }) = self.cgen.defs.get(sym)
                     else {
                         // SAFETY: should be a function.
                         opt_unreachable!()
                     };
 
-                    let callee = self
-                        .cgen
-                        .module
-                        .declare_func_in_func(id.clone(), self.fb.func);
+                    let callee = self.cgen.module.declare_func_in_func(*id, self.fb.func);
 
                     let mut arg_vals = Vec::new();
 
@@ -232,7 +226,7 @@ impl<'a> FunDefTranslator<'a> {
                     call_res.first().cloned()
                 }
                 _ => {
-                    let fnptr = self.translate_expr(&callee);
+                    let fnptr = self.translate_expr(callee);
                     let (args_t, ret_t) = callee.typ.clone().as_fun_ptr().unwrap();
 
                     let (sig, _) = self.cgen.make_sig(&args_t, &ret_t);

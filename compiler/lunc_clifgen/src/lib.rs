@@ -10,7 +10,7 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{DataDescription, DataId, FuncId, Linkage, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
 
-use lunc_scir::{ScItem, ScModule};
+use lunc_scir::{Abi, ScItem, ScModule};
 use lunc_utils::{BuildOptions, mangle, opt_unreachable, symbol};
 
 use crate::textual::TextualClif;
@@ -127,7 +127,7 @@ impl ClifGen {
                 self.record_fundef_in_mod(item);
             }
             ScItem::ExternBlock { .. } => {
-                todo!("extern block")
+                self.record_extern_block(item);
             }
             ScItem::Module { module, .. } => {
                 self.record_module(ctx, module);
@@ -147,7 +147,7 @@ impl ClifGen {
                 self.gen_fundef_in_mod(ctx, item);
             }
             ScItem::ExternBlock { .. } => {
-                todo!("extern block")
+                // nothing to do in gen, everything is done in `record_*`
             }
             ScItem::Module { module, .. } => {
                 self.gen_module(ctx, module);
@@ -170,7 +170,7 @@ impl ClifGen {
         let mut arg_map: Vec<Option<u32>> = Vec::with_capacity(arg_types.len());
 
         for argtyp in arg_types {
-            let arg = self.type_to_fundef_arg(&argtyp);
+            let arg = self.type_to_fundef_arg(argtyp);
 
             match arg {
                 FundefArg::Zst => {
@@ -183,7 +183,7 @@ impl ClifGen {
             }
         }
 
-        let ret_arg = self.type_to_fundef_arg(&ret_type);
+        let ret_arg = self.type_to_fundef_arg(ret_type);
         match ret_arg {
             FundefArg::Zst => {}
             FundefArg::Param(param) => sig.returns.push(param),
@@ -223,6 +223,71 @@ impl ClifGen {
             .insert(sym.clone(), ClifId::Func { id, sig, arg_map });
     }
 
+    /// Record an extern block defined in a module
+    ///
+    /// # Note
+    ///
+    /// `fundef` must be a [`ScItem::ExternBlock`]
+    fn record_extern_block(&mut self, fundef: &ScItem) {
+        let ScItem::ExternBlock { abi, items, .. } = fundef else {
+            // SAFETY: it's up to the caller.
+            opt_unreachable!()
+        };
+
+        debug_assert_eq!(*abi, Abi::C);
+
+        for item in items {
+            self.record_item_in_extern_blk(item);
+        }
+    }
+
+    /// Record definition for an Item contained inside of a module.
+    pub fn record_item_in_extern_blk(&mut self, item: &ScItem) {
+        match item {
+            // SAFETY: a global uninit or a fundecl can't be contained inside of a module
+            ScItem::GlobalDef { .. }
+            | ScItem::FunDefinition { .. }
+            | ScItem::ExternBlock { .. }
+            | ScItem::Module { .. } => opt_unreachable!(),
+            ScItem::GlobalUninit { .. } => todo!("global uninit in extern block"),
+            ScItem::FunDeclaration { .. } => {
+                self.record_fundecl_in_extern_blk(item);
+            }
+        }
+    }
+
+    /// Record a function declaration inside of an extern block
+    ///
+    /// # Note
+    ///
+    /// `fundecl` must be a [`ScItem::FunDeclaration`]
+    fn record_fundecl_in_extern_blk(&mut self, fundecl: &ScItem) {
+        let ScItem::FunDeclaration { sym, .. } = fundecl else {
+            // SAFETY: up to the caller
+            opt_unreachable!()
+        };
+
+        self.realname(sym);
+
+        let (arg_types, ret_type) = sym
+            .typ()
+            .as_fun_ptr()
+            .expect("function pointer type for fundecl item");
+
+        // make the signature of the function
+        let (sig, arg_map) = self.make_sig(&arg_types, &ret_type);
+
+        // create the function
+        let id = self
+            .module
+            .declare_function(sym.name().as_str(), Linkage::Import, &sig)
+            .unwrap();
+
+        self.textual.write_fundecl(&sig, sym);
+        self.defs
+            .insert(sym.clone(), ClifId::Func { id, sig, arg_map });
+    }
+
     /// Generate a function definition defined in a module
     ///
     /// # Note
@@ -234,7 +299,7 @@ impl ClifGen {
             opt_unreachable!()
         };
 
-        let Some(ClifId::Func { id, sig, arg_map }) = self.defs.get(&sym).cloned() else {
+        let Some(ClifId::Func { id, sig, arg_map }) = self.defs.get(sym).cloned() else {
             // SAFETY: the function should've already been defined
             opt_unreachable!()
         };
@@ -313,6 +378,9 @@ impl ClifGen {
 
         // define the data in the module
         self.module.define_data(data_id, &self.data_desc).unwrap();
+
+        // clear the data description
+        self.data_desc.clear();
 
         data_id
     }

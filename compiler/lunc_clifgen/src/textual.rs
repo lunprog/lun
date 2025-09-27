@@ -2,7 +2,7 @@
 
 use std::fmt::Write;
 
-use cranelift_codegen::ir::Function;
+use cranelift_codegen::ir::{Function, Signature};
 use lunc_utils::symbol;
 
 /// Textual representation of clif.
@@ -34,6 +34,19 @@ impl TextualClif {
             )
             .unwrap();
             write!(self.res, "{}", fundef.display()).unwrap();
+        }
+    }
+
+    /// Write a fundecl to the textual repr if enabled
+    ///
+    /// # Note
+    ///
+    /// It doesn't appear in this form in the real Cranelift Textual
+    /// representation this is why this function only writes comments, because
+    /// it is not a real thing.
+    pub fn write_fundecl(&mut self, sig: &Signature, sym: &symbol::Symbol) {
+        if self.enabled {
+            writeln!(self.res, "\n; declare function %{}{};", sym.name(), sig).unwrap();
         }
     }
 
