@@ -862,17 +862,17 @@ impl SymKind {
             return false;
         }
 
-        match (self, other) {
+        matches!(
+            (self, other),
             (
                 Self::Local { .. } | Self::Arg,
                 Self::Local { .. }
-                | Self::Arg
-                | Self::Global { .. }
-                | Self::Function
-                | Self::Module,
-            ) => true,
-            _ => false,
-        }
+                    | Self::Arg
+                    | Self::Global { .. }
+                    | Self::Function
+                    | Self::Module,
+            )
+        )
     }
 }
 
