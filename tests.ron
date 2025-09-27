@@ -1413,6 +1413,158 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
+    "desugaring/shadowing": (
+        compiler_out: "dsir = [
+  GlobalDef {
+    name: a @ 0..1 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: integer 1 @ 5..6 (fid = 0);
+    sym: Symbol {
+      kind: global;
+      name: a @ 0..1 (fid = 0);
+      realname: none;
+      which: 0;
+      path: orb.a;
+      typ: unknown;
+      typeness: implicit;
+      value: none;
+    };
+  } @ 0..7 (fid = 0),
+
+  GlobalDef {
+    name: b @ 9..10 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: FunDefinition {
+      args: [
+        Arg {
+          name: a @ 18..19 (fid = 0);
+          typexpr: Symbol {
+            kind: global;
+            name: usz @ none;
+            realname: none;
+            which: 0;
+            path: ∅;
+            typ: type;
+            typeness: explicit;
+            value: Type {
+              type: void;
+            };
+          } @ 21..25 (fid = 0);
+          sym: Symbol {
+            kind: argument;
+            name: a @ 18..19 (fid = 0);
+            realname: none;
+            which: 0;
+            path: a;
+            typ: unknown;
+            typeness: explicit;
+            value: none;
+          };
+        } @ 18..25 (fid = 0),
+      ];
+      rettypexpr: none;
+      body: Block [
+        VariableDef {
+          name: a @ 33..34 (fid = 0);
+          mutable: false;
+          typexpr: none;
+          value: Block {
+            label: none @ 0..0 (fid = 0);
+            block: Block [
+              @last_expr: none,
+            ] @ 38..40 (fid = 0);
+          } @ 38..40 (fid = 0);
+          sym: Symbol {
+            kind: local;
+            name: a @ 33..34 (fid = 0);
+            realname: none;
+            which: 0;
+            path: a;
+            typ: unknown;
+            typeness: implicit;
+            value: none;
+          };
+        } @ 33..40 (fid = 0),
+
+        @last_expr: none,
+      ] @ 27..43 (fid = 0);
+    } @ 14..43 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: b @ 9..10 (fid = 0);
+      realname: none;
+      which: 0;
+      path: orb.b;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 9..43 (fid = 0),
+
+  GlobalDef {
+    name: c @ 45..46 (fid = 0);
+    mutable: false;
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        VariableDef {
+          name: d @ 62..63 (fid = 0);
+          mutable: false;
+          typexpr: none;
+          value: integer 1 @ 67..68 (fid = 0);
+          sym: Symbol {
+            kind: local;
+            name: d @ 62..63 (fid = 0);
+            realname: none;
+            which: 0;
+            path: d;
+            typ: unknown;
+            typeness: implicit;
+            value: none;
+          };
+        } @ 62..68 (fid = 0),
+
+        VariableDef {
+          name: d @ 74..75 (fid = 0);
+          mutable: false;
+          typexpr: none;
+          value: integer 2 @ 79..80 (fid = 0);
+          sym: Symbol {
+            kind: local;
+            name: d @ 74..75 (fid = 0);
+            realname: none;
+            which: 1;
+            path: d;
+            typ: unknown;
+            typeness: implicit;
+            value: none;
+          };
+        } @ 74..80 (fid = 0),
+
+        @last_expr: none,
+      ] @ 56..83 (fid = 0);
+    } @ 50..83 (fid = 0);
+    sym: Symbol {
+      kind: function;
+      name: c @ 45..46 (fid = 0);
+      realname: none;
+      which: 0;
+      path: orb.c;
+      typ: unknown;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 45..83 (fid = 0),
+]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
     "lexer/E001": (
         compiler_out: "error[E001]: unknown start of token: 🌒
   ┌─ ./tests/lexer/E001.lun:2:1

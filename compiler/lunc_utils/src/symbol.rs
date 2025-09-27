@@ -857,8 +857,22 @@ impl SymKind {
     }
 
     /// Can this kind of symbol allow shadowing?
-    pub fn can_shadow(&self) -> bool {
-        matches!(self, SymKind::Local { .. } | SymKind::Arg)
+    pub fn can_shadow(&self, other: &Self) -> bool {
+        if *self == SymKind::Arg && *other == SymKind::Arg {
+            return false;
+        }
+
+        match (self, other) {
+            (
+                Self::Local { .. } | Self::Arg,
+                Self::Local { .. }
+                | Self::Arg
+                | Self::Global { .. }
+                | Self::Function
+                | Self::Module,
+            ) => true,
+            _ => false,
+        }
     }
 }
 
@@ -1202,5 +1216,64 @@ impl PrettyDump for ValueExpr {
                 write!(ctx.out, "void")
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shadowability() {
+        // local
+        for mutable in [true, false] {
+            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Local { mutable }));
+            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Local { mutable: !mutable }));
+            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Arg));
+            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Global { mutable }));
+            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Global { mutable: !mutable }));
+            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Function));
+            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Module));
+        }
+
+        // arg
+        assert!(SymKind::Arg.can_shadow(&SymKind::Local { mutable: true }));
+        assert!(SymKind::Arg.can_shadow(&SymKind::Local { mutable: false }));
+        assert!(!SymKind::Arg.can_shadow(&SymKind::Arg));
+        assert!(SymKind::Arg.can_shadow(&SymKind::Global { mutable: true }));
+        assert!(SymKind::Arg.can_shadow(&SymKind::Global { mutable: false }));
+        assert!(SymKind::Arg.can_shadow(&SymKind::Function));
+        assert!(SymKind::Arg.can_shadow(&SymKind::Module));
+
+        // global
+        for mutable in [true, false] {
+            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Local { mutable }));
+            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Local { mutable: !mutable }));
+            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Arg));
+            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Global { mutable }));
+            assert!(
+                !SymKind::Global { mutable }.can_shadow(&SymKind::Global { mutable: !mutable })
+            );
+            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Function));
+            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Module));
+        }
+
+        // function
+        assert!(!SymKind::Function.can_shadow(&SymKind::Local { mutable: true }));
+        assert!(!SymKind::Function.can_shadow(&SymKind::Local { mutable: false }));
+        assert!(!SymKind::Function.can_shadow(&SymKind::Arg));
+        assert!(!SymKind::Function.can_shadow(&SymKind::Global { mutable: true }));
+        assert!(!SymKind::Function.can_shadow(&SymKind::Global { mutable: false }));
+        assert!(!SymKind::Function.can_shadow(&SymKind::Function));
+        assert!(!SymKind::Function.can_shadow(&SymKind::Module));
+
+        // module
+        assert!(!SymKind::Module.can_shadow(&SymKind::Local { mutable: true }));
+        assert!(!SymKind::Module.can_shadow(&SymKind::Local { mutable: false }));
+        assert!(!SymKind::Module.can_shadow(&SymKind::Arg));
+        assert!(!SymKind::Module.can_shadow(&SymKind::Global { mutable: true }));
+        assert!(!SymKind::Module.can_shadow(&SymKind::Global { mutable: false }));
+        assert!(!SymKind::Module.can_shadow(&SymKind::Function));
+        assert!(!SymKind::Module.can_shadow(&SymKind::Module));
     }
 }
