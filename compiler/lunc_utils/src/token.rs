@@ -489,67 +489,67 @@ impl Display for Keyword {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Punctuation {
-    /// (
+    /// `(`
     LParen,
-    /// )
+    /// `)`
     RParen,
-    /// [
+    /// `[`
     LBracket,
-    /// ]
+    /// `]`
     RBracket,
-    /// {
+    /// `{`
     LBrace,
-    /// }
+    /// `}`
     RBrace,
-    /// +
+    /// `+`
     Plus,
-    /// -
+    /// `-`
     Minus,
-    /// *
+    /// `*`
     Star,
-    /// /
+    /// `/`
     Slash,
-    /// :
+    /// `:`
     Colon,
-    /// ,
+    /// `,`
     Comma,
-    /// =
+    /// `=`
     Equal,
-    /// ==
+    /// `==`
     Equal2,
-    /// !=
+    /// `!=`
     BangEqual,
-    /// !
+    /// `!`
     Bang,
-    /// <=
+    /// `<=`
     LtEqual,
-    /// <
+    /// `<`
     Lt,
-    /// <<
+    /// `<<`
     Lt2,
-    /// >
+    /// `>`
     Gt,
-    /// >>
+    /// `>>`
     Gt2,
-    /// >=
+    /// `>=`
     GtEqual,
-    /// ;
+    /// `;`
     Semicolon,
-    /// ->
+    /// `->`
     MinusGt,
-    /// ^
+    /// `^`
     Caret,
-    /// &
+    /// `&`
     Ampsand,
-    /// |
+    /// `|`
     Pipe,
-    /// %
+    /// `%`
     Percent,
-    /// .
+    /// `.`
     Dot,
-    /// .*
+    /// `.*`
     DotStar,
-    /// #
+    /// `#`
     Hashtag,
 }
 
