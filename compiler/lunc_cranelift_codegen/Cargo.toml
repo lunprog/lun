@@ -1,5 +1,5 @@
 [package]
-name = "lunc_clifgen"
+name = "lunc_cranelift_codegen"
 description = "Cranelift IR Generator, SCIR -> CLIF"
 version.workspace = true
 license.workspace = true

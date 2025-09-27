@@ -6,7 +6,7 @@
 //! - [lunc_dsir], desugars the [Ast] to [Dsir] and resolve names
 //! - [lunc_scir], lowers [Dsir] to [Scir] and perform various semantic checks
 //!   and add types
-//! - [lunc_clifgen], generates the Cranelift IR from [Scir]
+//! - [lunc_cranelift_codegen], generates the Cranelift IR from [Scir]
 //! - [lunc_diag], the error handling, the diagnostic system, with the Sink.
 //! - [lunc_utils], various internal utilities of the compiler
 //!
@@ -36,7 +36,7 @@ use std::{
 use termcolor::{ColorChoice, ColorChoiceParseError, StandardStream};
 use thiserror::Error;
 
-use lunc_clifgen::{ClifGen, ClifGenContext, OptLevel};
+use lunc_cranelift_codegen::{ClifGen, ClifGenContext, OptLevel};
 use lunc_diag::{DiagnosticSink, FileId};
 use lunc_dsir::Desugarrer;
 use lunc_lexer::Lexer;

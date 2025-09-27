@@ -706,7 +706,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "humantime",
- "lunc_clifgen",
+ "lunc_cranelift_codegen",
  "lunc_diag",
  "lunc_dsir",
  "lunc_lexer",
@@ -719,7 +719,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "lunc_clifgen"
+name = "lunc_cranelift_codegen"
 version = "0.1.0"
 dependencies = [
  "cranelift-codegen",

@@ -5,7 +5,7 @@ license.workspace = true
 edition = "2024"
 
 [dependencies]
-lunc_clifgen = { workspace = true }
+lunc_cranelift_codegen = { workspace = true }
 lunc_diag = { workspace = true }
 lunc_dsir = { workspace = true }
 lunc_lexer = { workspace = true }
