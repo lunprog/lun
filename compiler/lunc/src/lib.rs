@@ -780,7 +780,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
     //    maybe print the SSA
     if argv.debug.print(InterRes::Ssa) {
-        eprint!("; SSA of orb {}\n", opts.orb_name());
+        eprintln!("; SSA of orb {}", opts.orb_name());
         eprint!("{}", clifgen.textrepr());
     }
     if argv.debug.halt(CompStage::Ssa) || argv.debug.halt(CompStage::Codegen) {
