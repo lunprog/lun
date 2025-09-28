@@ -4,10 +4,12 @@
 )]
 
 use std::{
-    fmt::{Debug, Display, Write},
+    fmt::{self, Debug, Display, Write},
     ops::{Add, Range},
     sync::Arc,
 };
+
+use clap::ValueEnum;
 
 use crate::{symbol::EffectivePath, token::Keyword};
 
@@ -540,10 +542,11 @@ pub struct BuildOptions {
 
 impl BuildOptions {
     /// Create a new build options
-    pub fn new(orb_name: impl ToString, target: Triple) -> BuildOptions {
+    pub fn new(orb_name: impl ToString, orb_type: OrbType, target: Triple) -> BuildOptions {
         BuildOptions {
             inner: Arc::new(BuildOptionsInternal {
                 orb_name: orb_name.to_string(),
+                orb_type,
                 target,
             }),
         }
@@ -552,6 +555,11 @@ impl BuildOptions {
     /// Get the orb name
     pub fn orb_name(&self) -> &str {
         &self.inner.orb_name
+    }
+
+    /// Get the orb type
+    pub fn orb_type(&self) -> OrbType {
+        self.inner.orb_type
     }
 
     /// Get the target triplet
@@ -563,6 +571,7 @@ impl BuildOptions {
 #[derive(Debug, Clone)]
 pub struct BuildOptionsInternal {
     orb_name: String,
+    orb_type: OrbType,
     target: Triple,
 }
 
@@ -610,6 +619,24 @@ pub fn mangle(path: &EffectivePath) -> String {
     }
 
     result
+}
+
+/// Type of Orb.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ValueEnum)]
+pub enum OrbType {
+    /// Binary
+    Bin,
+    /// Lun lib
+    Llib,
+}
+
+impl Display for OrbType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Bin => write!(f, "bin"),
+            Self::Llib => write!(f, "lib"),
+        }
+    }
 }
 
 #[cfg(test)]

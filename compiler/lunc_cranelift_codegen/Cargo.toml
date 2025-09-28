@@ -8,6 +8,7 @@ edition = "2024"
 [dependencies]
 lunc_utils = { workspace = true }
 lunc_scir = { workspace = true }
+lunc_llib_meta = { workspace = true }
 
 # other dependencies
 cranelift-frontend = { version = "0.124.1" }

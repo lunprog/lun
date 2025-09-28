@@ -1,0 +1,9 @@
+// Full lun hello world!
+extern "C" {
+    puts :: fun(*i8);
+}
+
+main :: fun() {
+    puts(c"Hello World!");
+    puts(c"In full Lun!!");
+}

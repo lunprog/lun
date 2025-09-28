@@ -9,22 +9,29 @@
 //! - [lunc_cranelift_codegen], generates the Cranelift IR from [Scir]
 //! - [lunc_diag], the error handling, the diagnostic system, with the Sink.
 //! - [lunc_utils], various internal utilities of the compiler
+//! - [lunc_linkage], takes the object file from the [codegen], and outputs a
+//!   file with the format corresponding to the orb type.
+//! - [lunc_llib_meta], contains the [ModuleTree], and everything related to the
+//!   metadata added inside of a `llib` orb type.
 //!
 //! [Tokens]: lunc_utils::token::TokenStream
 //! [Ast]: lunc_parser::item::Module
 //! [Dsir]: lunc_dsir::DsModule
 //! [Scir]: lunc_scir::ScModule
+//! [codegen]: lunc_cranelift_codegen
+//! [ModuleTree]: lunc_llib_meta::ModuleTree
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
 use clap::{ArgAction, Parser as ArgParser, ValueEnum};
+use lunc_linkage::Linker;
 use std::{
     backtrace::{Backtrace, BacktraceStatus},
     env,
     error::Error,
     fmt::{self, Write},
-    fs::{self, read_to_string},
+    fs::read_to_string,
     io::{self, Write as IoWrite, stderr},
     panic,
     path::PathBuf,
@@ -43,7 +50,7 @@ use lunc_lexer::Lexer;
 use lunc_parser::Parser;
 use lunc_scir::SemaChecker;
 use lunc_utils::{
-    BuildOptions, is_identifier,
+    BuildOptions, OrbType, is_identifier,
     pretty::PrettyDump,
     target::{self, Triple},
 };
@@ -95,6 +102,10 @@ pub enum CliError {
     InvalidOptLevelVal(String),
     #[error("invalid value ({0}) for -C output-obj, for more details `lunc -C help`")]
     InvalidOutputObjVal(String),
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error("failed to link: {0}")]
+    LinkerFailed(String),
 }
 
 pub fn flush_outs() {
@@ -129,6 +140,10 @@ pub struct RawLuncCli {
     /// Name of the orb, defaults to the input file name with the extension
     #[arg(long)]
     orb_name: Option<String>,
+
+    /// Type of orb for the compiler to emit.
+    #[arg(long, default_value_t = OrbType::Bin, value_name = "bin|llib", hide_possible_values = true)]
+    orb_type: OrbType,
 
     /// Coloring possible values: 'always', 'always-ansi', 'never' and 'auto'
     #[arg(long, default_value_t = String::from("auto"))]
@@ -264,6 +279,7 @@ Stages:
 * dsir
 * scir
 * ssa
+* linking
 * codegen\
                 ",
             ),
@@ -346,6 +362,7 @@ pub struct Argv {
     debug: DebugOptions,
     target: Triple,
     orb_name: String,
+    orb_type: OrbType,
     color: ColorChoice,
     codegen: CodegenOptions,
 }
@@ -403,6 +420,7 @@ pub enum CompStage {
     Scir,
     Ssa,
     Codegen,
+    Linking,
 }
 
 /// Intermediate result
@@ -434,8 +452,19 @@ pub struct Timings {
     scir: Duration,
     /// duration of the ssa generation
     ssa: Duration,
+    /// sum of stages from setup to ssa
+    lun_sum: Duration,
+    /// duration of the linkage
+    linking: Duration,
     /// duration of the entire build
     total: Duration,
+}
+
+impl Timings {
+    /// Sum up and put it in lun_sum
+    pub fn sum_up(&mut self) {
+        self.lun_sum = self.setup + self.lexer + self.parser + self.dsir + self.scir + self.ssa;
+    }
 }
 
 impl fmt::Display for Timings {
@@ -447,17 +476,21 @@ impl fmt::Display for Timings {
             dsir,
             scir,
             ssa,
+            lun_sum,
+            linking,
             total,
         } = self.clone();
 
-        writeln!(f, "Timings:")?;
-        writeln!(f, "  setup: {}", humantime::format_duration(setup))?;
-        writeln!(f, "  lexer: {}", humantime::format_duration(lexer))?;
-        writeln!(f, " parser: {}", humantime::format_duration(parser))?;
-        writeln!(f, "   dsir: {}", humantime::format_duration(dsir))?;
-        writeln!(f, "   scir: {}", humantime::format_duration(scir))?;
-        writeln!(f, "    ssa: {}", humantime::format_duration(ssa))?;
-        writeln!(f, "= Total: {}", humantime::format_duration(total))?;
+        writeln!(f, " Timings:")?;
+        writeln!(f, "      setup: {}", humantime::format_duration(setup))?;
+        writeln!(f, "      lexer: {}", humantime::format_duration(lexer))?;
+        writeln!(f, "     parser: {}", humantime::format_duration(parser))?;
+        writeln!(f, "       dsir: {}", humantime::format_duration(dsir))?;
+        writeln!(f, "       scir: {}", humantime::format_duration(scir))?;
+        writeln!(f, "        ssa: {}", humantime::format_duration(ssa))?;
+        writeln!(f, "= Total Lun: {}\n", humantime::format_duration(lun_sum))?;
+        writeln!(f, "    linking: {}", humantime::format_duration(linking))?;
+        writeln!(f, "=    Global: {}", humantime::format_duration(total))?;
 
         Ok(())
     }
@@ -638,6 +671,7 @@ pub fn run() -> Result<()> {
         debug,
         target,
         orb_name,
+        orb_type: raw_argv.orb_type,
         color,
         codegen,
     };
@@ -659,7 +693,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
     let top_instant = Instant::now();
 
-    let opts = BuildOptions::new(&argv.orb_name, argv.target.clone());
+    let opts = BuildOptions::new(&argv.orb_name, argv.orb_type, argv.target.clone());
 
     // 1. retrieve the source code, file => text
     let source_code = read_to_string(&argv.input).map_err(|err| CliError::FileIoError {
@@ -734,6 +768,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     // 5. desugarring, AST => DSIR
     let mut desugarrer = Desugarrer::new(sink.clone(), opts.orb_name());
     let dsir = desugarrer.produce(ast).ok_or_else(builderr)?;
+    let orbtree = desugarrer.module_tree();
 
     //    maybe print the DSIR
     if argv.debug.print(InterRes::Dsir) {
@@ -753,8 +788,9 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     let scir_instant = Instant::now();
 
     // 6. type-checking and all the semantic analysis, DSIR => SCIR
-    let mut semacker = SemaChecker::new(sink.clone(), opts.clone());
+    let mut semacker = SemaChecker::new(sink.clone(), orbtree, opts.clone());
     let scir = semacker.produce(dsir).ok_or_else(builderr)?;
+    let orbtree = semacker.module_tree();
 
     //    maybe print the SCIR
     if argv.debug.print(InterRes::Scir) {
@@ -775,7 +811,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
     // 7. generate the clif, SCIR => SSA (CLIF) => ASM at the same time.
     let cliftxt = argv.debug.print(InterRes::Ssa);
-    let mut clifgen = ClifGen::new(opts.clone(), cliftxt, argv.codegen.opt_level);
+    let mut clifgen = ClifGen::new(opts.clone(), cliftxt, argv.codegen.opt_level, orbtree);
     clifgen.produce(&mut ClifGenContext::default(), scir);
 
     //    maybe print the SSA
@@ -788,15 +824,39 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
         return Ok(());
     }
 
-    if argv.codegen.output_obj {
-        // write the object to file
-        let obj = clifgen.finish_obj();
-        let obj_bytes = obj.emit().unwrap();
-        fs::write(argv.output.with_extension("o"), obj_bytes).unwrap();
-    }
+    // write the object to file
+    let objpath = argv
+        .codegen
+        .output_obj
+        .then_some(argv.output.with_extension("o"));
+
+    let obj = clifgen.finish_obj();
+    let obj_bytes = obj.emit().unwrap();
 
     timings.ssa = ssa_instant.elapsed();
+    let linking_instant = Instant::now();
+
+    // 8. link the object files
+    let mut linker = Linker::new(obj_bytes, objpath, &argv.output, opts.clone());
+
+    linker.write_obj()?;
+    if argv.debug.halt(CompStage::Linking) {
+        // NOTE: we don't emit diagnostics
+        return Ok(());
+    }
+
+    linker.link()?;
+    let out = linker.linker_out();
+    if !out.status.success() {
+        let out = String::from_utf8_lossy(&out.stderr).trim().to_string();
+
+        return Err(CliError::LinkerFailed(out));
+    }
+
+    timings.linking = linking_instant.elapsed();
+
     timings.total = top_instant.elapsed();
+    timings.sum_up();
 
     if argv.debug.timings {
         eprint!("\n{timings}");

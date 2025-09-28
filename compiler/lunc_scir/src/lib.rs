@@ -11,15 +11,16 @@ use lunc_dsir::{
     DsArg, DsBlock, DsDirective, DsExpr, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
     OSpan, QualifiedPath,
 };
+use lunc_llib_meta::ModuleTree;
 use lunc_utils::{
-    BuildOptions, FromHigher, Span, lower, opt_unreachable,
-    symbol::{Symbol, Type, Typeness, ValueExpr},
+    BuildOptions, FromHigher, OrbType, Span, lower, opt_unreachable,
+    symbol::{SymKind, Symbol, Type, Typeness, ValueExpr},
     target::PointerWidth,
 };
 
 pub use lunc_dsir::{Abi, BinOp, UnaryOp};
 
-use crate::diags::OutsideExternBlock;
+use crate::diags::{BadMainSignature, MainUndefined, OutsideExternBlock};
 
 mod checking;
 pub mod diags;
@@ -154,6 +155,17 @@ impl ScItem {
             | ScItem::FunDefinition { loc, .. }
             | ScItem::FunDeclaration { loc, .. }
             | ScItem::ExternBlock { loc, .. } => loc.clone().unwrap(),
+        }
+    }
+
+    pub fn symbol(&self) -> Option<Symbol> {
+        match self {
+            Self::GlobalDef { sym, .. }
+            | Self::GlobalUninit { sym, .. }
+            | Self::FunDefinition { sym, .. }
+            | Self::FunDeclaration { sym, .. }
+            | Self::Module { sym, .. } => Some(sym.clone()),
+            Self::ExternBlock { .. } => None,
         }
     }
 }
@@ -595,11 +607,11 @@ pub enum ScExpr {
     ///
     /// [`DsExpr::Null`]: lunc_dsir::DsExpr::Null
     Null,
-    /// See [`DsExpr::MemberAccess`]
+    /// See [`DsExpr::Field`]
     ///
     /// After the name resolution, member access of modules are converted to [`EffectivePath`]
     ///
-    /// [`DsExpr::MemberAccess`]: lunc_dsir::DsExpr::MemberAccess
+    /// [`DsExpr::Field`]: lunc_dsir::DsExpr::Field
     /// [`EffectivePath`]: lunc_utils::symbol::EffectivePath
     Field {
         expr: Box<ScExpression>,
@@ -798,22 +810,26 @@ pub struct SemaChecker {
     label_stack: LabelStack,
     /// container of the item currently being checked
     container: ItemContainer,
+    /// root module tree of the orb being built
+    orbtree: ModuleTree,
     /// the build options
     opts: BuildOptions,
 }
 
 impl SemaChecker {
-    pub fn new(sink: DiagnosticSink, opts: BuildOptions) -> SemaChecker {
+    pub fn new(sink: DiagnosticSink, orbtree: ModuleTree, opts: BuildOptions) -> SemaChecker {
         SemaChecker {
             sink,
             fun_retty: Type::Unknown,
             fun_retty_loc: None,
             label_stack: LabelStack::new(),
             container: ItemContainer::Module,
+            orbtree,
             opts,
         }
     }
 
+    /// Produce the semantic checked root module, with the given dsir module.
     pub fn produce(&mut self, dsir: DsModule) -> Option<ScModule> {
         let mut root = lower(dsir);
 
@@ -826,11 +842,41 @@ impl SemaChecker {
         // check the safety of the SCIR, we check if there is no integer literal overflow, float literal overflow..
         self.safety_ck_mod(&mut root);
 
+        if self.opts.orb_type() == OrbType::Bin {
+            if let Some(sym) = self.orbtree.def("main") {
+                // main definition present
+                let main_t = Type::FunPtr {
+                    args: Vec::new(),
+                    ret: Box::new(Type::Void),
+                };
+                let sym_t = sym.typ();
+
+                if sym.kind() != SymKind::Function || sym_t != main_t {
+                    // main doesn't have the correct signature
+                    self.sink.emit(BadMainSignature {
+                        got: sym_t,
+                        expected: main_t,
+                        loc: sym.loc().unwrap(),
+                    })
+                } else {
+                    // everything is fine we have the main definition and it's correct
+                }
+            } else {
+                // main definition not present
+                self.sink.emit(MainUndefined);
+            }
+        }
+
         if self.sink.failed() {
             return None;
         }
 
         Some(root)
+    }
+
+    /// Returns the module tree of the last module checked
+    pub fn module_tree(self) -> ModuleTree {
+        self.orbtree
     }
 
     /// Tries to evaluate the expression given as argument, if it can't, it

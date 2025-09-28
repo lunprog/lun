@@ -1,4 +1,29 @@
 {
+    "behavior/E041": (
+        compiler_out: "error[E041]: no `main` was found in a binary orb
+ = Consider adding a main function to the root of your orb.
+
+error: compilation of `E041` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
+    "behavior/E042": (
+        compiler_out: "error[E042]: bad main function signature, expected `*fun () -> void`
+  ┌─ ./tests/behavior/E042.lun:3:1
+  │
+3 │ main :: fun(a: bool) {}
+  │ ^^^^ but got `*fun (bool) -> void`
+
+error: compilation of `E042` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
     "desugaring/E010": (
         compiler_out: "error[E010]: cannot find `bim.boum` in this scope
   ┌─ ./tests/desugaring/E010.lun:2:9
@@ -2679,7 +2704,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
                                     name: fib @ 0..3 (fid = 2);
                                     realname: none;
                                     which: 0;
-                                    path: orb.dbg.nested.fib;
+                                    path: multifile.dbg.nested.fib;
                                     typ: *fun (i32) -> i32;
                                     typeness: explicit;
                                     value: none;
@@ -2723,7 +2748,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
                                     name: fib @ 0..3 (fid = 2);
                                     realname: none;
                                     which: 0;
-                                    path: orb.dbg.nested.fib;
+                                    path: multifile.dbg.nested.fib;
                                     typ: *fun (i32) -> i32;
                                     typeness: explicit;
                                     value: none;
@@ -2780,7 +2805,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
               name: fib @ 0..3 (fid = 2);
               realname: none;
               which: 0;
-              path: orb.dbg.nested.fib;
+              path: multifile.dbg.nested.fib;
               typ: *fun (i32) -> i32;
               typeness: explicit;
               value: none;
@@ -2792,7 +2817,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           name: nested @ 21..33 (fid = 1);
           realname: none;
           which: 0;
-          path: orb.dbg.nested;
+          path: multifile.dbg.nested;
           typ: unknown;
           typeness: explicit;
           value: none;
@@ -2876,7 +2901,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           name: puts @ 58..62 (fid = 1);
           realname: none;
           which: 0;
-          path: orb.dbg.puts;
+          path: multifile.dbg.puts;
           typ: *fun (* str) -> void;
           typeness: explicit;
           value: none;
@@ -2899,10 +2924,10 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
                   callee: Expression {
                     expr: Symbol {
                       kind: function;
-                      name: divide @ 163..169 (fid = 0);
+                      name: divide @ 164..170 (fid = 0);
                       realname: none;
                       which: 0;
-                      path: orb.divide;
+                      path: multifile.divide;
                       typ: *fun (f32, f32) -> f32;
                       typeness: explicit;
                       value: none;
@@ -2946,7 +2971,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           name: some_other_thing @ 127..143 (fid = 1);
           realname: none;
           which: 0;
-          path: orb.dbg.some_other_thing;
+          path: multifile.dbg.some_other_thing;
           typ: *fun () -> void;
           typeness: explicit;
           value: none;
@@ -2958,7 +2983,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
       name: dbg @ 24..33 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.dbg;
+      path: multifile.dbg;
       typ: unknown;
       typeness: explicit;
       value: none;
@@ -2966,7 +2991,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
   } @ 24..33 (fid = 0),
 
   FunDefinition {
-    name: run @ 60..63 (fid = 0);
+    name: main @ 60..64 (fid = 0);
     typexpr: none;
     args: [];
     rettypexpr: none;
@@ -2976,110 +3001,110 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           expr: FunCall {
             callee: Expression {
               expr: QualifiedPath {
-                path: orb.dbg.puts @ 80..92 (fid = 0);
+                path: orb.dbg.puts @ 81..93 (fid = 0);
                 sym: Symbol {
                   kind: function;
                   name: puts @ 58..62 (fid = 1);
                   realname: none;
                   which: 0;
-                  path: orb.dbg.puts;
+                  path: multifile.dbg.puts;
                   typ: *fun (* str) -> void;
                   typeness: explicit;
                   value: none;
                 };
               };
               typ: *fun (* str) -> void;
-            } @ 80..92 (fid = 0);
+            } @ 81..93 (fid = 0);
             args: [
               Expression {
                 expr: string "Hello world!";
                 typ: * str;
-              } @ 93..107 (fid = 0),
+              } @ 94..108 (fid = 0),
             ];
           };
           typ: void;
-        } @ 80..108 (fid = 0) @ 80..108 (fid = 0),
+        } @ 81..109 (fid = 0) @ 81..109 (fid = 0),
 
         Expression {
           expr: FunCall {
             callee: Expression {
               expr: QualifiedPath {
-                path: dbg.puts @ 114..122 (fid = 0);
+                path: dbg.puts @ 115..123 (fid = 0);
                 sym: Symbol {
                   kind: function;
                   name: puts @ 58..62 (fid = 1);
                   realname: none;
                   which: 0;
-                  path: orb.dbg.puts;
+                  path: multifile.dbg.puts;
                   typ: *fun (* str) -> void;
                   typeness: explicit;
                   value: none;
                 };
               };
               typ: *fun (* str) -> void;
-            } @ 114..122 (fid = 0);
+            } @ 115..123 (fid = 0);
             args: [
               Expression {
                 expr: string "Hello world!";
                 typ: * str;
-              } @ 123..137 (fid = 0),
+              } @ 124..138 (fid = 0),
             ];
           };
           typ: void;
-        } @ 114..138 (fid = 0) @ 114..138 (fid = 0),
+        } @ 115..139 (fid = 0) @ 115..139 (fid = 0),
 
         Expression {
           expr: FunCall {
             callee: Expression {
               expr: QualifiedPath {
-                path: nested.fib @ 144..154 (fid = 0);
+                path: nested.fib @ 145..155 (fid = 0);
                 sym: Symbol {
                   kind: function;
                   name: fib @ 0..3 (fid = 2);
                   realname: none;
                   which: 0;
-                  path: orb.dbg.nested.fib;
+                  path: multifile.dbg.nested.fib;
                   typ: *fun (i32) -> i32;
                   typeness: explicit;
                   value: none;
                 };
               };
               typ: *fun (i32) -> i32;
-            } @ 144..154 (fid = 0);
+            } @ 145..155 (fid = 0);
             args: [
               Expression {
                 expr: integer 12;
                 typ: i32;
-              } @ 155..157 (fid = 0),
+              } @ 156..158 (fid = 0),
             ];
           };
           typ: i32;
-        } @ 144..158 (fid = 0) @ 144..158 (fid = 0),
+        } @ 145..159 (fid = 0) @ 145..159 (fid = 0),
       ];
       last_expr: none;
       typ: void;
-    } @ 74..161 (fid = 0);
+    } @ 75..162 (fid = 0);
     info: {
       defined_mut: false;
     };
     sym: Symbol {
       kind: function;
-      name: run @ 60..63 (fid = 0);
+      name: main @ 60..64 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.run;
+      path: multifile.main;
       typ: *fun () -> void;
       typeness: explicit;
       value: none;
     };
-  } @ 60..161 (fid = 0),
+  } @ 60..162 (fid = 0),
 
   FunDefinition {
-    name: divide @ 163..169 (fid = 0);
+    name: divide @ 164..170 (fid = 0);
     typexpr: none;
     args: [
       Arg {
-        name: lhs @ 177..180 (fid = 0);
+        name: lhs @ 178..181 (fid = 0);
         typexpr: Expression {
           expr: Symbol {
             kind: global;
@@ -3094,10 +3119,10 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
             };
           };
           typ: type;
-        } @ 182..185 (fid = 0);
+        } @ 183..186 (fid = 0);
         sym: Symbol {
           kind: argument;
-          name: lhs @ 177..180 (fid = 0);
+          name: lhs @ 178..181 (fid = 0);
           realname: none;
           which: 0;
           path: lhs;
@@ -3105,10 +3130,10 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           typeness: explicit;
           value: none;
         };
-      } @ 177..185 (fid = 0),
+      } @ 178..186 (fid = 0),
 
       Arg {
-        name: rhs @ 187..190 (fid = 0);
+        name: rhs @ 188..191 (fid = 0);
         typexpr: Expression {
           expr: Symbol {
             kind: global;
@@ -3123,10 +3148,10 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
             };
           };
           typ: type;
-        } @ 192..195 (fid = 0);
+        } @ 193..196 (fid = 0);
         sym: Symbol {
           kind: argument;
-          name: rhs @ 187..190 (fid = 0);
+          name: rhs @ 188..191 (fid = 0);
           realname: none;
           which: 1;
           path: rhs;
@@ -3134,7 +3159,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           typeness: explicit;
           value: none;
         };
-      } @ 187..195 (fid = 0),
+      } @ 188..196 (fid = 0),
     ];
     rettypexpr: Expression {
       expr: Symbol {
@@ -3150,7 +3175,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
         };
       };
       typ: type;
-    } @ 200..203 (fid = 0);
+    } @ 201..204 (fid = 0);
     body: Block {
       stmts: [];
       last_expr: Expression {
@@ -3158,7 +3183,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           lhs: Expression {
             expr: Symbol {
               kind: argument;
-              name: lhs @ 177..180 (fid = 0);
+              name: lhs @ 178..181 (fid = 0);
               realname: none;
               which: 0;
               path: lhs;
@@ -3167,12 +3192,12 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
               value: none;
             };
             typ: f32;
-          } @ 210..213 (fid = 0);
+          } @ 211..214 (fid = 0);
           op: Div;
           rhs: Expression {
             expr: Symbol {
               kind: argument;
-              name: rhs @ 187..190 (fid = 0);
+              name: rhs @ 188..191 (fid = 0);
               realname: none;
               which: 1;
               path: rhs;
@@ -3181,48 +3206,48 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
               value: none;
             };
             typ: f32;
-          } @ 216..219 (fid = 0);
+          } @ 217..220 (fid = 0);
         };
         typ: f32;
-      } @ 210..219 (fid = 0);
+      } @ 211..220 (fid = 0);
       typ: f32;
-    } @ 204..221 (fid = 0);
+    } @ 205..222 (fid = 0);
     info: {
       defined_mut: false;
     };
     sym: Symbol {
       kind: function;
-      name: divide @ 163..169 (fid = 0);
+      name: divide @ 164..170 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.divide;
+      path: multifile.divide;
       typ: *fun (f32, f32) -> f32;
       typeness: explicit;
       value: none;
     };
-  } @ 163..221 (fid = 0),
+  } @ 164..222 (fid = 0),
 
   GlobalDef {
-    name: MY_LIL_CONSTANT @ 223..238 (fid = 0);
+    name: MY_LIL_CONSTANT @ 224..239 (fid = 0);
     mutable: false;
     typexpr: none;
     value: Expression {
       expr: integer 1234;
       typ: i32;
-    } @ 242..246 (fid = 0);
+    } @ 243..247 (fid = 0);
     sym: Symbol {
       kind: global;
-      name: MY_LIL_CONSTANT @ 223..238 (fid = 0);
+      name: MY_LIL_CONSTANT @ 224..239 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.MY_LIL_CONSTANT;
+      path: multifile.MY_LIL_CONSTANT;
       typ: i32;
       typeness: implicit;
       value: I32 {
         val: 1234;
       };
     };
-  } @ 223..247 (fid = 0),
+  } @ 224..248 (fid = 0),
 ]
 "#,
         compiler_code: 0,
@@ -5229,7 +5254,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_i8 @ 18..24 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_i8;
+      path: constant_evaluation.add_i8;
       typ: i8;
       typeness: explicit;
       value: I8 {
@@ -5275,7 +5300,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_i16 @ 41..48 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_i16;
+      path: constant_evaluation.add_i16;
       typ: i16;
       typeness: explicit;
       value: I16 {
@@ -5321,7 +5346,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_i32 @ 66..73 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_i32;
+      path: constant_evaluation.add_i32;
       typ: i32;
       typeness: explicit;
       value: I32 {
@@ -5367,7 +5392,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_i64 @ 91..98 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_i64;
+      path: constant_evaluation.add_i64;
       typ: i64;
       typeness: explicit;
       value: I64 {
@@ -5413,7 +5438,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_i128 @ 116..124 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_i128;
+      path: constant_evaluation.add_i128;
       typ: i128;
       typeness: explicit;
       value: I128 {
@@ -5459,7 +5484,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_isz @ 143..150 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_isz;
+      path: constant_evaluation.add_isz;
       typ: isz;
       typeness: explicit;
       value: I64 {
@@ -5505,7 +5530,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_u8 @ 169..175 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_u8;
+      path: constant_evaluation.add_u8;
       typ: u8;
       typeness: explicit;
       value: U8 {
@@ -5551,7 +5576,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_u16 @ 192..199 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_u16;
+      path: constant_evaluation.add_u16;
       typ: u16;
       typeness: explicit;
       value: U16 {
@@ -5597,7 +5622,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_u32 @ 217..224 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_u32;
+      path: constant_evaluation.add_u32;
       typ: u32;
       typeness: explicit;
       value: U32 {
@@ -5643,7 +5668,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_u64 @ 242..249 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_u64;
+      path: constant_evaluation.add_u64;
       typ: u64;
       typeness: explicit;
       value: U64 {
@@ -5689,7 +5714,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_u128 @ 267..275 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_u128;
+      path: constant_evaluation.add_u128;
       typ: u128;
       typeness: explicit;
       value: U128 {
@@ -5735,7 +5760,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_usz @ 294..301 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_usz;
+      path: constant_evaluation.add_usz;
       typ: usz;
       typeness: explicit;
       value: U64 {
@@ -5781,7 +5806,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_f32 @ 320..327 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_f32;
+      path: constant_evaluation.add_f32;
       typ: f32;
       typeness: explicit;
       value: F32 {
@@ -5827,7 +5852,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: add_f64 @ 347..354 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.add_f64;
+      path: constant_evaluation.add_f64;
       typ: f64;
       typeness: explicit;
       value: F64 {
@@ -5873,7 +5898,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_i8 @ 393..399 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_i8;
+      path: constant_evaluation.sub_i8;
       typ: i8;
       typeness: explicit;
       value: I8 {
@@ -5919,7 +5944,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_i16 @ 416..423 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_i16;
+      path: constant_evaluation.sub_i16;
       typ: i16;
       typeness: explicit;
       value: I16 {
@@ -5965,7 +5990,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_i32 @ 441..448 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_i32;
+      path: constant_evaluation.sub_i32;
       typ: i32;
       typeness: explicit;
       value: I32 {
@@ -6011,7 +6036,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_i64 @ 466..473 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_i64;
+      path: constant_evaluation.sub_i64;
       typ: i64;
       typeness: explicit;
       value: I64 {
@@ -6057,7 +6082,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_i128 @ 491..499 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_i128;
+      path: constant_evaluation.sub_i128;
       typ: i128;
       typeness: explicit;
       value: I128 {
@@ -6103,7 +6128,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_isz @ 518..525 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_isz;
+      path: constant_evaluation.sub_isz;
       typ: isz;
       typeness: explicit;
       value: I64 {
@@ -6149,7 +6174,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_u8 @ 544..550 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_u8;
+      path: constant_evaluation.sub_u8;
       typ: u8;
       typeness: explicit;
       value: U8 {
@@ -6195,7 +6220,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_u16 @ 567..574 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_u16;
+      path: constant_evaluation.sub_u16;
       typ: u16;
       typeness: explicit;
       value: U16 {
@@ -6241,7 +6266,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_u32 @ 592..599 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_u32;
+      path: constant_evaluation.sub_u32;
       typ: u32;
       typeness: explicit;
       value: U32 {
@@ -6287,7 +6312,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_u64 @ 617..624 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_u64;
+      path: constant_evaluation.sub_u64;
       typ: u64;
       typeness: explicit;
       value: U64 {
@@ -6333,7 +6358,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_u128 @ 642..650 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_u128;
+      path: constant_evaluation.sub_u128;
       typ: u128;
       typeness: explicit;
       value: U128 {
@@ -6379,7 +6404,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_usz @ 669..676 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_usz;
+      path: constant_evaluation.sub_usz;
       typ: usz;
       typeness: explicit;
       value: U64 {
@@ -6425,7 +6450,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_f32 @ 695..702 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_f32;
+      path: constant_evaluation.sub_f32;
       typ: f32;
       typeness: explicit;
       value: F32 {
@@ -6471,7 +6496,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: sub_f64 @ 722..729 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.sub_f64;
+      path: constant_evaluation.sub_f64;
       typ: f64;
       typeness: explicit;
       value: F64 {
@@ -6517,7 +6542,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_i8 @ 768..774 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_i8;
+      path: constant_evaluation.mul_i8;
       typ: i8;
       typeness: explicit;
       value: I8 {
@@ -6563,7 +6588,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_i16 @ 789..796 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_i16;
+      path: constant_evaluation.mul_i16;
       typ: i16;
       typeness: explicit;
       value: I16 {
@@ -6609,7 +6634,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_i32 @ 812..819 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_i32;
+      path: constant_evaluation.mul_i32;
       typ: i32;
       typeness: explicit;
       value: I32 {
@@ -6655,7 +6680,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_i64 @ 835..842 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_i64;
+      path: constant_evaluation.mul_i64;
       typ: i64;
       typeness: explicit;
       value: I64 {
@@ -6701,7 +6726,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_i128 @ 858..866 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_i128;
+      path: constant_evaluation.mul_i128;
       typ: i128;
       typeness: explicit;
       value: I128 {
@@ -6747,7 +6772,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_isz @ 883..890 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_isz;
+      path: constant_evaluation.mul_isz;
       typ: isz;
       typeness: explicit;
       value: I64 {
@@ -6793,7 +6818,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_u8 @ 907..913 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_u8;
+      path: constant_evaluation.mul_u8;
       typ: u8;
       typeness: explicit;
       value: U8 {
@@ -6839,7 +6864,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_u16 @ 928..935 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_u16;
+      path: constant_evaluation.mul_u16;
       typ: u16;
       typeness: explicit;
       value: U16 {
@@ -6885,7 +6910,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_u32 @ 951..958 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_u32;
+      path: constant_evaluation.mul_u32;
       typ: u32;
       typeness: explicit;
       value: U32 {
@@ -6931,7 +6956,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_u64 @ 974..981 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_u64;
+      path: constant_evaluation.mul_u64;
       typ: u64;
       typeness: explicit;
       value: U64 {
@@ -6977,7 +7002,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_u128 @ 997..1005 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_u128;
+      path: constant_evaluation.mul_u128;
       typ: u128;
       typeness: explicit;
       value: U128 {
@@ -7023,7 +7048,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_usz @ 1022..1029 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_usz;
+      path: constant_evaluation.mul_usz;
       typ: usz;
       typeness: explicit;
       value: U64 {
@@ -7069,7 +7094,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_f32 @ 1046..1053 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_f32;
+      path: constant_evaluation.mul_f32;
       typ: f32;
       typeness: explicit;
       value: F32 {
@@ -7115,7 +7140,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: mul_f64 @ 1071..1078 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.mul_f64;
+      path: constant_evaluation.mul_f64;
       typ: f64;
       typeness: explicit;
       value: F64 {
@@ -7161,7 +7186,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_i8 @ 1115..1121 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_i8;
+      path: constant_evaluation.div_i8;
       typ: i8;
       typeness: explicit;
       value: I8 {
@@ -7207,7 +7232,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_i16 @ 1137..1144 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_i16;
+      path: constant_evaluation.div_i16;
       typ: i16;
       typeness: explicit;
       value: I16 {
@@ -7253,7 +7278,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_i32 @ 1161..1168 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_i32;
+      path: constant_evaluation.div_i32;
       typ: i32;
       typeness: explicit;
       value: I32 {
@@ -7299,7 +7324,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_i64 @ 1185..1192 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_i64;
+      path: constant_evaluation.div_i64;
       typ: i64;
       typeness: explicit;
       value: I64 {
@@ -7345,7 +7370,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_i128 @ 1209..1217 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_i128;
+      path: constant_evaluation.div_i128;
       typ: i128;
       typeness: explicit;
       value: I128 {
@@ -7391,7 +7416,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_isz @ 1235..1242 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_isz;
+      path: constant_evaluation.div_isz;
       typ: isz;
       typeness: explicit;
       value: I64 {
@@ -7437,7 +7462,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_u8 @ 1260..1266 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_u8;
+      path: constant_evaluation.div_u8;
       typ: u8;
       typeness: explicit;
       value: U8 {
@@ -7483,7 +7508,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_u16 @ 1282..1289 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_u16;
+      path: constant_evaluation.div_u16;
       typ: u16;
       typeness: explicit;
       value: U16 {
@@ -7529,7 +7554,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_u32 @ 1306..1313 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_u32;
+      path: constant_evaluation.div_u32;
       typ: u32;
       typeness: explicit;
       value: U32 {
@@ -7575,7 +7600,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_u64 @ 1330..1337 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_u64;
+      path: constant_evaluation.div_u64;
       typ: u64;
       typeness: explicit;
       value: U64 {
@@ -7621,7 +7646,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_u128 @ 1354..1362 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_u128;
+      path: constant_evaluation.div_u128;
       typ: u128;
       typeness: explicit;
       value: U128 {
@@ -7667,7 +7692,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_usz @ 1380..1387 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_usz;
+      path: constant_evaluation.div_usz;
       typ: usz;
       typeness: explicit;
       value: U64 {
@@ -7713,7 +7738,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_f32 @ 1405..1412 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_f32;
+      path: constant_evaluation.div_f32;
       typ: f32;
       typeness: explicit;
       value: F32 {
@@ -7759,7 +7784,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: div_f64 @ 1431..1438 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.div_f64;
+      path: constant_evaluation.div_f64;
       typ: f64;
       typeness: explicit;
       value: F64 {
@@ -7805,7 +7830,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_i8 @ 1476..1482 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_i8;
+      path: constant_evaluation.rem_i8;
       typ: i8;
       typeness: explicit;
       value: I8 {
@@ -7851,7 +7876,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_i16 @ 1498..1505 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_i16;
+      path: constant_evaluation.rem_i16;
       typ: i16;
       typeness: explicit;
       value: I16 {
@@ -7897,7 +7922,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_i32 @ 1522..1529 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_i32;
+      path: constant_evaluation.rem_i32;
       typ: i32;
       typeness: explicit;
       value: I32 {
@@ -7943,7 +7968,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_i64 @ 1546..1553 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_i64;
+      path: constant_evaluation.rem_i64;
       typ: i64;
       typeness: explicit;
       value: I64 {
@@ -7989,7 +8014,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_i128 @ 1570..1578 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_i128;
+      path: constant_evaluation.rem_i128;
       typ: i128;
       typeness: explicit;
       value: I128 {
@@ -8035,7 +8060,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_isz @ 1596..1603 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_isz;
+      path: constant_evaluation.rem_isz;
       typ: isz;
       typeness: explicit;
       value: I64 {
@@ -8081,7 +8106,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_u8 @ 1621..1627 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_u8;
+      path: constant_evaluation.rem_u8;
       typ: u8;
       typeness: explicit;
       value: U8 {
@@ -8127,7 +8152,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_u16 @ 1643..1650 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_u16;
+      path: constant_evaluation.rem_u16;
       typ: u16;
       typeness: explicit;
       value: U16 {
@@ -8173,7 +8198,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_u32 @ 1667..1674 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_u32;
+      path: constant_evaluation.rem_u32;
       typ: u32;
       typeness: explicit;
       value: U32 {
@@ -8219,7 +8244,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_u64 @ 1691..1698 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_u64;
+      path: constant_evaluation.rem_u64;
       typ: u64;
       typeness: explicit;
       value: U64 {
@@ -8265,7 +8290,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_u128 @ 1715..1723 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_u128;
+      path: constant_evaluation.rem_u128;
       typ: u128;
       typeness: explicit;
       value: U128 {
@@ -8311,7 +8336,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: rem_usz @ 1741..1748 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.rem_usz;
+      path: constant_evaluation.rem_usz;
       typ: usz;
       typeness: explicit;
       value: U64 {
@@ -8370,7 +8395,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
           name: puts @ 17..21 (fid = 0);
           realname: none;
           which: 0;
-          path: orb.puts;
+          path: extern_block.puts;
           typ: *fun (* str) -> void;
           typeness: explicit;
           value: none;
@@ -8394,7 +8419,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
                 name: puts @ 17..21 (fid = 0);
                 realname: none;
                 which: 0;
-                path: orb.puts;
+                path: extern_block.puts;
                 typ: *fun (* str) -> void;
                 typeness: explicit;
                 value: none;
@@ -8422,7 +8447,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: main @ 39..43 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.main;
+      path: extern_block.main;
       typ: *fun () -> void;
       typeness: explicit;
       value: none;
@@ -8504,7 +8529,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: i32_return @ 0..10 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.i32_return;
+      path: fun_ret_ty.i32_return;
       typ: *fun () -> i32;
       typeness: explicit;
       value: none;
@@ -8579,7 +8604,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: f32_return @ 81..91 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.f32_return;
+      path: fun_ret_ty.f32_return;
       typ: *fun () -> f32;
       typeness: explicit;
       value: none;
@@ -8652,7 +8677,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: char_return @ 164..175 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.char_return;
+      path: fun_ret_ty.char_return;
       typ: *fun () -> char;
       typeness: explicit;
       value: none;
@@ -8731,7 +8756,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: string_return @ 247..260 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.string_return;
+      path: fun_ret_ty.string_return;
       typ: *fun () -> * str;
       typeness: explicit;
       value: none;
@@ -8791,7 +8816,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: void_return @ 353..364 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.void_return;
+      path: fun_ret_ty.void_return;
       typ: *fun () -> void;
       typeness: explicit;
       value: none;
@@ -8854,7 +8879,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: nested_loops @ 0..12 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.nested_loops;
+      path: label_kw_expr.nested_loops;
       typ: *fun () -> void;
       typeness: explicit;
       value: none;
@@ -8933,7 +8958,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: block_label @ 166..177 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.block_label;
+      path: label_kw_expr.block_label;
       typ: *fun () -> void;
       typeness: explicit;
       value: none;
@@ -8971,7 +8996,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       name: unused_label_block @ 254..272 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.unused_label_block;
+      path: label_kw_expr.unused_label_block;
       typ: *fun () -> void;
       typeness: explicit;
       value: none;
@@ -9053,7 +9078,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       name: loop_forever @ 0..12 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.loop_forever;
+      path: loop_semantics.loop_forever;
       typ: *fun () -> noreturn;
       typeness: explicit;
       value: none;
@@ -9123,7 +9148,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       name: still_loop_forever @ 51..69 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.still_loop_forever;
+      path: loop_semantics.still_loop_forever;
       typ: *fun () -> noreturn;
       typeness: explicit;
       value: none;
@@ -9223,7 +9248,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       name: loop_forever_in_practice @ 171..195 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.loop_forever_in_practice;
+      path: loop_semantics.loop_forever_in_practice;
       typ: *fun () -> void;
       typeness: explicit;
       value: none;
@@ -9250,7 +9275,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       name: cant_reach @ 0..10 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.cant_reach;
+      path: noreturn_block.cant_reach;
       typ: i32;
       typeness: implicit;
       value: I32 {
@@ -9309,7 +9334,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
                       name: cant_reach @ 0..10 (fid = 0);
                       realname: none;
                       which: 0;
-                      path: orb.cant_reach;
+                      path: noreturn_block.cant_reach;
                       typ: i32;
                       typeness: implicit;
                       value: I32 {
@@ -9371,7 +9396,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       name: main @ 18..22 (fid = 0);
       realname: none;
       which: 0;
-      path: orb.main;
+      path: noreturn_block.main;
       typ: *fun () -> usz;
       typeness: explicit;
       value: none;

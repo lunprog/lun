@@ -23,6 +23,14 @@ impl TextualClif {
         }
     }
 
+    /// Write a function that doesn't have a symbol but a name
+    pub fn write_function_no_sym(&mut self, fundef: &Function, name: &str) {
+        if self.enabled {
+            writeln!(self.res, "\n; name = {:?}", name).unwrap();
+            write!(self.res, "{}", fundef.display()).unwrap();
+        }
+    }
+
     /// Write a fundef to the textual repr if enabled
     pub fn write_fundef(&mut self, fundef: &Function, sym: &symbol::Symbol) {
         if self.enabled {

@@ -1,0 +1,15 @@
+[package]
+name = "lunc_linkage"
+description = """
+Takes the object file from the codegen, and outputs a file with the format
+corresponding to the orb type.
+"""
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]
+lunc_utils = { workspace = true }
+
+# other dependencies
+tempfile = "3.23.0"

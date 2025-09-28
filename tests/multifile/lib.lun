@@ -4,7 +4,7 @@
 
 #import orb.dbg.nested;
 
-run :: fun () {
+main :: fun () {
     orb.dbg.puts("Hello world!");
     dbg.puts("Hello world!");
     nested.fib(12);

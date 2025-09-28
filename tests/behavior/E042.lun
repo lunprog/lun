@@ -1,0 +1,3 @@
+// EO08: error testing - BadMainSignature
+
+main :: fun(a: bool) {}

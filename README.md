@@ -44,8 +44,22 @@ Checkout the examples in the [examples folder].
 
 ### Hello world
 
-Unfortunately there is no function currently to print to stdout, so we can't do
-hello world.
+```lun
+extern "C" {
+    puts :: fun(*i8);
+}
+
+main :: fun() {
+    puts(c"Hello World!");
+}
+```
+For now Lun doesn't have a standard library so we use `puts` from the libc.
+
+To compile run:
+```sh
+$ lunc helloworld.lun
+$ ./helloworld
+```
 
 [examples folder]: examples/
 

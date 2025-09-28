@@ -9,5 +9,6 @@ edition = "2024"
 lunc_diag = { workspace = true }
 lunc_dsir = { workspace = true }
 lunc_utils = { workspace = true }
+lunc_llib_meta = { workspace = true }
 
 # other dependencies

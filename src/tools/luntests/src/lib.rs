@@ -307,6 +307,7 @@ pub enum TestStage {
     Parser,
     Dsir,
     Scir,
+    Behavior,
     Multifile,
 }
 
@@ -317,7 +318,8 @@ impl TestStage {
             TestStage::Lexer => &["-Zhalt=lexer", "-Zprint=token-stream"],
             TestStage::Parser => &["-Zhalt=parser", "-Zprint=ast"],
             TestStage::Dsir => &["-Zhalt=dsir", "-Zprint=dsir"],
-            TestStage::Scir => &["-Zhalt=scir", "-Zprint=scir"],
+            TestStage::Scir => &["-Zhalt=scir", "-Zprint=scir", "--orb-type", "llib"],
+            TestStage::Behavior => &["-Zprint=ssa", "-Zprint=scir"],
             TestStage::Multifile => &[
                 "-Zprint=scir",
                 "-Zhalt=scir", // remove after cranelift gen is fully implemented
@@ -340,6 +342,8 @@ impl FromStr for TestStage {
             Ok(TestStage::Dsir)
         } else if s.starts_with("scir/") {
             Ok(TestStage::Scir)
+        } else if s.starts_with("behavior/") {
+            Ok(TestStage::Behavior)
         } else {
             Ok(TestStage::None)
         }

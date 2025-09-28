@@ -318,6 +318,8 @@ impl ToDiagnostic for Diagnostic {
 /// |`E038`| `tests/parser/E038.lun`                           |
 /// |`E039`| `tests/scir/E039.lun`                             |
 /// |`E040`| `tests/scir/E040.lun`                             |
+/// |`E041`| `tests/behavior/E041.lun`                         |
+/// |`E042`| `tests/behavior/E042.lun`                         |
 ///
 /// # Note
 ///
@@ -544,6 +546,11 @@ pub enum ErrorCode {
     /// cannot have a function definition / declaration inside of a global
     /// mutable definition
     FunctionInGlobalMut = 40,
+    /// main function isn't defined in a binary orb type.
+    MainUndefined = 41,
+    /// bad main function signature.
+    BadMainSignature = 42,
+    // NOTE: **BEFORE ADDING A NEW ERROR CODE, the `E017` and `E018` should be replaced!**
 }
 
 impl Display for ErrorCode {

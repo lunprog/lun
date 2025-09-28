@@ -199,6 +199,11 @@ impl Type {
         )
     }
 
+    /// Is this type a function pointer ?
+    pub fn is_fun_ptr(&self) -> bool {
+        matches!(self, Type::FunPtr { .. })
+    }
+
     /// Returns the signedness of an integer type or `None` if it's not an
     /// integer
     pub fn signedness(&self) -> Option<Signedness> {

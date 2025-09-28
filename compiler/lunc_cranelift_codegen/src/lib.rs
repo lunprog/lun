@@ -10,14 +10,16 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{DataDescription, DataId, FuncId, Linkage, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
 
+use lunc_llib_meta::ModuleTree;
 use lunc_scir::{Abi, ScItem, ScModule};
-use lunc_utils::{BuildOptions, mangle, opt_unreachable, symbol};
+use lunc_utils::{BuildOptions, OrbType, mangle, opt_unreachable, symbol};
 
 use crate::textual::TextualClif;
 use crate::translator::FunDefTranslator;
 
 pub use cranelift_codegen::settings::OptLevel;
 
+pub mod start;
 pub mod textual;
 pub mod translator;
 
@@ -38,6 +40,8 @@ pub struct ClifGen {
     textual: TextualClif,
     /// map of function or global symbol to a func or data id
     defs: HashMap<symbol::Symbol, ClifId>,
+    /// module tree of the root of the orb we are building
+    orbtree: ModuleTree,
 }
 
 /// Cranelift generator context.
@@ -59,7 +63,12 @@ impl Default for ClifGenContext {
 
 impl ClifGen {
     /// Create a new CLIF generator
-    pub fn new(opts: BuildOptions, textrepr: bool, opt_level: OptLevel) -> ClifGen {
+    pub fn new(
+        opts: BuildOptions,
+        textrepr: bool,
+        opt_level: OptLevel,
+        orbtree: ModuleTree,
+    ) -> ClifGen {
         // 1. configure the ISA-independent settings
         let mut shared_builder = settings::builder();
         // TODO: make those parameters configurable
@@ -90,6 +99,7 @@ impl ClifGen {
             opts,
             textual: TextualClif::new(textrepr),
             defs: HashMap::new(),
+            orbtree,
         }
     }
 
@@ -99,6 +109,15 @@ impl ClifGen {
 
         self.record_module(ctx, &root);
         self.gen_module(ctx, &root);
+
+        if self.opts.orb_type() == OrbType::Bin {
+            start::generate_main(self, ctx);
+        }
+    }
+
+    /// Returns the module tree.
+    pub fn module_tree(self) -> ModuleTree {
+        self.orbtree
     }
 
     /// Record definitions in CLIF for a Module
@@ -434,13 +453,9 @@ impl ClifGen {
     /// Computes the realname of a symbol, and replaces `orb` with the given orb
     /// name in the build options
     pub fn realname(&self, sym: &symbol::Symbol) {
-        let mut path = sym.path();
+        assert!(!sym.inspect(|s| matches!(s.path.first().map(|s| s.as_str()), Some("orb"))));
 
-        if let Some("orb") = path.first().map(|s| s.as_str()) {
-            *path.first_mut().unwrap() = String::from(self.opts.orb_name());
-        }
-
-        sym.inspect_mut(|this| this.realname = Some(mangle(&path)));
+        sym.inspect_mut(|this| this.realname = Some(mangle(&this.path)));
     }
 
     /// Returns the textual representation of the Cranelift IR

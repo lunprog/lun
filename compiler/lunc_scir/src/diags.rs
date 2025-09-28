@@ -424,3 +424,41 @@ impl ToDiagnostic for FunctionInGlobalMut {
             .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct MainUndefined;
+
+impl ToDiagnostic for MainUndefined {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::MainUndefined)
+            .with_message("no `main` was found in a binary orb")
+            .with_note("Consider adding a main function to the root of your orb.")
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BadMainSignature {
+    /// type of the main function that is defined
+    pub got: Type,
+    /// expected main function type
+    pub expected: Type,
+    /// location of the main function
+    pub loc: Span,
+}
+
+impl ToDiagnostic for BadMainSignature {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::BadMainSignature)
+            .with_message(format!(
+                "bad main function signature, expected `{}`",
+                self.expected
+            ))
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message(format!(
+                "but got {}`{}`",
+                if self.got.is_fun_ptr() { "" } else { "type " },
+                self.got
+            )))
+    }
+}

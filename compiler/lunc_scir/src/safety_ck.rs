@@ -1,3 +1,4 @@
+// TODO: rename this pass to `post_checking`
 use lunc_diag::ToDiagnostic;
 
 use crate::diags::{Idk128, OverflowingLiteral};
@@ -10,6 +11,16 @@ impl SemaChecker {
         self.safety_ck_items(&mut module.items);
     }
 
+    pub fn realpath(&self, item: &mut ScItem) {
+        if let Some(sym) = item.symbol()
+            && sym.inspect(|s| matches!(s.path.first().map(|s| s.as_str()), Some("orb")))
+        {
+            sym.inspect_mut(|sym| {
+                *sym.path.first_mut().unwrap() = String::from(self.opts.orb_name());
+            });
+        }
+    }
+
     pub fn safety_ck_items(&mut self, items: &mut [ScItem]) {
         for item in items {
             match self.safety_ck_item(item) {
@@ -20,6 +31,8 @@ impl SemaChecker {
     }
 
     pub fn safety_ck_item(&mut self, item: &mut ScItem) -> Result<(), Diagnostic> {
+        self.realpath(item);
+
         match item {
             ScItem::GlobalDef {
                 name: _,

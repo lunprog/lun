@@ -9,4 +9,5 @@ edition = "2024"
 thiserror = { workspace = true }
 serde = { workspace = true }
 concat-idents = "1.1.5"
-target-lexicon = { version = "0.13.3", features = ["std"] }
+target-lexicon = { version = "0.13.3", features = ["std", "serde_support"] }
+clap = { workspace = true }
