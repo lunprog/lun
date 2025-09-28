@@ -279,7 +279,7 @@ Stages:
 * dsir
 * scir
 * ssa
-* linking
+* linkage
 * codegen\
                 ",
             ),
@@ -420,7 +420,7 @@ pub enum CompStage {
     Scir,
     Ssa,
     Codegen,
-    Linking,
+    Linkage,
 }
 
 /// Intermediate result
@@ -455,7 +455,7 @@ pub struct Timings {
     /// sum of stages from setup to ssa
     lun_sum: Duration,
     /// duration of the linkage
-    linking: Duration,
+    linkage: Duration,
     /// duration of the entire build
     total: Duration,
 }
@@ -477,7 +477,7 @@ impl fmt::Display for Timings {
             scir,
             ssa,
             lun_sum,
-            linking,
+            linkage,
             total,
         } = self.clone();
 
@@ -489,7 +489,7 @@ impl fmt::Display for Timings {
         writeln!(f, "       scir: {}", humantime::format_duration(scir))?;
         writeln!(f, "        ssa: {}", humantime::format_duration(ssa))?;
         writeln!(f, "= Total Lun: {}\n", humantime::format_duration(lun_sum))?;
-        writeln!(f, "    linking: {}", humantime::format_duration(linking))?;
+        writeln!(f, "    linkage: {}", humantime::format_duration(linkage))?;
         writeln!(f, "=    Global: {}", humantime::format_duration(total))?;
 
         Ok(())
@@ -834,13 +834,13 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     let obj_bytes = obj.emit().unwrap();
 
     timings.ssa = ssa_instant.elapsed();
-    let linking_instant = Instant::now();
+    let linkage_instant = Instant::now();
 
     // 8. link the object files
     let mut linker = Linker::new(obj_bytes, objpath, &argv.output, opts.clone());
 
     linker.write_obj()?;
-    if argv.debug.halt(CompStage::Linking) {
+    if argv.debug.halt(CompStage::Linkage) {
         // NOTE: we don't emit diagnostics
         return Ok(());
     }
@@ -855,7 +855,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
     _ = orbtree;
 
-    timings.linking = linking_instant.elapsed();
+    timings.linkage = linkage_instant.elapsed();
 
     timings.total = top_instant.elapsed();
     timings.sum_up();

@@ -43,8 +43,7 @@ impl<'a> FunDefTranslator<'a> {
         block
             .last_expr
             .as_ref()
-            .map(|expr| self.try_translate_expr(expr))
-            .flatten()
+            .and_then(|expr| self.try_translate_expr(expr))
     }
 
     /// Translate the expression and return the value containing it.
