@@ -347,12 +347,12 @@ impl<'a> FunDefTranslator<'a> {
                 // evaluate lhs in current block.
                 let x = self.translate_expr(lhs);
 
-                // branch to `eval_y`(then) bb if x != 0
-                // or to `join`(else) bb if x == 0
+                // branch to `join`(then) bb if x != 0
+                // or to `eval_y`(else) bb if x == 0
                 let true_i8 = self.fb.ins().iconst(types::I8, 1);
                 self.fb
                     .ins()
-                    .brif(x, eval_y_bb, &[], join_bb, &[BlockArg::Value(true_i8)]);
+                    .brif(x, join_bb, &[BlockArg::Value(true_i8)], eval_y_bb, &[]);
 
                 // build eval_y bb.
                 {

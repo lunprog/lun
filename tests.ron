@@ -24,6 +24,966 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
+    "behavior/logic_and": (
+        compiler_out: r#"scir = [
+  ExternBlock {
+    abi: C;
+    items: [
+      FunDeclaration {
+        name: puts @ 17..21 (fid = 0);
+        typexpr: none;
+        args: [
+          Expression {
+            expr: PointerType {
+              mutable: false;
+              typexpr: Expression {
+                expr: Symbol {
+                  kind: global;
+                  name: i8 @ none;
+                  realname: none;
+                  which: 0;
+                  path: ∅;
+                  typ: type;
+                  typeness: explicit;
+                  value: Type {
+                    type: i8;
+                  };
+                };
+                typ: type;
+              } @ 30..32 (fid = 0);
+            };
+            typ: type;
+          } @ 29..32 (fid = 0),
+        ];
+        rettypexpr: none;
+        defined_mut: false;
+        sym: Symbol {
+          kind: function;
+          name: puts @ 17..21 (fid = 0);
+          realname: none;
+          which: 0;
+          path: logic_and.puts;
+          typ: *fun (* i8) -> void;
+          typeness: explicit;
+          value: none;
+        };
+      } @ 17..34 (fid = 0),
+    ];
+  } @ 0..36 (fid = 0),
+
+  FunDefinition {
+    name: foo @ 38..41 (fid = 0);
+    typexpr: none;
+    args: [];
+    rettypexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: bool @ none;
+        realname: none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: bool;
+        };
+      };
+      typ: type;
+    } @ 54..58 (fid = 0);
+    body: Block {
+      stmts: [
+        Expression {
+          expr: FunCall {
+            callee: Expression {
+              expr: Symbol {
+                kind: function;
+                name: puts @ 17..21 (fid = 0);
+                realname: none;
+                which: 0;
+                path: logic_and.puts;
+                typ: *fun (* i8) -> void;
+                typeness: explicit;
+                value: none;
+              };
+              typ: *fun (* i8) -> void;
+            } @ 65..69 (fid = 0);
+            args: [
+              Expression {
+                expr: c_str "foo";
+                typ: * i8;
+              } @ 70..76 (fid = 0),
+            ];
+          };
+          typ: void;
+        } @ 65..77 (fid = 0) @ 65..77 (fid = 0),
+      ];
+      last_expr: Expression {
+        expr: boolean false;
+        typ: bool;
+      } @ 83..88 (fid = 0);
+      typ: bool;
+    } @ 59..90 (fid = 0);
+    info: {
+      defined_mut: false;
+    };
+    sym: Symbol {
+      kind: function;
+      name: foo @ 38..41 (fid = 0);
+      realname: none;
+      which: 0;
+      path: logic_and.foo;
+      typ: *fun () -> bool;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 38..90 (fid = 0),
+
+  FunDefinition {
+    name: bar @ 92..95 (fid = 0);
+    typexpr: none;
+    args: [];
+    rettypexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: bool @ none;
+        realname: none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: bool;
+        };
+      };
+      typ: type;
+    } @ 108..112 (fid = 0);
+    body: Block {
+      stmts: [
+        Expression {
+          expr: FunCall {
+            callee: Expression {
+              expr: Symbol {
+                kind: function;
+                name: puts @ 17..21 (fid = 0);
+                realname: none;
+                which: 0;
+                path: logic_and.puts;
+                typ: *fun (* i8) -> void;
+                typeness: explicit;
+                value: none;
+              };
+              typ: *fun (* i8) -> void;
+            } @ 119..123 (fid = 0);
+            args: [
+              Expression {
+                expr: c_str "bar";
+                typ: * i8;
+              } @ 124..130 (fid = 0),
+            ];
+          };
+          typ: void;
+        } @ 119..131 (fid = 0) @ 119..131 (fid = 0),
+      ];
+      last_expr: Expression {
+        expr: boolean true;
+        typ: bool;
+      } @ 137..141 (fid = 0);
+      typ: bool;
+    } @ 113..143 (fid = 0);
+    info: {
+      defined_mut: false;
+    };
+    sym: Symbol {
+      kind: function;
+      name: bar @ 92..95 (fid = 0);
+      realname: none;
+      which: 0;
+      path: logic_and.bar;
+      typ: *fun () -> bool;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 92..143 (fid = 0),
+
+  FunDefinition {
+    name: main @ 145..149 (fid = 0);
+    typexpr: none;
+    args: [];
+    rettypexpr: none;
+    body: Block {
+      stmts: [
+        Expression {
+          expr: FunCall {
+            callee: Expression {
+              expr: Symbol {
+                kind: function;
+                name: puts @ 17..21 (fid = 0);
+                realname: none;
+                which: 0;
+                path: logic_and.puts;
+                typ: *fun (* i8) -> void;
+                typeness: explicit;
+                value: none;
+              };
+              typ: *fun (* i8) -> void;
+            } @ 165..169 (fid = 0);
+            args: [
+              Expression {
+                expr: c_str "ONLY `foo`:";
+                typ: * i8;
+              } @ 170..184 (fid = 0),
+            ];
+          };
+          typ: void;
+        } @ 165..185 (fid = 0) @ 165..185 (fid = 0),
+
+        Expression {
+          expr: Binary {
+            lhs: Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: Symbol {
+                    kind: function;
+                    name: foo @ 38..41 (fid = 0);
+                    realname: none;
+                    which: 0;
+                    path: logic_and.foo;
+                    typ: *fun () -> bool;
+                    typeness: explicit;
+                    value: none;
+                  };
+                  typ: *fun () -> bool;
+                } @ 191..194 (fid = 0);
+                args: [];
+              };
+              typ: bool;
+            } @ 191..196 (fid = 0);
+            op: LogicalAnd;
+            rhs: Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: Symbol {
+                    kind: function;
+                    name: bar @ 92..95 (fid = 0);
+                    realname: none;
+                    which: 0;
+                    path: logic_and.bar;
+                    typ: *fun () -> bool;
+                    typeness: explicit;
+                    value: none;
+                  };
+                  typ: *fun () -> bool;
+                } @ 201..204 (fid = 0);
+                args: [];
+              };
+              typ: bool;
+            } @ 201..206 (fid = 0);
+          };
+          typ: bool;
+        } @ 191..206 (fid = 0) @ 191..206 (fid = 0),
+
+        Expression {
+          expr: FunCall {
+            callee: Expression {
+              expr: Symbol {
+                kind: function;
+                name: puts @ 17..21 (fid = 0);
+                realname: none;
+                which: 0;
+                path: logic_and.puts;
+                typ: *fun (* i8) -> void;
+                typeness: explicit;
+                value: none;
+              };
+              typ: *fun (* i8) -> void;
+            } @ 212..216 (fid = 0);
+            args: [
+              Expression {
+                expr: c_str "";
+                typ: * i8;
+              } @ 217..220 (fid = 0),
+            ];
+          };
+          typ: void;
+        } @ 212..221 (fid = 0) @ 212..221 (fid = 0),
+
+        Expression {
+          expr: FunCall {
+            callee: Expression {
+              expr: Symbol {
+                kind: function;
+                name: puts @ 17..21 (fid = 0);
+                realname: none;
+                which: 0;
+                path: logic_and.puts;
+                typ: *fun (* i8) -> void;
+                typeness: explicit;
+                value: none;
+              };
+              typ: *fun (* i8) -> void;
+            } @ 228..232 (fid = 0);
+            args: [
+              Expression {
+                expr: c_str "BOTH `bar` and `foo`:";
+                typ: * i8;
+              } @ 233..257 (fid = 0),
+            ];
+          };
+          typ: void;
+        } @ 228..258 (fid = 0) @ 228..258 (fid = 0),
+
+        Expression {
+          expr: Binary {
+            lhs: Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: Symbol {
+                    kind: function;
+                    name: bar @ 92..95 (fid = 0);
+                    realname: none;
+                    which: 0;
+                    path: logic_and.bar;
+                    typ: *fun () -> bool;
+                    typeness: explicit;
+                    value: none;
+                  };
+                  typ: *fun () -> bool;
+                } @ 264..267 (fid = 0);
+                args: [];
+              };
+              typ: bool;
+            } @ 264..269 (fid = 0);
+            op: LogicalAnd;
+            rhs: Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: Symbol {
+                    kind: function;
+                    name: foo @ 38..41 (fid = 0);
+                    realname: none;
+                    which: 0;
+                    path: logic_and.foo;
+                    typ: *fun () -> bool;
+                    typeness: explicit;
+                    value: none;
+                  };
+                  typ: *fun () -> bool;
+                } @ 274..277 (fid = 0);
+                args: [];
+              };
+              typ: bool;
+            } @ 274..279 (fid = 0);
+          };
+          typ: bool;
+        } @ 264..279 (fid = 0) @ 264..279 (fid = 0),
+      ];
+      last_expr: none;
+      typ: void;
+    } @ 159..282 (fid = 0);
+    info: {
+      defined_mut: false;
+    };
+    sym: Symbol {
+      kind: function;
+      name: main @ 145..149 (fid = 0);
+      realname: none;
+      which: 0;
+      path: logic_and.main;
+      typ: *fun () -> void;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 145..282 (fid = 0),
+]
+; SSA of orb logic_and
+
+; declare function %puts(i64) system_v;
+
+data %__cstr_logic_and_70_76_0 = align(8) { 102, 111, 111, 0 }
+
+; name = "foo", realname = "_L9logic_and3foo"
+function u0:1() -> i8 system_v {
+    gv0 = symbol colocated userextname1
+    sig0 = (i64) system_v
+    fn0 = u0:0 sig0
+
+block0:
+    v0 = global_value.i64 gv0
+    call fn0(v0)
+    v1 = iconst.i8 0
+    return v1  ; v1 = 0
+}
+
+data %__cstr_logic_and_124_130_0 = align(8) { 98, 97, 114, 0 }
+
+; name = "bar", realname = "_L9logic_and3bar"
+function u0:2() -> i8 system_v {
+    gv0 = symbol colocated userextname1
+    sig0 = (i64) system_v
+    fn0 = u0:0 sig0
+
+block0:
+    v0 = global_value.i64 gv0
+    call fn0(v0)
+    v1 = iconst.i8 1
+    return v1  ; v1 = 1
+}
+
+data %__cstr_logic_and_170_184_0 = align(8) { 79, 78, 76, 89, 32, 96, 102, 111, 111, 96, 58, 0 }
+
+data %__cstr_logic_and_217_220_0 = align(8) { 0 }
+
+data %__cstr_logic_and_233_257_0 = align(8) { 66, 79, 84, 72, 32, 96, 98, 97, 114, 96, 32, 97, 110, 100, 32, 96, 102, 111, 111, 96, 58, 0 }
+
+; name = "main", realname = "_L9logic_and4main"
+function u0:3() system_v {
+    gv0 = symbol colocated userextname1
+    gv1 = symbol colocated userextname4
+    gv2 = symbol colocated userextname5
+    sig0 = (i64) system_v
+    sig1 = () -> i8 system_v
+    sig2 = () -> i8 system_v
+    sig3 = (i64) system_v
+    sig4 = (i64) system_v
+    sig5 = () -> i8 system_v
+    sig6 = () -> i8 system_v
+    fn0 = u0:0 sig0
+    fn1 = colocated u0:1 sig1
+    fn2 = colocated u0:2 sig2
+    fn3 = u0:0 sig3
+    fn4 = u0:0 sig4
+    fn5 = colocated u0:2 sig5
+    fn6 = colocated u0:1 sig6
+
+block0:
+    v0 = global_value.i64 gv0
+    call fn0(v0)
+    v1 = call fn1()
+    v2 = iconst.i8 0
+    brif v1, block1, block2(v2)  ; v2 = 0
+
+block1:
+    v3 = call fn2()
+    jump block2(v3)
+
+block2(v4: i8):
+    v5 = global_value.i64 gv1
+    call fn3(v5)
+    v6 = global_value.i64 gv2
+    call fn4(v6)
+    v7 = call fn5()
+    v8 = iconst.i8 0
+    brif v7, block3, block4(v8)  ; v8 = 0
+
+block3:
+    v9 = call fn6()
+    jump block4(v9)
+
+block4(v10: i8):
+    return
+}
+
+; name = "main"
+function u0:4(i32, i64, i64) -> i32 system_v {
+    sig0 = () system_v
+    fn0 = colocated u0:3 sig0
+
+block0(v0: i32, v1: i64, v2: i64):
+    call fn0()
+    v3 = iconst.i32 0
+    return v3  ; v3 = 0
+}
+"#,
+        compiler_code: 0,
+        test_out: "ONLY `foo`:
+foo
+
+BOTH `bar` and `foo`:
+bar
+foo
+",
+        test_code: 0,
+    ),
+    "behavior/logic_or": (
+        compiler_out: r#"scir = [
+  ExternBlock {
+    abi: C;
+    items: [
+      FunDeclaration {
+        name: puts @ 17..21 (fid = 0);
+        typexpr: none;
+        args: [
+          Expression {
+            expr: PointerType {
+              mutable: false;
+              typexpr: Expression {
+                expr: Symbol {
+                  kind: global;
+                  name: i8 @ none;
+                  realname: none;
+                  which: 0;
+                  path: ∅;
+                  typ: type;
+                  typeness: explicit;
+                  value: Type {
+                    type: i8;
+                  };
+                };
+                typ: type;
+              } @ 30..32 (fid = 0);
+            };
+            typ: type;
+          } @ 29..32 (fid = 0),
+        ];
+        rettypexpr: none;
+        defined_mut: false;
+        sym: Symbol {
+          kind: function;
+          name: puts @ 17..21 (fid = 0);
+          realname: none;
+          which: 0;
+          path: logic_or.puts;
+          typ: *fun (* i8) -> void;
+          typeness: explicit;
+          value: none;
+        };
+      } @ 17..34 (fid = 0),
+    ];
+  } @ 0..36 (fid = 0),
+
+  FunDefinition {
+    name: foo @ 38..41 (fid = 0);
+    typexpr: none;
+    args: [];
+    rettypexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: bool @ none;
+        realname: none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: bool;
+        };
+      };
+      typ: type;
+    } @ 54..58 (fid = 0);
+    body: Block {
+      stmts: [
+        Expression {
+          expr: FunCall {
+            callee: Expression {
+              expr: Symbol {
+                kind: function;
+                name: puts @ 17..21 (fid = 0);
+                realname: none;
+                which: 0;
+                path: logic_or.puts;
+                typ: *fun (* i8) -> void;
+                typeness: explicit;
+                value: none;
+              };
+              typ: *fun (* i8) -> void;
+            } @ 65..69 (fid = 0);
+            args: [
+              Expression {
+                expr: c_str "foo";
+                typ: * i8;
+              } @ 70..76 (fid = 0),
+            ];
+          };
+          typ: void;
+        } @ 65..77 (fid = 0) @ 65..77 (fid = 0),
+      ];
+      last_expr: Expression {
+        expr: boolean false;
+        typ: bool;
+      } @ 83..88 (fid = 0);
+      typ: bool;
+    } @ 59..90 (fid = 0);
+    info: {
+      defined_mut: false;
+    };
+    sym: Symbol {
+      kind: function;
+      name: foo @ 38..41 (fid = 0);
+      realname: none;
+      which: 0;
+      path: logic_or.foo;
+      typ: *fun () -> bool;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 38..90 (fid = 0),
+
+  FunDefinition {
+    name: bar @ 92..95 (fid = 0);
+    typexpr: none;
+    args: [];
+    rettypexpr: Expression {
+      expr: Symbol {
+        kind: global;
+        name: bool @ none;
+        realname: none;
+        which: 0;
+        path: ∅;
+        typ: type;
+        typeness: explicit;
+        value: Type {
+          type: bool;
+        };
+      };
+      typ: type;
+    } @ 108..112 (fid = 0);
+    body: Block {
+      stmts: [
+        Expression {
+          expr: FunCall {
+            callee: Expression {
+              expr: Symbol {
+                kind: function;
+                name: puts @ 17..21 (fid = 0);
+                realname: none;
+                which: 0;
+                path: logic_or.puts;
+                typ: *fun (* i8) -> void;
+                typeness: explicit;
+                value: none;
+              };
+              typ: *fun (* i8) -> void;
+            } @ 119..123 (fid = 0);
+            args: [
+              Expression {
+                expr: c_str "bar";
+                typ: * i8;
+              } @ 124..130 (fid = 0),
+            ];
+          };
+          typ: void;
+        } @ 119..131 (fid = 0) @ 119..131 (fid = 0),
+      ];
+      last_expr: Expression {
+        expr: boolean true;
+        typ: bool;
+      } @ 137..141 (fid = 0);
+      typ: bool;
+    } @ 113..143 (fid = 0);
+    info: {
+      defined_mut: false;
+    };
+    sym: Symbol {
+      kind: function;
+      name: bar @ 92..95 (fid = 0);
+      realname: none;
+      which: 0;
+      path: logic_or.bar;
+      typ: *fun () -> bool;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 92..143 (fid = 0),
+
+  FunDefinition {
+    name: main @ 145..149 (fid = 0);
+    typexpr: none;
+    args: [];
+    rettypexpr: none;
+    body: Block {
+      stmts: [
+        Expression {
+          expr: FunCall {
+            callee: Expression {
+              expr: Symbol {
+                kind: function;
+                name: puts @ 17..21 (fid = 0);
+                realname: none;
+                which: 0;
+                path: logic_or.puts;
+                typ: *fun (* i8) -> void;
+                typeness: explicit;
+                value: none;
+              };
+              typ: *fun (* i8) -> void;
+            } @ 165..169 (fid = 0);
+            args: [
+              Expression {
+                expr: c_str "BOTH `foo` and `bar`:";
+                typ: * i8;
+              } @ 170..194 (fid = 0),
+            ];
+          };
+          typ: void;
+        } @ 165..195 (fid = 0) @ 165..195 (fid = 0),
+
+        Expression {
+          expr: Binary {
+            lhs: Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: Symbol {
+                    kind: function;
+                    name: foo @ 38..41 (fid = 0);
+                    realname: none;
+                    which: 0;
+                    path: logic_or.foo;
+                    typ: *fun () -> bool;
+                    typeness: explicit;
+                    value: none;
+                  };
+                  typ: *fun () -> bool;
+                } @ 201..204 (fid = 0);
+                args: [];
+              };
+              typ: bool;
+            } @ 201..206 (fid = 0);
+            op: LogicalOr;
+            rhs: Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: Symbol {
+                    kind: function;
+                    name: bar @ 92..95 (fid = 0);
+                    realname: none;
+                    which: 0;
+                    path: logic_or.bar;
+                    typ: *fun () -> bool;
+                    typeness: explicit;
+                    value: none;
+                  };
+                  typ: *fun () -> bool;
+                } @ 210..213 (fid = 0);
+                args: [];
+              };
+              typ: bool;
+            } @ 210..215 (fid = 0);
+          };
+          typ: bool;
+        } @ 201..215 (fid = 0) @ 201..215 (fid = 0),
+
+        Expression {
+          expr: FunCall {
+            callee: Expression {
+              expr: Symbol {
+                kind: function;
+                name: puts @ 17..21 (fid = 0);
+                realname: none;
+                which: 0;
+                path: logic_or.puts;
+                typ: *fun (* i8) -> void;
+                typeness: explicit;
+                value: none;
+              };
+              typ: *fun (* i8) -> void;
+            } @ 221..225 (fid = 0);
+            args: [
+              Expression {
+                expr: c_str "";
+                typ: * i8;
+              } @ 226..229 (fid = 0),
+            ];
+          };
+          typ: void;
+        } @ 221..230 (fid = 0) @ 221..230 (fid = 0),
+
+        Expression {
+          expr: FunCall {
+            callee: Expression {
+              expr: Symbol {
+                kind: function;
+                name: puts @ 17..21 (fid = 0);
+                realname: none;
+                which: 0;
+                path: logic_or.puts;
+                typ: *fun (* i8) -> void;
+                typeness: explicit;
+                value: none;
+              };
+              typ: *fun (* i8) -> void;
+            } @ 237..241 (fid = 0);
+            args: [
+              Expression {
+                expr: c_str "ONLY `bar`:";
+                typ: * i8;
+              } @ 242..256 (fid = 0),
+            ];
+          };
+          typ: void;
+        } @ 237..257 (fid = 0) @ 237..257 (fid = 0),
+
+        Expression {
+          expr: Binary {
+            lhs: Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: Symbol {
+                    kind: function;
+                    name: bar @ 92..95 (fid = 0);
+                    realname: none;
+                    which: 0;
+                    path: logic_or.bar;
+                    typ: *fun () -> bool;
+                    typeness: explicit;
+                    value: none;
+                  };
+                  typ: *fun () -> bool;
+                } @ 263..266 (fid = 0);
+                args: [];
+              };
+              typ: bool;
+            } @ 263..268 (fid = 0);
+            op: LogicalOr;
+            rhs: Expression {
+              expr: FunCall {
+                callee: Expression {
+                  expr: Symbol {
+                    kind: function;
+                    name: foo @ 38..41 (fid = 0);
+                    realname: none;
+                    which: 0;
+                    path: logic_or.foo;
+                    typ: *fun () -> bool;
+                    typeness: explicit;
+                    value: none;
+                  };
+                  typ: *fun () -> bool;
+                } @ 272..275 (fid = 0);
+                args: [];
+              };
+              typ: bool;
+            } @ 272..277 (fid = 0);
+          };
+          typ: bool;
+        } @ 263..277 (fid = 0) @ 263..277 (fid = 0),
+      ];
+      last_expr: none;
+      typ: void;
+    } @ 159..280 (fid = 0);
+    info: {
+      defined_mut: false;
+    };
+    sym: Symbol {
+      kind: function;
+      name: main @ 145..149 (fid = 0);
+      realname: none;
+      which: 0;
+      path: logic_or.main;
+      typ: *fun () -> void;
+      typeness: explicit;
+      value: none;
+    };
+  } @ 145..280 (fid = 0),
+]
+; SSA of orb logic_or
+
+; declare function %puts(i64) system_v;
+
+data %__cstr_logic_or_70_76_0 = align(8) { 102, 111, 111, 0 }
+
+; name = "foo", realname = "_L8logic_or3foo"
+function u0:1() -> i8 system_v {
+    gv0 = symbol colocated userextname1
+    sig0 = (i64) system_v
+    fn0 = u0:0 sig0
+
+block0:
+    v0 = global_value.i64 gv0
+    call fn0(v0)
+    v1 = iconst.i8 0
+    return v1  ; v1 = 0
+}
+
+data %__cstr_logic_or_124_130_0 = align(8) { 98, 97, 114, 0 }
+
+; name = "bar", realname = "_L8logic_or3bar"
+function u0:2() -> i8 system_v {
+    gv0 = symbol colocated userextname1
+    sig0 = (i64) system_v
+    fn0 = u0:0 sig0
+
+block0:
+    v0 = global_value.i64 gv0
+    call fn0(v0)
+    v1 = iconst.i8 1
+    return v1  ; v1 = 1
+}
+
+data %__cstr_logic_or_170_194_0 = align(8) { 66, 79, 84, 72, 32, 96, 102, 111, 111, 96, 32, 97, 110, 100, 32, 96, 98, 97, 114, 96, 58, 0 }
+
+data %__cstr_logic_or_226_229_0 = align(8) { 0 }
+
+data %__cstr_logic_or_242_256_0 = align(8) { 79, 78, 76, 89, 32, 96, 98, 97, 114, 96, 58, 0 }
+
+; name = "main", realname = "_L8logic_or4main"
+function u0:3() system_v {
+    gv0 = symbol colocated userextname1
+    gv1 = symbol colocated userextname4
+    gv2 = symbol colocated userextname5
+    sig0 = (i64) system_v
+    sig1 = () -> i8 system_v
+    sig2 = () -> i8 system_v
+    sig3 = (i64) system_v
+    sig4 = (i64) system_v
+    sig5 = () -> i8 system_v
+    sig6 = () -> i8 system_v
+    fn0 = u0:0 sig0
+    fn1 = colocated u0:1 sig1
+    fn2 = colocated u0:2 sig2
+    fn3 = u0:0 sig3
+    fn4 = u0:0 sig4
+    fn5 = colocated u0:2 sig5
+    fn6 = colocated u0:1 sig6
+
+block0:
+    v0 = global_value.i64 gv0
+    call fn0(v0)
+    v1 = call fn1()
+    v2 = iconst.i8 1
+    brif v1, block2(v2), block1  ; v2 = 1
+
+block1:
+    v3 = call fn2()
+    jump block2(v3)
+
+block2(v4: i8):
+    v5 = global_value.i64 gv1
+    call fn3(v5)
+    v6 = global_value.i64 gv2
+    call fn4(v6)
+    v7 = call fn5()
+    v8 = iconst.i8 1
+    brif v7, block4(v8), block3  ; v8 = 1
+
+block3:
+    v9 = call fn6()
+    jump block4(v9)
+
+block4(v10: i8):
+    return
+}
+
+; name = "main"
+function u0:4(i32, i64, i64) -> i32 system_v {
+    sig0 = () system_v
+    fn0 = colocated u0:3 sig0
+
+block0(v0: i32, v1: i64, v2: i64):
+    call fn0()
+    v3 = iconst.i32 0
+    return v3  ; v3 = 0
+}
+"#,
+        compiler_code: 0,
+        test_out: "BOTH `foo` and `bar`:
+foo
+bar
+
+ONLY `bar`:
+bar
+",
+        test_code: 0,
+    ),
     "desugaring/E010": (
         compiler_out: "error[E010]: cannot find `bim.boum` in this scope
   ┌─ ./tests/desugaring/E010.lun:2:9

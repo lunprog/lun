@@ -1,0 +1,22 @@
+extern "C" {
+    puts :: fun(*i8);
+}
+
+foo :: fun() -> bool {
+    puts(c"foo");
+    false
+}
+
+bar :: fun() -> bool {
+    puts(c"bar");
+    true
+}
+
+main :: fun() {
+    puts(c"ONLY `foo`:");
+    foo() and bar();
+    puts(c"");
+
+    puts(c"BOTH `bar` and `foo`:");
+    bar() and foo();
+}

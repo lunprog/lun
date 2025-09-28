@@ -41,12 +41,19 @@ pub struct TestContext {
 
 impl TestContext {
     pub const TESTS_PATH: &str = "./tests.ron";
+    pub const BUILD_TESTS_PATH: &str = "./build/tests";
 
     pub fn new() -> TestContext {
         TestContext {
             records: IndexMap::new(),
             tests: Vec::new(),
         }
+    }
+
+    pub fn create_build_tests_dir() -> Result<(), TestError> {
+        fs::create_dir_all(Self::BUILD_TESTS_PATH)?;
+
+        Ok(())
     }
 
     pub fn load_tests(&mut self, path: &Path) -> Result<(), TestError> {
@@ -144,10 +151,12 @@ impl TestContext {
         let tests_count = self.tests.len();
         let width = fast_digit_length::<10>(tests_count as u128) as usize;
 
+        Self::create_build_tests_dir()?;
+
         let mut summary = TestSummary {
             ok: 0,
-            build_fail: 0,
-            unexpected_build_out: 0,
+            fail: 0,
+            unexpected_out: 0,
             duration: Duration::ZERO,
             test_count: self.tests.len(),
         };
@@ -156,11 +165,18 @@ impl TestContext {
             let test_record = self.records.get(name).unwrap();
             let mut cmd = Command::new("./target/debug/lunc");
 
-            let extra_args = stage.to_compiler_args();
-            cmd.args(extra_args);
+            let bin_path = format!(
+                "{}/{}",
+                Self::BUILD_TESTS_PATH,
+                name.split('/').nth(1).unwrap()
+            );
 
-            cmd.args(["--color", "never"]);
-            cmd.arg(path);
+            let extra_args = stage.to_compiler_args();
+            cmd.args(extra_args)
+                .args(["--color", "never"])
+                .arg("-o")
+                .arg(&bin_path)
+                .arg(path);
 
             write!(
                 out,
@@ -174,25 +190,66 @@ impl TestContext {
             let cmd_output = cmd.output()?;
             let compiler_out = String::from_utf8_lossy(&cmd_output.stderr).to_string();
 
-            if cmd_output.status.code().unwrap() as u8 != test_record.compiler_code {
+            let compiler_code = cmd_output.status.code().unwrap() as u8;
+            if compiler_code != test_record.compiler_code {
                 // compiler failed to build the test
                 out.set_color(&TestContext::compiler_fail_color_spec())?;
                 writeln!(out, "BUILD FAILED")?;
-                summary.build_fail += 1;
+                summary.fail += 1;
                 out.reset()?;
 
-                TestContext::log_test_compiler_fail(out, &cmd_output)?;
+                TestContext::log_test_compiler_fail("compiler", out, &cmd_output, true)?;
                 continue;
             }
+
+            let mut build_fail = false;
 
             if compiler_out != test_record.compiler_out {
                 // compiler outputted something different than what was expected
                 out.set_color(&TestContext::compiler_fail_color_spec())?;
                 writeln!(out, "UNEXPECTED BUILD OUT")?;
-                summary.unexpected_build_out += 1;
+                summary.unexpected_out += 1;
                 out.reset()?;
 
-                TestContext::log_test_compiler_fail(out, &cmd_output)?;
+                TestContext::log_test_compiler_fail("compiler", out, &cmd_output, true)?;
+                build_fail = true;
+            }
+
+            // run test if stage says so and the EXPECTED compiler code is zero
+            if stage.run_test() && test_record.compiler_code == 0 {
+                cmd = Command::new(&bin_path);
+
+                let test_output = cmd.output()?;
+                let test_out = String::from_utf8_lossy(&test_output.stdout).to_string();
+
+                if test_output.status.code().unwrap() as u8 != test_record.test_code {
+                    // test failed
+                    if !build_fail {
+                        out.set_color(&TestContext::compiler_fail_color_spec())?;
+                        writeln!(out, "TEST FAILED")?;
+                        summary.fail += 1;
+                        out.reset()?;
+                    }
+
+                    TestContext::log_test_compiler_fail("test", out, &test_output, false)?;
+                    continue;
+                }
+
+                if test_out != test_record.test_out {
+                    // test outputted something different than what was expected
+                    if !build_fail {
+                        out.set_color(&TestContext::compiler_fail_color_spec())?;
+                        writeln!(out, "UNEXPECTED TEST OUT")?;
+                        summary.unexpected_out += 1;
+                        out.reset()?;
+                    }
+
+                    TestContext::log_test_compiler_fail("test", out, &test_output, false)?;
+                    continue;
+                }
+            }
+
+            if build_fail {
                 continue;
             }
 
@@ -217,16 +274,24 @@ impl TestContext {
     }
 
     pub fn record_tests(&mut self, out: &mut StandardStream) -> Result<(), TestError> {
+        Self::create_build_tests_dir()?;
+
         for Test { name, path, stage } in &self.tests {
             let test_record = self.records.get_mut(name).unwrap();
             let mut cmd = Command::new("./target/debug/lunc");
 
+            let bin_path = format!(
+                "{}/{}",
+                Self::BUILD_TESTS_PATH,
+                name.split('/').nth(1).unwrap()
+            );
+
             let extra_args = stage.to_compiler_args();
-            cmd.args(extra_args);
-
-            cmd.args(["--color", "never"]);
-
-            cmd.arg(path);
+            cmd.args(extra_args)
+                .args(["--color", "never"])
+                .arg("-o")
+                .arg(&bin_path)
+                .arg(path);
 
             let cmd_output = cmd.output()?;
             let compiler_out = String::from_utf8_lossy(&cmd_output.stderr).to_string();
@@ -254,7 +319,27 @@ impl TestContext {
                 writeln!(out)?;
             }
 
-            // TODO: implement test running
+            if stage.run_test() && test_record.compiler_code == 0 {
+                cmd = Command::new(&bin_path);
+
+                let test_output = cmd.output().unwrap();
+                let test_out = String::from_utf8_lossy(&test_output.stdout).to_string();
+
+                test_record.test_out = test_out;
+                let old_testcode = test_record.test_code;
+                test_record.test_code = test_output.status.code().unwrap() as u8;
+
+                if old_testcode != test_record.test_code {
+                    out.set_color(&TestContext::compiler_fail_color_spec())?;
+                    write!(out, "NOTE: ")?;
+                    out.reset()?;
+                    writeln!(
+                        out,
+                        "test {}, test code {old_testcode} -> {}",
+                        name, test_record.test_code
+                    )?;
+                }
+            }
         }
 
         Ok(())
@@ -273,12 +358,18 @@ impl TestContext {
     }
 
     fn log_test_compiler_fail(
+        name: &'static str,
         out: &mut StandardStream,
         cmd_output: &Output,
+        stderr: bool,
     ) -> Result<(), TestError> {
-        writeln!(out, "\nstderr:")?;
-
-        out.write_all(&cmd_output.stderr)?;
+        if stderr {
+            writeln!(out, "\nstderr({name}):")?;
+            out.write_all(&cmd_output.stderr)?;
+        } else {
+            writeln!(out, "\nstdout({name}):")?;
+            out.write_all(&cmd_output.stdout)?;
+        }
 
         writeln!(out, "\nexit code: {}", cmd_output.status.code().unwrap())?;
         Ok(())
@@ -327,6 +418,10 @@ impl TestStage {
                 "multifile",
             ],
         }
+    }
+
+    pub fn run_test(&self) -> bool {
+        matches!(self, Self::Behavior)
     }
 }
 
@@ -382,8 +477,8 @@ impl Default for TestRecord {
 #[derive(Debug, Clone)]
 pub struct TestSummary {
     ok: usize,
-    build_fail: usize,
-    unexpected_build_out: usize,
+    fail: usize,
+    unexpected_out: usize,
     // other things..
     duration: Duration,
     test_count: usize,
@@ -393,13 +488,13 @@ impl TestSummary {
     pub fn failed(&self) -> bool {
         let TestSummary {
             ok: _,
-            build_fail,
-            unexpected_build_out,
+            fail,
+            unexpected_out,
             duration: _,
             test_count: _,
         } = self;
 
-        *build_fail != 0 || *unexpected_build_out != 0
+        *fail != 0 || *unexpected_out != 0
     }
 
     pub fn write_report(&self, out: &mut StandardStream) -> Result<(), TestError> {
@@ -416,8 +511,8 @@ impl TestSummary {
             writeln!(out, ", {}/{} passed successfully", self.ok, self.test_count)?;
             writeln!(
                 out,
-                "{} failed to build and {} had an unexpected compiler output",
-                self.build_fail, self.unexpected_build_out
+                "{} failed to build/test and {} had an unexpected compiler/test output",
+                self.fail, self.unexpected_out
             )?;
         } else {
             writeln!(
