@@ -6,6 +6,7 @@ use std::{
     ops::RangeInclusive,
 };
 
+use serde::{Deserialize, Serialize};
 use target_lexicon::{PointerWidth, Triple};
 
 use crate::{
@@ -14,7 +15,7 @@ use crate::{
 };
 
 /// The underlying type of an expression
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum Type {
     /// The type is not yet evaluated, we don't know it yet, it's an error if an
     /// expression, after type checking, still has Unknown type
@@ -524,7 +525,7 @@ pub enum Signedness {
 }
 
 /// A maybe not yet evaluated Symbol
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Hash, Serialize, Deserialize)]
 pub enum LazySymbol {
     Name(String),
     Sym(Symbol),
@@ -580,7 +581,7 @@ idtype! {
     /// Symbol is an idtype because in the dsir and the scir, we want to mutate
     /// every reference of a symbol and using idtype's is fast, memory efficient
     /// and easier than `Arc<RwLock<InternalSymbol>>` everywhere.
-    pub struct Symbol [ Clone, PartialEq ] {
+    pub struct Symbol [ Clone, PartialEq, Serialize, Deserialize ] {
         /// kind of symbol
         pub kind: SymKind,
         /// name when defined, it's not the full path
@@ -816,7 +817,7 @@ impl PrettyDump for Symbol {
 }
 
 /// How the type of the symbol has been computed
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Typeness {
     /// The type was inferred from an expression and can be coerced to another
     /// type.
@@ -842,7 +843,7 @@ impl PrettyDump for Typeness {
 }
 
 /// The kind of symbol
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum SymKind {
     /// Local variable
     Local { mutable: bool },
@@ -900,7 +901,7 @@ impl PrettyDump for SymKind {
 }
 
 /// A path to a definition in DSIR / DSIR
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct EffectivePath(Vec<String>);
 
 impl EffectivePath {
@@ -1065,7 +1066,7 @@ macro_rules! value_expr_impl_op {
 ///
 /// There is no `Usz` or `Isz` value expr, it's because we replace it when we do
 /// the evaluation to the corresponding integer.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ValueExpr {
     /// Internal value of a type
     Type(Type),

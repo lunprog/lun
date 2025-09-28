@@ -10,6 +10,7 @@ use std::{
 };
 
 use clap::ValueEnum;
+use serde::{Deserialize, Serialize};
 
 use crate::{symbol::EffectivePath, token::Keyword};
 
@@ -41,7 +42,7 @@ use target_lexicon::Triple;
 ///
 /// the `lo` and `hi` field expect and byte index into the underlying string,
 /// not the nth character. They are byte indices to be more efficient
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Span {
     pub lo: usize,
     pub hi: usize,
@@ -124,7 +125,7 @@ impl<I: Into<usize>, J: Into<usize>> From<(I, J, FileId)> for Span {
 }
 
 /// A file id, used to represent, which file we are talking about
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct FileId(u32);
 
 impl FileId {

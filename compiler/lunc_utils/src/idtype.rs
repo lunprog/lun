@@ -207,7 +207,7 @@ macro_rules! idtype {
 
             $crate::internal_idtype!(
                 attr = [
-                    $( $attr , )*
+                    $( $attr , )* derive(serde::Serialize, serde::Deserialize),
                     doc = "# Fields documentation",
                     $(
                         doc = concat!("## `", stringify!($field_name), "`"),
@@ -600,11 +600,12 @@ macro_rules! internal_idtype {
 
 #[doc(hidden)]
 pub use ::concat_idents::concat_idents;
+use serde::{Deserialize, Serialize};
 
 #[doc(inline)]
 pub use crate::idtype;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Entry<T> {
     #[doc(hidden)]
     pub value: RwLock<T>,
@@ -614,8 +615,18 @@ pub struct Entry<T> {
     pub count: u32,
 }
 
+/// Should rarely be cloned.
+impl<T: Clone> Clone for Entry<T> {
+    fn clone(&self) -> Self {
+        Self {
+            value: RwLock::new(self.value.read().unwrap().clone()),
+            count: self.count,
+        }
+    }
+}
+
 /// Database of idtype, for type `T`.
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Database<T> {
     data: HashMap<NonZeroUsize, Entry<T>>,
     last_id: NonZeroUsize,

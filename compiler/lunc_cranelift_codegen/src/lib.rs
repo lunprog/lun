@@ -115,11 +115,6 @@ impl ClifGen {
         }
     }
 
-    /// Returns the module tree.
-    pub fn module_tree(self) -> ModuleTree {
-        self.orbtree
-    }
-
     /// Record definitions in CLIF for a Module
     pub fn record_module(&mut self, ctx: &mut ClifGenContext, module: &ScModule) {
         for item in &module.items {
@@ -463,9 +458,9 @@ impl ClifGen {
         self.textual.res.clone()
     }
 
-    /// Finish the compilation to an object file
-    pub fn finish_obj(self) -> ObjectProduct {
-        self.module.finish()
+    /// Finish the compilation to an object file and also returns the objtree
+    pub fn finish(self) -> (ObjectProduct, ModuleTree) {
+        (self.module.finish(), self.orbtree)
     }
 }
 

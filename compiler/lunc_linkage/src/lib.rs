@@ -55,8 +55,8 @@ impl Linker {
         }
     }
 
-    /// Perform the linkage, this function must be called after [`write_obj`]
-    /// was called.
+    /// Perform the linkage, this function must be called after
+    /// [`Linker::write_obj`] was called.
     pub fn link(&mut self) -> io::Result<()> {
         match self.opts.orb_type() {
             OrbType::Bin => self.link_bin(),

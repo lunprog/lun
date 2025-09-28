@@ -6,11 +6,12 @@
 use std::collections::HashMap;
 
 use lunc_utils::symbol::{EffectivePath, LazySymbol, SymKind, Symbol};
+use serde::{Deserialize, Serialize};
 
 pub mod meta;
 
 /// A tree representing the orb definitions as a tree
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModuleTree {
     /// submodules of this module
     submodules: HashMap<String, ModuleTree>,

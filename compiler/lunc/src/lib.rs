@@ -830,7 +830,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
         .output_obj
         .then_some(argv.output.with_extension("o"));
 
-    let obj = clifgen.finish_obj();
+    let (obj, orbtree) = clifgen.finish();
     let obj_bytes = obj.emit().unwrap();
 
     timings.ssa = ssa_instant.elapsed();
@@ -852,6 +852,8 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
         return Err(CliError::LinkerFailed(out));
     }
+
+    _ = orbtree;
 
     timings.linking = linking_instant.elapsed();
 
