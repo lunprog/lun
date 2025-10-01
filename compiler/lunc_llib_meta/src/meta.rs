@@ -67,7 +67,7 @@ impl Lmeta {
 
     /// Deserializes the bytes to a Lmeta.
     ///
-    /// # Note
+    /// # Safety
     ///
     /// This function doesn't convert the old symbol's id in the orbtree
     /// to new symbol's id. So a Lmeta, from this function **should not be
