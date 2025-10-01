@@ -17,7 +17,7 @@ members = [
 
 [workspace.package]
 version = "0.1.0"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 
 [workspace.dependencies]
 lunc_cranelift_codegen = { path = "compiler/lunc_cranelift_codegen" }
