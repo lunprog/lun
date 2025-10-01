@@ -10,6 +10,9 @@ edition = "2024"
 
 [dependencies]
 lunc_utils = { workspace = true }
+lunc_llib_meta = { workspace = true }
 
 # other dependencies
 tempfile = "3.23.0"
+tar = "0.4.44"
+thiserror = { workspace = true }

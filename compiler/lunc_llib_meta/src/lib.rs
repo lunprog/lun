@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 pub mod meta;
 
 /// A tree representing the orb definitions as a tree
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModuleTree {
     /// submodules of this module
     submodules: HashMap<String, ModuleTree>,

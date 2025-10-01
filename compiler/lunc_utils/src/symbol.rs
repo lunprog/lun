@@ -2,6 +2,7 @@
 
 use std::{
     fmt::{self, Display},
+    hash::Hash,
     io::{self, Write},
     ops::RangeInclusive,
 };
@@ -525,7 +526,7 @@ pub enum Signedness {
 }
 
 /// A maybe not yet evaluated Symbol
-#[derive(Debug, Clone, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum LazySymbol {
     Name(String),
     Sym(Symbol),
@@ -581,7 +582,7 @@ idtype! {
     /// Symbol is an idtype because in the dsir and the scir, we want to mutate
     /// every reference of a symbol and using idtype's is fast, memory efficient
     /// and easier than `Arc<RwLock<InternalSymbol>>` everywhere.
-    pub struct Symbol [ Clone, PartialEq, Serialize, Deserialize ] {
+    pub struct Symbol [ Clone, PartialEq, Hash, Serialize, Deserialize ] {
         /// kind of symbol
         pub kind: SymKind,
         /// name when defined, it's not the full path
@@ -1225,8 +1226,33 @@ impl PrettyDump for ValueExpr {
     }
 }
 
+impl Hash for ValueExpr {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Type(val) => val.hash(state),
+            Self::Boolean(val) => val.hash(state),
+            Self::I8(val) => val.hash(state),
+            Self::I16(val) => val.hash(state),
+            Self::I32(val) => val.hash(state),
+            Self::I64(val) => val.hash(state),
+            Self::I128(val) => val.hash(state),
+            Self::U8(val) => val.hash(state),
+            Self::U16(val) => val.hash(state),
+            Self::U32(val) => val.hash(state),
+            Self::U64(val) => val.hash(state),
+            Self::U128(val) => val.hash(state),
+            Self::Str(val) => val.hash(state),
+            Self::Char(val) => val.hash(state),
+            Self::F32(val) => val.to_le_bytes().hash(state),
+            Self::F64(val) => val.to_le_bytes().hash(state),
+            // write a dummy thing for Void
+            Self::Void => state.write_u8(0xFF),
+        }
+    }
+}
+
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
 
     #[test]

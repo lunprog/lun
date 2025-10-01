@@ -60,7 +60,7 @@
 use std::{
     collections::HashMap,
     num::NonZeroUsize,
-    sync::{LazyLock, RwLock, RwLockReadGuard, RwLockWriteGuard},
+    sync::{LazyLock, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
 
 // TODO(URGENT): rewrite this macro as a procedural macro, declarative macros
@@ -135,14 +135,13 @@ macro_rules! idtype {
     {impl Hash for $name:ident; $($rest:tt)*} => {
         impl std::hash::Hash for $name {
             fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-                // let db = Self::database().lock();
+                let db = Self::database().lock();
 
-                // let entry = db.get_entry(self.0);
+                let entry = db.get_entry(self.0);
 
-                // let guard = entry.value.read().unwrap();
+                let guard = entry.value.read().unwrap();
 
-                // <<Self as $crate::idtype::InternalType>::Internal as std::hash::Hash>::hash(&*guard, state);
-                state.write_usize(self.0.get());
+                <<Self as $crate::idtype::InternalType>::Internal as std::hash::Hash>::hash(&*guard, state);
             }
         }
 
@@ -160,21 +159,19 @@ macro_rules! idtype {
             /// see
             #[doc = concat!("[`", stringify!($name), "::object_eq`]")]
             fn eq(&self, other: &Self) -> bool {
-                // // NOTE: we cannot use the `object_eq` method here because we
-                // // don't know if the internal value implements `Eq`
-                // let db = Self::database().lock();
+                let db = Self::database().lock();
 
-                // let self_entry = db.get_entry(self.0);
+                let self_entry = db.get_entry(self.0);
 
-                // let self_guard = self_entry.value.read().unwrap();
+                let self_guard = self_entry.value.read().unwrap();
 
-                // let other_entry = db.get_entry(other.0);
+                let other_entry = db.get_entry(other.0);
 
-                // let other_guard = other_entry.value.read().unwrap();
+                let other_guard = other_entry.value.read().unwrap();
 
-                // PartialEq::eq(&*self_guard, &*other_guard)
+                PartialEq::eq(&*self_guard, &*other_guard)
 
-                self.object_eq(other)
+                // self.object_eq(other)
             }
         }
 
@@ -748,6 +745,10 @@ impl<T> Database<T> {
         self.last_id = NonZeroUsize::new(1).unwrap();
         self.data.clear();
     }
+
+    pub fn data(self) -> HashMap<NonZeroUsize, Entry<T>> {
+        self.data
+    }
 }
 
 impl<T> Default for Database<T> {
@@ -807,13 +808,27 @@ impl<T> Default for DatabaseLock<T> {
 pub trait InternalType {
     type Internal;
 }
+/// We are using a lock in the tests of idtype because it makes those test
+/// "single-threaded", by default test are run in parallel in Rust and
+/// idtype does not support being used across multiple tests, and even
+/// if they do, those tests must run independently so we use a lock to
+/// ensure that the tests run sequantially, (we don't know the order but
+/// whatever..).
+#[doc(hidden)]
+pub static TEST_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
 #[cfg(test)]
 pub mod tests {
     // NOTE: this module is marked as public so that the functions we do not use
     // do no emit the `dead_code` lint
 
-    use std::{error::Error, panic::catch_unwind, ptr, sync::Mutex};
+    use std::{
+        collections::HashSet,
+        error::Error,
+        hash::{Hash, Hasher},
+        panic::catch_unwind,
+        ptr,
+    };
 
     use super::*;
 
@@ -864,19 +879,11 @@ pub mod tests {
         }
     }
 
-    /// We are using a lock in the tests of idtype because it makes those test
-    /// "single-threaded", by default test are run in parallel in Rust and
-    /// idtype does not support being used across multiple tests, and even
-    /// if they do, those tests must run independently so we use a lock to
-    /// ensure that the tests run sequantially, (we don't know the order but
-    /// whatever..).
-    static LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
-
     type TestRes = Result<(), Box<dyn Error>>;
 
     #[test]
     fn test_basic_creation_and_inspect() -> TestRes {
-        let _lock = LOCK.lock()?;
+        let _lock = TEST_LOCK.lock()?;
         clear_test_id_db();
 
         let a = TestId::with_internal("hello");
@@ -893,7 +900,7 @@ pub mod tests {
 
     #[test]
     fn test_clone_and_alive_count() -> TestRes {
-        let _lock = LOCK.lock()?;
+        let _lock = TEST_LOCK.lock()?;
         clear_test_id_db();
 
         let a = TestId::with_internal("value");
@@ -910,7 +917,7 @@ pub mod tests {
 
     #[test]
     fn test_drop_and_alive_cleanup() -> TestRes {
-        let _lock = LOCK.lock()?;
+        let _lock = TEST_LOCK.lock()?;
         clear_test_id_db();
 
         let a = TestId::with_internal("temp");
@@ -925,7 +932,7 @@ pub mod tests {
 
     #[test]
     fn test_mutation() -> TestRes {
-        let _lock = LOCK.lock()?;
+        let _lock = TEST_LOCK.lock()?;
         clear_test_id_db();
 
         let a = TestId::with_internal("hello");
@@ -943,7 +950,7 @@ pub mod tests {
 
     #[test]
     fn test_try_clone_value_and_clone_val() -> TestRes {
-        let _lock = LOCK.lock()?;
+        let _lock = TEST_LOCK.lock()?;
         clear_test_id_db();
 
         let a = TestId::with_internal("abc");
@@ -956,7 +963,7 @@ pub mod tests {
 
     #[test]
     fn test_multiple_id_types_independence() -> TestRes {
-        let _lock = LOCK.lock()?;
+        let _lock = TEST_LOCK.lock()?;
         clear_test_id_db();
         clear_another_id_db();
 
@@ -973,7 +980,7 @@ pub mod tests {
 
     #[test]
     fn test_unit_idtype_creation() -> TestRes {
-        let _lock = LOCK.lock()?;
+        let _lock = TEST_LOCK.lock()?;
         clear_unit_id_db();
 
         let a = UnitId::with_internal(());
@@ -989,8 +996,56 @@ pub mod tests {
     }
 
     #[test]
+    fn partial_eq_vs_object_eq() -> TestRes {
+        let _lock = TEST_LOCK.lock()?;
+        clear_test_id_db();
+
+        let a = TestId::with_internal("same");
+        let b = TestId::with_internal("same");
+
+        // object_eq compares identity
+        assert!(!a.object_eq(&b));
+        // PartialEq compares underlying data
+        assert_eq!(a, b);
+
+        Ok(())
+    }
+
+    #[test]
+    fn hash_and_hashset_behavior() -> TestRes {
+        let _lock = TEST_LOCK.lock()?;
+
+        clear_test_id_db();
+
+        let a = TestId::with_internal("foo");
+        let b = TestId::with_internal("foo");
+
+        // They should hash the same
+        let hash_a = {
+            let mut h = std::collections::hash_map::DefaultHasher::new();
+            a.hash(&mut h);
+            h.finish()
+        };
+
+        let hash_b = {
+            let mut h = std::collections::hash_map::DefaultHasher::new();
+            b.hash(&mut h);
+            h.finish()
+        };
+        assert_eq!(hash_a, hash_b);
+
+        // Inserting both into a HashSet yields length 1
+        let mut set = HashSet::new();
+        set.insert(a);
+        set.insert(b);
+        assert_eq!(set.len(), 1);
+
+        Ok(())
+    }
+
+    #[test]
     fn debug_output_contains_fields() -> TestRes {
-        let _lock = LOCK.lock()?;
+        let _lock = TEST_LOCK.lock()?;
         clear_test_id_db();
 
         let x = TestId::with_internal("dbg");
@@ -1004,7 +1059,7 @@ pub mod tests {
 
     #[test]
     fn unsafe_from_raw_does_not_increment_count_but_drop_decrements() -> TestRes {
-        let _lock = LOCK.lock()?;
+        let _lock = TEST_LOCK.lock()?;
         clear_test_id_db();
 
         let a = TestId::with_internal("raw");
@@ -1025,7 +1080,7 @@ pub mod tests {
 
     #[test]
     fn unit_id_clone_and_drop_sequence() -> TestRes {
-        let _lock = LOCK.lock()?;
+        let _lock = TEST_LOCK.lock()?;
         clear_unit_id_db();
 
         let u1 = UnitId::with_internal(());

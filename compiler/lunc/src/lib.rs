@@ -106,6 +106,8 @@ pub enum CliError {
     Io(#[from] io::Error),
     #[error("failed to link: {0}")]
     LinkerFailed(String),
+    #[error(transparent)]
+    Linkage(#[from] lunc_linkage::Error),
 }
 
 pub fn flush_outs() {
@@ -836,8 +838,8 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     timings.ssa = ssa_instant.elapsed();
     let linkage_instant = Instant::now();
 
-    // 8. link the object files
-    let mut linker = Linker::new(obj_bytes, objpath, &argv.output, opts.clone());
+    // 8. link the object files, .o => Bin / Llib file
+    let mut linker = Linker::new(obj_bytes, objpath, &argv.output, orbtree, opts.clone());
 
     linker.write_obj()?;
     if argv.debug.halt(CompStage::Linkage) {
@@ -845,12 +847,14 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
         return Ok(());
     }
 
-    linker.link()?;
-    let out = linker.linker_out();
-    if !out.status.success() {
-        let out = String::from_utf8_lossy(&out.stderr).trim().to_string();
+    match linker.link() {
+        Ok(()) => {}
+        Err(lunc_linkage::Error::Linker(out)) => {
+            let out = String::from_utf8_lossy(&out.stderr).trim().to_string();
 
-        return Err(CliError::LinkerFailed(out));
+            return Err(CliError::LinkerFailed(out));
+        }
+        Err(e) => return Err(e.into()),
     }
 
     _ = orbtree;
