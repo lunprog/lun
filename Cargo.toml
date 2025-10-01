@@ -31,7 +31,7 @@ lunc_scir = { path = "compiler/lunc_scir" }
 lunc_utils = { path = "compiler/lunc_utils" }
 
 # other dependencies
-thiserror = "2.0.16"
+thiserror = "2.0.17"
 codespan-reporting = "0.12.0"
 half = "2.6.0"
 termcolor = "1.4.1"
