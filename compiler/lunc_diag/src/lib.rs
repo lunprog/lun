@@ -647,6 +647,11 @@ impl ToDiagnostic for ReachedEOF {
     }
 }
 
+/// Diagnostic was guaranteed to be reported to the user.
+pub struct DiagGuaranteed(pub(crate) ());
+
+pub type Result<T, E = DiagGuaranteed> = core::result::Result<T, E>;
+
 #[cfg(test)]
 mod tests {
     use super::*;
