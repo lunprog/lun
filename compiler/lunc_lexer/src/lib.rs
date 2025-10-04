@@ -9,7 +9,7 @@ use diags::{
     TooManyCodepointsInCharLiteral, UnknownCharacterEscape, UnknownToken,
     UnterminatedStringLiteral,
 };
-use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF};
+use lunc_diag::{DiagnosticSink, FileId, ReachedEOF, Result};
 
 use lunc_utils::{
     Span, span,
@@ -55,9 +55,7 @@ impl Lexer {
             let t = match self.lex_token() {
                 Ok(TokenType::Dummy) => continue,
                 Ok(t) => t,
-                Err(diag) => {
-                    // irrecoverable error diagnostic
-                    self.sink.emit(diag);
+                Err(_) => {
                     break;
                 }
             };
@@ -132,7 +130,7 @@ impl Lexer {
         }
     }
 
-    pub fn lex_token(&mut self) -> Result<TokenType, Diagnostic> {
+    pub fn lex_token(&mut self) -> Result<TokenType> {
         use lunc_utils::token::{Punctuation::*, TokenType::*};
 
         let t = match self.peek() {
@@ -305,10 +303,7 @@ impl Lexer {
                 let str = match self.lex_string_with_options(false) {
                     Ok(TokenType::StringLit(s)) => s,
                     Ok(_) => unreachable!(),
-                    Err(d) => {
-                        self.sink.emit(d);
-                        String::default()
-                    }
+                    Err(_) => String::default(),
                 };
 
                 TokenType::SpecializedStringLit {
@@ -320,10 +315,7 @@ impl Lexer {
                 let char = match self.lex_char() {
                     Ok(TokenType::CharLit(c)) => c,
                     Ok(_) => unreachable!(),
-                    Err(d) => {
-                        self.sink.emit(d);
-                        char::default()
-                    }
+                    Err(_) => char::default(),
                 };
 
                 TokenType::SpecializedCharLit {
@@ -411,7 +403,7 @@ impl Lexer {
         hex
     }
 
-    pub fn lex_number(&mut self) -> Result<TokenType, Diagnostic> {
+    pub fn lex_number(&mut self) -> Result<TokenType> {
         let number = self.lex_number_internal()?;
 
         match self.peek() {
@@ -437,7 +429,7 @@ impl Lexer {
 
     /// function to lex a number BUT does not support specialization, call
     /// [`lex_number`] instead
-    fn lex_number_internal(&mut self) -> Result<TokenType, Diagnostic> {
+    fn lex_number_internal(&mut self) -> Result<TokenType> {
         // Integer literal grammar:
         //
         // int_lit = decimal_lit | binary_lit | octal_lit | hexadecimal_lit ;
@@ -472,13 +464,7 @@ impl Lexer {
                 self.pop(); // 0
                 self.pop(); // X / x
                 let int_str = self.lex_hexadecimal();
-                let int_part = match self.parse_u128(&int_str, 16) {
-                    Ok(h) => h,
-                    Err(d) => {
-                        self.sink.emit(d);
-                        0
-                    }
-                };
+                let int_part = self.parse_u128(&int_str, 16).unwrap_or_default();
 
                 match self.peek() {
                     Some('.') => {
@@ -490,10 +476,7 @@ impl Lexer {
 
                                 match self.parse_u128_with_digit_count(&frac_str, 16) {
                                     Ok((f, n)) => (f, n as i32),
-                                    Err(d) => {
-                                        self.sink.emit(d);
-                                        (0, 0)
-                                    }
+                                    Err(_) => (0, 0),
                                 }
                             }
                             _ => (0, 0),
@@ -531,10 +514,7 @@ impl Lexer {
 
                                 let exp = match self.parse_u128(&exp_str, 10) {
                                     Ok(e) => e as i32,
-                                    Err(d) => {
-                                        self.sink.emit(d);
-                                        0
-                                    }
+                                    Err(_) => 0,
                                 };
 
                                 sign * exp
@@ -596,10 +576,7 @@ impl Lexer {
                         let exp_value = sign
                             * match self.parse_u128(&exp_str, 10) {
                                 Ok(e) => e as i32,
-                                Err(d) => {
-                                    self.sink.emit(d);
-                                    0
-                                }
+                                Err(_) => 0,
                             };
 
                         let int_f64 = int_part as f64;
@@ -642,12 +619,7 @@ impl Lexer {
 
                         match self.parse_u128_with_digit_count(&frac_str, 10) {
                             Ok((f, n)) => (f, n as i32),
-                            Err(d) => {
-                                // NOTE: we are not using ? to propagate the diag, we just use
-                                // a poisoned value
-                                self.sink.emit(d);
-                                (0, 0)
-                            }
+                            Err(_) => (0, 0),
                         }
                     }
                     _ => (0, 0),
@@ -684,10 +656,7 @@ impl Lexer {
 
                         let exp = match self.parse_u128(&exp_str, 10) {
                             Ok(e) => e as i32,
-                            Err(d) => {
-                                self.sink.emit(d);
-                                0
-                            }
+                            Err(_) => 0,
                         };
 
                         sign * exp
@@ -708,14 +677,11 @@ impl Lexer {
         }
     }
 
-    pub fn lex_string(&mut self) -> Result<TokenType, Diagnostic> {
+    pub fn lex_string(&mut self) -> Result<TokenType> {
         self.lex_string_with_options(true)
     }
 
-    pub fn lex_string_with_options(
-        &mut self,
-        support_escape: bool,
-    ) -> Result<TokenType, Diagnostic> {
+    pub fn lex_string_with_options(&mut self, support_escape: bool) -> Result<TokenType> {
         let mut str = String::new();
 
         // pop the first "
@@ -740,13 +706,8 @@ impl Lexer {
                         continue;
                     }
 
-                    match self.lex_escape_sequence(es, true) {
-                        Ok(c) => {
-                            str.push(c);
-                        }
-                        Err(d) => {
-                            self.sink.emit(d);
-                        }
+                    if let Ok(c) = self.lex_escape_sequence(es, true) {
+                        str.push(c);
                     }
                 }
                 Some(c) => {
@@ -764,7 +725,7 @@ impl Lexer {
         Ok(TokenType::StringLit(str))
     }
 
-    pub fn lex_char(&mut self) -> Result<TokenType, Diagnostic> {
+    pub fn lex_char(&mut self) -> Result<TokenType> {
         self.expect('\'');
 
         let mut empty_char = false;
@@ -783,13 +744,7 @@ impl Lexer {
                 if es == '\'' {
                     es
                 } else {
-                    match self.lex_escape_sequence(es, false) {
-                        Ok(es) => es,
-                        Err(d) => {
-                            self.sink.emit(d);
-                            char::default()
-                        }
-                    }
+                    self.lex_escape_sequence(es, false).unwrap_or_default()
                 }
             }
             Some('\'') => {
@@ -830,7 +785,7 @@ impl Lexer {
 
     /// makes an escape sequence return a tuple of the character that corresponds
     /// to the escape and the increments to make to the head
-    pub fn lex_escape_sequence(&mut self, es: char, string: bool) -> Result<char, Diagnostic> {
+    pub fn lex_escape_sequence(&mut self, es: char, string: bool) -> Result<char> {
         #[inline(always)]
         fn char(i: u8) -> char {
             i as char
@@ -925,7 +880,7 @@ impl Lexer {
 
     /// set string to true if the escape sequence is part of a string, false if
     /// it is part of a char literal
-    pub fn lex_hex_escape(&mut self, string: bool) -> Result<char, Diagnostic> {
+    pub fn lex_hex_escape(&mut self, string: bool) -> Result<char> {
         let mut str = String::with_capacity(2);
         for _ in 0..2 {
             str.push(match self.peek() {
@@ -988,7 +943,7 @@ impl Lexer {
     /// # Errors
     ///
     /// Returns a [`Diagnostic`] if the input is invalid or too large.
-    pub fn parse_u128(&mut self, input: &str, radix: u8) -> Result<u128, Diagnostic> {
+    pub fn parse_u128(&mut self, input: &str, radix: u8) -> Result<u128> {
         self.parse_u128_with_digit_count(input, radix)
             .map(|(int, _)| int)
     }
@@ -1014,7 +969,7 @@ impl Lexer {
         input: &str,
         radix: u8,
         options: ParseOptions,
-    ) -> Result<u128, Diagnostic> {
+    ) -> Result<u128> {
         self.parse_u128_advanced(input, radix, options)
             .map(|(int, _)| int)
     }
@@ -1039,11 +994,7 @@ impl Lexer {
     /// # Errors
     ///
     /// Returns a [`Diagnostic`] if the input is invalid or overflows.
-    pub fn parse_u128_with_digit_count(
-        &mut self,
-        input: &str,
-        radix: u8,
-    ) -> Result<(u128, u32), Diagnostic> {
+    pub fn parse_u128_with_digit_count(&mut self, input: &str, radix: u8) -> Result<(u128, u32)> {
         self.parse_u128_advanced(
             input,
             radix,
@@ -1087,7 +1038,7 @@ impl Lexer {
         input: &str,
         radix: u8,
         options: ParseOptions,
-    ) -> Result<(u128, u32), Diagnostic> {
+    ) -> Result<(u128, u32)> {
         if !(2..=36).contains(&radix) {
             panic!("invalid radix provided, {radix}, it must be between 2 and 36 included.")
         }
