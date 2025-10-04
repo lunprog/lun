@@ -158,12 +158,33 @@ impl Lexer {
             Some(',') => Punct(Comma),
             Some(';') => Punct(Semicolon),
             Some('^') => Punct(Caret),
-            Some('&') => Punct(Ampsand),
-            Some('|') => Punct(Pipe),
+            Some('&') => {
+                self.pop();
+
+                match self.peek() {
+                    Some('&') => {
+                        self.pop();
+                        return Ok(Punct(Ampsand2));
+                    }
+                    _ => return Ok(Punct(Ampsand)),
+                }
+            }
+            Some('|') => {
+                self.pop();
+
+                match self.peek() {
+                    Some('|') => {
+                        self.pop();
+                        return Ok(Punct(Pipe2));
+                    }
+                    _ => return Ok(Punct(Pipe)),
+                }
+            }
             Some('%') => Punct(Percent),
             Some('#') => Punct(Hashtag),
             Some('=') => {
                 self.pop();
+
                 match self.peek() {
                     Some('=') => {
                         self.pop();
@@ -314,7 +335,6 @@ impl Lexer {
                 use TokenType::Kw;
 
                 match word.as_str() {
-                    Keyword::AND => Kw(Keyword::And),
                     Keyword::AS => Kw(Keyword::As),
                     Keyword::BREAK => Kw(Keyword::Break),
                     Keyword::COMPTIME => Kw(Keyword::Comptime),
@@ -332,7 +352,6 @@ impl Lexer {
                     Keyword::LOOP => Kw(Keyword::Loop),
                     Keyword::MUT => Kw(Keyword::Mut),
                     Keyword::NULL => Kw(Keyword::Null),
-                    Keyword::OR => Kw(Keyword::Or),
                     Keyword::ORB => Kw(Keyword::Orb),
                     Keyword::PUB => Kw(Keyword::Pub),
                     Keyword::RETURN => Kw(Keyword::Return),

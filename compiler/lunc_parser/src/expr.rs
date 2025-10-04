@@ -571,8 +571,8 @@ impl Precedence {
         use TokenType::Punct;
         match value {
             Punct(Punctuation::Equal) => Some(Precedence::Assignment),
-            Kw(Keyword::Or) => Some(Precedence::LogicalOr),
-            Kw(Keyword::And) => Some(Precedence::LogicalAnd),
+            Punct(Punctuation::Ampsand2) => Some(Precedence::LogicalOr),
+            Punct(Punctuation::Pipe2) => Some(Precedence::LogicalAnd),
             Punct(
                 Punctuation::Lt | Punctuation::Gt | Punctuation::LtEqual | Punctuation::GtEqual,
             ) => Some(Precedence::Comparison),

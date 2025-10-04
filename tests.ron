@@ -273,14 +273,14 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
                     value: none;
                   };
                   typ: *fun () -> bool;
-                } @ 201..204 (fid = 0);
+                } @ 200..203 (fid = 0);
                 args: [];
               };
               typ: bool;
-            } @ 201..206 (fid = 0);
+            } @ 200..205 (fid = 0);
           };
           typ: bool;
-        } @ 191..206 (fid = 0) @ 191..206 (fid = 0),
+        } @ 191..205 (fid = 0) @ 191..205 (fid = 0),
 
         Expression {
           expr: FunCall {
@@ -296,16 +296,16 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
                 value: none;
               };
               typ: *fun (* i8) -> void;
-            } @ 212..216 (fid = 0);
+            } @ 211..215 (fid = 0);
             args: [
               Expression {
                 expr: c_str "";
                 typ: * i8;
-              } @ 217..220 (fid = 0),
+              } @ 216..219 (fid = 0),
             ];
           };
           typ: void;
-        } @ 212..221 (fid = 0) @ 212..221 (fid = 0),
+        } @ 211..220 (fid = 0) @ 211..220 (fid = 0),
 
         Expression {
           expr: FunCall {
@@ -321,16 +321,16 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
                 value: none;
               };
               typ: *fun (* i8) -> void;
-            } @ 228..232 (fid = 0);
+            } @ 227..231 (fid = 0);
             args: [
               Expression {
                 expr: c_str "BOTH `bar` and `foo`:";
                 typ: * i8;
-              } @ 233..257 (fid = 0),
+              } @ 232..256 (fid = 0),
             ];
           };
           typ: void;
-        } @ 228..258 (fid = 0) @ 228..258 (fid = 0),
+        } @ 227..257 (fid = 0) @ 227..257 (fid = 0),
 
         Expression {
           expr: Binary {
@@ -348,11 +348,11 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
                     value: none;
                   };
                   typ: *fun () -> bool;
-                } @ 264..267 (fid = 0);
+                } @ 263..266 (fid = 0);
                 args: [];
               };
               typ: bool;
-            } @ 264..269 (fid = 0);
+            } @ 263..268 (fid = 0);
             op: LogicalAnd;
             rhs: Expression {
               expr: FunCall {
@@ -368,18 +368,18 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
                     value: none;
                   };
                   typ: *fun () -> bool;
-                } @ 274..277 (fid = 0);
+                } @ 272..275 (fid = 0);
                 args: [];
               };
               typ: bool;
-            } @ 274..279 (fid = 0);
+            } @ 272..277 (fid = 0);
           };
           typ: bool;
-        } @ 264..279 (fid = 0) @ 264..279 (fid = 0),
+        } @ 263..277 (fid = 0) @ 263..277 (fid = 0),
       ];
       last_expr: none;
       typ: void;
-    } @ 159..282 (fid = 0);
+    } @ 159..280 (fid = 0);
     info: {
       defined_mut: false;
     };
@@ -393,7 +393,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
       typeness: explicit;
       value: none;
     };
-  } @ 145..282 (fid = 0),
+  } @ 145..280 (fid = 0),
 ]
 ; SSA of orb logic_and
 
@@ -431,9 +431,9 @@ block0:
 
 data %__cstr_logic_and_170_184_0 = align(8) { 79, 78, 76, 89, 32, 96, 102, 111, 111, 96, 58, 0 }
 
-data %__cstr_logic_and_217_220_0 = align(8) { 0 }
+data %__cstr_logic_and_216_219_0 = align(8) { 0 }
 
-data %__cstr_logic_and_233_257_0 = align(8) { 66, 79, 84, 72, 32, 96, 98, 97, 114, 96, 32, 97, 110, 100, 32, 96, 102, 111, 111, 96, 58, 0 }
+data %__cstr_logic_and_232_256_0 = align(8) { 66, 79, 84, 72, 32, 96, 98, 97, 114, 96, 32, 97, 110, 100, 32, 96, 102, 111, 111, 96, 58, 0 }
 
 ; name = "main", realname = "_L9logic_and4main"
 function u0:3() system_v {
@@ -2329,11 +2329,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                       typ: unknown;
                       typeness: implicit;
                       value: none;
-                    } @ 285..286 (fid = 0);
+                    } @ 284..285 (fid = 0);
                     op: CompGT;
-                    rhs: integer 2 @ 289..290 (fid = 0);
-                  } @ 285..290 (fid = 0);
-                } @ 274..290 (fid = 0);
+                    rhs: integer 2 @ 288..289 (fid = 0);
+                  } @ 284..289 (fid = 0);
+                } @ 274..289 (fid = 0);
               } @ none;
               then_br: Break {
                 label: label;
@@ -2355,9 +2355,9 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                     typ: unknown;
                     typeness: explicit;
                     value: none;
-                  } @ 301..308 (fid = 0);
+                  } @ 300..307 (fid = 0);
                   args: [
-                    string "j = {}" @ 309..317 (fid = 0),
+                    string "j = {}" @ 308..316 (fid = 0),
 
                     Symbol {
                       kind: local;
@@ -2368,19 +2368,19 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                       typ: unknown;
                       typeness: implicit;
                       value: none;
-                    } @ 319..320 (fid = 0),
+                    } @ 318..319 (fid = 0),
                   ];
-                } @ 301..321 (fid = 0) @ 301..321 (fid = 0),
+                } @ 300..320 (fid = 0) @ 300..320 (fid = 0),
 
                 @last_expr: none,
-              ] @ 291..328 (fid = 0);
+              ] @ 290..327 (fid = 0);
             } @ none @ none,
 
             @last_expr: none,
-          ] @ 291..328 (fid = 0);
-        } @ 261..328 (fid = 0),
-      ] @ 173..330 (fid = 0);
-    } @ 167..330 (fid = 0);
+          ] @ 290..327 (fid = 0);
+        } @ 261..327 (fid = 0),
+      ] @ 173..329 (fid = 0);
+    } @ 167..329 (fid = 0);
     sym: Symbol {
       kind: function;
       name: main @ 159..163 (fid = 0);
@@ -2391,7 +2391,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       typeness: explicit;
       value: none;
     };
-  } @ 159..330 (fid = 0),
+  } @ 159..329 (fid = 0),
 ]
 "#,
         compiler_code: 0,
@@ -3105,158 +3105,148 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     "lexer/kw_idents": (
         compiler_out: "tokenstream = {
   {
-    tt: keyword 'and';
-    loc: 19..22 (fid = 0);
-    lexeme: `and`;
-  },
-  {
     tt: keyword 'as';
-    loc: 23..25 (fid = 0);
+    loc: 19..21 (fid = 0);
     lexeme: `as`;
   },
   {
     tt: keyword 'break';
-    loc: 26..31 (fid = 0);
+    loc: 22..27 (fid = 0);
     lexeme: `break`;
   },
   {
     tt: keyword 'comptime';
-    loc: 32..40 (fid = 0);
+    loc: 28..36 (fid = 0);
     lexeme: `comptime`;
   },
   {
     tt: keyword 'continue';
-    loc: 41..49 (fid = 0);
+    loc: 37..45 (fid = 0);
     lexeme: `continue`;
   },
   {
     tt: keyword 'defer';
-    loc: 50..55 (fid = 0);
+    loc: 46..51 (fid = 0);
     lexeme: `defer`;
   },
   {
     tt: keyword 'else';
-    loc: 56..60 (fid = 0);
+    loc: 52..56 (fid = 0);
     lexeme: `else`;
   },
   {
     tt: keyword 'extern';
-    loc: 61..67 (fid = 0);
+    loc: 57..63 (fid = 0);
     lexeme: `extern`;
   },
   {
     tt: keyword 'false';
-    loc: 68..73 (fid = 0);
+    loc: 64..69 (fid = 0);
     lexeme: `false`;
   },
   {
     tt: keyword 'for';
-    loc: 74..77 (fid = 0);
+    loc: 70..73 (fid = 0);
     lexeme: `for`;
   },
   {
     tt: keyword 'fun';
-    loc: 78..81 (fid = 0);
+    loc: 74..77 (fid = 0);
     lexeme: `fun`;
   },
   {
     tt: keyword 'if';
-    loc: 82..84 (fid = 0);
+    loc: 78..80 (fid = 0);
     lexeme: `if`;
   },
   {
     tt: keyword 'impl';
-    loc: 85..89 (fid = 0);
+    loc: 81..85 (fid = 0);
     lexeme: `impl`;
   },
   {
     tt: keyword 'in';
-    loc: 90..92 (fid = 0);
+    loc: 86..88 (fid = 0);
     lexeme: `in`;
   },
   {
     tt: keyword 'let';
-    loc: 93..96 (fid = 0);
+    loc: 89..92 (fid = 0);
     lexeme: `let`;
   },
   {
     tt: keyword 'loop';
-    loc: 97..101 (fid = 0);
+    loc: 93..97 (fid = 0);
     lexeme: `loop`;
   },
   {
     tt: keyword 'mut';
-    loc: 102..105 (fid = 0);
+    loc: 98..101 (fid = 0);
     lexeme: `mut`;
   },
   {
     tt: keyword 'null';
-    loc: 106..110 (fid = 0);
+    loc: 102..106 (fid = 0);
     lexeme: `null`;
   },
   {
-    tt: keyword 'or';
-    loc: 111..113 (fid = 0);
-    lexeme: `or`;
-  },
-  {
     tt: keyword 'orb';
-    loc: 114..117 (fid = 0);
+    loc: 107..110 (fid = 0);
     lexeme: `orb`;
   },
   {
     tt: keyword 'pub';
-    loc: 118..121 (fid = 0);
+    loc: 111..114 (fid = 0);
     lexeme: `pub`;
   },
   {
     tt: keyword 'return';
-    loc: 122..128 (fid = 0);
+    loc: 115..121 (fid = 0);
     lexeme: `return`;
   },
   {
     tt: keyword 'self';
-    loc: 129..133 (fid = 0);
+    loc: 122..126 (fid = 0);
     lexeme: `self`;
   },
   {
     tt: keyword 'then';
-    loc: 134..138 (fid = 0);
+    loc: 127..131 (fid = 0);
     lexeme: `then`;
   },
   {
     tt: keyword 'trait';
-    loc: 139..144 (fid = 0);
+    loc: 132..137 (fid = 0);
     lexeme: `trait`;
   },
   {
     tt: keyword 'true';
-    loc: 145..149 (fid = 0);
+    loc: 138..142 (fid = 0);
     lexeme: `true`;
   },
   {
     tt: keyword 'while';
-    loc: 150..155 (fid = 0);
+    loc: 143..148 (fid = 0);
     lexeme: `while`;
   },
   {
     tt: ident 'foo';
-    loc: 183..186 (fid = 0);
+    loc: 176..179 (fid = 0);
     lexeme: `foo`;
   },
   {
     tt: ident 'bar_baz';
-    loc: 187..194 (fid = 0);
+    loc: 180..187 (fid = 0);
     lexeme: `bar_baz`;
   },
   {
     tt: ident 'FooBarBaz';
-    loc: 195..204 (fid = 0);
+    loc: 188..197 (fid = 0);
     lexeme: `FooBarBaz`;
   },
   {
     tt: end of file;
-    loc: 205..206 (fid = 0);
+    loc: 198..199 (fid = 0);
     lexeme: N/A;
   },
 }
@@ -3398,28 +3388,43 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     lexeme: `&`;
   },
   {
+    tt: punctuation Ampsand2;
+    loc: 59..61 (fid = 0);
+    lexeme: `&&`;
+  },
+  {
     tt: punctuation Pipe;
-    loc: 59..60 (fid = 0);
+    loc: 62..63 (fid = 0);
     lexeme: `|`;
   },
   {
+    tt: punctuation Pipe2;
+    loc: 64..66 (fid = 0);
+    lexeme: `||`;
+  },
+  {
     tt: punctuation Percent;
-    loc: 61..62 (fid = 0);
+    loc: 67..68 (fid = 0);
     lexeme: `%`;
   },
   {
     tt: punctuation Dot;
-    loc: 63..64 (fid = 0);
+    loc: 69..70 (fid = 0);
     lexeme: `.`;
   },
   {
     tt: punctuation DotStar;
-    loc: 65..67 (fid = 0);
+    loc: 71..73 (fid = 0);
     lexeme: `.*`;
   },
   {
+    tt: punctuation Hashtag;
+    loc: 74..75 (fid = 0);
+    lexeme: `#`;
+  },
+  {
     tt: end of file;
-    loc: 68..69 (fid = 0);
+    loc: 76..77 (fid = 0);
     lexeme: N/A;
   },
 }
@@ -5473,15 +5478,15 @@ error[E008]: mismatched types
 error[E008]: mismatched types
    ┌─ ./tests/scir/E008.lun:32:10
    │
-32 │     c :: v and v;
-   │          ^^^^^^^ expected `bool`, found `bool`
+32 │     c :: v && v;
+   │          ^^^^^^ expected `bool`, found `bool`
    │
    = can't perform 'and' on type 'void'
 
 error[E008]: mismatched types
    ┌─ ./tests/scir/E008.lun:33:10
    │
-33 │     d :: 0.0 or 0.2;
+33 │     d :: 0.0 || 0.2;
    │          ^^^^^^^^^^ expected `bool`, found `bool`
    │
    = can't perform 'or' on type 'f32'
@@ -5489,7 +5494,7 @@ error[E008]: mismatched types
 error[E008]: mismatched types
    ┌─ ./tests/scir/E008.lun:34:10
    │
-34 │     e :: 1 or 2;
+34 │     e :: 1 || 2;
    │          ^^^^^^ expected `bool`, found `bool`
    │
    = can't perform 'or' on type 'i32'

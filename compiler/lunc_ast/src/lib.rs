@@ -11,7 +11,7 @@ use std::{
 use lunc_utils::{
     pretty::{PrettyCtxt, PrettyDump},
     token::{
-        Keyword, Punctuation,
+        Punctuation,
         TokenType::{self, *},
     },
 };
@@ -363,8 +363,10 @@ impl BinOp {
             Punct::Equal2 => BOp::CompEq,
             Punct::BangEqual => BOp::CompNe,
             Punct::Ampsand => BOp::BitwiseAnd,
+            Punct::Ampsand2 => BOp::LogicalAnd,
             Punct::Caret => BOp::BitwiseXor,
             Punct::Pipe => BOp::BitwiseOr,
+            Punct::Pipe2 => BOp::LogicalOr,
             Punct::Lt2 => BOp::Shl,
             Punct::Gt2 => BOp::Shr,
             _ => return None,
@@ -374,8 +376,6 @@ impl BinOp {
     pub fn from_tt(tt: TokenType) -> Option<BinOp> {
         match tt {
             Punct(p) => Self::from_punct(p),
-            Kw(Keyword::And) => Some(BinOp::LogicalAnd),
-            Kw(Keyword::Or) => Some(BinOp::LogicalOr),
             _ => None,
         }
     }

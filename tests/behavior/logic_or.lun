@@ -14,9 +14,9 @@ bar :: fun() -> bool {
 
 main :: fun() {
     puts(c"BOTH `foo` and `bar`:");
-    foo() or bar();
+    foo() || bar();
     puts(c"");
 
     puts(c"ONLY `bar`:");
-    bar() or foo();
+    bar() || foo();
 }

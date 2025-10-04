@@ -13,7 +13,7 @@ main :: fun() {
 
     j := 3;
 
-    label: while j < 10 and j > 2 {
+    label: while j < 10 && j > 2 {
         println("j = {}", j);
     }
 }

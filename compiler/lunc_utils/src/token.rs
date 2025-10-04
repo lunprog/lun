@@ -277,8 +277,6 @@ impl Display for TokenType {
 // Lexer and add it to the list of all keywords.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Keyword {
-    /// and
-    And,
     /// as
     As,
     /// break
@@ -313,8 +311,6 @@ pub enum Keyword {
     Mut,
     /// null
     Null,
-    /// or
-    Or,
     /// orb
     Orb,
     /// pub
@@ -339,9 +335,6 @@ pub enum Keyword {
 }
 
 impl Keyword {
-    /// `and` keyword.
-    pub const AND: &str = "and";
-
     /// `as` keyword.
     pub const AS: &str = "as";
 
@@ -393,9 +386,6 @@ impl Keyword {
     /// `null` keyword.
     pub const NULL: &str = "null";
 
-    /// `or` keyword.
-    pub const OR: &str = "or";
-
     /// `orb` keyword.
     pub const ORB: &str = "orb";
 
@@ -421,8 +411,7 @@ impl Keyword {
     pub const WHILE: &str = "while";
 
     /// List of all of the keywords
-    pub const ALL_KEYWORDS: [&str; 27] = [
-        Keyword::AND,
+    pub const ALL_KEYWORDS: [&str; 25] = [
         Keyword::AS,
         Keyword::BREAK,
         Keyword::COMPTIME,
@@ -440,7 +429,6 @@ impl Keyword {
         Keyword::LOOP,
         Keyword::MUT,
         Keyword::NULL,
-        Keyword::OR,
         Keyword::ORB,
         Keyword::PUB,
         Keyword::RETURN,
@@ -455,7 +443,6 @@ impl Keyword {
 impl Display for Keyword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Keyword::And => f.write_str(Keyword::AND),
             Keyword::As => f.write_str(Keyword::AS),
             Keyword::Break => f.write_str(Keyword::BREAK),
             Keyword::Comptime => f.write_str(Keyword::COMPTIME),
@@ -473,7 +460,6 @@ impl Display for Keyword {
             Keyword::Loop => f.write_str(Keyword::LOOP),
             Keyword::Mut => f.write_str(Keyword::MUT),
             Keyword::Null => f.write_str(Keyword::NULL),
-            Keyword::Or => f.write_str(Keyword::OR),
             Keyword::Orb => f.write_str(Keyword::ORB),
             Keyword::Pub => f.write_str(Keyword::PUB),
             Keyword::Return => f.write_str(Keyword::RETURN),
@@ -540,8 +526,12 @@ pub enum Punctuation {
     Caret,
     /// `&`
     Ampsand,
+    /// `&&`
+    Ampsand2,
     /// `|`
     Pipe,
+    /// `||`
+    Pipe2,
     /// `%`
     Percent,
     /// `.`
@@ -582,7 +572,9 @@ impl Display for Punctuation {
             MinusGt => f.write_str("->"),
             Caret => f.write_str("^"),
             Ampsand => f.write_str("&"),
+            Ampsand2 => f.write_str("&&"),
             Pipe => f.write_str("|"),
+            Pipe2 => f.write_str("||"),
             Percent => f.write_str("%"),
             Dot => f.write_str("."),
             DotStar => f.write_str(".*"),
