@@ -3,7 +3,7 @@
 use std::fmt::Write;
 
 use cranelift_codegen::ir::{Function, Signature};
-use lunc_utils::symbol;
+use lunc_ast::symbol;
 
 /// Textual representation of clif.
 #[derive(Debug)]

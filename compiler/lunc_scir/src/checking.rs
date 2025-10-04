@@ -1,10 +1,8 @@
 use std::iter::{self, zip};
 
+use lunc_ast::symbol::{Signedness, Type};
 use lunc_diag::{ToDiagnostic, feature_todo};
-use lunc_utils::{
-    opt_unreachable,
-    symbol::{Signedness, Typeness},
-};
+use lunc_utils::opt_unreachable;
 
 use crate::diags::{
     ArityDoesntMatch, BorrowMutWhenNotDefinedMut, BreakUseAnImplicitLabelInBlock,
@@ -941,7 +939,7 @@ impl SemaChecker {
                 }
             }
             ScExpr::Unary { op, expr: exp } => match op {
-                UnaryOp::Negation => {
+                UnOp::Negation => {
                     self.ck_expr(exp, coerce_to)?;
 
                     match (exp.typ.is_int(), exp.typ.signedness(), exp.typ.is_float()) {
@@ -982,14 +980,14 @@ impl SemaChecker {
                         }
                     }
                 }
-                UnaryOp::Not => {
+                UnOp::Not => {
                     self.ck_expr(exp, Some(Type::Bool))?;
 
                     self.expr_typeck(&Type::Bool, exp, None, None);
 
                     expr.typ = Type::Bool;
                 }
-                UnaryOp::Dereference => {
+                UnOp::Dereference => {
                     // NOTE: here we tell the type checker `we if you have no idea try to coerce the expression to *T`.
                     self.ck_expr(
                         exp,

@@ -1,6 +1,6 @@
 //! Parsing of lun's directives.
 
-use lunc_utils::symbol::EffectivePath;
+use lunc_ast::symbol::EffectivePath;
 
 use crate::item::Item;
 
@@ -13,7 +13,7 @@ pub enum Directive {
     Mod { name: String, loc: Span },
     /// `"#" "import" path [ "as" ident ] ";"`
     Import {
-        path: QualifiedPath,
+        path: SpannedPath,
         alias: Option<String>,
         loc: Span,
     },
@@ -63,7 +63,7 @@ pub fn parse_import_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
     // TEST: n/a
     expect_token!(parser => [Ident(id), id.clone(), if id.as_str() == Directive::IMPORT_NAME], Ident(String::new()));
 
-    let path = parse!(parser => QualifiedPath);
+    let path = parse!(parser => SpannedPath);
 
     let alias = if let Some(Kw(Keyword::As)) = parser.peek_tt() {
         parser.pop();
@@ -86,14 +86,14 @@ pub fn parse_import_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
     }))
 }
 
-/// `ident { "." ident }`
+/// Spanned [EffectivePath].
 #[derive(Debug, Clone)]
-pub struct QualifiedPath {
+pub struct SpannedPath {
     pub path: EffectivePath,
     pub loc: Span,
 }
 
-impl AstNode for QualifiedPath {
+impl AstNode for SpannedPath {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         let mut path = Vec::new();
         // TEST: no. 1
@@ -110,7 +110,7 @@ impl AstNode for QualifiedPath {
             path.push(id);
         }
 
-        Ok(QualifiedPath {
+        Ok(SpannedPath {
             path: EffectivePath::from_vec(path),
             loc: Span::from_ends(lo, hi),
         })

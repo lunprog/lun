@@ -846,6 +846,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "humantime",
+ "lunc_ast",
  "lunc_cranelift_codegen",
  "lunc_diag",
  "lunc_dsir",
@@ -861,6 +862,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "lunc_ast"
+version = "0.1.0"
+dependencies = [
+ "lunc_utils",
+ "serde",
+]
+
+[[package]]
 name = "lunc_cranelift_codegen"
 version = "0.1.0"
 dependencies = [
@@ -868,6 +877,7 @@ dependencies = [
  "cranelift-frontend",
  "cranelift-module",
  "cranelift-object",
+ "lunc_ast",
  "lunc_llib_meta",
  "lunc_scir",
  "lunc_utils",
@@ -886,6 +896,7 @@ dependencies = [
 name = "lunc_dsir"
 version = "0.1.0"
 dependencies = [
+ "lunc_ast",
  "lunc_diag",
  "lunc_lexer",
  "lunc_llib_meta",
@@ -918,6 +929,7 @@ name = "lunc_llib_meta"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "lunc_ast",
  "lunc_utils",
  "postcard",
  "ron",
@@ -929,6 +941,7 @@ dependencies = [
 name = "lunc_parser"
 version = "0.1.0"
 dependencies = [
+ "lunc_ast",
  "lunc_diag",
  "lunc_utils",
  "thiserror",
@@ -938,6 +951,7 @@ dependencies = [
 name = "lunc_scir"
 version = "0.1.0"
 dependencies = [
+ "lunc_ast",
  "lunc_diag",
  "lunc_dsir",
  "lunc_llib_meta",

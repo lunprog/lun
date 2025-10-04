@@ -10,9 +10,10 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{DataDescription, DataId, FuncId, Linkage, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
 
+use lunc_ast::symbol;
 use lunc_llib_meta::ModuleTree;
 use lunc_scir::{Abi, ScItem, ScModule};
-use lunc_utils::{BuildOptions, OrbType, mangle, opt_unreachable, symbol};
+use lunc_utils::{BuildOptions, OrbType, opt_unreachable};
 
 use crate::textual::TextualClif;
 use crate::translator::FunDefTranslator;
@@ -450,7 +451,7 @@ impl ClifGen {
     pub fn realname(&self, sym: &symbol::Symbol) {
         assert!(!sym.inspect(|s| matches!(s.path.first().map(|s| s.as_str()), Some("orb"))));
 
-        sym.inspect_mut(|this| this.realname = Some(mangle(&this.path)));
+        sym.inspect_mut(|this| this.realname = Some(this.path.mangle()));
     }
 
     /// Returns the textual representation of the Cranelift IR

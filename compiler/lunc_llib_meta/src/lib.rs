@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use lunc_utils::symbol::{EffectivePath, LazySymbol, SymKind, Symbol};
+use lunc_ast::symbol::{EffectivePath, LazySymbol, SymKind, Symbol};
 use serde::{Deserialize, Serialize};
 
 pub mod meta;

@@ -8,8 +8,8 @@ use lunc_utils::{
 };
 
 use crate::{
-    directive::{Directive, QualifiedPath},
-    expr::{Arg, BinOp, Else, Expr, Expression, IfExpression, UnaryOp},
+    directive::{Directive, SpannedPath},
+    expr::{Arg, Else, Expr, Expression, IfExpression},
     item::{Abi, Item, Module},
     stmt::{Block, Statement, Stmt},
 };
@@ -115,6 +115,7 @@ impl PrettyDump for Expr {
                 Ok(())
             }
             Expr::Ident(id) => write!(out, "ident {id}"),
+            // Expr::Path(path) => write!(out, "path {path}"),
             Expr::Binary { lhs, op, rhs } => {
                 ctx.pretty_struct("Binary")
                     .field("lhs", lhs)
@@ -340,18 +341,6 @@ impl PrettyDump for IfExpression {
     }
 }
 
-impl PrettyDump for BinOp {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        write!(ctx.out, "{self:?}")
-    }
-}
-
-impl PrettyDump for UnaryOp {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        write!(ctx.out, "{self:?}")
-    }
-}
-
 impl PrettyDump for Block {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         struct LastExpr<'a>(&'a Option<Box<Expression>>);
@@ -448,9 +437,9 @@ impl PrettyDump for Directive {
     }
 }
 
-impl PrettyDump for QualifiedPath {
+impl PrettyDump for SpannedPath {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        let QualifiedPath { path, loc } = self;
+        let SpannedPath { path, loc } = self;
 
         path.try_dump(ctx)?;
         ctx.print_loc(loc)

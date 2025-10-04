@@ -5,22 +5,26 @@
 
 use std::fmt::Debug;
 
-use diags::{CantResolveComptimeValue, ExpectedTypeFoundExpr};
+use lunc_ast::{
+    BinOp, UnOp,
+    symbol::{SymKind, Symbol, Type, Typeness, ValueExpr},
+};
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
 use lunc_dsir::{
     DsArg, DsBlock, DsDirective, DsExpr, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
-    OSpan, QualifiedPath,
+    OSpan, SpannedPath,
 };
 use lunc_llib_meta::ModuleTree;
 use lunc_utils::{
-    BuildOptions, FromHigher, OrbType, Span, lower, opt_unreachable,
-    symbol::{SymKind, Symbol, Type, Typeness, ValueExpr},
-    target::PointerWidth,
+    BuildOptions, FromHigher, OrbType, Span, lower, opt_unreachable, target::PointerWidth,
 };
 
-pub use lunc_dsir::{Abi, BinOp, UnaryOp};
+pub use lunc_dsir::Abi;
 
-use crate::diags::{BadMainSignature, MainUndefined, OutsideExternBlock};
+use crate::diags::{
+    BadMainSignature, CantResolveComptimeValue, ExpectedTypeFoundExpr, MainUndefined,
+    OutsideExternBlock,
+};
 
 mod checking;
 pub mod diags;
@@ -324,7 +328,7 @@ impl ScExpression {
                 }
             }
             ScExpr::Unary {
-                op: UnaryOp::Dereference,
+                op: UnOp::Dereference,
                 expr,
             } => {
                 if expr.typ.is_mut_ptr() {
@@ -538,10 +542,7 @@ pub enum ScExpr {
     /// See [`DsExpr::Unary`]
     ///
     /// [`DsExpr::Unary`]: lunc_dsir::DsExpr::Unary
-    Unary {
-        op: UnaryOp,
-        expr: Box<ScExpression>,
-    },
+    Unary { op: UnOp, expr: Box<ScExpression> },
     /// See [`DsExpr::Borrow`]
     ///
     /// [`DsExpr::Borrow`]: lunc_dsir::DsExpr::Borrow
@@ -612,7 +613,7 @@ pub enum ScExpr {
     /// After the name resolution, member access of modules are converted to [`EffectivePath`]
     ///
     /// [`DsExpr::Field`]: lunc_dsir::DsExpr::Field
-    /// [`EffectivePath`]: lunc_utils::symbol::EffectivePath
+    /// [`EffectivePath`]: lunc_ast::symbol::EffectivePath
     Field {
         expr: Box<ScExpression>,
         member: String,
@@ -623,7 +624,7 @@ pub enum ScExpr {
     /// so this expression is lowered down to an EffectivePath
     QualifiedPath {
         /// path to the symbol
-        path: QualifiedPath,
+        path: SpannedPath,
         /// the symbol we are referring to
         sym: Symbol,
     },

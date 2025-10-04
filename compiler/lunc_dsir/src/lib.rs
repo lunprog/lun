@@ -10,6 +10,10 @@ use diags::{
     UnderscoreReservedIdent,
 };
 
+use lunc_ast::{
+    BinOp, UnOp,
+    symbol::{EffectivePath, LazySymbol, SymKind, Symbol, Type, Typeness},
+};
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
 use lunc_lexer::Lexer;
 use lunc_llib_meta::ModuleTree;
@@ -20,16 +24,9 @@ use lunc_parser::{
     item::{Item, Module},
     stmt::{Block, Statement, Stmt},
 };
-use lunc_utils::{
-    FromHigher, Span, lower, opt_unreachable,
-    symbol::{EffectivePath, LazySymbol, SymKind, Symbol, Type, Typeness},
-};
+use lunc_utils::{FromHigher, Span, lower, opt_unreachable};
 
-pub use lunc_parser::{
-    directive::QualifiedPath,
-    expr::{BinOp, UnaryOp},
-    item::Abi,
-};
+pub use lunc_parser::{directive::SpannedPath, item::Abi};
 
 pub mod diags;
 pub mod pretty;
@@ -129,7 +126,7 @@ pub enum DsItem {
 #[derive(Debug, Clone)]
 pub enum DsDirective {
     Import {
-        path: QualifiedPath,
+        path: SpannedPath,
         alias: Option<String>,
         loc: OSpan,
     },
@@ -317,7 +314,7 @@ impl FromHigher for DsExpression {
                     body.loc.clone(),
                     vec![
                         stmt_expr(expr_if(
-                            expr_unary(UnaryOp::Not, lower(*cond)),
+                            expr_unary(UnOp::Not, lower(*cond)),
                             expr_break(label.map(|(name, _)| name), None),
                             None,
                         )),
@@ -444,10 +441,7 @@ pub enum DsExpr {
     /// See [`Expr::Unary`]
     ///
     /// [`Expr::Unary`]: lunc_parser::expr::Expr::Unary
-    Unary {
-        op: UnaryOp,
-        expr: Box<DsExpression>,
-    },
+    Unary { op: UnOp, expr: Box<DsExpression> },
     /// See [`Expr::Borrow`]
     ///
     /// [`Expr::Borrow`]: lunc_parser::expr::Expr::Borrow
@@ -514,13 +508,17 @@ pub enum DsExpr {
         expr: Box<DsExpression>,
         member: String,
     },
+    // /// See [`Expr::Orb`]
+    // ///
+    // /// [`Expr::Orb`]: lunc_parser::expr::Expr::Orb
+    // Orb,
     /// Constructed from member access, eg:
     ///
     /// `orb.driver.run` are member accesses and it refers to a function "run",
     /// so this expression is lowered down to an EffectivePath
     QualifiedPath {
         /// path to the symbol
-        path: QualifiedPath,
+        path: SpannedPath,
         /// the symbol we are referring to
         sym: LazySymbol,
     },
@@ -637,7 +635,7 @@ pub fn expr_binary(lhs: DsExpression, op: BinOp, rhs: DsExpression) -> DsExpress
 }
 
 /// Creates a unary expression without location.
-pub fn expr_unary(op: UnaryOp, expr: DsExpression) -> DsExpression {
+pub fn expr_unary(op: UnOp, expr: DsExpression) -> DsExpression {
     DsExpression {
         expr: DsExpr::Unary {
             op,
@@ -960,7 +958,7 @@ impl Desugarrer {
                 Some(orb_name.to_string()),
                 LazySymbol::Name("orb".to_string()),
             ),
-            current_path: EffectivePath::with_root_member("orb"),
+            current_path: EffectivePath::with_root_segment("orb"),
         }
     }
 
@@ -1400,11 +1398,11 @@ impl Desugarrer {
                 }
             }
             DsExpr::Field { .. } => {
-                if let Some(path) = self.flatten_member_access(expr) {
+                if let Some(path) = self.flatten_field_expr(expr) {
                     *expr = DsExpression {
                         expr: DsExpr::QualifiedPath {
                             sym: LazySymbol::Name(path.last().unwrap().clone()),
-                            path: QualifiedPath {
+                            path: SpannedPath {
                                 path,
                                 loc: expr.loc.clone().unwrap(),
                             },
@@ -1491,7 +1489,7 @@ impl Desugarrer {
 
     /// Returns an effective path if the root of the effective path is a module,
     /// and converts the nested member accesses to an effective path.
-    pub fn flatten_member_access(&mut self, expr: &DsExpression) -> Option<EffectivePath> {
+    pub fn flatten_field_expr(&mut self, expr: &DsExpression) -> Option<EffectivePath> {
         let mut path = Vec::new();
         let mut current = expr;
 
@@ -1710,7 +1708,8 @@ impl Desugarrer {
                 if let Some(module) = self.orb.goto(&mod_path)
                     && let Some(symref) = module.def_or_mod(&name)
                 {
-                    self.table.bind(alias.clone().unwrap_or(name), symref)
+                    self.table
+                        .bind(alias.clone().unwrap_or(name.to_string()), symref)
                 } else {
                     Err(NotFoundInScope {
                         name: path.path.to_string(),
@@ -1778,11 +1777,7 @@ impl SymbolMap {
                     // NOTE: here we can set the loc to be 0..0 into the root
                     // file, its fine ig, a span from the first character to eof
                     // would be better but this works
-                    Symbol::module(
-                        "orb".to_string(),
-                        EffectivePath::with_root_member("orb"),
-                        Some(lunc_utils::Span::ZERO),
-                    ),
+                    Symbol::orb(),
                 ),
             ]),
             fun_count: 0,

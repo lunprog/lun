@@ -1,6 +1,7 @@
 //! Lun is a statically typed programming language.
 //!
 //! Related crates of the compiler:
+//! - [lunc_ast], AST types shared across compiler stages
 //! - [lunc_lexer], lexes the text into [Tokens]
 //! - [lunc_parser], parses the [Tokens] into an [Ast]
 //! - [lunc_dsir], desugars the [Ast] to [Dsir] and resolve names
