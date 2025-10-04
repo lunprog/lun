@@ -1,7 +1,6 @@
 //! Parsing of lun's expressions.
 
-use std::fmt::Display;
-
+use lunc_ast::{BinOp, UnOp};
 use lunc_utils::opt_unreachable;
 
 use crate::stmt::Block;
@@ -101,6 +100,10 @@ pub enum Expr {
     ///
     /// `ident`
     Ident(String),
+    // /// a path expression
+    // ///
+    /// e.g: `abc`, `core::panic`, `core::Number::max`
+    // Path(Path),
     /// binary operation
     ///
     /// `expr op expr`
@@ -112,7 +115,7 @@ pub enum Expr {
     /// unary operation
     ///
     /// `op expr`
-    Unary { op: UnaryOp, expr: Box<Expression> },
+    Unary { op: UnOp, expr: Box<Expression> },
     /// Borrow operator
     ///
     /// `"&" "mut"? expression`
@@ -286,7 +289,7 @@ pub fn parse_expr_precedence(
             Some(Kw(Keyword::Loop)) => parse!(@fn parser => parse_infinite_loop_expr),
             Some(Kw(Keyword::While)) => parse!(@fn parser => parse_predicate_loop_expr),
             Some(Kw(Keyword::For)) => parse!(@fn parser => parse_iterator_loop_expr),
-            Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
+            Some(Punct(Punctuation::LCurly)) => parse!(@fn parser => parse_block_expr),
             // SAFETY: we checked in the if of the match arm that it can only
             // be a keyword and one of loop, while or for
             _ => opt_unreachable!(),
@@ -302,14 +305,14 @@ pub fn parse_expr_precedence(
         Some(Kw(Keyword::Continue)) => parse!(@fn parser => parse_continue_expr),
         Some(Kw(Keyword::Null)) => parse!(@fn parser => parse_null_expr),
         Some(Kw(Keyword::Orb)) => parse!(@fn parser => parse_orb_expr),
-        Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
+        Some(Punct(Punctuation::LCurly)) => parse!(@fn parser => parse_block_expr),
         Some(Punct(Punctuation::Star))
             if parser.nth_tt(1) == Some(&TokenType::Kw(Keyword::Fun)) =>
         {
             parse!(@fn parser => parse_funptr_type_expr)
         }
         Some(Punct(Punctuation::Star)) => parse!(@fn parser => parse_pointer_type_expr),
-        Some(tt) if UnaryOp::left_from_token(tt.clone()).is_some() => {
+        Some(tt) if UnOp::left_from_token(tt.clone()).is_some() => {
             parse!(@fn parser => parse_unary_left_expr)
         }
         Some(_) => {
@@ -350,7 +353,7 @@ pub fn parse_expr_precedence(
             Some(maybe_bin_op) if BinOp::from_tt(maybe_bin_op.clone()).is_some() => {
                 parse!(@fn parser => parse_binary_expr, lhs)
             }
-            Some(maybe_right_op) if UnaryOp::right_from_token(maybe_right_op.clone()).is_some() => {
+            Some(maybe_right_op) if UnOp::right_from_token(maybe_right_op.clone()).is_some() => {
                 parse!(@fn parser => parse_unary_right_expr, lhs)
             }
             _ => break,
@@ -366,7 +369,7 @@ impl Parser {
             && matches!(
                 self.nth_tt(2),
                 Some(
-                    Kw(Keyword::While | Keyword::For | Keyword::Loop) | Punct(Punctuation::LBrace)
+                    Kw(Keyword::While | Keyword::For | Keyword::Loop) | Punct(Punctuation::LCurly)
                 )
             )
     }
@@ -568,8 +571,8 @@ impl Precedence {
         use TokenType::Punct;
         match value {
             Punct(Punctuation::Equal) => Some(Precedence::Assignment),
-            Kw(Keyword::Or) => Some(Precedence::LogicalOr),
-            Kw(Keyword::And) => Some(Precedence::LogicalAnd),
+            Punct(Punctuation::Ampsand2) => Some(Precedence::LogicalOr),
+            Punct(Punctuation::Pipe2) => Some(Precedence::LogicalAnd),
             Punct(
                 Punctuation::Lt | Punctuation::Gt | Punctuation::LtEqual | Punctuation::GtEqual,
             ) => Some(Precedence::Comparison),
@@ -592,132 +595,6 @@ impl Precedence {
 
 /// The highest precedence of [`Precedence`]
 pub const HIGHEST_PRECEDENCE: Precedence = Precedence::Assignment;
-
-#[derive(Debug, Clone)]
-pub enum BinOp {
-    /// addition
-    Add,
-    /// subtraction
-    Sub,
-    /// multiplication
-    Mul,
-    /// division
-    Div,
-    /// remainder
-    Rem,
-    /// less than
-    CompLT,
-    /// less than or equal
-    CompLE,
-    /// greater than
-    CompGT,
-    /// greater than or equal
-    CompGE,
-    /// equal
-    CompEq,
-    /// not equal
-    CompNe,
-    /// assignment
-    Assignment,
-    /// and
-    LogicalAnd,
-    /// or
-    LogicalOr,
-    /// &
-    BitwiseAnd,
-    /// ^
-    BitwiseXor,
-    /// |
-    BitwiseOr,
-    /// shift right, >>
-    Shr,
-    /// shift left, <<
-    Shl,
-}
-
-impl Display for BinOp {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            Self::Add => "+",
-            Self::Sub => "-",
-            Self::Mul => "*",
-            Self::Div => "/",
-            Self::Rem => "%",
-            Self::CompLT => "<",
-            Self::CompLE => "<=",
-            Self::CompGT => ">",
-            Self::CompGE => ">=",
-            Self::CompEq => "==",
-            Self::CompNe => "!=",
-            Self::Assignment => "=",
-            Self::LogicalAnd => "and",
-            Self::LogicalOr => "or",
-            Self::BitwiseAnd => "&",
-            Self::BitwiseXor => "^",
-            Self::BitwiseOr => "|",
-            Self::Shr => ">>",
-            Self::Shl => "<<",
-        };
-
-        f.write_str(str)
-    }
-}
-
-impl BinOp {
-    pub fn from_punct(punct: Punctuation) -> Option<BinOp> {
-        use BinOp as BOp;
-        use Punctuation as Punct;
-
-        Some(match punct {
-            Punct::Equal => BOp::Assignment,
-            Punct::Star => BOp::Mul,
-            Punct::Slash => BOp::Div,
-            Punct::Percent => BOp::Rem,
-            Punct::Plus => BOp::Add,
-            Punct::Minus => BOp::Sub,
-            Punct::Lt => BOp::CompLT,
-            Punct::Gt => BOp::CompGT,
-            Punct::LtEqual => BOp::CompLE,
-            Punct::GtEqual => BOp::CompGE,
-            Punct::Equal2 => BOp::CompEq,
-            Punct::BangEqual => BOp::CompNe,
-            Punct::Ampsand => BOp::BitwiseAnd,
-            Punct::Caret => BOp::BitwiseXor,
-            Punct::Pipe => BOp::BitwiseOr,
-            Punct::Lt2 => BOp::Shl,
-            Punct::Gt2 => BOp::Shr,
-            _ => return None,
-        })
-    }
-
-    pub fn from_tt(tt: TokenType) -> Option<BinOp> {
-        match tt {
-            Punct(p) => Self::from_punct(p),
-            Kw(Keyword::And) => Some(BinOp::LogicalAnd),
-            Kw(Keyword::Or) => Some(BinOp::LogicalOr),
-            _ => None,
-        }
-    }
-
-    /// Is the binary operation rational? < <= > >= == !=
-    pub fn is_relational(&self) -> bool {
-        matches!(
-            self,
-            BinOp::CompLT
-                | BinOp::CompLE
-                | BinOp::CompGT
-                | BinOp::CompGE
-                | BinOp::CompEq
-                | BinOp::CompNe
-        )
-    }
-
-    pub fn is_logical(&self) -> bool {
-        // TODO: implement logical operators like `"not" expr`, `expr "and"
-        // expr`, `expr "or" expr`, `expr "xor" expr`
-        matches!(self, Self::LogicalAnd | Self::LogicalOr)
-    }
-}
 
 /// Parse binary expression, `expression op expression`
 pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> Result<Expression, Diagnostic> {
@@ -761,60 +638,10 @@ pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> Result<Express
     })
 }
 
-/// Unary Operators
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum UnaryOp {
-    // left unary operator
-    /// `- expression`
-    Negation,
-    /// `! expression`
-    Not,
-    // right unary operator
-    /// `expression.*`
-    Dereference,
-}
-
-impl Display for UnaryOp {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            Self::Negation => "-",
-            Self::Not => "!",
-            Self::Dereference => ".*",
-        };
-
-        f.write_str(str)
-    }
-}
-
-impl UnaryOp {
-    /// get the unary operation for left side unary operation
-    ///
-    /// eg:
-    /// `-a` `!a` `&a`
-    pub fn left_from_token(tt: TokenType) -> Option<UnaryOp> {
-        match tt {
-            Punct(Punctuation::Minus) => Some(UnaryOp::Negation),
-            Punct(Punctuation::Bang) => Some(UnaryOp::Not),
-            _ => None,
-        }
-    }
-
-    /// get the unary operation for right side unary operation
-    ///
-    /// eg:
-    /// `a.*`
-    pub fn right_from_token(tt: TokenType) -> Option<UnaryOp> {
-        match tt {
-            Punct(Punctuation::DotStar) => Some(UnaryOp::Dereference),
-            _ => None,
-        }
-    }
-}
-
 /// Parse unary expression, `op expression`
 pub fn parse_unary_left_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (op, lo) = if let Some(Token { tt, loc }) = parser.peek_tok() {
-        if let Some(op) = UnaryOp::left_from_token(tt.clone()) {
+        if let Some(op) = UnOp::left_from_token(tt.clone()) {
             let loc = loc.clone();
             parser.pop();
             (op, loc)
@@ -1022,7 +849,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 
     let cond = parse!(box: parser => Expression);
 
-    if let Some(TokenType::Punct(Punctuation::LBrace)) = parser.peek_tt() {
+    if let Some(TokenType::Punct(Punctuation::LCurly)) = parser.peek_tt() {
         // if expr
         // "if" expression block [ "else" (if-expr | block-expr) ]
         let body = parse!(box: parser => Block);
@@ -1045,7 +872,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 
                     Else::IfExpr(if_expr)
                 }
-                Some(Punct(Punctuation::LBrace)) => {
+                Some(Punct(Punctuation::LCurly)) => {
                     // block
                     let block = parse!(parser => Block);
 
@@ -1058,7 +885,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 
                     // TEST: no. 2
                     return Err(ExpectedToken::new(
-                        [Punct(Punctuation::LBrace), Kw(Keyword::If)],
+                        [Punct(Punctuation::LCurly), Kw(Keyword::If)],
                         t.tt.clone(),
                         Some("if expression"),
                         t.loc.clone(),
@@ -1110,7 +937,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 
         // TEST: no. 3
         Err(ExpectedToken::new(
-            [Punct(Punctuation::LBrace)],
+            [Punct(Punctuation::LCurly)],
             t.tt.clone(),
             Some("if expression"),
             t.loc.clone(),
@@ -1438,7 +1265,7 @@ pub fn parse_unary_right_expr(
     let lo = lhs.loc.clone();
 
     let (op, hi) = if let Some(Token { tt, loc }) = parser.peek_tok() {
-        if let Some(op) = UnaryOp::right_from_token(tt.clone()) {
+        if let Some(op) = UnOp::right_from_token(tt.clone()) {
             let loc = loc.clone();
             parser.pop();
             (op, loc)

@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
   "compiler/lunc",
+  "compiler/lunc_ast",
   "compiler/lunc_cranelift_codegen",
   "compiler/lunc_diag",
   "compiler/lunc_dsir",
@@ -20,6 +21,7 @@ version = "0.1.0"
 license = "MIT"
 
 [workspace.dependencies]
+lunc_ast = { path = "compiler/lunc_ast" }
 lunc_cranelift_codegen = { path = "compiler/lunc_cranelift_codegen" }
 lunc_diag = { path = "compiler/lunc_diag" }
 lunc_dsir = { path = "compiler/lunc_dsir" }

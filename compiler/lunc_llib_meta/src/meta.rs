@@ -3,11 +3,8 @@
 use std::{collections::HashMap, num::NonZeroUsize};
 
 use chrono::{Local, NaiveDateTime};
-use lunc_utils::{
-    idtype::Database,
-    symbol::{InternalSymbol, LazySymbol, Symbol},
-    target,
-};
+use lunc_ast::symbol::{InternalSymbol, LazySymbol, Symbol};
+use lunc_utils::{idtype::Database, target};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

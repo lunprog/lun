@@ -11,3 +11,4 @@ lunc_lexer = { workspace = true }
 lunc_parser = { workspace = true }
 lunc_utils = { workspace = true }
 lunc_llib_meta = { workspace = true }
+lunc_ast = { workspace = true }

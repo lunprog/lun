@@ -29,8 +29,8 @@ ops :: fun(v: void) {
     // testing absurd mismatched types in binary ops checking
     a :: 1.0 << 1.0;
     b :: v * v;
-    c :: v and v;
-    d :: 0.0 or 0.2;
-    e :: 1 or 2;
+    c :: v && v;
+    d :: 0.0 || 0.2;
+    e :: 1 || 2;
     f :: 1.0 % 2.0;
 }

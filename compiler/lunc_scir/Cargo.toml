@@ -10,5 +10,6 @@ lunc_diag = { workspace = true }
 lunc_dsir = { workspace = true }
 lunc_utils = { workspace = true }
 lunc_llib_meta = { workspace = true }
+lunc_ast = { workspace = true }
 
 # other dependencies

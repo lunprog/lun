@@ -10,11 +10,12 @@ use cranelift_codegen::ir::{
 use cranelift_frontend::{FunctionBuilder, Variable};
 
 use cranelift_module::{Linkage, Module};
-use lunc_scir::{BinOp, ScBlock, ScExpr, ScExpression, ScStatement, ScStmt, UnaryOp};
-use lunc_utils::{
-    Span, opt_unreachable,
+use lunc_ast::{
+    BinOp, UnOp,
     symbol::{self, Signedness, SymKind},
 };
+use lunc_scir::{ScBlock, ScExpr, ScExpression, ScStatement, ScStmt};
+use lunc_utils::{Span, opt_unreachable};
 
 use crate::{ClifGen, ClifId};
 
@@ -279,7 +280,7 @@ impl<'a> FunDefTranslator<'a> {
                 _ => opt_unreachable!(),
             },
             ScExpr::Unary {
-                op: UnaryOp::Dereference,
+                op: UnOp::Dereference,
                 expr,
             } => {
                 // expr evaluates to a (mutable) pointer so we just translate

@@ -45,7 +45,7 @@ impl TokenStream {
             !self.finished,
             "can't push a token to the token stream if it's already finished"
         );
-        assert_ne!(tt, TokenType::__NotAToken__);
+        assert_ne!(tt, TokenType::Dummy);
 
         let is_eof = tt == TokenType::EOF;
 
@@ -211,7 +211,7 @@ impl Token {
                 writeln!(out, "    lexeme: N/A;")?;
                 writeln!(out, "  }},")?;
             }
-            TokenType::__NotAToken__ => unreachable!(),
+            TokenType::Dummy => unreachable!(),
         }
 
         Ok(())
@@ -246,10 +246,9 @@ pub enum TokenType {
     Punct(Punctuation),
     /// End Of File
     EOF,
-    /// this is not a token, it is used when encountering a comment or a
+    /// this is a dummy token, it is used when encountering a comment or a
     /// whitespace it can't be pushed into a token stream.
-    #[doc(hidden)]
-    __NotAToken__,
+    Dummy,
 }
 
 impl Display for TokenType {
@@ -269,7 +268,7 @@ impl Display for TokenType {
             SpecializedFloatLit { .. } => write!(f, "specialized float literal"),
             Punct(p) => write!(f, "`{p}`"),
             EOF => write!(f, "<eof>"),
-            __NotAToken__ => write!(f, "not a token"),
+            Dummy => write!(f, "not a token"),
         }
     }
 }
@@ -278,8 +277,6 @@ impl Display for TokenType {
 // Lexer and add it to the list of all keywords.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Keyword {
-    /// and
-    And,
     /// as
     As,
     /// break
@@ -314,8 +311,6 @@ pub enum Keyword {
     Mut,
     /// null
     Null,
-    /// or
-    Or,
     /// orb
     Orb,
     /// pub
@@ -340,9 +335,6 @@ pub enum Keyword {
 }
 
 impl Keyword {
-    /// `and` keyword.
-    pub const AND: &str = "and";
-
     /// `as` keyword.
     pub const AS: &str = "as";
 
@@ -394,9 +386,6 @@ impl Keyword {
     /// `null` keyword.
     pub const NULL: &str = "null";
 
-    /// `or` keyword.
-    pub const OR: &str = "or";
-
     /// `orb` keyword.
     pub const ORB: &str = "orb";
 
@@ -422,8 +411,7 @@ impl Keyword {
     pub const WHILE: &str = "while";
 
     /// List of all of the keywords
-    pub const ALL_KEYWORDS: [&str; 27] = [
-        Keyword::AND,
+    pub const ALL_KEYWORDS: [&str; 25] = [
         Keyword::AS,
         Keyword::BREAK,
         Keyword::COMPTIME,
@@ -441,7 +429,6 @@ impl Keyword {
         Keyword::LOOP,
         Keyword::MUT,
         Keyword::NULL,
-        Keyword::OR,
         Keyword::ORB,
         Keyword::PUB,
         Keyword::RETURN,
@@ -456,7 +443,6 @@ impl Keyword {
 impl Display for Keyword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Keyword::And => f.write_str(Keyword::AND),
             Keyword::As => f.write_str(Keyword::AS),
             Keyword::Break => f.write_str(Keyword::BREAK),
             Keyword::Comptime => f.write_str(Keyword::COMPTIME),
@@ -474,7 +460,6 @@ impl Display for Keyword {
             Keyword::Loop => f.write_str(Keyword::LOOP),
             Keyword::Mut => f.write_str(Keyword::MUT),
             Keyword::Null => f.write_str(Keyword::NULL),
-            Keyword::Or => f.write_str(Keyword::OR),
             Keyword::Orb => f.write_str(Keyword::ORB),
             Keyword::Pub => f.write_str(Keyword::PUB),
             Keyword::Return => f.write_str(Keyword::RETURN),
@@ -498,9 +483,9 @@ pub enum Punctuation {
     /// `]`
     RBracket,
     /// `{`
-    LBrace,
+    LCurly,
     /// `}`
-    RBrace,
+    RCurly,
     /// `+`
     Plus,
     /// `-`
@@ -541,8 +526,12 @@ pub enum Punctuation {
     Caret,
     /// `&`
     Ampsand,
+    /// `&&`
+    Ampsand2,
     /// `|`
     Pipe,
+    /// `||`
+    Pipe2,
     /// `%`
     Percent,
     /// `.`
@@ -561,8 +550,8 @@ impl Display for Punctuation {
             RParen => f.write_str(")"),
             LBracket => f.write_str("["),
             RBracket => f.write_str("]"),
-            LBrace => f.write_str("{"),
-            RBrace => f.write_str("}"),
+            LCurly => f.write_str("{"),
+            RCurly => f.write_str("}"),
             Plus => f.write_str("+"),
             Minus => f.write_str("-"),
             Star => f.write_str("*"),
@@ -583,7 +572,9 @@ impl Display for Punctuation {
             MinusGt => f.write_str("->"),
             Caret => f.write_str("^"),
             Ampsand => f.write_str("&"),
+            Ampsand2 => f.write_str("&&"),
             Pipe => f.write_str("|"),
+            Pipe2 => f.write_str("||"),
             Percent => f.write_str("%"),
             Dot => f.write_str("."),
             DotStar => f.write_str(".*"),

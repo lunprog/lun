@@ -1,5 +1,4 @@
 // some keywords..
-and
 as
 break
 comptime
@@ -17,7 +16,6 @@ let
 loop
 mut
 null
-or
 orb
 pub
 return

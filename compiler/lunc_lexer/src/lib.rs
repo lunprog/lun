@@ -53,7 +53,7 @@ impl Lexer {
         loop {
             self.head.reset();
             let t = match self.lex_token() {
-                Ok(TokenType::__NotAToken__) => continue,
+                Ok(TokenType::Dummy) => continue,
                 Ok(t) => t,
                 Err(diag) => {
                     // irrecoverable error diagnostic
@@ -140,8 +140,8 @@ impl Lexer {
             Some(')') => Punct(RParen),
             Some('[') => Punct(LBracket),
             Some(']') => Punct(RBracket),
-            Some('{') => Punct(LBrace),
-            Some('}') => Punct(RBrace),
+            Some('{') => Punct(LCurly),
+            Some('}') => Punct(RCurly),
             Some('+') => Punct(Plus),
             Some('-') => {
                 self.pop();
@@ -158,12 +158,33 @@ impl Lexer {
             Some(',') => Punct(Comma),
             Some(';') => Punct(Semicolon),
             Some('^') => Punct(Caret),
-            Some('&') => Punct(Ampsand),
-            Some('|') => Punct(Pipe),
+            Some('&') => {
+                self.pop();
+
+                match self.peek() {
+                    Some('&') => {
+                        self.pop();
+                        return Ok(Punct(Ampsand2));
+                    }
+                    _ => return Ok(Punct(Ampsand)),
+                }
+            }
+            Some('|') => {
+                self.pop();
+
+                match self.peek() {
+                    Some('|') => {
+                        self.pop();
+                        return Ok(Punct(Pipe2));
+                    }
+                    _ => return Ok(Punct(Pipe)),
+                }
+            }
             Some('%') => Punct(Percent),
             Some('#') => Punct(Hashtag),
             Some('=') => {
                 self.pop();
+
                 match self.peek() {
                     Some('=') => {
                         self.pop();
@@ -218,7 +239,7 @@ impl Lexer {
                         // start of a line comment
                         self.pop();
                         self.lex_until('\n');
-                        return Ok(TokenType::__NotAToken__);
+                        return Ok(TokenType::Dummy);
                     }
                     Some('*') => {
                         // start of multiline comment
@@ -237,7 +258,7 @@ impl Lexer {
                         self.pop(); // pop *
                         self.pop(); // pop /
 
-                        return Ok(TokenType::__NotAToken__);
+                        return Ok(TokenType::Dummy);
                     }
                     _ => return Ok(Punct(Slash)),
                 }
@@ -258,12 +279,12 @@ impl Lexer {
             Some('0'..='9') => return self.lex_number(),
             Some(w) if w.is_whitespace() => {
                 self.pop();
-                return Ok(TokenType::__NotAToken__);
+                return Ok(TokenType::Dummy);
             }
             Some(c) => {
                 self.pop();
                 self.sink.emit(UnknownToken { c, loc: self.loc() });
-                return Ok(TokenType::__NotAToken__);
+                return Ok(TokenType::Dummy);
             }
             None => EOF,
         };
@@ -314,7 +335,6 @@ impl Lexer {
                 use TokenType::Kw;
 
                 match word.as_str() {
-                    Keyword::AND => Kw(Keyword::And),
                     Keyword::AS => Kw(Keyword::As),
                     Keyword::BREAK => Kw(Keyword::Break),
                     Keyword::COMPTIME => Kw(Keyword::Comptime),
@@ -332,7 +352,6 @@ impl Lexer {
                     Keyword::LOOP => Kw(Keyword::Loop),
                     Keyword::MUT => Kw(Keyword::Mut),
                     Keyword::NULL => Kw(Keyword::Null),
-                    Keyword::OR => Kw(Keyword::Or),
                     Keyword::ORB => Kw(Keyword::Orb),
                     Keyword::PUB => Kw(Keyword::Pub),
                     Keyword::RETURN => Kw(Keyword::Return),

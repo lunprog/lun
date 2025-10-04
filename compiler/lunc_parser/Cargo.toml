@@ -8,6 +8,7 @@ edition = "2024"
 [dependencies]
 lunc_diag = { workspace = true }
 lunc_utils = { workspace = true }
+lunc_ast = { workspace = true }
 
 # other dependencies
 thiserror = { workspace = true }

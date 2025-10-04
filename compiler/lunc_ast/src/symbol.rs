@@ -7,13 +7,12 @@ use std::{
     ops::RangeInclusive,
 };
 
-use serde::{Deserialize, Serialize};
-use target_lexicon::{PointerWidth, Triple};
-
-use crate::{
+use lunc_utils::{
     Span, idtype,
     pretty::{PrettyCtxt, PrettyDump},
+    target::{PointerWidth, Triple},
 };
+use serde::{Deserialize, Serialize};
 
 /// The underlying type of an expression
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
@@ -688,6 +687,15 @@ impl Symbol {
         })
     }
 
+    /// Create a new orb symbol.
+    pub fn orb() -> Symbol {
+        Symbol::module(
+            "orb".to_string(),
+            EffectivePath::with_root_segment("orb"),
+            Some(Span::ZERO),
+        )
+    }
+
     /// Create a new symbol with kind local and no type.
     pub fn local(
         mutable: bool,
@@ -700,7 +708,7 @@ impl Symbol {
             SymKind::Local { mutable },
             name.clone(),
             which,
-            EffectivePath::with_root_member(name),
+            EffectivePath::with_root_segment(name),
             typeness,
             loc,
         )
@@ -712,7 +720,7 @@ impl Symbol {
             SymKind::Arg,
             name.clone(),
             which,
-            EffectivePath::with_root_member(name),
+            EffectivePath::with_root_segment(name),
             Typeness::Explicit,
             loc,
         )
@@ -912,7 +920,7 @@ impl EffectivePath {
     }
 
     /// Creates a new effective path with just a single member
-    pub fn with_root_member(root_member: impl ToString) -> EffectivePath {
+    pub fn with_root_segment(root_member: impl ToString) -> EffectivePath {
         EffectivePath(vec![root_member.to_string()])
     }
 
@@ -991,6 +999,57 @@ impl EffectivePath {
     /// Return a slice of the members
     pub fn members(&self) -> &[String] {
         &self.0
+    }
+
+    /// Does the effective path starts with `orb`?
+    pub fn starts_with_orb(&self) -> bool {
+        matches!(self.first().map(|s| s.as_str()), Some("orb"))
+    }
+
+    /// Mangles an effective path into a realname.
+    ///
+    /// An effective path `std.mem.transmute` is mangled like so:
+    ///
+    /// ## 1. The prefix `_L`
+    ///
+    /// We append a prefix to the result, it's always `_L` and the `L` is for `Lun`.
+    ///
+    /// result = `_L`
+    ///
+    /// ## 2. For each member
+    ///
+    /// We append the length of a member in decimal form is taking and the member
+    /// like so
+    ///
+    /// ### For `std`
+    ///
+    /// result = `_L3std`
+    ///
+    /// ### For `mem`
+    ///
+    /// result = `_L3std3mem`
+    ///
+    /// ### For `transmute`
+    ///
+    /// result = `_L3std3mem9transmute`
+    ///
+    /// ### If we had another long member, like `hello_world_im_so_long`
+    ///
+    /// we just append `22hello_world_im_so_long` to the result.
+    ///
+    /// ## 3. Finished
+    ///
+    /// This is super simple mangling.
+    pub fn mangle(&self) -> String {
+        let mut result = String::from("_L");
+
+        for member in self.members() {
+            let mangled = format!("{}{member}", member.len());
+
+            result.push_str(&mangled);
+        }
+
+        result
     }
 }
 
