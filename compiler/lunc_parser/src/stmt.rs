@@ -20,13 +20,13 @@ impl AstNode for Block {
 
         // TEST: no. 1
         let (_, lo) =
-            expect_token!(parser => [Punct(Punctuation::LBrace), ()], Punctuation::LBrace);
+            expect_token!(parser => [Punct(Punctuation::LCurly), ()], Punctuation::LCurly);
 
         let mut last_expr = None;
 
         loop {
             match parser.peek_tt() {
-                Some(EOF) | Some(Punct(Punctuation::RBrace)) | None => {
+                Some(EOF) | Some(Punct(Punctuation::RCurly)) | None => {
                     break;
                 }
                 _ => {}
@@ -35,7 +35,7 @@ impl AstNode for Block {
 
             let stmt = parse!(parser => Statement);
 
-            let next_brace = matches!(parser.peek_tt(), Some(Punct(Punctuation::RBrace)));
+            let next_brace = matches!(parser.peek_tt(), Some(Punct(Punctuation::RCurly)));
             let is_expr = stmt.is_expr();
 
             match (next_brace, is_expr) {
@@ -103,7 +103,7 @@ impl AstNode for Block {
 
         // TEST: no. 5
         let (_, hi) =
-            expect_token!(parser => [Punct(Punctuation::RBrace), ()], Punctuation::RBrace);
+            expect_token!(parser => [Punct(Punctuation::RCurly), ()], Punctuation::RCurly);
 
         Ok(Block {
             stmts,
@@ -175,7 +175,7 @@ impl Parser {
             && !matches!(
                 self.nth_tt(2),
                 Some(
-                    Kw(Keyword::While | Keyword::For | Keyword::Loop) | Punct(Punctuation::LBrace)
+                    Kw(Keyword::While | Keyword::For | Keyword::Loop) | Punct(Punctuation::LCurly)
                 )
             )
     }

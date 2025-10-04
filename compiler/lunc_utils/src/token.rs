@@ -45,7 +45,7 @@ impl TokenStream {
             !self.finished,
             "can't push a token to the token stream if it's already finished"
         );
-        assert_ne!(tt, TokenType::__NotAToken__);
+        assert_ne!(tt, TokenType::Dummy);
 
         let is_eof = tt == TokenType::EOF;
 
@@ -211,7 +211,7 @@ impl Token {
                 writeln!(out, "    lexeme: N/A;")?;
                 writeln!(out, "  }},")?;
             }
-            TokenType::__NotAToken__ => unreachable!(),
+            TokenType::Dummy => unreachable!(),
         }
 
         Ok(())
@@ -246,10 +246,9 @@ pub enum TokenType {
     Punct(Punctuation),
     /// End Of File
     EOF,
-    /// this is not a token, it is used when encountering a comment or a
+    /// this is a dummy token, it is used when encountering a comment or a
     /// whitespace it can't be pushed into a token stream.
-    #[doc(hidden)]
-    __NotAToken__,
+    Dummy,
 }
 
 impl Display for TokenType {
@@ -269,7 +268,7 @@ impl Display for TokenType {
             SpecializedFloatLit { .. } => write!(f, "specialized float literal"),
             Punct(p) => write!(f, "`{p}`"),
             EOF => write!(f, "<eof>"),
-            __NotAToken__ => write!(f, "not a token"),
+            Dummy => write!(f, "not a token"),
         }
     }
 }
@@ -498,9 +497,9 @@ pub enum Punctuation {
     /// `]`
     RBracket,
     /// `{`
-    LBrace,
+    LCurly,
     /// `}`
-    RBrace,
+    RCurly,
     /// `+`
     Plus,
     /// `-`
@@ -561,8 +560,8 @@ impl Display for Punctuation {
             RParen => f.write_str(")"),
             LBracket => f.write_str("["),
             RBracket => f.write_str("]"),
-            LBrace => f.write_str("{"),
-            RBrace => f.write_str("}"),
+            LCurly => f.write_str("{"),
+            RCurly => f.write_str("}"),
             Plus => f.write_str("+"),
             Minus => f.write_str("-"),
             Star => f.write_str("*"),

@@ -3288,12 +3288,12 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     lexeme: `]`;
   },
   {
-    tt: punctuation LBrace;
+    tt: punctuation LCurly;
     loc: 8..9 (fid = 0);
     lexeme: `{`;
   },
   {
-    tt: punctuation RBrace;
+    tt: punctuation RCurly;
     loc: 10..11 (fid = 0);
     lexeme: `}`;
   },

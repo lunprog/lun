@@ -286,7 +286,7 @@ pub fn parse_expr_precedence(
             Some(Kw(Keyword::Loop)) => parse!(@fn parser => parse_infinite_loop_expr),
             Some(Kw(Keyword::While)) => parse!(@fn parser => parse_predicate_loop_expr),
             Some(Kw(Keyword::For)) => parse!(@fn parser => parse_iterator_loop_expr),
-            Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
+            Some(Punct(Punctuation::LCurly)) => parse!(@fn parser => parse_block_expr),
             // SAFETY: we checked in the if of the match arm that it can only
             // be a keyword and one of loop, while or for
             _ => opt_unreachable!(),
@@ -302,7 +302,7 @@ pub fn parse_expr_precedence(
         Some(Kw(Keyword::Continue)) => parse!(@fn parser => parse_continue_expr),
         Some(Kw(Keyword::Null)) => parse!(@fn parser => parse_null_expr),
         Some(Kw(Keyword::Orb)) => parse!(@fn parser => parse_orb_expr),
-        Some(Punct(Punctuation::LBrace)) => parse!(@fn parser => parse_block_expr),
+        Some(Punct(Punctuation::LCurly)) => parse!(@fn parser => parse_block_expr),
         Some(Punct(Punctuation::Star))
             if parser.nth_tt(1) == Some(&TokenType::Kw(Keyword::Fun)) =>
         {
@@ -366,7 +366,7 @@ impl Parser {
             && matches!(
                 self.nth_tt(2),
                 Some(
-                    Kw(Keyword::While | Keyword::For | Keyword::Loop) | Punct(Punctuation::LBrace)
+                    Kw(Keyword::While | Keyword::For | Keyword::Loop) | Punct(Punctuation::LCurly)
                 )
             )
     }
@@ -1022,7 +1022,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 
     let cond = parse!(box: parser => Expression);
 
-    if let Some(TokenType::Punct(Punctuation::LBrace)) = parser.peek_tt() {
+    if let Some(TokenType::Punct(Punctuation::LCurly)) = parser.peek_tt() {
         // if expr
         // "if" expression block [ "else" (if-expr | block-expr) ]
         let body = parse!(box: parser => Block);
@@ -1045,7 +1045,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 
                     Else::IfExpr(if_expr)
                 }
-                Some(Punct(Punctuation::LBrace)) => {
+                Some(Punct(Punctuation::LCurly)) => {
                     // block
                     let block = parse!(parser => Block);
 
@@ -1058,7 +1058,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 
                     // TEST: no. 2
                     return Err(ExpectedToken::new(
-                        [Punct(Punctuation::LBrace), Kw(Keyword::If)],
+                        [Punct(Punctuation::LCurly), Kw(Keyword::If)],
                         t.tt.clone(),
                         Some("if expression"),
                         t.loc.clone(),
@@ -1110,7 +1110,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 
         // TEST: no. 3
         Err(ExpectedToken::new(
-            [Punct(Punctuation::LBrace)],
+            [Punct(Punctuation::LCurly)],
             t.tt.clone(),
             Some("if expression"),
             t.loc.clone(),

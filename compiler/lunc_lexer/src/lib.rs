@@ -53,7 +53,7 @@ impl Lexer {
         loop {
             self.head.reset();
             let t = match self.lex_token() {
-                Ok(TokenType::__NotAToken__) => continue,
+                Ok(TokenType::Dummy) => continue,
                 Ok(t) => t,
                 Err(diag) => {
                     // irrecoverable error diagnostic
@@ -140,8 +140,8 @@ impl Lexer {
             Some(')') => Punct(RParen),
             Some('[') => Punct(LBracket),
             Some(']') => Punct(RBracket),
-            Some('{') => Punct(LBrace),
-            Some('}') => Punct(RBrace),
+            Some('{') => Punct(LCurly),
+            Some('}') => Punct(RCurly),
             Some('+') => Punct(Plus),
             Some('-') => {
                 self.pop();
@@ -218,7 +218,7 @@ impl Lexer {
                         // start of a line comment
                         self.pop();
                         self.lex_until('\n');
-                        return Ok(TokenType::__NotAToken__);
+                        return Ok(TokenType::Dummy);
                     }
                     Some('*') => {
                         // start of multiline comment
@@ -237,7 +237,7 @@ impl Lexer {
                         self.pop(); // pop *
                         self.pop(); // pop /
 
-                        return Ok(TokenType::__NotAToken__);
+                        return Ok(TokenType::Dummy);
                     }
                     _ => return Ok(Punct(Slash)),
                 }
@@ -258,12 +258,12 @@ impl Lexer {
             Some('0'..='9') => return self.lex_number(),
             Some(w) if w.is_whitespace() => {
                 self.pop();
-                return Ok(TokenType::__NotAToken__);
+                return Ok(TokenType::Dummy);
             }
             Some(c) => {
                 self.pop();
                 self.sink.emit(UnknownToken { c, loc: self.loc() });
-                return Ok(TokenType::__NotAToken__);
+                return Ok(TokenType::Dummy);
             }
             None => EOF,
         };

@@ -247,12 +247,12 @@ pub fn parse_extern_block_item(parser: &mut Parser) -> Result<Item, Diagnostic> 
     };
 
     // TEST: no. 2
-    expect_token!(parser => [Punct(Punctuation::LBrace), ()], Punct(Punctuation::LBrace));
+    expect_token!(parser => [Punct(Punctuation::LCurly), ()], Punct(Punctuation::LCurly));
 
     let mut items = Vec::new();
 
     loop {
-        if let Some(Punct(Punctuation::RBrace)) = parser.peek_tt() {
+        if let Some(Punct(Punctuation::RCurly)) = parser.peek_tt() {
             break;
         }
 
@@ -260,14 +260,14 @@ pub fn parse_extern_block_item(parser: &mut Parser) -> Result<Item, Diagnostic> 
 
         items.push(item);
 
-        if let Some(Punct(Punctuation::RBrace)) = parser.peek_tt() {
+        if let Some(Punct(Punctuation::RCurly)) = parser.peek_tt() {
             break;
         }
     }
 
     // TEST: n/a
     let (_, hi) =
-        expect_token!(parser => [Punct(Punctuation::RBrace), ()], Punct(Punctuation::RBrace));
+        expect_token!(parser => [Punct(Punctuation::RCurly), ()], Punct(Punctuation::RCurly));
 
     Ok(Item::ExternBlock {
         abi,
