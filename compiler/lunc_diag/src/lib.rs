@@ -13,6 +13,7 @@ use codespan_reporting::{
 
 use std::{
     fmt::Display,
+    panic::Location,
     sync::{Arc, RwLock},
 };
 
@@ -73,8 +74,8 @@ pub struct DiagnosticSink(Arc<RwLock<SinkInner>>);
 
 impl DiagnosticSink {
     /// Create a new diagnostic sink
-    pub fn new() -> DiagnosticSink {
-        DiagnosticSink(Arc::new(RwLock::new(SinkInner::new())))
+    pub fn new(debug: bool) -> DiagnosticSink {
+        DiagnosticSink(Arc::new(RwLock::new(SinkInner::new(debug))))
     }
 
     /// Registers a new file into the diagnostic sink and returns the correspond file id.
@@ -98,13 +99,13 @@ impl DiagnosticSink {
     /// Print all diagnostics to the given writer, with default config.
     pub fn dump_with(&self, writer: &mut StandardStream) -> Result<(), files::Error> {
         let inner = self.0.read().unwrap();
-        inner.emit(writer)
+        inner.dump_with(writer)
     }
 
     /// Emit all the diagnostics to stderr.
     pub fn dump(&self) {
         let inner = self.0.read().unwrap();
-        inner.emit_to_stderr();
+        inner.dump_to_stderr();
     }
 
     /// Returns a summary if there was errors or warnings, nothing if there is
@@ -115,13 +116,19 @@ impl DiagnosticSink {
     }
 
     /// Emit a diagnostic
+    #[track_caller]
     pub fn emit(&mut self, diag: impl ToDiagnostic) {
         let mut inner = self.0.write().unwrap();
-        inner.push(diag);
+        inner.emit(diag);
     }
 
     /// Emit a summary diagnostic
     pub fn emit_summary(&mut self, orb_name: &str) {
+        {
+            let mut inner = self.0.write().unwrap();
+            inner.debug = false;
+        }
+
         self.emit(
             if self.failed() {
                 Diagnostic::error()
@@ -140,12 +147,6 @@ impl DiagnosticSink {
     }
 }
 
-impl Default for DiagnosticSink {
-    fn default() -> Self {
-        DiagnosticSink::new()
-    }
-}
-
 /// A collector of Diagnostics.
 #[derive(Debug, Clone)]
 struct SinkInner {
@@ -158,17 +159,20 @@ struct SinkInner {
     files: MultiFile,
     /// last file id given
     last_fid: u32,
+    /// does we add debug information to the output?
+    debug: bool,
 }
 
 impl SinkInner {
     /// Create a new diagnostic sink
-    pub fn new() -> SinkInner {
+    pub fn new(debug: bool) -> SinkInner {
         SinkInner {
             diags: Vec::new(),
             errors: 0,
             warnings: 0,
             files: MultiFile::new(),
             last_fid: 0,
+            debug,
         }
     }
 
@@ -192,7 +196,7 @@ impl SinkInner {
     }
 
     /// Print all diagnostics to the given writer, with default config.
-    pub fn emit(&self, writer: &mut StandardStream) -> Result<(), files::Error> {
+    pub fn dump_with(&self, writer: &mut StandardStream) -> Result<(), files::Error> {
         let config = Config::default();
 
         for diag in &self.diags {
@@ -203,10 +207,10 @@ impl SinkInner {
     }
 
     /// Emit all the diagnostics to stderr.
-    pub fn emit_to_stderr(&self) {
+    pub fn dump_to_stderr(&self) {
         let mut stderr = StandardStream::stderr(ColorChoice::Auto);
 
-        self.emit(&mut stderr)
+        self.dump_with(&mut stderr)
             .expect("failed to emit the diagnostics");
     }
 
@@ -234,8 +238,9 @@ impl SinkInner {
         }
     }
 
-    pub fn push(&mut self, diag: impl ToDiagnostic) {
-        let diag = diag.into_diag();
+    #[track_caller]
+    pub fn emit(&mut self, diag: impl ToDiagnostic) {
+        let mut diag = diag.into_diag();
 
         if diag.severity == Severity::Warning {
             self.warnings += 1;
@@ -243,6 +248,16 @@ impl SinkInner {
             self.errors += 1;
         } else {
             panic!("severity '{:?}' is not supported", diag.severity);
+        }
+
+        if self.debug {
+            let caller_loc = Location::caller();
+            diag.notes.push(format!(
+                "DEBUG: this diagnostic was emitted in {file}, at {line}:{column}",
+                file = caller_loc.file(),
+                line = caller_loc.line(),
+                column = caller_loc.column()
+            ));
         }
 
         self.diags.push(diag);

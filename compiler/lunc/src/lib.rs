@@ -93,22 +93,29 @@ pub enum CliError {
     ArgumentUsedMultipleTimes(String),
     #[error(transparent)]
     ClapError(#[from] clap::Error),
-    #[error("invalid value ({0}) for -Z halt, for more details `lunc -Z help`")]
-    InvalidHaltVal(String),
-    #[error("invalid value ({0}) for -Z timings, possible values: `true`,`false`")]
-    InvalidTimingsVal(String),
-    #[error("invalid value ({0}) for -Z print, for more details `lunc -Z help`")]
-    InvalidPrintVal(String),
-    #[error("invalid value ({0}) for -C opt-level, for more details `lunc -C help`")]
-    InvalidOptLevelVal(String),
-    #[error("invalid value ({0}) for -C output-obj, for more details `lunc -C help`")]
-    InvalidOutputObjVal(String),
+    #[error("invalid value ({val}) for {opt}, for more details type `lunc {help}`")]
+    InvalidVal {
+        help: String,
+        opt: String,
+        val: String,
+    },
     #[error(transparent)]
     Io(#[from] io::Error),
     #[error("failed to link: {0}")]
     LinkerFailed(String),
     #[error(transparent)]
     Linkage(#[from] lunc_linkage::Error),
+}
+
+impl CliError {
+    /// Creates a new invalid val error
+    pub fn invalid_val(help: &str, opt: &str, val: &str) -> CliError {
+        CliError::InvalidVal {
+            help: help.to_string(),
+            opt: opt.to_string(),
+            val: val.to_string(),
+        }
+    }
 }
 
 pub fn flush_outs() {
@@ -259,6 +266,8 @@ pub enum DebugKey {
     Timings,
     /// Prints to the standard error, one or more of:
     Print,
+    /// Diagnostics debug information.
+    DiagDebug,
 }
 
 impl ValueEnumExt for DebugKey {
@@ -386,6 +395,7 @@ pub struct DebugOptions {
     halt: Option<CompStage>,
     timings: bool,
     print: Vec<InterRes>,
+    diag_debug: bool,
 }
 
 impl DebugOptions {
@@ -600,6 +610,7 @@ pub fn run() -> Result<()> {
     // here to know if we have defined multiple times one option
     let mut debug_halt_def = false;
     let mut debug_timings_def = false;
+    let mut debug_diag_debug_def = false;
 
     for Kv { key, val } in raw_argv.debug {
         match key {
@@ -610,7 +621,8 @@ pub fn run() -> Result<()> {
                 }
 
                 debug.halt = Some(
-                    CompStage::from_str(&val, false).map_err(|_| CliError::InvalidHaltVal(val))?,
+                    CompStage::from_str(&val, false)
+                        .map_err(|_| CliError::invalid_val("-Z help", "-Z halt", &val))?,
                 );
                 debug_halt_def = true;
             }
@@ -621,13 +633,27 @@ pub fn run() -> Result<()> {
                     ));
                 }
 
-                debug.timings = val.parse().map_err(|_| CliError::InvalidTimingsVal(val))?;
+                debug.timings = val
+                    .parse()
+                    .map_err(|_| CliError::invalid_val("-Z help", "-Z timings", &val))?;
                 debug_timings_def = true;
             }
             DebugKey::Print => {
                 debug.print.push(
-                    InterRes::from_str(&val, false).map_err(|_| CliError::InvalidPrintVal(val))?,
+                    InterRes::from_str(&val, false)
+                        .map_err(|_| CliError::invalid_val("-Z help", "-Z print", &val))?,
                 );
+            }
+            DebugKey::DiagDebug => {
+                if debug_diag_debug_def {
+                    return Err(CliError::ArgumentUsedMultipleTimes(
+                        "-Z diag-debug".to_string(),
+                    ));
+                }
+
+                debug.diag_debug = bool::from_str(&val)
+                    .map_err(|_| CliError::invalid_val("-Z help", "-Z diag-debug", &val))?;
+                debug_diag_debug_def = true;
             }
         }
     }
@@ -648,7 +674,9 @@ pub fn run() -> Result<()> {
                     ));
                 }
 
-                codegen.opt_level = val.parse().map_err(|_| CliError::InvalidOptLevelVal(val))?;
+                codegen.opt_level = val
+                    .parse()
+                    .map_err(|_| CliError::invalid_val("-C help", "-C opt-level", &val))?;
                 codegen_optlevel_def = true;
             }
             CodegenKey::OutputObj => {
@@ -660,7 +688,7 @@ pub fn run() -> Result<()> {
 
                 codegen.output_obj = val
                     .parse()
-                    .map_err(|_| CliError::InvalidOutputObjVal(val))?;
+                    .map_err(|_| CliError::invalid_val("-C help", "-C output-obj", &val))?;
                 codegen_outputobj_def = true;
             }
         }
@@ -711,7 +739,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
     // 2. create the diagnostic sink
     let input_str = argv.input.clone().into_os_string().into_string().unwrap();
-    let sink = DiagnosticSink::new();
+    let sink = DiagnosticSink::new(argv.debug.diag_debug);
     let root_fid = sink.register_file(input_str, source_code.clone());
     assert_eq!(root_fid, FileId::ROOT_MODULE);
 
