@@ -1,7 +1,7 @@
 //! Diagnostics that may be emitted by the parser.
 
 use lunc_diag::{Diagnostic, ErrorCode, Label, ToDiagnostic};
-use lunc_token::{Token, TokenReprSet, TokenType};
+use lunc_token::{ExpTokenSet, Token, TokenType};
 use lunc_utils::{DEFAULT_MAX_LEVENSHTEIN_DISTANCE, Span, list_fmt, suggest};
 
 use std::fmt::Display;
@@ -110,7 +110,7 @@ impl ExpectedToken {
         }
     }
 
-    pub fn add_expects(mut self, expects: TokenReprSet) -> Self {
+    pub fn add_expects(mut self, expects: ExpTokenSet) -> Self {
         self.expected
             .extend(expects.iter().map(|tr| tr.to_string()));
         self

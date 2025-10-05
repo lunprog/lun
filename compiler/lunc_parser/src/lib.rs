@@ -11,7 +11,7 @@ use item::Module;
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, Result, ToDiagnostic};
 
 use lunc_token::{
-    ExpToken, Lit, LitKind, Token, TokenReprSet, TokenStream,
+    ExpToken, ExpTokenSet, Lit, LitKind, Token, TokenStream,
     TokenType::{self, *},
 };
 use lunc_utils::{Span, pretty::PrettyDump};
@@ -39,7 +39,7 @@ pub struct Parser {
     /// The previous token
     pub prev_token: Token,
     /// The expected token reprs.
-    pub expected_token_reprs: TokenReprSet,
+    pub expected_token_exps: ExpTokenSet,
 }
 
 impl Parser {
@@ -54,7 +54,7 @@ impl Parser {
             fid,
             token,
             prev_token: Token::dummy(),
-            expected_token_reprs: TokenReprSet::new(),
+            expected_token_exps: ExpTokenSet::new(),
         }
     }
 
@@ -68,7 +68,7 @@ impl Parser {
         self.prev_token = mem::replace(&mut self.token, next);
 
         // diagnostic.
-        self.expected_token_reprs.clear();
+        self.expected_token_exps.clear();
     }
 
     /// Checks if the next token is `exp.tok`, if so returns `true`.
@@ -76,10 +76,10 @@ impl Parser {
     /// This method add `exp.tr` to the `Parser::expected_token_reprs` set if
     /// `exp.tok` is not encountered.
     pub fn check(&mut self, exp: ExpToken) -> bool {
-        let is_present = self.token == exp.tok;
+        let is_present = self.token.tt == exp;
 
         if !is_present {
-            self.expected_token_reprs.insert(exp.tr);
+            self.expected_token_exps.insert(exp);
         }
 
         is_present
@@ -126,7 +126,7 @@ impl Parser {
     /// Create a new expected diag with the current token and the
     /// [`Parser::expected_token_reprs`].
     pub fn expected_diag(&self) -> ExpectedToken {
-        ExpectedToken::new([], self.token.clone()).add_expects(self.expected_token_reprs)
+        ExpectedToken::new([], self.token.clone()).add_expects(self.expected_token_exps)
     }
 
     /// Look-ahead `dist` tokens away from [`Parser::token`], when `dist == 0`,

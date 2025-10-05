@@ -5,6 +5,7 @@
 
 use std::{
     fmt::{self, Debug, Display},
+    hash::{DefaultHasher, Hash, Hasher},
     io::{self, Write},
     mem,
 };
@@ -613,6 +614,20 @@ impl Display for TokenType {
     }
 }
 
+impl PartialEq<ExpToken> for TokenType {
+    fn eq(&self, other: &ExpToken) -> bool {
+        let mut state = DefaultHasher::new();
+        mem::discriminant(self).hash(&mut state);
+        let self_hash = state.finish();
+
+        state = DefaultHasher::new();
+        other.hash(&mut state);
+        let other_hash = state.finish();
+
+        self_hash == other_hash
+    }
+}
+
 /// Is this string identifier compatible?
 pub fn is_identifier(id: &str) -> bool {
     // identifiers only support ascii for now
@@ -740,15 +755,19 @@ impl Display for LitVal {
     }
 }
 
-/// Token repr, this is used by `E006`, `ExpectedToken`, diagnostics to avoid
+/// Expected token.
+///
+/// This is used by `E006`, `ExpectedToken`, diagnostics to avoid
 /// creating empty tokens when a TokenType expects a value, so [`TokenRepr`]
 /// don't expect a value.
+///
+/// This is also used by `check` and `expect` methods of the parser.
 ///
 /// *This is inspired by [rustc's TokenType].*
 ///
 /// [rustc's TokenType]: https://doc.rust-lang.org/nightly/nightly-rustc/rustc_parse/parser/token_type/enum.TokenType.html
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum TokenRepr {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ExpToken {
     LParen,
     RParen,
     LBracket,
@@ -810,75 +829,83 @@ pub enum TokenRepr {
     Ident,
     Lit,
     EOF,
+    Dummy,
 }
 
-impl Display for TokenRepr {
+impl Display for ExpToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use TokenRepr as Tr;
+        use ExpToken as Et;
 
         match self {
-            Tr::LParen => write!(f, "`(`"),
-            Tr::RParen => write!(f, "`)`"),
-            Tr::LBracket => write!(f, "`[`"),
-            Tr::RBracket => write!(f, "`]`"),
-            Tr::LCurly => write!(f, "`{{`"),
-            Tr::RCurly => write!(f, "`}}`"),
-            Tr::Plus => write!(f, "`+`"),
-            Tr::Minus => write!(f, "`-`"),
-            Tr::Star => write!(f, "`*`"),
-            Tr::Slash => write!(f, "`/`"),
-            Tr::Colon => write!(f, "`:`"),
-            Tr::Comma => write!(f, "`,`"),
-            Tr::Eq => write!(f, "`=`"),
-            Tr::EqEq => write!(f, "`==`"),
-            Tr::BangEq => write!(f, "`!=`"),
-            Tr::Bang => write!(f, "`!`"),
-            Tr::LtEq => write!(f, "`<=`"),
-            Tr::Lt => write!(f, "`<`"),
-            Tr::LtLt => write!(f, "`<<`"),
-            Tr::Gt => write!(f, "`>`"),
-            Tr::GtGt => write!(f, "`>>`"),
-            Tr::GtEq => write!(f, "`>=`"),
-            Tr::Semi => write!(f, "`;`"),
-            Tr::MinusGt => write!(f, "`->`"),
-            Tr::Caret => write!(f, "`^`"),
-            Tr::And => write!(f, "`&`"),
-            Tr::AndAnd => write!(f, "`&&`"),
-            Tr::Or => write!(f, "`|`"),
-            Tr::OrOr => write!(f, "`||`"),
-            Tr::Percent => write!(f, "`%`"),
-            Tr::Dot => write!(f, "`.`"),
-            Tr::DotStar => write!(f, "`.*`"),
-            Tr::Pound => write!(f, "`#`"),
-            Tr::KwAs => write!(f, "keyword `as`"),
-            Tr::KwBreak => write!(f, "keyword `break`"),
-            Tr::KwComptime => write!(f, "keyword `comptime`"),
-            Tr::KwContinue => write!(f, "keyword `continue`"),
-            Tr::KwDefer => write!(f, "keyword `defer`"),
-            Tr::KwElse => write!(f, "keyword `else`"),
-            Tr::KwExtern => write!(f, "keyword `extern`"),
-            Tr::KwFalse => write!(f, "keyword `false`"),
-            Tr::KwFor => write!(f, "keyword `for`"),
-            Tr::KwFun => write!(f, "keyword `fun`"),
-            Tr::KwIf => write!(f, "keyword `if`"),
-            Tr::KwImpl => write!(f, "keyword `impl`"),
-            Tr::KwIn => write!(f, "keyword `in`"),
-            Tr::KwLet => write!(f, "keyword `let`"),
-            Tr::KwLoop => write!(f, "keyword `loop`"),
-            Tr::KwMut => write!(f, "keyword `mut`"),
-            Tr::KwNull => write!(f, "keyword `null`"),
-            Tr::KwOrb => write!(f, "keyword `orb`"),
-            Tr::KwPub => write!(f, "keyword `pub`"),
-            Tr::KwReturn => write!(f, "keyword `return`"),
-            Tr::KwSelfVal => write!(f, "keyword `self`"),
-            Tr::KwThen => write!(f, "keyword `then`"),
-            Tr::KwTrait => write!(f, "keyword `trait`"),
-            Tr::KwTrue => write!(f, "keyword `true`"),
-            Tr::KwWhile => write!(f, "keyword `while`"),
-            Tr::Ident => write!(f, "identifier"),
-            Tr::Lit => write!(f, "literal"),
-            Tr::EOF => write!(f, "end of file"),
+            Et::LParen => write!(f, "`(`"),
+            Et::RParen => write!(f, "`)`"),
+            Et::LBracket => write!(f, "`[`"),
+            Et::RBracket => write!(f, "`]`"),
+            Et::LCurly => write!(f, "`{{`"),
+            Et::RCurly => write!(f, "`}}`"),
+            Et::Plus => write!(f, "`+`"),
+            Et::Minus => write!(f, "`-`"),
+            Et::Star => write!(f, "`*`"),
+            Et::Slash => write!(f, "`/`"),
+            Et::Colon => write!(f, "`:`"),
+            Et::Comma => write!(f, "`,`"),
+            Et::Eq => write!(f, "`=`"),
+            Et::EqEq => write!(f, "`==`"),
+            Et::BangEq => write!(f, "`!=`"),
+            Et::Bang => write!(f, "`!`"),
+            Et::LtEq => write!(f, "`<=`"),
+            Et::Lt => write!(f, "`<`"),
+            Et::LtLt => write!(f, "`<<`"),
+            Et::Gt => write!(f, "`>`"),
+            Et::GtGt => write!(f, "`>>`"),
+            Et::GtEq => write!(f, "`>=`"),
+            Et::Semi => write!(f, "`;`"),
+            Et::MinusGt => write!(f, "`->`"),
+            Et::Caret => write!(f, "`^`"),
+            Et::And => write!(f, "`&`"),
+            Et::AndAnd => write!(f, "`&&`"),
+            Et::Or => write!(f, "`|`"),
+            Et::OrOr => write!(f, "`||`"),
+            Et::Percent => write!(f, "`%`"),
+            Et::Dot => write!(f, "`.`"),
+            Et::DotStar => write!(f, "`.*`"),
+            Et::Pound => write!(f, "`#`"),
+            Et::KwAs => write!(f, "keyword `as`"),
+            Et::KwBreak => write!(f, "keyword `break`"),
+            Et::KwComptime => write!(f, "keyword `comptime`"),
+            Et::KwContinue => write!(f, "keyword `continue`"),
+            Et::KwDefer => write!(f, "keyword `defer`"),
+            Et::KwElse => write!(f, "keyword `else`"),
+            Et::KwExtern => write!(f, "keyword `extern`"),
+            Et::KwFalse => write!(f, "keyword `false`"),
+            Et::KwFor => write!(f, "keyword `for`"),
+            Et::KwFun => write!(f, "keyword `fun`"),
+            Et::KwIf => write!(f, "keyword `if`"),
+            Et::KwImpl => write!(f, "keyword `impl`"),
+            Et::KwIn => write!(f, "keyword `in`"),
+            Et::KwLet => write!(f, "keyword `let`"),
+            Et::KwLoop => write!(f, "keyword `loop`"),
+            Et::KwMut => write!(f, "keyword `mut`"),
+            Et::KwNull => write!(f, "keyword `null`"),
+            Et::KwOrb => write!(f, "keyword `orb`"),
+            Et::KwPub => write!(f, "keyword `pub`"),
+            Et::KwReturn => write!(f, "keyword `return`"),
+            Et::KwSelfVal => write!(f, "keyword `self`"),
+            Et::KwThen => write!(f, "keyword `then`"),
+            Et::KwTrait => write!(f, "keyword `trait`"),
+            Et::KwTrue => write!(f, "keyword `true`"),
+            Et::KwWhile => write!(f, "keyword `while`"),
+            Et::Ident => write!(f, "identifier"),
+            Et::Lit => write!(f, "literal"),
+            Et::EOF => write!(f, "end of file"),
+            Et::Dummy => unreachable!(),
         }
+    }
+}
+
+impl PartialEq<TokenType> for ExpToken {
+    fn eq(&self, other: &TokenType) -> bool {
+        other.eq(self)
     }
 }
 
@@ -888,21 +915,21 @@ impl Display for TokenRepr {
 ///
 /// [rustc's TokenTypeSet]: https://doc.rust-lang.org/nightly/nightly-rustc/rustc_parse/parser/token_type/struct.TokenTypeSet.html
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct TokenReprSet(u64);
+pub struct ExpTokenSet(u64);
 
-impl TokenReprSet {
-    /// Create a new TokenRepr set.
-    pub fn new() -> TokenReprSet {
-        TokenReprSet(0)
+impl ExpTokenSet {
+    /// Create a new ExpToken Set.
+    pub fn new() -> ExpTokenSet {
+        ExpTokenSet(0)
     }
 
-    /// Insert a tokenrepr inside the set.
-    pub fn insert(&mut self, tr: TokenRepr) {
+    /// Insert an ExpToken inside the set.
+    pub fn insert(&mut self, tr: ExpToken) {
         self.0 |= 1u64 << tr as u64;
     }
 
-    /// Does this TrSet contains `tr`?
-    pub fn contains(&self, tr: TokenRepr) -> bool {
+    /// Does this ExpTokenSet contains `tr`?
+    pub fn contains(&self, tr: ExpToken) -> bool {
         self.0 & (1u64 << tr as u64) != 0
     }
 
@@ -911,22 +938,23 @@ impl TokenReprSet {
         self.0 = 0;
     }
 
-    pub fn iter(&self) -> TokenReprSetIter {
-        TokenReprSetIter(*self)
+    /// Create an iterator of [`ExpToken`].
+    pub fn iter(&self) -> ExpTokenSetIter {
+        ExpTokenSetIter(*self)
     }
 }
 
-impl Default for TokenReprSet {
+impl Default for ExpTokenSet {
     fn default() -> Self {
-        TokenReprSet::new()
+        ExpTokenSet::new()
     }
 }
 
-/// Iterator of [`TokenRepr`] in a [`TokenReprSet`].
-pub struct TokenReprSetIter(TokenReprSet);
+/// Iterator of [`ExpToken`] in a [`ExpTokenSet`].
+pub struct ExpTokenSetIter(ExpTokenSet);
 
-impl Iterator for TokenReprSetIter {
-    type Item = TokenRepr;
+impl Iterator for ExpTokenSetIter {
+    type Item = ExpToken;
 
     fn next(&mut self) -> Option<Self::Item> {
         let num_bits = (size_of_val(&self.0.0) * 8) as u64;
@@ -943,89 +971,9 @@ impl Iterator for TokenReprSetIter {
                 panic!("invalid token repr {zeros}")
             }
 
-            Some(unsafe { mem::transmute::<u8, TokenRepr>(zeros as u8) })
+            Some(unsafe { mem::transmute::<u8, ExpToken>(zeros as u8) })
         }
     }
-}
-
-macro_rules! pair {
-    ($name:ident, $tok:ident) => {
-        #[doc = concat!("Create a new `", stringify!($tok), "` pair.")]
-        #[allow(non_upper_case_globals)]
-        pub const $name: ExpToken = ExpToken {
-            tok: TokenType::$tok,
-            tr: TokenRepr::$tok,
-        };
-    };
-}
-
-/// Expected token, used by `check` and `expect` methods of the parser.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ExpToken {
-    pub tok: TokenType,
-    pub tr: TokenRepr,
-}
-
-impl ExpToken {
-    pair!(LParen, LParen);
-    pair!(RParen, RParen);
-    pair!(LBracket, LBracket);
-    pair!(RBracket, RBracket);
-    pair!(LCurly, LCurly);
-    pair!(RCurly, RCurly);
-    pair!(Plus, Plus);
-    pair!(Minus, Minus);
-    pair!(Star, Star);
-    pair!(Slash, Slash);
-    pair!(Colon, Colon);
-    pair!(Comma, Comma);
-    pair!(Eq, Eq);
-    pair!(EqEq, EqEq);
-    pair!(BangEq, BangEq);
-    pair!(Bang, Bang);
-    pair!(LtEq, LtEq);
-    pair!(Lt, Lt);
-    pair!(LtLt, LtLt);
-    pair!(Gt, Gt);
-    pair!(GtGt, GtGt);
-    pair!(GtEq, GtEq);
-    pair!(Semi, Semi);
-    pair!(MinusGt, MinusGt);
-    pair!(Caret, Caret);
-    pair!(And, And);
-    pair!(AndAnd, AndAnd);
-    pair!(Or, Or);
-    pair!(OrOr, OrOr);
-    pair!(Percent, Percent);
-    pair!(Dot, Dot);
-    pair!(DotStar, DotStar);
-    pair!(Pound, Pound);
-    pair!(KwAs, KwAs);
-    pair!(KwBreak, KwBreak);
-    pair!(KwComptime, KwComptime);
-    pair!(KwContinue, KwContinue);
-    pair!(KwDefer, KwDefer);
-    pair!(KwElse, KwElse);
-    pair!(KwExtern, KwExtern);
-    pair!(KwFalse, KwFalse);
-    pair!(KwFor, KwFor);
-    pair!(KwFun, KwFun);
-    pair!(KwIf, KwIf);
-    pair!(KwImpl, KwImpl);
-    pair!(KwIn, KwIn);
-    pair!(KwLet, KwLet);
-    pair!(KwLoop, KwLoop);
-    pair!(KwMut, KwMut);
-    pair!(KwNull, KwNull);
-    pair!(KwOrb, KwOrb);
-    pair!(KwPub, KwPub);
-    pair!(KwReturn, KwReturn);
-    pair!(KwSelfVal, KwSelfVal);
-    pair!(KwThen, KwThen);
-    pair!(KwTrait, KwTrait);
-    pair!(KwTrue, KwTrue);
-    pair!(KwWhile, KwWhile);
-    pair!(EOF, EOF);
 }
 
 #[cfg(test)]
@@ -1038,5 +986,88 @@ mod tests {
         assert!(!is_identifier("ça"));
         assert!(!is_identifier("Hello, World!"));
         assert!(!is_identifier("orb"));
+    }
+
+    macro_rules! eq_test {
+        ($name:ident) => {
+            assert!(TokenType::$name.eq(&ExpToken::$name));
+            assert!(ExpToken::$name.eq(&TokenType::$name));
+        };
+        (@val $tt:expr, $exp:expr) => {
+            assert!($tt.eq(&$exp));
+            assert!($exp.eq(&$tt));
+        };
+    }
+
+    #[test]
+    fn exp_token_and_token_type_equality() {
+        eq_test!(LParen);
+        eq_test!(RParen);
+        eq_test!(LBracket);
+        eq_test!(RBracket);
+        eq_test!(LCurly);
+        eq_test!(RCurly);
+        eq_test!(Plus);
+        eq_test!(Minus);
+        eq_test!(Star);
+        eq_test!(Slash);
+        eq_test!(Colon);
+        eq_test!(Comma);
+        eq_test!(Eq);
+        eq_test!(EqEq);
+        eq_test!(BangEq);
+        eq_test!(Bang);
+        eq_test!(LtEq);
+        eq_test!(Lt);
+        eq_test!(LtLt);
+        eq_test!(Gt);
+        eq_test!(GtGt);
+        eq_test!(GtEq);
+        eq_test!(Semi);
+        eq_test!(MinusGt);
+        eq_test!(Caret);
+        eq_test!(And);
+        eq_test!(AndAnd);
+        eq_test!(Or);
+        eq_test!(OrOr);
+        eq_test!(Percent);
+        eq_test!(Dot);
+        eq_test!(DotStar);
+        eq_test!(Pound);
+        eq_test!(KwAs);
+        eq_test!(KwBreak);
+        eq_test!(KwComptime);
+        eq_test!(KwContinue);
+        eq_test!(KwDefer);
+        eq_test!(KwElse);
+        eq_test!(KwExtern);
+        eq_test!(KwFalse);
+        eq_test!(KwFor);
+        eq_test!(KwFun);
+        eq_test!(KwIf);
+        eq_test!(KwImpl);
+        eq_test!(KwIn);
+        eq_test!(KwLet);
+        eq_test!(KwLoop);
+        eq_test!(KwMut);
+        eq_test!(KwNull);
+        eq_test!(KwOrb);
+        eq_test!(KwPub);
+        eq_test!(KwReturn);
+        eq_test!(KwSelfVal);
+        eq_test!(KwThen);
+        eq_test!(KwTrait);
+        eq_test!(KwTrue);
+        eq_test!(KwWhile);
+        eq_test!(@val TokenType::Ident(String::from("Hello")), ExpToken::Ident);
+        eq_test!(@val TokenType::Ident(String::new()), ExpToken::Ident);
+        eq_test!(@val TokenType::Ident(String::from("..")), ExpToken::Ident);
+        eq_test!(@val TokenType::Ident(String::from("Très bien!")), ExpToken::Ident);
+        eq_test!(@val TokenType::Lit(Lit::int(123)), ExpToken::Lit);
+        eq_test!(@val TokenType::Lit(Lit::char('L')), ExpToken::Lit);
+        eq_test!(@val TokenType::Lit(Lit::float(6.9)), ExpToken::Lit);
+        eq_test!(@val TokenType::Lit(Lit::string("Hello, world".to_string())), ExpToken::Lit);
+        eq_test!(EOF);
+        eq_test!(Dummy);
     }
 }
