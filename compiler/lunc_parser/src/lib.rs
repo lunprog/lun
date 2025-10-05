@@ -11,7 +11,7 @@ use item::Module;
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, ToDiagnostic};
 
 use lunc_token::{
-    Keyword, Punctuation, Token, TokenStream,
+    Token, TokenStream,
     TokenType::{self, *},
 };
 use lunc_utils::{Span, pretty::PrettyDump};
@@ -23,6 +23,7 @@ pub mod item;
 pub mod pretty;
 pub mod stmt;
 
+/// Parser of Lun, turns Tokens into an Ast.
 #[derive(Debug, Clone)]
 pub struct Parser {
     /// token stream
@@ -83,10 +84,7 @@ impl Parser {
 
     /// Returns true if the next token the end of a statement or chunk.
     pub fn is_stmt_end(&self) -> bool {
-        matches!(
-            self.peek_tt(),
-            Some(Kw(Keyword::Else) | Punct(Punctuation::Semicolon | Punctuation::RCurly))
-        )
+        matches!(self.peek_tt(), Some(KwElse | Semi | RCurly))
     }
 
     pub fn produce(&mut self) -> Option<Module> {

@@ -3,6 +3,7 @@
 use std::str::FromStr;
 
 use lunc_diag::FileId;
+use lunc_token::{LitKind, LitVal, Literal};
 use lunc_utils::opt_unreachable;
 
 use crate::{
@@ -114,8 +115,8 @@ impl AstNode for Item {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         match parser.peek_tt() {
             Some(Ident(_)) => parse_global_item(parser),
-            Some(Punct(Punctuation::Hashtag)) => parse_directive_item(parser),
-            Some(Kw(Keyword::Extern)) => parse_extern_block_item(parser),
+            Some(Pound) => parse_directive_item(parser),
+            Some(KwExtern) => parse_extern_block_item(parser),
             Some(_) => {
                 let t = parser.peek_tok().unwrap().clone();
                 // TEST: no. 1
@@ -131,19 +132,19 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
     let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
 
     // TEST: no. 1
-    expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);
+    expect_token!(parser => [Colon, ()], Colon);
 
     let typexpr = match parser.peek_tt() {
-        Some(Punct(Punctuation::Colon | Punctuation::Equal)) => None,
+        Some(Colon | Eq) => None,
         _ => Some(parse!(@fn parser => parse_typexpr)),
     };
 
     let is_const = match parser.peek_tt() {
-        Some(Punct(Punctuation::Colon)) => {
+        Some(Colon) => {
             // const global def
             true
         }
-        Some(Punct(Punctuation::Equal)) => {
+        Some(Eq) => {
             // var global def
             false
         }
@@ -156,7 +157,7 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
             };
 
             // TEST: no. 2
-            let hi = expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punctuation::Semicolon).1;
+            let hi = expect_token!(parser => [Semi, ()], Semi).1;
 
             return Ok(Item::GlobalUninit {
                 name,
@@ -172,14 +173,14 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
     let value = parse!(parser => Expression);
 
     let hi = if value.is_expr_with_block() {
-        if let Some(Punct(Punctuation::Semicolon)) = parser.peek_tt() {
+        if let Some(Semi) = parser.peek_tt() {
             parser.pop();
         }
 
         value.loc.clone()
     } else {
         // TEST: no. 3
-        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punctuation::Semicolon).1
+        expect_token!(parser => [Semi, ()], Semi).1
     };
 
     let loc = Span::from_ends(lo.clone(), hi);
@@ -230,10 +231,14 @@ pub fn parse_directive_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
 
 pub fn parse_extern_block_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
     // TEST: n/a
-    let (_, lo) = expect_token!(parser => [Kw(Keyword::Extern), ()], Kw(Keyword::Extern));
+    let (_, lo) = expect_token!(parser => [KwExtern, ()], KwExtern);
 
     // TEST: no. 1
-    let (abi_str, abi_loc) = expect_token!(parser => [StringLit(s), s.clone()], "string literal");
+    let (LitVal::Str(abi_str), abi_loc) = expect_token!(parser => [Lit(Literal { kind: LitKind::Str, value, .. }), value.clone()], "string literal")
+    else {
+        // SAFETY: literal is guaranteed to contain a string value, if kind is str.
+        opt_unreachable!()
+    };
     let abi = match Abi::from_str(&abi_str) {
         Ok(abi) => abi,
         Err(()) => {
@@ -247,12 +252,12 @@ pub fn parse_extern_block_item(parser: &mut Parser) -> Result<Item, Diagnostic> 
     };
 
     // TEST: no. 2
-    expect_token!(parser => [Punct(Punctuation::LCurly), ()], Punct(Punctuation::LCurly));
+    expect_token!(parser => [LCurly, ()], LCurly);
 
     let mut items = Vec::new();
 
     loop {
-        if let Some(Punct(Punctuation::RCurly)) = parser.peek_tt() {
+        if let Some(RCurly) = parser.peek_tt() {
             break;
         }
 
@@ -260,14 +265,13 @@ pub fn parse_extern_block_item(parser: &mut Parser) -> Result<Item, Diagnostic> 
 
         items.push(item);
 
-        if let Some(Punct(Punctuation::RCurly)) = parser.peek_tt() {
+        if let Some(RCurly) = parser.peek_tt() {
             break;
         }
     }
 
     // TEST: n/a
-    let (_, hi) =
-        expect_token!(parser => [Punct(Punctuation::RCurly), ()], Punct(Punctuation::RCurly));
+    let (_, hi) = expect_token!(parser => [RCurly, ()], RCurly);
 
     Ok(Item::ExternBlock {
         abi,

@@ -2861,72 +2861,72 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     "lexer/char_literal": (
         compiler_out: r#"tokenstream = {
   {
-    tt: character 'C';
+    tt: char 'C';
     loc: 0..3 (fid = 0);
     lexeme: `'C'`;
   },
   {
-    tt: character '\0';
+    tt: char '\0';
     loc: 4..8 (fid = 0);
     lexeme: `'\0'`;
   },
   {
-    tt: character '\n';
+    tt: char '\n';
     loc: 9..13 (fid = 0);
     lexeme: `'\n'`;
   },
   {
-    tt: character '\u{c}';
+    tt: char '\u{c}';
     loc: 14..18 (fid = 0);
     lexeme: `'\f'`;
   },
   {
-    tt: character '\t';
+    tt: char '\t';
     loc: 19..23 (fid = 0);
     lexeme: `'\t'`;
   },
   {
-    tt: character '\u{b}';
+    tt: char '\u{b}';
     loc: 24..28 (fid = 0);
     lexeme: `'\v'`;
   },
   {
-    tt: character '\u{7}';
+    tt: char '\u{7}';
     loc: 29..33 (fid = 0);
     lexeme: `'\a'`;
   },
   {
-    tt: character '\u{8}';
+    tt: char '\u{8}';
     loc: 34..38 (fid = 0);
     lexeme: `'\b'`;
   },
   {
-    tt: character '\u{1b}';
+    tt: char '\u{1b}';
     loc: 39..43 (fid = 0);
     lexeme: `'\e'`;
   },
   {
-    tt: character '\\';
+    tt: char '\\';
     loc: 44..48 (fid = 0);
     lexeme: `'\\'`;
   },
   {
-    tt: character '@';
+    tt: char '@';
     loc: 49..55 (fid = 0);
     lexeme: `'\x40'`;
   },
   {
-    tt: character 'ÿ';
+    tt: char 'ÿ';
     loc: 56..60 (fid = 0);
     lexeme: `'ÿ'`;
   },
   {
-    tt: character '🌒';
+    tt: char '🌒';
     loc: 61..67 (fid = 0);
     lexeme: `'🌒'`;
   },
   {
-    tt: character '🌒';
+    tt: char '🌒';
     loc: 68..79 (fid = 0);
     lexeme: `'\u{1F312}'`;
   },
@@ -3012,82 +3012,82 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     "lexer/integer_literals": (
         compiler_out: "tokenstream = {
   {
-    tt: integer '123456789';
+    tt: integer 123456789;
     loc: 0..9 (fid = 0);
     lexeme: `123456789`;
   },
   {
-    tt: integer '123456789';
+    tt: integer 123456789;
     loc: 10..21 (fid = 0);
     lexeme: `123_456_789`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 41..50 (fid = 0);
     lexeme: `0b1111011`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 51..60 (fid = 0);
     lexeme: `0B1111011`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 61..72 (fid = 0);
     lexeme: `0b0111_1011`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 73..84 (fid = 0);
     lexeme: `0B0111_1011`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 103..108 (fid = 0);
     lexeme: `0o173`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 109..114 (fid = 0);
     lexeme: `0O173`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 115..122 (fid = 0);
     lexeme: `0o01_73`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 123..130 (fid = 0);
     lexeme: `0O01_73`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 155..159 (fid = 0);
     lexeme: `0x7b`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 160..164 (fid = 0);
     lexeme: `0X7b`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 165..169 (fid = 0);
     lexeme: `0x7B`;
   },
   {
-    tt: integer '123';
+    tt: integer 123;
     loc: 170..174 (fid = 0);
     lexeme: `0X7B`;
   },
   {
-    tt: integer '3735928559';
+    tt: integer 3735928559;
     loc: 175..186 (fid = 0);
     lexeme: `0xDEAD_BEEF`;
   },
   {
-    tt: integer '3735928559';
+    tt: integer 3735928559;
     loc: 187..200 (fid = 0);
     lexeme: `0Xde_ad_be_ef`;
   },
@@ -3258,167 +3258,167 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     "lexer/punctuation": (
         compiler_out: "tokenstream = {
   {
-    tt: punctuation LParen;
+    tt: punct LParen;
     loc: 0..1 (fid = 0);
     lexeme: `(`;
   },
   {
-    tt: punctuation RParen;
+    tt: punct RParen;
     loc: 2..3 (fid = 0);
     lexeme: `)`;
   },
   {
-    tt: punctuation LBracket;
+    tt: punct LBracket;
     loc: 4..5 (fid = 0);
     lexeme: `[`;
   },
   {
-    tt: punctuation RBracket;
+    tt: punct RBracket;
     loc: 6..7 (fid = 0);
     lexeme: `]`;
   },
   {
-    tt: punctuation LCurly;
+    tt: punct LCurly;
     loc: 8..9 (fid = 0);
     lexeme: `{`;
   },
   {
-    tt: punctuation RCurly;
+    tt: punct RCurly;
     loc: 10..11 (fid = 0);
     lexeme: `}`;
   },
   {
-    tt: punctuation Plus;
+    tt: punct Plus;
     loc: 12..13 (fid = 0);
     lexeme: `+`;
   },
   {
-    tt: punctuation Minus;
+    tt: punct Minus;
     loc: 14..15 (fid = 0);
     lexeme: `-`;
   },
   {
-    tt: punctuation Star;
+    tt: punct Star;
     loc: 16..17 (fid = 0);
     lexeme: `*`;
   },
   {
-    tt: punctuation Slash;
+    tt: punct Slash;
     loc: 18..19 (fid = 0);
     lexeme: `/`;
   },
   {
-    tt: punctuation Colon;
+    tt: punct Colon;
     loc: 20..21 (fid = 0);
     lexeme: `:`;
   },
   {
-    tt: punctuation Comma;
+    tt: punct Comma;
     loc: 22..23 (fid = 0);
     lexeme: `,`;
   },
   {
-    tt: punctuation Equal;
+    tt: punct Eq;
     loc: 24..25 (fid = 0);
     lexeme: `=`;
   },
   {
-    tt: punctuation Equal2;
+    tt: punct EqEq;
     loc: 26..28 (fid = 0);
     lexeme: `==`;
   },
   {
-    tt: punctuation BangEqual;
+    tt: punct BangEq;
     loc: 29..31 (fid = 0);
     lexeme: `!=`;
   },
   {
-    tt: punctuation Bang;
+    tt: punct Bang;
     loc: 32..33 (fid = 0);
     lexeme: `!`;
   },
   {
-    tt: punctuation LtEqual;
+    tt: punct LtEq;
     loc: 34..36 (fid = 0);
     lexeme: `<=`;
   },
   {
-    tt: punctuation Lt;
+    tt: punct Lt;
     loc: 37..38 (fid = 0);
     lexeme: `<`;
   },
   {
-    tt: punctuation Lt2;
+    tt: punct LtLt;
     loc: 39..41 (fid = 0);
     lexeme: `<<`;
   },
   {
-    tt: punctuation Gt;
+    tt: punct Gt;
     loc: 42..43 (fid = 0);
     lexeme: `>`;
   },
   {
-    tt: punctuation Gt2;
+    tt: punct GtGt;
     loc: 44..46 (fid = 0);
     lexeme: `>>`;
   },
   {
-    tt: punctuation GtEqual;
+    tt: punct GtEq;
     loc: 47..49 (fid = 0);
     lexeme: `>=`;
   },
   {
-    tt: punctuation Semicolon;
+    tt: punct Semi;
     loc: 50..51 (fid = 0);
     lexeme: `;`;
   },
   {
-    tt: punctuation MinusGt;
+    tt: punct MinusGt;
     loc: 52..54 (fid = 0);
     lexeme: `->`;
   },
   {
-    tt: punctuation Caret;
+    tt: punct Caret;
     loc: 55..56 (fid = 0);
     lexeme: `^`;
   },
   {
-    tt: punctuation Ampsand;
+    tt: punct And;
     loc: 57..58 (fid = 0);
     lexeme: `&`;
   },
   {
-    tt: punctuation Ampsand2;
+    tt: punct AndAnd;
     loc: 59..61 (fid = 0);
     lexeme: `&&`;
   },
   {
-    tt: punctuation Pipe;
+    tt: punct Or;
     loc: 62..63 (fid = 0);
     lexeme: `|`;
   },
   {
-    tt: punctuation Pipe2;
+    tt: punct OrOr;
     loc: 64..66 (fid = 0);
     lexeme: `||`;
   },
   {
-    tt: punctuation Percent;
+    tt: punct Percent;
     loc: 67..68 (fid = 0);
     lexeme: `%`;
   },
   {
-    tt: punctuation Dot;
+    tt: punct Dot;
     loc: 69..70 (fid = 0);
     lexeme: `.`;
   },
   {
-    tt: punctuation DotStar;
+    tt: punct DotStar;
     loc: 71..73 (fid = 0);
     lexeme: `.*`;
   },
   {
-    tt: punctuation Hashtag;
+    tt: punct Pound;
     loc: 74..75 (fid = 0);
     lexeme: `#`;
   },
@@ -3436,65 +3436,55 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     "lexer/specialized_literals": (
         compiler_out: r#"tokenstream = {
   {
-    tt: specialized char literal;
-    s12n: "a7";
-    lit: 'C'
+    tt: char 'C';
+    tag: "a7";
     loc: 28..33 (fid = 0);
     lexeme: `a7'C'`;
   },
   {
-    tt: specialized string literal;
-    s12n: "c";
-    lit: "Hello, world! This string is a null terminated string"
+    tt: c_string "Hello, world! This string is a null terminated string";
     loc: 65..121 (fid = 0);
     lexeme: `c"Hello, world! This string is a null terminated string"`;
   },
   {
-    tt: specialized string literal;
-    s12n: "r";
-    lit: "no escapes \\n\\r"
+    tt: string "no escapes \\n\\r";
+    tag: "r";
     loc: 169..187 (fid = 0);
     lexeme: `r"no escapes \n\r"`;
   },
   {
-    tt: specialized int literal;
-    s12n: "usz";
-    lit: 123456
+    tt: integer 123456;
+    tag: "usz";
     loc: 220..231 (fid = 0);
     lexeme: `123_456'usz`;
   },
   {
-    tt: specialized float literal;
-    s12n: "f64";
-    lit: 12345678.9
+    tt: float 12345678.9;
+    tag: "f64";
     loc: 262..280 (fid = 0);
     lexeme: `123_456.789e+2'f64`;
   },
   {
-    tt: specialized char literal;
-    s12n: "fun";
-    lit: '\0'
+    tt: char '\0';
+    tag: "fun";
     loc: 353..360 (fid = 0);
     lexeme: `fun'\0'`;
   },
   {
-    tt: specialized string literal;
-    s12n: "orb";
-    lit: "Hello"
+    tt: string "Hello";
+    tag: "orb";
     loc: 409..419 (fid = 0);
     lexeme: `orb"Hello"`;
   },
   {
-    tt: specialized int literal;
-    s12n: "let";
-    lit: 343569
+    tt: integer 343569;
+    tag: "let";
     loc: 435..446 (fid = 0);
     lexeme: `3435_69'let`;
   },
   {
-    tt: specialized float literal;
-    s12n: "comptime";
-    lit: 6.9
+    tt: float 6.9;
+    tag: "comptime";
     loc: 469..481 (fid = 0);
     lexeme: `6.9'comptime`;
   },
@@ -4220,7 +4210,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
         test_code: 0,
     ),
     "parser/E006_block_1": (
-        compiler_out: "error[E006]: expected {, found identifier
+        compiler_out: "error[E006]: expected `{`, found identifier
   ┌─ ./tests/parser/E006_block_1.lun:2:17
   │
 2 │ a :: while true b;
@@ -4276,7 +4266,7 @@ error: compilation of `E006_block_4` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_block_5": (
-        compiler_out: "error[E006]: expected }, found <eof>
+        compiler_out: "error[E006]: expected `}`, found <eof>
   ┌─ ./tests/parser/E006_block_5.lun:3:1
   │
 3 │ 
@@ -4374,7 +4364,7 @@ error: compilation of `E006_extern_block_3` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_funcall_expr": (
-        compiler_out: "error[E006]: expected , or ), found integer literal
+        compiler_out: "error[E006]: expected `,` or `)`, found integer literal
   ┌─ ./tests/parser/E006_funcall_expr.lun:2:14
   │
 2 │ a :: call(12 12)
@@ -4388,7 +4378,7 @@ error: compilation of `E006_funcall_expr` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_funkw_expr_1": (
-        compiler_out: "error[E006]: expected (, found integer literal
+        compiler_out: "error[E006]: expected `(`, found integer literal
   ┌─ ./tests/parser/E006_funkw_expr_1.lun:2:10
   │
 2 │ a :: fun 12;
@@ -4458,7 +4448,7 @@ error: compilation of `./tests/parser/E006_funkw_expr_5` failed due to 1 error a
         test_code: 0,
     ),
     "parser/E006_funptr_1": (
-        compiler_out: "error[E006]: expected (, found identifier
+        compiler_out: "error[E006]: expected `(`, found identifier
   ┌─ ./tests/parser/E006_funptr_1.lun:2:11
   │
 2 │ a :: *fun b;
@@ -4472,7 +4462,7 @@ error: compilation of `E006_funptr_1` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_funptr_2": (
-        compiler_out: "error[E006]: expected , or ), found identifier
+        compiler_out: "error[E006]: expected `,` or `)`, found identifier
   ┌─ ./tests/parser/E006_funptr_2.lun:2:14
   │
 2 │ a :: *fun (a a;
@@ -4486,7 +4476,7 @@ error: compilation of `E006_funptr_2` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_global_def_1": (
-        compiler_out: "error[E006]: expected :, found `;`
+        compiler_out: "error[E006]: expected `:`, found `;`
   ┌─ ./tests/parser/E006_global_def_1.lun:2:2
   │
 2 │ a;
@@ -4500,7 +4490,7 @@ error: compilation of `E006_global_def_1` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_global_def_2": (
-        compiler_out: "error[E006]: expected ;, found <eof>
+        compiler_out: "error[E006]: expected `;`, found <eof>
   ┌─ ./tests/parser/E006_global_def_2.lun:3:1
   │
 3 │ 
@@ -4514,7 +4504,7 @@ error: compilation of `E006_global_def_2` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_global_def_3": (
-        compiler_out: "error[E006]: expected ;, found <eof>
+        compiler_out: "error[E006]: expected `;`, found <eof>
   ┌─ ./tests/parser/E006_global_def_3.lun:3:1
   │
 3 │ 
@@ -4528,7 +4518,7 @@ error: compilation of `E006_global_def_3` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_grouping_expr": (
-        compiler_out: "error[E006]: expected ), found `;`
+        compiler_out: "error[E006]: expected `)`, found `;`
   ┌─ ./tests/parser/E006_grouping_expr.lun:2:9
   │
 2 │ a :: (12;
@@ -4696,7 +4686,7 @@ error: compilation of `E006_let_stmt_1` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_let_stmt_2": (
-        compiler_out: "error[E006]: expected =, found `-`
+        compiler_out: "error[E006]: expected `=`, found `-`
   ┌─ ./tests/parser/E006_let_stmt_2.lun:3:11
   │
 3 │     let a - b;
@@ -4780,7 +4770,7 @@ error: compilation of `E006_qualified_path_2` failed due to 1 error and 0 warnin
         test_code: 0,
     ),
     "parser/E006_short_var_def_1": (
-        compiler_out: "error[E006]: expected : or =, found identifier
+        compiler_out: "error[E006]: expected `:` or `=`, found identifier
   ┌─ ./tests/parser/E006_short_var_def_1.lun:3:11
   │
 3 │     a : b c;

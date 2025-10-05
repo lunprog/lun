@@ -8,10 +8,7 @@ use std::{
     io::{self, Write},
 };
 
-use lunc_token::{
-    Punctuation,
-    TokenType::{self, *},
-};
+use lunc_token::TokenType;
 use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 pub mod symbol;
@@ -343,37 +340,27 @@ impl Display for BinOp {
 }
 
 impl BinOp {
-    pub fn from_punct(punct: Punctuation) -> Option<BinOp> {
-        use BinOp as BOp;
-        use Punctuation as Punct;
-
-        Some(match punct {
-            Punct::Equal => BOp::Assignment,
-            Punct::Star => BOp::Mul,
-            Punct::Slash => BOp::Div,
-            Punct::Percent => BOp::Rem,
-            Punct::Plus => BOp::Add,
-            Punct::Minus => BOp::Sub,
-            Punct::Lt => BOp::CompLT,
-            Punct::Gt => BOp::CompGT,
-            Punct::LtEqual => BOp::CompLE,
-            Punct::GtEqual => BOp::CompGE,
-            Punct::Equal2 => BOp::CompEq,
-            Punct::BangEqual => BOp::CompNe,
-            Punct::Ampsand => BOp::BitwiseAnd,
-            Punct::Ampsand2 => BOp::LogicalAnd,
-            Punct::Caret => BOp::BitwiseXor,
-            Punct::Pipe => BOp::BitwiseOr,
-            Punct::Pipe2 => BOp::LogicalOr,
-            Punct::Lt2 => BOp::Shl,
-            Punct::Gt2 => BOp::Shr,
-            _ => return None,
-        })
-    }
-
     pub fn from_tt(tt: TokenType) -> Option<BinOp> {
         match tt {
-            Punct(p) => Self::from_punct(p),
+            TokenType::Eq => Some(BinOp::Assignment),
+            TokenType::Star => Some(BinOp::Mul),
+            TokenType::Slash => Some(BinOp::Div),
+            TokenType::Percent => Some(BinOp::Rem),
+            TokenType::Plus => Some(BinOp::Add),
+            TokenType::Minus => Some(BinOp::Sub),
+            TokenType::Lt => Some(BinOp::CompLT),
+            TokenType::Gt => Some(BinOp::CompGT),
+            TokenType::LtEq => Some(BinOp::CompLE),
+            TokenType::GtEq => Some(BinOp::CompGE),
+            TokenType::EqEq => Some(BinOp::CompEq),
+            TokenType::BangEq => Some(BinOp::CompNe),
+            TokenType::And => Some(BinOp::BitwiseAnd),
+            TokenType::AndAnd => Some(BinOp::LogicalAnd),
+            TokenType::Caret => Some(BinOp::BitwiseXor),
+            TokenType::Or => Some(BinOp::BitwiseOr),
+            TokenType::OrOr => Some(BinOp::LogicalOr),
+            TokenType::LtLt => Some(BinOp::Shl),
+            TokenType::GtGt => Some(BinOp::Shr),
             _ => None,
         }
     }
@@ -435,8 +422,8 @@ impl UnOp {
     /// `-a` `!a` `&a`
     pub fn left_from_token(tt: TokenType) -> Option<UnOp> {
         match tt {
-            Punct(Punctuation::Minus) => Some(UnOp::Negation),
-            Punct(Punctuation::Bang) => Some(UnOp::Not),
+            TokenType::Minus => Some(UnOp::Negation),
+            TokenType::Bang => Some(UnOp::Not),
             _ => None,
         }
     }
@@ -447,7 +434,7 @@ impl UnOp {
     /// `a.*`
     pub fn right_from_token(tt: TokenType) -> Option<UnOp> {
         match tt {
-            Punct(Punctuation::DotStar) => Some(UnOp::Dereference),
+            TokenType::DotStar => Some(UnOp::Dereference),
             _ => None,
         }
     }

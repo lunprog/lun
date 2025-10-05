@@ -114,97 +114,155 @@ pub struct Token {
 
 impl Token {
     pub fn fmt<W: Write>(&self, out: &mut W, src: &str) -> io::Result<()> {
-        let print_common = |out: &mut W| -> io::Result<()> {
+        let p_common = |out: &mut W| -> io::Result<()> {
             writeln!(out, "    loc: {};", self.loc)?;
             writeln!(out, "    lexeme: `{}`;", self.loc.slice_str(src))?;
             Ok(())
         };
 
-        match &self.tt {
-            TokenType::Kw(kw) => {
-                writeln!(out, "  {{")?;
-                writeln!(out, "    tt: keyword '{kw}';")?;
-                print_common(out)?;
-                writeln!(out, "  }},")?;
+        let p_kw = |out: &mut W, kw: &'static str| -> io::Result<()> {
+            writeln!(out, "  {{")?;
+            writeln!(out, "    tt: keyword '{}';", kw)?;
+            p_common(out)?;
+            writeln!(out, "  }},")?;
+            Ok(())
+        };
+
+        let p_punct = |out: &mut W, p: &TokenType| -> io::Result<()> {
+            writeln!(out, "  {{")?;
+            writeln!(out, "    tt: punct {p:?};")?;
+            p_common(out)?;
+            writeln!(out, "  }},")?;
+            Ok(())
+        };
+
+        let tt = &self.tt;
+        match tt {
+            TokenType::LParen
+            | TokenType::RParen
+            | TokenType::LBracket
+            | TokenType::RBracket
+            | TokenType::LCurly
+            | TokenType::RCurly
+            | TokenType::Plus
+            | TokenType::Minus
+            | TokenType::Star
+            | TokenType::Slash
+            | TokenType::Colon
+            | TokenType::Comma
+            | TokenType::Eq
+            | TokenType::EqEq
+            | TokenType::BangEq
+            | TokenType::Bang
+            | TokenType::LtEq
+            | TokenType::Lt
+            | TokenType::LtLt
+            | TokenType::Gt
+            | TokenType::GtGt
+            | TokenType::GtEq
+            | TokenType::Semi
+            | TokenType::MinusGt
+            | TokenType::Caret
+            | TokenType::And
+            | TokenType::AndAnd
+            | TokenType::Or
+            | TokenType::OrOr
+            | TokenType::Percent
+            | TokenType::Dot
+            | TokenType::DotStar
+            | TokenType::Pound => {
+                p_punct(out, tt)?;
+            }
+            TokenType::KwAs => {
+                p_kw(out, TokenType::KW_AS)?;
+            }
+            TokenType::KwBreak => {
+                p_kw(out, TokenType::KW_BREAK)?;
+            }
+            TokenType::KwComptime => {
+                p_kw(out, TokenType::KW_COMPTIME)?;
+            }
+            TokenType::KwContinue => {
+                p_kw(out, TokenType::KW_CONTINUE)?;
+            }
+            TokenType::KwDefer => {
+                p_kw(out, TokenType::KW_DEFER)?;
+            }
+            TokenType::KwElse => {
+                p_kw(out, TokenType::KW_ELSE)?;
+            }
+            TokenType::KwExtern => {
+                p_kw(out, TokenType::KW_EXTERN)?;
+            }
+            TokenType::KwFalse => {
+                p_kw(out, TokenType::KW_FALSE)?;
+            }
+            TokenType::KwFor => {
+                p_kw(out, TokenType::KW_FOR)?;
+            }
+            TokenType::KwFun => {
+                p_kw(out, TokenType::KW_FUN)?;
+            }
+            TokenType::KwIf => {
+                p_kw(out, TokenType::KW_IF)?;
+            }
+            TokenType::KwImpl => {
+                p_kw(out, TokenType::KW_IMPL)?;
+            }
+            TokenType::KwIn => {
+                p_kw(out, TokenType::KW_IN)?;
+            }
+            TokenType::KwLet => {
+                p_kw(out, TokenType::KW_LET)?;
+            }
+            TokenType::KwLoop => {
+                p_kw(out, TokenType::KW_LOOP)?;
+            }
+            TokenType::KwMut => {
+                p_kw(out, TokenType::KW_MUT)?;
+            }
+            TokenType::KwNull => {
+                p_kw(out, TokenType::KW_NULL)?;
+            }
+            TokenType::KwOrb => {
+                p_kw(out, TokenType::KW_ORB)?;
+            }
+            TokenType::KwPub => {
+                p_kw(out, TokenType::KW_PUB)?;
+            }
+            TokenType::KwReturn => {
+                p_kw(out, TokenType::KW_RETURN)?;
+            }
+            TokenType::KwSelfVal => {
+                p_kw(out, TokenType::KW_SELF)?;
+            }
+            TokenType::KwThen => {
+                p_kw(out, TokenType::KW_THEN)?;
+            }
+            TokenType::KwTrait => {
+                p_kw(out, TokenType::KW_TRAIT)?;
+            }
+            TokenType::KwTrue => {
+                p_kw(out, TokenType::KW_TRUE)?;
+            }
+            TokenType::KwWhile => {
+                p_kw(out, TokenType::KW_WHILE)?;
             }
             TokenType::Ident(id) => {
                 writeln!(out, "  {{")?;
                 writeln!(out, "    tt: ident '{id}';")?;
-                print_common(out)?;
+                p_common(out)?;
                 writeln!(out, "  }},")?;
             }
-            TokenType::IntLit(i) => {
+            TokenType::Lit(Literal { kind, value, tag }) => {
                 writeln!(out, "  {{")?;
-                writeln!(out, "    tt: integer '{i}';")?;
-                print_common(out)?;
-                writeln!(out, "  }},")?;
-            }
-            TokenType::StringLit(s) => {
-                writeln!(out, "  {{")?;
-                writeln!(out, "    tt: string {s:?};")?;
-                print_common(out)?;
-                writeln!(out, "  }},")?;
-            }
-            TokenType::CharLit(c) => {
-                writeln!(out, "  {{")?;
-                writeln!(out, "    tt: character {c:?};")?;
-                print_common(out)?;
-                writeln!(out, "  }},")?;
-            }
-            TokenType::FloatLit(f) => {
-                writeln!(out, "  {{")?;
-                writeln!(out, "    tt: float {f:?};")?;
-                print_common(out)?;
-                writeln!(out, "  }},")?;
-            }
-            TokenType::SpecializedStringLit {
-                specialization,
-                str,
-            } => {
-                writeln!(out, "  {{")?;
-                writeln!(out, "    tt: specialized string literal;")?;
-                writeln!(out, "    s12n: {specialization:?};")?;
-                writeln!(out, "    lit: {str:?}")?;
-                print_common(out)?;
-                writeln!(out, "  }},")?;
-            }
-            TokenType::SpecializedCharLit {
-                specialization,
-                char,
-            } => {
-                writeln!(out, "  {{")?;
-                writeln!(out, "    tt: specialized char literal;")?;
-                writeln!(out, "    s12n: {specialization:?};")?;
-                writeln!(out, "    lit: {char:?}")?;
-                print_common(out)?;
-                writeln!(out, "  }},")?;
-            }
-            TokenType::SpecializedIntLit {
-                specialization,
-                int,
-            } => {
-                writeln!(out, "  {{")?;
-                writeln!(out, "    tt: specialized int literal;")?;
-                writeln!(out, "    s12n: {specialization:?};")?;
-                writeln!(out, "    lit: {int:?}")?;
-                print_common(out)?;
-                writeln!(out, "  }},")?;
-            }
-            TokenType::SpecializedFloatLit {
-                specialization,
-                float,
-            } => {
-                writeln!(out, "  {{")?;
-                writeln!(out, "    tt: specialized float literal;")?;
-                writeln!(out, "    s12n: {specialization:?};")?;
-                writeln!(out, "    lit: {float:?}")?;
-                print_common(out)?;
-                writeln!(out, "  }},")?;
-            }
-            TokenType::Punct(p) => {
-                writeln!(out, "  {{")?;
-                writeln!(out, "    tt: punctuation {p:?};")?;
-                print_common(out)?;
+                writeln!(out, "    tt: {kind} {value};")?;
+
+                if let Some(tag) = tag {
+                    writeln!(out, "    tag: {tag:?};")?;
+                }
+
+                p_common(out)?;
                 writeln!(out, "  }},")?;
             }
             TokenType::EOF => {
@@ -223,260 +281,10 @@ impl Token {
 
 // NOTE: when adding a new token, a correspond test should be added into
 // `tests/lexer/` that should test everything about this new token
-#[derive(Debug, Clone, PartialEq)]
-pub enum TokenType {
-    /// keyword
-    Kw(Keyword),
-    /// identifier
-    Ident(String),
-    /// integer literal
-    IntLit(u128),
-    /// string literal
-    StringLit(String),
-    /// char literal
-    CharLit(char),
-    /// float literal
-    FloatLit(f64),
-    /// specialized string literal
-    SpecializedStringLit { specialization: String, str: String },
-    /// specialized char literal
-    SpecializedCharLit { specialization: String, char: char },
-    /// specialized integer literal
-    SpecializedIntLit { specialization: String, int: u128 },
-    /// specialized float literal
-    SpecializedFloatLit { specialization: String, float: f64 },
-    /// punctuation and operators
-    Punct(Punctuation),
-    /// End Of File
-    EOF,
-    /// this is a dummy token, it is used when encountering a comment or a
-    /// whitespace it can't be pushed into a token stream.
-    Dummy,
-}
-
-impl Display for TokenType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use TokenType::*;
-
-        match self {
-            Kw(kw) => write!(f, "keyword `{kw}`"),
-            Ident(_) => write!(f, "identifier"),
-            IntLit(_) => write!(f, "integer literal"),
-            StringLit(_) => write!(f, "string literal"),
-            CharLit(_) => write!(f, "character literal"),
-            FloatLit(_) => write!(f, "float literal"),
-            SpecializedStringLit { .. } => write!(f, "specialized string literal"),
-            SpecializedCharLit { .. } => write!(f, "specialized character literal"),
-            SpecializedIntLit { .. } => write!(f, "specialized integer literal"),
-            SpecializedFloatLit { .. } => write!(f, "specialized float literal"),
-            Punct(p) => write!(f, "`{p}`"),
-            EOF => write!(f, "<eof>"),
-            Dummy => write!(f, "not a token"),
-        }
-    }
-}
-
 // WARN: /!\ If a keyword is added change the `lex_identifier` method of the
 // Lexer and add it to the list of all keywords.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Keyword {
-    /// as
-    As,
-    /// break
-    Break,
-    /// comptime
-    Comptime,
-    /// continue
-    Continue,
-    /// defer
-    Defer,
-    /// else
-    Else,
-    /// extern
-    Extern,
-    /// false
-    False,
-    /// for
-    For,
-    /// fun
-    Fun,
-    /// if
-    If,
-    /// impl
-    Impl,
-    /// in
-    In,
-    /// let
-    Let,
-    /// loop
-    Loop,
-    /// mut
-    Mut,
-    /// null
-    Null,
-    /// orb
-    Orb,
-    /// pub
-    Pub,
-    /// return
-    Return,
-    /// self
-    ///
-    /// # Note
-    ///
-    /// here the name of this keyword is `SelfVal` because we can't name it
-    /// `Self` because it's a keyword and neither `r#Self`.
-    SelfVal,
-    /// then
-    Then,
-    /// trait
-    Trait,
-    /// true
-    True,
-    /// while
-    While,
-}
-
-impl Keyword {
-    /// `as` keyword.
-    pub const AS: &str = "as";
-
-    /// `break` keyword.
-    pub const BREAK: &str = "break";
-
-    /// `comptime` keyword.
-    pub const COMPTIME: &str = "comptime";
-
-    /// `continue` keyword.
-    pub const CONTINUE: &str = "continue";
-
-    /// `defer` keyword.
-    pub const DEFER: &str = "defer";
-
-    /// `else` keyword.
-    pub const ELSE: &str = "else";
-
-    /// `extern` keyword.
-    pub const EXTERN: &str = "extern";
-
-    /// `false` keyword.
-    pub const FALSE: &str = "false";
-
-    /// `for` keyword.
-    pub const FOR: &str = "for";
-
-    /// `fun` keyword.
-    pub const FUN: &str = "fun";
-
-    /// `if` keyword.
-    pub const IF: &str = "if";
-
-    /// `impl` keyword.
-    pub const IMPL: &str = "impl";
-
-    /// `in` keyword.
-    pub const IN: &str = "in";
-
-    /// `let` keyword.
-    pub const LET: &str = "let";
-
-    /// `loop` keyword.
-    pub const LOOP: &str = "loop";
-
-    /// `mut` keyword
-    pub const MUT: &str = "mut";
-
-    /// `null` keyword.
-    pub const NULL: &str = "null";
-
-    /// `orb` keyword.
-    pub const ORB: &str = "orb";
-
-    /// `pub` keyword.
-    pub const PUB: &str = "pub";
-
-    /// `return` keyword.
-    pub const RETURN: &str = "return";
-
-    /// `self` keyword.
-    pub const SELF: &str = "self";
-
-    /// `then` keyword.
-    pub const THEN: &str = "then";
-
-    /// `trait` keyword.
-    pub const TRAIT: &str = "trait";
-
-    /// `true` keyword.
-    pub const TRUE: &str = "true";
-
-    /// `while` keyword.
-    pub const WHILE: &str = "while";
-
-    /// List of all of the keywords
-    pub const ALL_KEYWORDS: [&str; 25] = [
-        Keyword::AS,
-        Keyword::BREAK,
-        Keyword::COMPTIME,
-        Keyword::CONTINUE,
-        Keyword::DEFER,
-        Keyword::ELSE,
-        Keyword::EXTERN,
-        Keyword::FALSE,
-        Keyword::FOR,
-        Keyword::FUN,
-        Keyword::IF,
-        Keyword::IMPL,
-        Keyword::IN,
-        Keyword::LET,
-        Keyword::LOOP,
-        Keyword::MUT,
-        Keyword::NULL,
-        Keyword::ORB,
-        Keyword::PUB,
-        Keyword::RETURN,
-        Keyword::SELF,
-        Keyword::THEN,
-        Keyword::TRAIT,
-        Keyword::TRUE,
-        Keyword::WHILE,
-    ];
-}
-
-impl Display for Keyword {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Keyword::As => f.write_str(Keyword::AS),
-            Keyword::Break => f.write_str(Keyword::BREAK),
-            Keyword::Comptime => f.write_str(Keyword::COMPTIME),
-            Keyword::Continue => f.write_str(Keyword::CONTINUE),
-            Keyword::Defer => f.write_str(Keyword::DEFER),
-            Keyword::Else => f.write_str(Keyword::ELSE),
-            Keyword::Extern => f.write_str(Keyword::EXTERN),
-            Keyword::False => f.write_str(Keyword::FALSE),
-            Keyword::For => f.write_str(Keyword::FOR),
-            Keyword::Fun => f.write_str(Keyword::FUN),
-            Keyword::If => f.write_str(Keyword::IF),
-            Keyword::Impl => f.write_str(Keyword::IMPL),
-            Keyword::In => f.write_str(Keyword::IN),
-            Keyword::Let => f.write_str(Keyword::LET),
-            Keyword::Loop => f.write_str(Keyword::LOOP),
-            Keyword::Mut => f.write_str(Keyword::MUT),
-            Keyword::Null => f.write_str(Keyword::NULL),
-            Keyword::Orb => f.write_str(Keyword::ORB),
-            Keyword::Pub => f.write_str(Keyword::PUB),
-            Keyword::Return => f.write_str(Keyword::RETURN),
-            Keyword::SelfVal => f.write_str(Keyword::SELF),
-            Keyword::Then => f.write_str(Keyword::THEN),
-            Keyword::Trait => f.write_str(Keyword::TRAIT),
-            Keyword::True => f.write_str(Keyword::TRUE),
-            Keyword::While => f.write_str(Keyword::WHILE),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Punctuation {
+#[derive(Debug, Clone, PartialEq)]
+pub enum TokenType {
     /// `(`
     LParen,
     /// `)`
@@ -502,39 +310,39 @@ pub enum Punctuation {
     /// `,`
     Comma,
     /// `=`
-    Equal,
+    Eq,
     /// `==`
-    Equal2,
+    EqEq,
     /// `!=`
-    BangEqual,
+    BangEq,
     /// `!`
     Bang,
     /// `<=`
-    LtEqual,
+    LtEq,
     /// `<`
     Lt,
     /// `<<`
-    Lt2,
+    LtLt,
     /// `>`
     Gt,
     /// `>>`
-    Gt2,
+    GtGt,
     /// `>=`
-    GtEqual,
+    GtEq,
     /// `;`
-    Semicolon,
+    Semi,
     /// `->`
     MinusGt,
     /// `^`
     Caret,
     /// `&`
-    Ampsand,
+    And,
     /// `&&`
-    Ampsand2,
+    AndAnd,
     /// `|`
-    Pipe,
+    Or,
     /// `||`
-    Pipe2,
+    OrOr,
     /// `%`
     Percent,
     /// `.`
@@ -542,46 +350,241 @@ pub enum Punctuation {
     /// `.*`
     DotStar,
     /// `#`
-    Hashtag,
+    Pound,
+    /// keyword `as`
+    KwAs,
+    /// keyword `break`
+    KwBreak,
+    /// keyword `comptime`
+    KwComptime,
+    /// keyword `continue`
+    KwContinue,
+    /// keyword `defer`
+    KwDefer,
+    /// keyword `else`
+    KwElse,
+    /// keyword `extern`
+    KwExtern,
+    /// keyword `false`
+    KwFalse,
+    /// keyword `for`
+    KwFor,
+    /// keyword `fun`
+    KwFun,
+    /// keyword `if`
+    KwIf,
+    /// keyword `impl`
+    KwImpl,
+    /// keyword `in`
+    KwIn,
+    /// keyword `let`
+    KwLet,
+    /// keyword `loop`
+    KwLoop,
+    /// keyword `mut`
+    KwMut,
+    /// keyword `null`
+    KwNull,
+    /// keyword `orb`
+    KwOrb,
+    /// keyword `pub`
+    KwPub,
+    /// keyword `return`
+    KwReturn,
+    /// keyword `self`
+    KwSelfVal,
+    /// keyword `then`
+    KwThen,
+    /// keyword `trait`
+    KwTrait,
+    /// keyword `true`
+    KwTrue,
+    /// keyword `while`
+    KwWhile,
+    /// identifier
+    Ident(String),
+    /// literal
+    Lit(Literal),
+    /// End Of File
+    EOF,
+    /// this is a dummy token, it is used when encountering a comment or a
+    /// whitespace it can't be pushed into a token stream.
+    Dummy,
 }
 
-impl Display for Punctuation {
+impl TokenType {
+    /// `as` keyword.
+    pub const KW_AS: &str = "as";
+
+    /// `break` keyword.
+    pub const KW_BREAK: &str = "break";
+
+    /// `comptime` keyword.
+    pub const KW_COMPTIME: &str = "comptime";
+
+    /// `continue` keyword.
+    pub const KW_CONTINUE: &str = "continue";
+
+    /// `defer` keyword.
+    pub const KW_DEFER: &str = "defer";
+
+    /// `else` keyword.
+    pub const KW_ELSE: &str = "else";
+
+    /// `extern` keyword.
+    pub const KW_EXTERN: &str = "extern";
+
+    /// `false` keyword.
+    pub const KW_FALSE: &str = "false";
+
+    /// `for` keyword.
+    pub const KW_FOR: &str = "for";
+
+    /// `fun` keyword.
+    pub const KW_FUN: &str = "fun";
+
+    /// `if` keyword.
+    pub const KW_IF: &str = "if";
+
+    /// `impl` keyword.
+    pub const KW_IMPL: &str = "impl";
+
+    /// `in` keyword.
+    pub const KW_IN: &str = "in";
+
+    /// `let` keyword.
+    pub const KW_LET: &str = "let";
+
+    /// `loop` keyword.
+    pub const KW_LOOP: &str = "loop";
+
+    /// `mut` keyword
+    pub const KW_MUT: &str = "mut";
+
+    /// `null` keyword.
+    pub const KW_NULL: &str = "null";
+
+    /// `orb` keyword.
+    pub const KW_ORB: &str = "orb";
+
+    /// `pub` keyword.
+    pub const KW_PUB: &str = "pub";
+
+    /// `return` keyword.
+    pub const KW_RETURN: &str = "return";
+
+    /// `self` keyword.
+    pub const KW_SELF: &str = "self";
+
+    /// `then` keyword.
+    pub const KW_THEN: &str = "then";
+
+    /// `trait` keyword.
+    pub const KW_TRAIT: &str = "trait";
+
+    /// `true` keyword.
+    pub const KW_TRUE: &str = "true";
+
+    /// `while` keyword.
+    pub const KW_WHILE: &str = "while";
+
+    /// List of all of the keywords
+    pub const ALL_KEYWORDS: [&str; 25] = [
+        TokenType::KW_AS,
+        TokenType::KW_BREAK,
+        TokenType::KW_COMPTIME,
+        TokenType::KW_CONTINUE,
+        TokenType::KW_DEFER,
+        TokenType::KW_ELSE,
+        TokenType::KW_EXTERN,
+        TokenType::KW_FALSE,
+        TokenType::KW_FOR,
+        TokenType::KW_FUN,
+        TokenType::KW_IF,
+        TokenType::KW_IMPL,
+        TokenType::KW_IN,
+        TokenType::KW_LET,
+        TokenType::KW_LOOP,
+        TokenType::KW_MUT,
+        TokenType::KW_NULL,
+        TokenType::KW_ORB,
+        TokenType::KW_PUB,
+        TokenType::KW_RETURN,
+        TokenType::KW_SELF,
+        TokenType::KW_THEN,
+        TokenType::KW_TRAIT,
+        TokenType::KW_TRUE,
+        TokenType::KW_WHILE,
+    ];
+}
+
+impl Display for TokenType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use Punctuation::*;
+        use TokenType as Tt;
+
         match self {
-            LParen => f.write_str("("),
-            RParen => f.write_str(")"),
-            LBracket => f.write_str("["),
-            RBracket => f.write_str("]"),
-            LCurly => f.write_str("{"),
-            RCurly => f.write_str("}"),
-            Plus => f.write_str("+"),
-            Minus => f.write_str("-"),
-            Star => f.write_str("*"),
-            Slash => f.write_str("/"),
-            Colon => f.write_str(":"),
-            Comma => f.write_str(","),
-            Equal => f.write_str("="),
-            Equal2 => f.write_str("=="),
-            BangEqual => f.write_str("!="),
-            Bang => f.write_str("!"),
-            LtEqual => f.write_str("<="),
-            Lt => f.write_str("<"),
-            Lt2 => f.write_str("<<"),
-            Gt => f.write_str(">"),
-            Gt2 => f.write_str(">>"),
-            GtEqual => f.write_str(">="),
-            Semicolon => f.write_str(";"),
-            MinusGt => f.write_str("->"),
-            Caret => f.write_str("^"),
-            Ampsand => f.write_str("&"),
-            Ampsand2 => f.write_str("&&"),
-            Pipe => f.write_str("|"),
-            Pipe2 => f.write_str("||"),
-            Percent => f.write_str("%"),
-            Dot => f.write_str("."),
-            DotStar => f.write_str(".*"),
-            Hashtag => f.write_str("#"),
+            Tt::LParen => write!(f, "`(`"),
+            Tt::RParen => write!(f, "`)`"),
+            Tt::LBracket => write!(f, "`[`"),
+            Tt::RBracket => write!(f, "`]`"),
+            Tt::LCurly => write!(f, "`{{`"),
+            Tt::RCurly => write!(f, "`}}`"),
+            Tt::Plus => write!(f, "`+`"),
+            Tt::Minus => write!(f, "`-`"),
+            Tt::Star => write!(f, "`*`"),
+            Tt::Slash => write!(f, "`/`"),
+            Tt::Colon => write!(f, "`:`"),
+            Tt::Comma => write!(f, "`,`"),
+            Tt::Eq => write!(f, "`=`"),
+            Tt::EqEq => write!(f, "`==`"),
+            Tt::BangEq => write!(f, "`!=`"),
+            Tt::Bang => write!(f, "`!`"),
+            Tt::LtEq => write!(f, "`<=`"),
+            Tt::Lt => write!(f, "`<`"),
+            Tt::LtLt => write!(f, "`<<`"),
+            Tt::Gt => write!(f, "`>`"),
+            Tt::GtGt => write!(f, "`>>`"),
+            Tt::GtEq => write!(f, "`>=`"),
+            Tt::Semi => write!(f, "`;`"),
+            Tt::MinusGt => write!(f, "`->`"),
+            Tt::Caret => write!(f, "`^`"),
+            Tt::And => write!(f, "`&`"),
+            Tt::AndAnd => write!(f, "`&&`"),
+            Tt::Or => write!(f, "`|`"),
+            Tt::OrOr => write!(f, "`||`"),
+            Tt::Percent => write!(f, "`%`"),
+            Tt::Dot => write!(f, "`.`"),
+            Tt::DotStar => write!(f, "`.*`"),
+            Tt::Pound => write!(f, "`#`"),
+            Tt::KwAs => write!(f, "keyword `as`"),
+            Tt::KwBreak => write!(f, "keyword `break`"),
+            Tt::KwComptime => write!(f, "keyword `comptime`"),
+            Tt::KwContinue => write!(f, "keyword `continue`"),
+            Tt::KwDefer => write!(f, "keyword `defer`"),
+            Tt::KwElse => write!(f, "keyword `else`"),
+            Tt::KwExtern => write!(f, "keyword `extern`"),
+            Tt::KwFalse => write!(f, "keyword `false`"),
+            Tt::KwFor => write!(f, "keyword `for`"),
+            Tt::KwFun => write!(f, "keyword `fun`"),
+            Tt::KwIf => write!(f, "keyword `if`"),
+            Tt::KwImpl => write!(f, "keyword `impl`"),
+            Tt::KwIn => write!(f, "keyword `in`"),
+            Tt::KwLet => write!(f, "keyword `let`"),
+            Tt::KwLoop => write!(f, "keyword `loop`"),
+            Tt::KwMut => write!(f, "keyword `mut`"),
+            Tt::KwNull => write!(f, "keyword `null`"),
+            Tt::KwOrb => write!(f, "keyword `orb`"),
+            Tt::KwPub => write!(f, "keyword `pub`"),
+            Tt::KwReturn => write!(f, "keyword `return`"),
+            Tt::KwSelfVal => write!(f, "keyword `self`"),
+            Tt::KwThen => write!(f, "keyword `then`"),
+            Tt::KwTrait => write!(f, "keyword `trait`"),
+            Tt::KwTrue => write!(f, "keyword `true`"),
+            Tt::KwWhile => write!(f, "keyword `while`"),
+            Tt::Ident(_) => write!(f, "identifier"),
+            Tt::Lit(Literal { kind, .. }) => write!(f, "{kind} literal"),
+            Tt::EOF => write!(f, "<eof>"),
+            Tt::Dummy => write!(f, "not a token"),
         }
     }
 }
@@ -604,11 +607,113 @@ pub fn is_identifier(id: &str) -> bool {
     }
 
     // identifier cannot be a keyword
-    if Keyword::ALL_KEYWORDS.contains(&id) {
+    if TokenType::ALL_KEYWORDS.contains(&id) {
         return false;
     }
 
     true
+}
+
+/// A literal token
+///
+/// # Note
+///
+/// The `kind` and `value` must match, a literal with kind [`LitKind::Float`] and
+/// value [`LitVal::Int(12)`] is invalid, and **can lead to UB**.
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Literal {
+    pub kind: LitKind,
+    pub value: LitVal,
+    pub tag: Option<String>,
+}
+
+impl Literal {
+    /// Create a new character literal
+    pub const fn char(val: char) -> Literal {
+        Literal {
+            kind: LitKind::Char,
+            value: LitVal::Char(val),
+            tag: None,
+        }
+    }
+
+    /// Create a new integer literal
+    pub const fn int(val: u128) -> Literal {
+        Literal {
+            kind: LitKind::Integer,
+            value: LitVal::Int(val),
+            tag: None,
+        }
+    }
+
+    /// Create a new float literal
+    pub const fn float(val: f64) -> Literal {
+        Literal {
+            kind: LitKind::Float,
+            value: LitVal::Float(val),
+            tag: None,
+        }
+    }
+
+    /// Create a new string literal
+    pub fn string(val: String) -> Literal {
+        Literal {
+            kind: LitKind::Str,
+            value: LitVal::Str(val),
+            tag: None,
+        }
+    }
+
+    /// Create a new c string literal
+    pub fn c_string(val: String) -> Literal {
+        Literal {
+            kind: LitKind::CStr,
+            value: LitVal::Str(val),
+            tag: None,
+        }
+    }
+}
+
+/// A kind of literal token
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum LitKind {
+    Char,
+    Integer,
+    Float,
+    Str,
+    CStr,
+}
+
+impl Display for LitKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Char => write!(f, "char"),
+            Self::Integer => write!(f, "integer"),
+            Self::Float => write!(f, "float"),
+            Self::Str => write!(f, "string"),
+            Self::CStr => write!(f, "c_string"),
+        }
+    }
+}
+
+/// The value of a literal.
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum LitVal {
+    Char(char),
+    Int(u128),
+    Float(f64),
+    Str(String),
+}
+
+impl Display for LitVal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Char(val) => write!(f, "{val:?}"),
+            Self::Int(val) => write!(f, "{val:?}"),
+            Self::Float(val) => write!(f, "{val:?}"),
+            Self::Str(val) => write!(f, "{val:?}"),
+        }
+    }
 }
 
 #[cfg(test)]
