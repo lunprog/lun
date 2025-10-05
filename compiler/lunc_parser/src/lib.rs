@@ -10,14 +10,11 @@ use expr::Expression;
 use item::Module;
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, ToDiagnostic};
 
-use lunc_utils::{
-    Span,
-    pretty::PrettyDump,
-    token::{
-        Keyword, Punctuation, Token, TokenStream,
-        TokenType::{self, *},
-    },
+use lunc_token::{
+    Keyword, Punctuation, Token, TokenStream,
+    TokenType::{self, *},
 };
+use lunc_utils::{Span, pretty::PrettyDump};
 
 pub mod diags;
 pub mod directive;
@@ -144,7 +141,7 @@ macro_rules! expect_token {
     ($parser:expr => [ $($token:pat, $result:expr $(,in $between:stmt)?);* ] else $unexpected:block) => (
         match $parser.peek_tok() {
             $(
-                Some(::lunc_utils::token::Token { tt: $token, .. }) => {
+                Some(::lunc_token::Token { tt: $token, .. }) => {
                     $(
                         $between
                     )?
@@ -162,7 +159,7 @@ macro_rules! expect_token {
             $(
                 // we allow unused variable in case of a $between that terminates.
                 #[allow(unused_variables)]
-                Some(::lunc_utils::token::Token {
+                Some(::lunc_token::Token {
                     tt: $token,
                     ..
                 }) $( if $cond )? => {
@@ -177,7 +174,7 @@ macro_rules! expect_token {
                     ($result, $parser.pop().unwrap().loc)
                 }
             )*
-            Some(::lunc_utils::token::Token { tt, loc }) => {
+            Some(::lunc_token::Token { tt, loc }) => {
                 let node = None::<String>;
                 $(
                     node = Some($node);

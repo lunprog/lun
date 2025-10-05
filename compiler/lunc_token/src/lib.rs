@@ -1,11 +1,14 @@
-//! Token, TokenStream, everything related to tokens.
+//! Token related to tokens shared between lunc_lexer and lunc_parser.
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
+)]
 
 use std::{
     fmt::{self, Debug, Display},
     io::{self, Write},
 };
 
-use crate::{FileId, Span};
+use lunc_utils::{FileId, Span};
 
 /// A list of Tokens, and always ending with a `end of file` token
 #[derive(Clone, Default)]
@@ -580,5 +583,43 @@ impl Display for Punctuation {
             DotStar => f.write_str(".*"),
             Hashtag => f.write_str("#"),
         }
+    }
+}
+
+/// Is this string identifier compatible?
+pub fn is_identifier(id: &str) -> bool {
+    // identifiers only support ascii for now
+    if !id.is_ascii() {
+        return false;
+    }
+
+    // identifiers cannot have a whitespace
+    if id.contains(char::is_whitespace) {
+        return false;
+    }
+
+    // identifiers always start with a letter
+    if !id.chars().next().unwrap().is_alphabetic() {
+        return false;
+    }
+
+    // identifier cannot be a keyword
+    if Keyword::ALL_KEYWORDS.contains(&id) {
+        return false;
+    }
+
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn identifiers_checks_test() {
+        assert!(is_identifier("hello"));
+        assert!(!is_identifier("ça"));
+        assert!(!is_identifier("Hello, World!"));
+        assert!(!is_identifier("orb"));
     }
 }

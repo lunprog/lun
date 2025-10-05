@@ -9,6 +9,7 @@ edition = "2024"
 lunc_diag = { workspace = true }
 lunc_utils = { workspace = true }
 lunc_ast = { workspace = true }
+lunc_token = { workspace = true }
 
 # other dependencies
 thiserror = { workspace = true }

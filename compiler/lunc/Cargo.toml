@@ -14,6 +14,7 @@ lunc_linkage = { workspace = true }
 lunc_llib_meta = { workspace = true }
 lunc_parser = { workspace = true }
 lunc_scir = { workspace = true }
+lunc_token = { workspace = true }
 lunc_utils = { workspace = true }
 
 # other dependencies

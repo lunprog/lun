@@ -11,10 +11,8 @@ use diags::{
 };
 use lunc_diag::{DiagnosticSink, FileId, ReachedEOF, Result};
 
-use lunc_utils::{
-    Span, span,
-    token::{Keyword, TokenStream, TokenType},
-};
+use lunc_token::{Keyword, TokenStream, TokenType};
+use lunc_utils::{Span, span};
 
 pub mod diags;
 mod head;
@@ -131,7 +129,7 @@ impl Lexer {
     }
 
     pub fn lex_token(&mut self) -> Result<TokenType> {
-        use lunc_utils::token::{Punctuation::*, TokenType::*};
+        use lunc_token::{Punctuation::*, TokenType::*};
 
         let t = match self.peek() {
             Some('(') => Punct(LParen),
@@ -943,6 +941,8 @@ impl Lexer {
     /// # Errors
     ///
     /// Returns a [`Diagnostic`] if the input is invalid or too large.
+    ///
+    /// [`Diagnostic`]: lunc_diag::Diagnostic
     pub fn parse_u128(&mut self, input: &str, radix: u8) -> Result<u128> {
         self.parse_u128_with_digit_count(input, radix)
             .map(|(int, _)| int)
@@ -964,6 +964,8 @@ impl Lexer {
     /// # Errors
     ///
     /// Returns a [`Diagnostic`] on overflow or invalid input.
+    ///
+    /// [`Diagnostic`]: lunc_diag::Diagnostic
     pub fn parse_u128_with_options(
         &mut self,
         input: &str,
@@ -994,6 +996,8 @@ impl Lexer {
     /// # Errors
     ///
     /// Returns a [`Diagnostic`] if the input is invalid or overflows.
+    ///
+    /// [`Diagnostic`]: lunc_diag::Diagnostic
     pub fn parse_u128_with_digit_count(&mut self, input: &str, radix: u8) -> Result<(u128, u32)> {
         self.parse_u128_advanced(
             input,
@@ -1033,6 +1037,8 @@ impl Lexer {
     ///
     /// Returns a [`Diagnostic`] if an invalid character is encountered or the
     /// value overflows.
+    ///
+    /// [`Diagnostic`]: lunc_diag::Diagnostic
     pub fn parse_u128_advanced(
         &mut self,
         input: &str,

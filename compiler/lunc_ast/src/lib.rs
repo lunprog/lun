@@ -8,13 +8,11 @@ use std::{
     io::{self, Write},
 };
 
-use lunc_utils::{
-    pretty::{PrettyCtxt, PrettyDump},
-    token::{
-        Punctuation,
-        TokenType::{self, *},
-    },
+use lunc_token::{
+    Punctuation,
+    TokenType::{self, *},
 };
+use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 pub mod symbol;
 

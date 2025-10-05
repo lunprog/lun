@@ -12,11 +12,8 @@ use std::{
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
-use crate::token::Keyword;
-
 pub mod idtype;
 pub mod pretty;
-pub mod token;
 
 pub mod target {
     pub use target_lexicon::*;
@@ -509,31 +506,6 @@ macro_rules! opt_unreachable {
     };
 }
 
-/// Is this string identifier compatible?
-pub fn is_identifier(id: &str) -> bool {
-    // identifiers only support ascii for now
-    if !id.is_ascii() {
-        return false;
-    }
-
-    // identifiers cannot have a whitespace
-    if id.contains(char::is_whitespace) {
-        return false;
-    }
-
-    // identifiers always start with a letter
-    if !id.chars().next().unwrap().is_alphabetic() {
-        return false;
-    }
-
-    // identifier cannot be a keyword
-    if Keyword::ALL_KEYWORDS.contains(&id) {
-        return false;
-    }
-
-    true
-}
-
 /// Build options
 #[derive(Debug, Clone)]
 pub struct BuildOptions {
@@ -727,13 +699,5 @@ mod tests {
         let words = ["cat", "bat", "rat"];
         // all at distance 1; should pick the first encountered ("cat")
         assert_eq!(suggest("cot", &words, 1), Some("cat"));
-    }
-
-    #[test]
-    fn identifiers_checks_test() {
-        assert!(is_identifier("hello"));
-        assert!(!is_identifier("ça"));
-        assert!(!is_identifier("Hello, World!"));
-        assert!(!is_identifier("orb"));
     }
 }

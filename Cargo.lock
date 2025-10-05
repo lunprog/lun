@@ -855,6 +855,7 @@ dependencies = [
  "lunc_llib_meta",
  "lunc_parser",
  "lunc_scir",
+ "lunc_token",
  "lunc_utils",
  "shadow-rs",
  "termcolor",
@@ -865,6 +866,7 @@ dependencies = [
 name = "lunc_ast"
 version = "0.1.0"
 dependencies = [
+ "lunc_token",
  "lunc_utils",
  "serde",
 ]
@@ -909,6 +911,7 @@ name = "lunc_lexer"
 version = "0.1.0"
 dependencies = [
  "lunc_diag",
+ "lunc_token",
  "lunc_utils",
  "thiserror",
 ]
@@ -943,6 +946,7 @@ version = "0.1.0"
 dependencies = [
  "lunc_ast",
  "lunc_diag",
+ "lunc_token",
  "lunc_utils",
  "thiserror",
 ]
@@ -955,6 +959,13 @@ dependencies = [
  "lunc_diag",
  "lunc_dsir",
  "lunc_llib_meta",
+ "lunc_utils",
+]
+
+[[package]]
+name = "lunc_token"
+version = "0.1.0"
+dependencies = [
  "lunc_utils",
 ]
 

@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+  # compiler
   "compiler/lunc",
   "compiler/lunc_ast",
   "compiler/lunc_cranelift_codegen",
@@ -11,7 +12,10 @@ members = [
   "compiler/lunc_llib_meta",
   "compiler/lunc_parser",
   "compiler/lunc_scir",
+  "compiler/lunc_token",
   "compiler/lunc_utils",
+
+  # tools
   "src/tools/xtask",
   "src/tools/luntests",
 ]
@@ -30,6 +34,7 @@ lunc_linkage = { path = "compiler/lunc_linkage" }
 lunc_llib_meta = { path = "compiler/lunc_llib_meta" }
 lunc_parser = { path = "compiler/lunc_parser" }
 lunc_scir = { path = "compiler/lunc_scir" }
+lunc_token = { path = "compiler/lunc_token" }
 lunc_utils = { path = "compiler/lunc_utils" }
 
 # other dependencies

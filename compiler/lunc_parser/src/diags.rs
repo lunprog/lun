@@ -1,10 +1,8 @@
 //! Diagnostics that may be emitted by the parser.
 
 use lunc_diag::{Diagnostic, ErrorCode, Label, ToDiagnostic};
-use lunc_utils::{
-    DEFAULT_MAX_LEVENSHTEIN_DISTANCE, Span, list_fmt, suggest,
-    token::{Punctuation, TokenType},
-};
+use lunc_token::{Punctuation, TokenType};
+use lunc_utils::{DEFAULT_MAX_LEVENSHTEIN_DISTANCE, Span, list_fmt, suggest};
 
 use std::fmt::Display;
 

@@ -1,9 +1,11 @@
 //! Lun is a statically typed programming language.
 //!
 //! Related crates of the compiler:
-//! - [lunc_ast], AST types shared across compiler stages
 //! - [lunc_lexer], lexes the text into [Tokens]
+//! - [lunc_token], Token related to tokens shared between [lunc_lexer] and
+//!   [lunc_parser].
 //! - [lunc_parser], parses the [Tokens] into an [Ast]
+//! - [lunc_ast], AST types shared across compiler stages
 //! - [lunc_dsir], desugars the [Ast] to [Dsir] and resolve names
 //! - [lunc_scir], lowers [Dsir] to [Scir] and perform various semantic checks
 //!   and add types
@@ -15,7 +17,7 @@
 //! - [lunc_llib_meta], contains the [ModuleTree], and everything related to the
 //!   metadata added inside of a `llib` orb type.
 //!
-//! [Tokens]: lunc_utils::token::TokenStream
+//! [Tokens]: lunc_token::TokenStream
 //! [Ast]: lunc_parser::item::Module
 //! [Dsir]: lunc_dsir::DsModule
 //! [Scir]: lunc_scir::ScModule
@@ -50,8 +52,9 @@ use lunc_dsir::Desugarrer;
 use lunc_lexer::Lexer;
 use lunc_parser::Parser;
 use lunc_scir::SemaChecker;
+use lunc_token::is_identifier;
 use lunc_utils::{
-    BuildOptions, OrbType, is_identifier,
+    BuildOptions, OrbType,
     pretty::PrettyDump,
     target::{self, Triple},
 };
