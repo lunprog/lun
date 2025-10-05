@@ -758,7 +758,7 @@ impl Display for LitVal {
 /// Expected token.
 ///
 /// This is used by `E006`, `ExpectedToken`, diagnostics to avoid
-/// creating empty tokens when a TokenType expects a value, so [`TokenRepr`]
+/// creating empty tokens when a TokenType expects a value, so [`ExpToken`]
 /// don't expect a value.
 ///
 /// This is also used by `check` and `expect` methods of the parser.

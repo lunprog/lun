@@ -14,7 +14,7 @@ use lunc_token::{
     ExpToken, ExpTokenSet, Lit, LitKind, Token, TokenStream,
     TokenType::{self, *},
 };
-use lunc_utils::{Span, pretty::PrettyDump};
+use lunc_utils::{Span, opt_unreachable, pretty::PrettyDump};
 
 pub mod diags;
 pub mod directive;
@@ -97,9 +97,8 @@ impl Parser {
         is_present
     }
 
-    /// Consumes the next token if it is a [`TokenType::Literal`] and if it's
-    /// kind is `litexp`. Returns `Some(lit)` if it existed or `None` if it
-    /// did not.
+    /// Consumes the next token if it is a [`TokenType::Lit`] and if it's kind
+    /// is `litexp`. Returns `Some(lit)` if it existed or `None` if it did not.
     pub fn eat_lit(&mut self, litexp: LitKind) -> Option<Lit> {
         match &self.token.tt {
             TokenType::Lit(lit) if lit.kind == litexp => {
@@ -124,7 +123,7 @@ impl Parser {
     }
 
     /// Create a new expected diag with the current token and the
-    /// [`Parser::expected_token_reprs`].
+    /// [`Parser::expected_token_exps`].
     pub fn expected_diag(&self) -> ExpectedToken {
         ExpectedToken::new([], self.token.clone()).add_expects(self.expected_token_exps)
     }
@@ -137,6 +136,38 @@ impl Parser {
         } else {
             looker(self.tokstream.get(self.ti + dist))
         }
+    }
+
+    /// Return the literal contained in the previously parsed token,
+    /// [`Parser::prev_token`].
+    ///
+    /// # Safety
+    ///
+    /// Calling this function if [`Parser::prev_token`] isn't a
+    /// [`TokenType::Lit`], it's a UB.
+    pub fn as_lit(&self) -> Lit {
+        let Lit(lit) = &self.prev_token.tt else {
+            // SAFETY: upheld by caller
+            opt_unreachable!();
+        };
+
+        lit.clone()
+    }
+
+    /// Return the identifier (the string) contained in the previously parsed
+    /// token, [`Parser::prev_token`].
+    ///
+    /// # Safety
+    ///
+    /// Calling this function if [`Parser::prev_token`] isn't a
+    /// [`TokenType::Ident`], it's a UB.
+    pub fn as_ident(&self) -> String {
+        let Ident(id) = &self.prev_token.tt else {
+            // SAFETY: upheld by caller
+            opt_unreachable!();
+        };
+
+        id.clone()
     }
 
     // TODO: deprecate and then remove when no longer used the following methods
