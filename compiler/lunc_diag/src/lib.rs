@@ -117,9 +117,11 @@ impl DiagnosticSink {
 
     /// Emit a diagnostic
     #[track_caller]
-    pub fn emit(&mut self, diag: impl ToDiagnostic) {
+    pub fn emit(&mut self, diag: impl ToDiagnostic) -> DiagGuaranteed {
         let mut inner = self.0.write().unwrap();
         inner.emit(diag);
+
+        DiagGuaranteed(())
     }
 
     /// Emit a summary diagnostic
@@ -648,6 +650,7 @@ impl ToDiagnostic for ReachedEOF {
 }
 
 /// Diagnostic was guaranteed to be reported to the user.
+#[derive(Debug, Clone)]
 pub struct DiagGuaranteed(pub(crate) ());
 
 pub type Result<T, E = DiagGuaranteed> = core::result::Result<T, E>;

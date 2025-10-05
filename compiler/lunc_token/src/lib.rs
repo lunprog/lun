@@ -6,9 +6,10 @@
 use std::{
     fmt::{self, Debug, Display},
     io::{self, Write},
+    mem,
 };
 
-use lunc_utils::{FileId, Span};
+use lunc_utils::{FileId, Span, opt_unreachable};
 
 /// A list of Tokens, and always ending with a `end of file` token
 #[derive(Clone, Default)]
@@ -60,32 +61,40 @@ impl TokenStream {
         is_eof
     }
 
-    /// Get the token a the index `idx` returns None if the token isn't found
+    /// Get the token a the index `idx`, always returns the EOF token if `idx`
+    /// is out of bounds of the stream.
     ///
     /// # Panic
     ///
     /// This function will panic if you call it on a non-finished token stream
     #[track_caller]
-    pub fn get(&self, idx: usize) -> Option<&Token> {
+    pub fn get(&self, idx: usize) -> &Token {
         assert!(
             self.finished,
             "can't access tokens while the token stream isn't finished."
         );
-        self.toks.get(idx)
+        self.toks.get(idx).unwrap_or_else(|| self.get_eof())
     }
 
-    /// Get the last token of a finished token stream will always be the EOF token
+    /// Get the last token of a finished token stream, it will always be the
+    /// EOF token
     ///
     /// # Panic
     ///
     /// This function will panic if you call it on a non-finished token stream
     #[track_caller]
-    pub fn last(&self) -> Option<&Token> {
+    pub fn get_eof(&self) -> &Token {
         assert!(
             self.finished,
             "can't access tokens while the token stream isn't finished."
         );
-        self.toks.last()
+
+        let Some(eof) = self.toks.last() else {
+            // SAFETY: a token stream is ensured to contain an eof token
+            opt_unreachable!();
+        };
+
+        eof
     }
 
     pub fn fmt(&self, out: &mut impl Write, src: &str) -> io::Result<()> {
@@ -254,7 +263,7 @@ impl Token {
                 p_common(out)?;
                 writeln!(out, "  }},")?;
             }
-            TokenType::Lit(Literal { kind, value, tag }) => {
+            TokenType::Lit(Lit { kind, value, tag }) => {
                 writeln!(out, "  {{")?;
                 writeln!(out, "    tt: {kind} {value};")?;
 
@@ -277,12 +286,27 @@ impl Token {
 
         Ok(())
     }
+
+    /// Create a new dummy token.
+    pub const fn dummy() -> Token {
+        Token {
+            tt: TokenType::Dummy,
+            loc: Span::ZERO,
+        }
+    }
 }
 
-// NOTE: when adding a new token, a correspond test should be added into
+impl PartialEq<TokenType> for Token {
+    fn eq(&self, other: &TokenType) -> bool {
+        self.tt == *other
+    }
+}
+
+// WARN: when adding a new token, a correspond test should be added into
 // `tests/lexer/` that should test everything about this new token
 // WARN: /!\ If a keyword is added change the `lex_identifier` method of the
 // Lexer and add it to the list of all keywords.
+/// Token type.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     /// `(`
@@ -404,7 +428,7 @@ pub enum TokenType {
     /// identifier
     Ident(String),
     /// literal
-    Lit(Literal),
+    Lit(Lit),
     /// End Of File
     EOF,
     /// this is a dummy token, it is used when encountering a comment or a
@@ -582,7 +606,7 @@ impl Display for TokenType {
             Tt::KwTrue => write!(f, "keyword `true`"),
             Tt::KwWhile => write!(f, "keyword `while`"),
             Tt::Ident(_) => write!(f, "identifier"),
-            Tt::Lit(Literal { kind, .. }) => write!(f, "{kind} literal"),
+            Tt::Lit(Lit { kind, .. }) => write!(f, "{kind} literal"),
             Tt::EOF => write!(f, "<eof>"),
             Tt::Dummy => write!(f, "not a token"),
         }
@@ -621,16 +645,16 @@ pub fn is_identifier(id: &str) -> bool {
 /// The `kind` and `value` must match, a literal with kind [`LitKind::Float`] and
 /// value [`LitVal::Int(12)`] is invalid, and **can lead to UB**.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Literal {
+pub struct Lit {
     pub kind: LitKind,
     pub value: LitVal,
     pub tag: Option<String>,
 }
 
-impl Literal {
+impl Lit {
     /// Create a new character literal
-    pub const fn char(val: char) -> Literal {
-        Literal {
+    pub const fn char(val: char) -> Lit {
+        Lit {
             kind: LitKind::Char,
             value: LitVal::Char(val),
             tag: None,
@@ -638,8 +662,8 @@ impl Literal {
     }
 
     /// Create a new integer literal
-    pub const fn int(val: u128) -> Literal {
-        Literal {
+    pub const fn int(val: u128) -> Lit {
+        Lit {
             kind: LitKind::Integer,
             value: LitVal::Int(val),
             tag: None,
@@ -647,8 +671,8 @@ impl Literal {
     }
 
     /// Create a new float literal
-    pub const fn float(val: f64) -> Literal {
-        Literal {
+    pub const fn float(val: f64) -> Lit {
+        Lit {
             kind: LitKind::Float,
             value: LitVal::Float(val),
             tag: None,
@@ -656,8 +680,8 @@ impl Literal {
     }
 
     /// Create a new string literal
-    pub fn string(val: String) -> Literal {
-        Literal {
+    pub fn string(val: String) -> Lit {
+        Lit {
             kind: LitKind::Str,
             value: LitVal::Str(val),
             tag: None,
@@ -665,8 +689,8 @@ impl Literal {
     }
 
     /// Create a new c string literal
-    pub fn c_string(val: String) -> Literal {
-        Literal {
+    pub fn c_string(val: String) -> Lit {
+        Lit {
             kind: LitKind::CStr,
             value: LitVal::Str(val),
             tag: None,
@@ -714,6 +738,294 @@ impl Display for LitVal {
             Self::Str(val) => write!(f, "{val:?}"),
         }
     }
+}
+
+/// Token repr, this is used by `E006`, `ExpectedToken`, diagnostics to avoid
+/// creating empty tokens when a TokenType expects a value, so [`TokenRepr`]
+/// don't expect a value.
+///
+/// *This is inspired by [rustc's TokenType].*
+///
+/// [rustc's TokenType]: https://doc.rust-lang.org/nightly/nightly-rustc/rustc_parse/parser/token_type/enum.TokenType.html
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum TokenRepr {
+    LParen,
+    RParen,
+    LBracket,
+    RBracket,
+    LCurly,
+    RCurly,
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Colon,
+    Comma,
+    Eq,
+    EqEq,
+    BangEq,
+    Bang,
+    LtEq,
+    Lt,
+    LtLt,
+    Gt,
+    GtGt,
+    GtEq,
+    Semi,
+    MinusGt,
+    Caret,
+    And,
+    AndAnd,
+    Or,
+    OrOr,
+    Percent,
+    Dot,
+    DotStar,
+    Pound,
+    KwAs,
+    KwBreak,
+    KwComptime,
+    KwContinue,
+    KwDefer,
+    KwElse,
+    KwExtern,
+    KwFalse,
+    KwFor,
+    KwFun,
+    KwIf,
+    KwImpl,
+    KwIn,
+    KwLet,
+    KwLoop,
+    KwMut,
+    KwNull,
+    KwOrb,
+    KwPub,
+    KwReturn,
+    KwSelfVal,
+    KwThen,
+    KwTrait,
+    KwTrue,
+    KwWhile,
+    Ident,
+    Lit,
+    EOF,
+}
+
+impl Display for TokenRepr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use TokenRepr as Tr;
+
+        match self {
+            Tr::LParen => write!(f, "`(`"),
+            Tr::RParen => write!(f, "`)`"),
+            Tr::LBracket => write!(f, "`[`"),
+            Tr::RBracket => write!(f, "`]`"),
+            Tr::LCurly => write!(f, "`{{`"),
+            Tr::RCurly => write!(f, "`}}`"),
+            Tr::Plus => write!(f, "`+`"),
+            Tr::Minus => write!(f, "`-`"),
+            Tr::Star => write!(f, "`*`"),
+            Tr::Slash => write!(f, "`/`"),
+            Tr::Colon => write!(f, "`:`"),
+            Tr::Comma => write!(f, "`,`"),
+            Tr::Eq => write!(f, "`=`"),
+            Tr::EqEq => write!(f, "`==`"),
+            Tr::BangEq => write!(f, "`!=`"),
+            Tr::Bang => write!(f, "`!`"),
+            Tr::LtEq => write!(f, "`<=`"),
+            Tr::Lt => write!(f, "`<`"),
+            Tr::LtLt => write!(f, "`<<`"),
+            Tr::Gt => write!(f, "`>`"),
+            Tr::GtGt => write!(f, "`>>`"),
+            Tr::GtEq => write!(f, "`>=`"),
+            Tr::Semi => write!(f, "`;`"),
+            Tr::MinusGt => write!(f, "`->`"),
+            Tr::Caret => write!(f, "`^`"),
+            Tr::And => write!(f, "`&`"),
+            Tr::AndAnd => write!(f, "`&&`"),
+            Tr::Or => write!(f, "`|`"),
+            Tr::OrOr => write!(f, "`||`"),
+            Tr::Percent => write!(f, "`%`"),
+            Tr::Dot => write!(f, "`.`"),
+            Tr::DotStar => write!(f, "`.*`"),
+            Tr::Pound => write!(f, "`#`"),
+            Tr::KwAs => write!(f, "keyword `as`"),
+            Tr::KwBreak => write!(f, "keyword `break`"),
+            Tr::KwComptime => write!(f, "keyword `comptime`"),
+            Tr::KwContinue => write!(f, "keyword `continue`"),
+            Tr::KwDefer => write!(f, "keyword `defer`"),
+            Tr::KwElse => write!(f, "keyword `else`"),
+            Tr::KwExtern => write!(f, "keyword `extern`"),
+            Tr::KwFalse => write!(f, "keyword `false`"),
+            Tr::KwFor => write!(f, "keyword `for`"),
+            Tr::KwFun => write!(f, "keyword `fun`"),
+            Tr::KwIf => write!(f, "keyword `if`"),
+            Tr::KwImpl => write!(f, "keyword `impl`"),
+            Tr::KwIn => write!(f, "keyword `in`"),
+            Tr::KwLet => write!(f, "keyword `let`"),
+            Tr::KwLoop => write!(f, "keyword `loop`"),
+            Tr::KwMut => write!(f, "keyword `mut`"),
+            Tr::KwNull => write!(f, "keyword `null`"),
+            Tr::KwOrb => write!(f, "keyword `orb`"),
+            Tr::KwPub => write!(f, "keyword `pub`"),
+            Tr::KwReturn => write!(f, "keyword `return`"),
+            Tr::KwSelfVal => write!(f, "keyword `self`"),
+            Tr::KwThen => write!(f, "keyword `then`"),
+            Tr::KwTrait => write!(f, "keyword `trait`"),
+            Tr::KwTrue => write!(f, "keyword `true`"),
+            Tr::KwWhile => write!(f, "keyword `while`"),
+            Tr::Ident => write!(f, "identifier"),
+            Tr::Lit => write!(f, "literal"),
+            Tr::EOF => write!(f, "end of file"),
+        }
+    }
+}
+
+/// A bitset used by `Parser::check`, `Parser::eat` and `Parser::expect`
+///
+/// *This is inspired by [rustc's TokenTypeSet].*
+///
+/// [rustc's TokenTypeSet]: https://doc.rust-lang.org/nightly/nightly-rustc/rustc_parse/parser/token_type/struct.TokenTypeSet.html
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct TokenReprSet(u64);
+
+impl TokenReprSet {
+    /// Create a new TokenRepr set.
+    pub fn new() -> TokenReprSet {
+        TokenReprSet(0)
+    }
+
+    /// Insert a tokenrepr inside the set.
+    pub fn insert(&mut self, tr: TokenRepr) {
+        self.0 |= 1u64 << tr as u64;
+    }
+
+    /// Does this TrSet contains `tr`?
+    pub fn contains(&self, tr: TokenRepr) -> bool {
+        self.0 & (1u64 << tr as u64) != 0
+    }
+
+    /// Clear the set.
+    pub fn clear(&mut self) {
+        self.0 = 0;
+    }
+
+    pub fn iter(&self) -> TokenReprSetIter {
+        TokenReprSetIter(*self)
+    }
+}
+
+impl Default for TokenReprSet {
+    fn default() -> Self {
+        TokenReprSet::new()
+    }
+}
+
+/// Iterator of [`TokenRepr`] in a [`TokenReprSet`].
+pub struct TokenReprSetIter(TokenReprSet);
+
+impl Iterator for TokenReprSetIter {
+    type Item = TokenRepr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let num_bits = (size_of_val(&self.0.0) * 8) as u64;
+        debug_assert_eq!(num_bits, 64);
+
+        let zeros = self.0.0.trailing_zeros() as u64;
+
+        if zeros == num_bits {
+            None
+        } else {
+            self.0.0 &= !(1 << zeros);
+
+            if !(0..=62).contains(&zeros) {
+                panic!("invalid token repr {zeros}")
+            }
+
+            Some(unsafe { mem::transmute::<u8, TokenRepr>(zeros as u8) })
+        }
+    }
+}
+
+macro_rules! pair {
+    ($name:ident, $tok:ident) => {
+        #[doc = concat!("Create a new `", stringify!($tok), "` pair.")]
+        #[allow(non_upper_case_globals)]
+        pub const $name: ExpToken = ExpToken {
+            tok: TokenType::$tok,
+            tr: TokenRepr::$tok,
+        };
+    };
+}
+
+/// Expected token, used by `check` and `expect` methods of the parser.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExpToken {
+    pub tok: TokenType,
+    pub tr: TokenRepr,
+}
+
+impl ExpToken {
+    pair!(LParen, LParen);
+    pair!(RParen, RParen);
+    pair!(LBracket, LBracket);
+    pair!(RBracket, RBracket);
+    pair!(LCurly, LCurly);
+    pair!(RCurly, RCurly);
+    pair!(Plus, Plus);
+    pair!(Minus, Minus);
+    pair!(Star, Star);
+    pair!(Slash, Slash);
+    pair!(Colon, Colon);
+    pair!(Comma, Comma);
+    pair!(Eq, Eq);
+    pair!(EqEq, EqEq);
+    pair!(BangEq, BangEq);
+    pair!(Bang, Bang);
+    pair!(LtEq, LtEq);
+    pair!(Lt, Lt);
+    pair!(LtLt, LtLt);
+    pair!(Gt, Gt);
+    pair!(GtGt, GtGt);
+    pair!(GtEq, GtEq);
+    pair!(Semi, Semi);
+    pair!(MinusGt, MinusGt);
+    pair!(Caret, Caret);
+    pair!(And, And);
+    pair!(AndAnd, AndAnd);
+    pair!(Or, Or);
+    pair!(OrOr, OrOr);
+    pair!(Percent, Percent);
+    pair!(Dot, Dot);
+    pair!(DotStar, DotStar);
+    pair!(Pound, Pound);
+    pair!(KwAs, KwAs);
+    pair!(KwBreak, KwBreak);
+    pair!(KwComptime, KwComptime);
+    pair!(KwContinue, KwContinue);
+    pair!(KwDefer, KwDefer);
+    pair!(KwElse, KwElse);
+    pair!(KwExtern, KwExtern);
+    pair!(KwFalse, KwFalse);
+    pair!(KwFor, KwFor);
+    pair!(KwFun, KwFun);
+    pair!(KwIf, KwIf);
+    pair!(KwImpl, KwImpl);
+    pair!(KwIn, KwIn);
+    pair!(KwLet, KwLet);
+    pair!(KwLoop, KwLoop);
+    pair!(KwMut, KwMut);
+    pair!(KwNull, KwNull);
+    pair!(KwOrb, KwOrb);
+    pair!(KwPub, KwPub);
+    pair!(KwReturn, KwReturn);
+    pair!(KwSelfVal, KwSelfVal);
+    pair!(KwThen, KwThen);
+    pair!(KwTrait, KwTrait);
+    pair!(KwTrue, KwTrue);
+    pair!(KwWhile, KwWhile);
+    pair!(EOF, EOF);
 }
 
 #[cfg(test)]

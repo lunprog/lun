@@ -1,7 +1,7 @@
 //! Parsing of lun's expressions.
 
 use lunc_ast::{BinOp, UnOp};
-use lunc_token::{LitKind, LitVal, Literal};
+use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::opt_unreachable;
 
 use crate::stmt::Block;
@@ -275,23 +275,23 @@ pub fn parse_expr_precedence(
     // TODO: parsing of range expressions, `expr..<expr` and `expr..=expr`, and
     // maybe `..<expr`, `..=expr` and maybe `expr..`
     let mut lhs = match parser.peek_tt() {
-        Some(Lit(Literal {
+        Some(Lit(Lit {
             kind: LitKind::Integer,
             ..
         })) => parse!(@fn parser => parse_intlit_expr),
         Some(KwTrue | KwFalse) => parse!(@fn parser => parse_boollit_expr),
-        Some(Lit(Literal {
+        Some(Lit(Lit {
             kind: LitKind::Str, ..
         })) => parse!(@fn parser => parse_strlit_expr),
-        Some(Lit(Literal {
+        Some(Lit(Lit {
             kind: LitKind::CStr,
             ..
         })) => parse!(@fn parser => parse_cstrlit_expr),
-        Some(Lit(Literal {
+        Some(Lit(Lit {
             kind: LitKind::Char,
             ..
         })) => parse!(@fn parser => parse_charlit_expr),
-        Some(Lit(Literal {
+        Some(Lit(Lit {
             kind: LitKind::Float,
             ..
         })) => parse!(@fn parser => parse_floatlit_expr),
@@ -332,7 +332,9 @@ pub fn parse_expr_precedence(
             // loop, see parsing of statements also.
 
             // TEST: no. 1
-            return Err(ExpectedToken::new("expression", t.tt, None::<String>, t.loc).into_diag());
+            return Err(
+                OldExpectedToken::new("expression", t.tt, None::<String>, t.loc).into_diag(),
+            );
         }
         None => {
             return Err(parser.eof_diag());
@@ -383,7 +385,7 @@ impl Parser {
 /// Parse an integer literal expression
 pub fn parse_intlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     // TEST: n/a
-    let (LitVal::Int(i), loc) = expect_token!(parser => [Lit(Literal { kind: LitKind::Integer, value, .. }), value.clone()], "integer literal")
+    let (LitVal::Int(i), loc) = expect_token!(parser => [Lit(Lit { kind: LitKind::Integer, value, .. }), value.clone()], "integer literal")
     else {
         // SAFETY: guaranteed to be a int value, if kind is integer.
         opt_unreachable!()
@@ -409,7 +411,7 @@ pub fn parse_boollit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic>
 /// Parse a string literal expression
 pub fn parse_strlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     // TEST: n/a
-    let (LitVal::Str(str), loc) = expect_token!(parser => [Lit(Literal { kind: LitKind::Str, value, .. }), value.clone()], "string literal")
+    let (LitVal::Str(str), loc) = expect_token!(parser => [Lit(Lit { kind: LitKind::Str, value, .. }), value.clone()], "string literal")
     else {
         // SAFETY: guaranteed to be a str value, if kind is string.
         opt_unreachable!()
@@ -424,7 +426,7 @@ pub fn parse_strlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
 /// Parse a C string literal expression
 pub fn parse_cstrlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     // TEST: n/a
-    let (LitVal::Str(str), loc) = expect_token!(parser => [Lit(Literal { kind: LitKind::CStr, value, .. }), value.clone()], "string literal")
+    let (LitVal::Str(str), loc) = expect_token!(parser => [Lit(Lit { kind: LitKind::CStr, value, .. }), value.clone()], "string literal")
     else {
         // SAFETY: guaranteed to be a str value, if kind is string.
         opt_unreachable!()
@@ -439,7 +441,7 @@ pub fn parse_cstrlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic>
 /// Parses a character literal expression
 pub fn parse_charlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     // TEST: n/a
-    let (LitVal::Char(char), loc) = expect_token!(parser => [Lit(Literal { kind: LitKind::Char, value, .. }), value.clone()], "string literal")
+    let (LitVal::Char(char), loc) = expect_token!(parser => [Lit(Lit { kind: LitKind::Char, value, .. }), value.clone()], "string literal")
     else {
         // SAFETY: guaranteed to be a char value, if kind is char.
         opt_unreachable!()
@@ -454,7 +456,7 @@ pub fn parse_charlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic>
 /// Parses a float literal expression
 pub fn parse_floatlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     // TEST: n/a
-    let (LitVal::Float(float), loc) = expect_token!(parser => [Lit(Literal {kind: LitKind::Float, value, ..}), value.clone()], "float literal")
+    let (LitVal::Float(float), loc) = expect_token!(parser => [Lit(Lit {kind: LitKind::Float, value, ..}), value.clone()], "float literal")
     else {
         // SAFETY: guaranteed to be a float value, if kind is float
         opt_unreachable!()
@@ -624,7 +626,8 @@ pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> Result<Express
             let t = tok.clone();
             // TEST: n/a
             return Err(
-                ExpectedToken::new("binary operator", t.tt, Some("expression"), t.loc).into_diag(),
+                OldExpectedToken::new("binary operator", t.tt, Some("expression"), t.loc)
+                    .into_diag(),
             );
         }
         None => return Err(parser.eof_diag()),
@@ -664,7 +667,8 @@ pub fn parse_unary_left_expr(parser: &mut Parser) -> Result<Expression, Diagnost
             let t = parser.peek_tok().unwrap().clone();
             // TEST: n/a
             return Err(
-                ExpectedToken::new("unary operator", t.tt, Some("expression"), t.loc).into_diag(),
+                OldExpectedToken::new("unary operator", t.tt, Some("expression"), t.loc)
+                    .into_diag(),
             );
         }
     } else {
@@ -899,7 +903,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
                     let t = parser.peek_tok().unwrap();
 
                     // TEST: no. 2
-                    return Err(ExpectedToken::new(
+                    return Err(OldExpectedToken::new(
                         [LCurly, KwIf],
                         t.tt.clone(),
                         Some("if expression"),
@@ -952,7 +956,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
 
         // TEST: no. 3
         Err(
-            ExpectedToken::new([LCurly], t.tt.clone(), Some("if expression"), t.loc.clone())
+            OldExpectedToken::new([LCurly], t.tt.clone(), Some("if expression"), t.loc.clone())
                 .into_diag(),
         )
     }
@@ -1285,7 +1289,8 @@ pub fn parse_unary_right_expr(
 
             // TEST: n/a
             return Err(
-                ExpectedToken::new("unary operator", t.tt, Some("expression"), t.loc).into_diag(),
+                OldExpectedToken::new("unary operator", t.tt, Some("expression"), t.loc)
+                    .into_diag(),
             );
         }
     } else {

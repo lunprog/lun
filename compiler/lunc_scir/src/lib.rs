@@ -858,7 +858,7 @@ impl SemaChecker {
                         got: sym_t,
                         expected: main_t,
                         loc: sym.loc().unwrap(),
-                    })
+                    });
                 } else {
                     // everything is fine we have the main definition and it's correct
                 }

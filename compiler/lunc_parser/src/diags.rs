@@ -1,14 +1,14 @@
 //! Diagnostics that may be emitted by the parser.
 
 use lunc_diag::{Diagnostic, ErrorCode, Label, ToDiagnostic};
-use lunc_token::TokenType;
+use lunc_token::{Token, TokenReprSet, TokenType};
 use lunc_utils::{DEFAULT_MAX_LEVENSHTEIN_DISTANCE, Span, list_fmt, suggest};
 
 use std::fmt::Display;
 
 use crate::directive::Directive;
 
-pub struct ExpectedToken {
+pub(crate) struct OldExpectedToken {
     /// what token was expected?
     expected: Vec<Box<dyn Display>>,
     /// what was found instead of the expected token
@@ -20,14 +20,14 @@ pub struct ExpectedToken {
     loc: Span,
 }
 
-impl ExpectedToken {
-    pub fn new<I, S, L>(expected: I, found: TokenType, node: Option<S>, loc: L) -> ExpectedToken
+impl OldExpectedToken {
+    pub fn new<I, S, L>(expected: I, found: TokenType, node: Option<S>, loc: L) -> OldExpectedToken
     where
         I: IntoDisplayables,
         S: ToString,
         L: Into<Span>,
     {
-        ExpectedToken {
+        OldExpectedToken {
             expected: expected.into_displayables(),
             found,
             node: node.map(|s| s.to_string()),
@@ -78,6 +78,51 @@ impl<T: Display + Clone + 'static, const N: usize> IntoDisplayables for [T; N] {
             Box::new(val.clone())
         }
         self.iter().map(|d| clone_to_boxed_display(d)).collect()
+    }
+}
+
+impl ToDiagnostic for OldExpectedToken {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::ExpectedToken)
+            .with_message(self.fmt_msg())
+            .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExpectedToken {
+    /// what token was expected?
+    expected: Vec<String>,
+    /// what was found instead of the expected token
+    found: TokenType,
+    /// location of the found token
+    loc: Span,
+}
+
+impl ExpectedToken {
+    /// Create a new ExpectedToken diag.
+    pub fn new<I: IntoIterator<Item = String>>(expected: I, found: Token) -> ExpectedToken {
+        ExpectedToken {
+            expected: expected.into_iter().collect(),
+            found: found.tt,
+            loc: found.loc,
+        }
+    }
+
+    pub fn add_expects(mut self, expects: TokenReprSet) -> Self {
+        self.expected
+            .extend(expects.iter().map(|tr| tr.to_string()));
+        self
+    }
+
+    fn fmt_msg(&self) -> String {
+        let len = self.expected.len();
+        assert_ne!(len, 0);
+
+        let expected = list_fmt(&self.expected);
+
+        format!("expected {}, found {}", expected, self.found)
     }
 }
 

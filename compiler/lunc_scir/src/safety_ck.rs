@@ -25,7 +25,9 @@ impl SemaChecker {
         for item in items {
             match self.safety_ck_item(item) {
                 Ok(()) => {}
-                Err(d) => self.sink.emit(d),
+                Err(d) => {
+                    self.sink.emit(d);
+                }
             };
         }
     }
@@ -80,7 +82,9 @@ impl SemaChecker {
                 for arg in args {
                     match self.safety_ck_arg(arg) {
                         Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
+                        Err(d) => {
+                            self.sink.emit(d);
+                        }
                     }
                 }
 
@@ -109,7 +113,9 @@ impl SemaChecker {
                 for arg in args {
                     match self.safety_ck_expr(arg) {
                         Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
+                        Err(d) => {
+                            self.sink.emit(d);
+                        }
                     }
                 }
 
@@ -287,7 +293,9 @@ impl SemaChecker {
                 for arg in args {
                     match self.safety_ck_expr(arg) {
                         Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
+                        Err(d) => {
+                            self.sink.emit(d);
+                        }
                     }
                 }
 
@@ -305,7 +313,9 @@ impl SemaChecker {
         for stmt in &block.stmts {
             match self.safety_ck_stmt(stmt) {
                 Ok(()) => {}
-                Err(d) => self.sink.emit(d),
+                Err(d) => {
+                    self.sink.emit(d);
+                }
             }
         }
 

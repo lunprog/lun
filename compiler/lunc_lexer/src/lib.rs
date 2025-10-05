@@ -11,7 +11,7 @@ use diags::{
 };
 use lunc_diag::{DiagnosticSink, FileId, ReachedEOF, Result};
 
-use lunc_token::{LitKind, Literal, TokenStream, TokenType};
+use lunc_token::{Lit, LitKind, TokenStream, TokenType};
 use lunc_utils::{Span, opt_unreachable, span};
 
 pub mod diags;
@@ -301,7 +301,7 @@ impl Lexer {
                 let mut lit = match self.lex_string_with_options(false) {
                     Ok(TokenType::Lit(lit)) => lit,
                     Ok(_) => unreachable!(),
-                    Err(_) => Literal::string(String::default()),
+                    Err(_) => Lit::string(String::default()),
                 };
 
                 if word == "c" {
@@ -316,7 +316,7 @@ impl Lexer {
                 let mut lit = match self.lex_char() {
                     Ok(TokenType::Lit(lit)) => lit,
                     Ok(_) => unreachable!(),
-                    Err(_) => Literal::char(char::default()),
+                    Err(_) => Lit::char(char::default()),
                 };
 
                 lit.tag = Some(word);
@@ -540,7 +540,7 @@ impl Lexer {
 
                         let float = base * 2.0f64.powi(exp_value);
 
-                        return Ok(TokenType::Lit(Literal::float(float)));
+                        return Ok(TokenType::Lit(Lit::float(float)));
                     }
                     Some('p' | 'P') => {
                         self.pop();
@@ -580,13 +580,13 @@ impl Lexer {
                         let int_f64 = int_part as f64;
                         let float = int_f64 * 2.0f64.powi(exp_value);
 
-                        return Ok(TokenType::Lit(Literal::float(float)));
+                        return Ok(TokenType::Lit(Lit::float(float)));
                     }
                     _ => {
                         if int_str.is_empty() {
                             self.sink.emit(NoDigitsInANonDecimal { loc: self.loc() });
                         }
-                        return Ok(TokenType::Lit(Literal::int(int_part)));
+                        return Ok(TokenType::Lit(Lit::int(int_part)));
                     }
                 }
             }
@@ -669,9 +669,9 @@ impl Lexer {
 
                 let float = base * 10.0f64.powi(exp_value);
 
-                Ok(TokenType::Lit(Literal::float(float)))
+                Ok(TokenType::Lit(Lit::float(float)))
             }
-            _ => Ok(TokenType::Lit(Literal::int(int_part))),
+            _ => Ok(TokenType::Lit(Lit::int(int_part))),
         }
     }
 
@@ -720,7 +720,7 @@ impl Lexer {
             }
         }
 
-        Ok(TokenType::Lit(Literal::string(str)))
+        Ok(TokenType::Lit(Lit::string(str)))
     }
 
     pub fn lex_char(&mut self) -> Result<TokenType> {
@@ -778,7 +778,7 @@ impl Lexer {
             }
         }
 
-        Ok(TokenType::Lit(Literal::char(c)))
+        Ok(TokenType::Lit(Lit::char(c)))
     }
 
     /// makes an escape sequence return a tuple of the character that corresponds
@@ -806,10 +806,12 @@ impl Lexer {
                     Some('{') => {
                         self.pop();
                     }
-                    _ => self.sink.emit(InvalidUnicodeEscape {
-                        note: InvalidUnicodeNote::ExpectedOpeningBrace,
-                        loc: self.loc_current_char(),
-                    }),
+                    _ => {
+                        self.sink.emit(InvalidUnicodeEscape {
+                            note: InvalidUnicodeNote::ExpectedOpeningBrace,
+                            loc: self.loc_current_char(),
+                        });
+                    }
                 }
                 let hex_str = self.lex_hexadecimal();
 
@@ -847,10 +849,12 @@ impl Lexer {
                     Some('}') => {
                         self.pop();
                     }
-                    _ => self.sink.emit(InvalidUnicodeEscape {
-                        note: InvalidUnicodeNote::ExpectedClosingBrace,
-                        loc: self.loc_current_char(),
-                    }),
+                    _ => {
+                        self.sink.emit(InvalidUnicodeEscape {
+                            note: InvalidUnicodeNote::ExpectedClosingBrace,
+                            loc: self.loc_current_char(),
+                        });
+                    }
                 }
 
                 if let Some(c) = char::from_u32(hex) {
@@ -1107,7 +1111,7 @@ impl Lexer {
         }
 
         if overflowed && !had_invalid_digit && options.emit_diags {
-            self.sink.emit(TooLargeIntegerLiteral { loc: self.loc() })
+            self.sink.emit(TooLargeIntegerLiteral { loc: self.loc() });
         }
 
         Ok((result, digit_count))

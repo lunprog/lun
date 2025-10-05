@@ -3,7 +3,7 @@
 use std::str::FromStr;
 
 use lunc_diag::FileId;
-use lunc_token::{LitKind, LitVal, Literal};
+use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::opt_unreachable;
 
 use crate::{
@@ -120,7 +120,7 @@ impl AstNode for Item {
             Some(_) => {
                 let t = parser.peek_tok().unwrap().clone();
                 // TEST: no. 1
-                Err(ExpectedToken::new("item", t.tt, None::<String>, t.loc).into_diag())
+                Err(OldExpectedToken::new("item", t.tt, None::<String>, t.loc).into_diag())
             }
             None => Err(parser.eof_diag()),
         }
@@ -222,7 +222,7 @@ pub fn parse_directive_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
             let t = parser.nth_tok(1).unwrap().clone();
             // TEST: no. 2
             Err(
-                ExpectedToken::new(TokenType::Ident(String::new()), t.tt, None::<String>, t.loc)
+                OldExpectedToken::new(TokenType::Ident(String::new()), t.tt, None::<String>, t.loc)
                     .into_diag(),
             )
         }
@@ -234,7 +234,7 @@ pub fn parse_extern_block_item(parser: &mut Parser) -> Result<Item, Diagnostic> 
     let (_, lo) = expect_token!(parser => [KwExtern, ()], KwExtern);
 
     // TEST: no. 1
-    let (LitVal::Str(abi_str), abi_loc) = expect_token!(parser => [Lit(Literal { kind: LitKind::Str, value, .. }), value.clone()], "string literal")
+    let (LitVal::Str(abi_str), abi_loc) = expect_token!(parser => [Lit(Lit { kind: LitKind::Str, value, .. }), value.clone()], "string literal")
     else {
         // SAFETY: literal is guaranteed to contain a string value, if kind is str.
         opt_unreachable!()
