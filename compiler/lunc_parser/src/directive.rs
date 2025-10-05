@@ -36,8 +36,7 @@ impl Directive {
 
 pub fn parse_mod_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
     // TEST: n/a
-    let (_, lo) =
-        expect_token!(parser => [Punct(Punctuation::Hashtag), ()], Punct(Punctuation::Hashtag));
+    let (_, lo) = expect_token!(parser => [Pound, ()], Pound);
 
     // TEST: n/a
     expect_token!(parser => [Ident(id), id.clone(), if id.as_str() == Directive::MOD_NAME], Ident(String::new()));
@@ -46,8 +45,7 @@ pub fn parse_mod_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
     let (name, _) = expect_token!(parser => [Ident(s), s.clone()], Ident(String::new()));
 
     // TEST: no. 2
-    let (_, hi) =
-        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
+    let (_, hi) = expect_token!(parser => [Semi, ()], Semi);
 
     Ok(Item::Directive(Directive::Mod {
         name,
@@ -57,15 +55,14 @@ pub fn parse_mod_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
 
 pub fn parse_import_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
     // TEST: n/a
-    let (_, lo) =
-        expect_token!(parser => [Punct(Punctuation::Hashtag), ()], Punct(Punctuation::Hashtag));
+    let (_, lo) = expect_token!(parser => [Pound, ()], Pound);
 
     // TEST: n/a
     expect_token!(parser => [Ident(id), id.clone(), if id.as_str() == Directive::IMPORT_NAME], Ident(String::new()));
 
     let path = parse!(parser => SpannedPath);
 
-    let alias = if let Some(Kw(Keyword::As)) = parser.peek_tt() {
+    let alias = if let Some(KwAs) = parser.peek_tt() {
         parser.pop();
         // TEST: no. 1
         let alias = expect_token!(noloc: parser => [Ident(id), id.clone()], Ident(String::new()));
@@ -76,8 +73,7 @@ pub fn parse_import_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
     };
 
     // TEST: no. 2
-    let (_, hi) =
-        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
+    let (_, hi) = expect_token!(parser => [Semi, ()], Semi);
 
     Ok(Item::Directive(Directive::Import {
         path,
@@ -97,11 +93,11 @@ impl AstNode for SpannedPath {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         let mut path = Vec::new();
         // TEST: no. 1
-        let (id, lo) = expect_token!(parser => [Ident(id), id.clone(); Kw(Keyword::Orb), String::from("orb")], Ident(String::new()));
+        let (id, lo) = expect_token!(parser => [Ident(id), id.clone(); KwOrb, String::from("orb")], Ident(String::new()));
         path.push(id);
 
         let mut hi = lo.clone();
-        while let Some(Punct(Punctuation::Dot)) = parser.peek_tt() {
+        while let Some(Dot) = parser.peek_tt() {
             parser.pop();
 
             // TEST: no. 2

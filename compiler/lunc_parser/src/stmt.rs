@@ -19,14 +19,13 @@ impl AstNode for Block {
         let mut stmts = Vec::new();
 
         // TEST: no. 1
-        let (_, lo) =
-            expect_token!(parser => [Punct(Punctuation::LCurly), ()], Punctuation::LCurly);
+        let (_, lo) = expect_token!(parser => [LCurly, ()], LCurly);
 
         let mut last_expr = None;
 
         loop {
             match parser.peek_tt() {
-                Some(EOF) | Some(Punct(Punctuation::RCurly)) | None => {
+                Some(EOF) | Some(RCurly) | None => {
                     break;
                 }
                 _ => {}
@@ -35,7 +34,7 @@ impl AstNode for Block {
 
             let stmt = parse!(parser => Statement);
 
-            let next_brace = matches!(parser.peek_tt(), Some(Punct(Punctuation::RCurly)));
+            let next_brace = matches!(parser.peek_tt(), Some(RCurly));
             let is_expr = stmt.is_expr();
 
             match (next_brace, is_expr) {
@@ -64,7 +63,7 @@ impl AstNode for Block {
                     stmts.push(stmt.clone());
 
                     // TEST: no. 2
-                    expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
+                    expect_token!(parser => [Semi, ()], Semi);
                 }
                 (false, true) => {
                     // here we have a statement expression, we require a
@@ -82,10 +81,10 @@ impl AstNode for Block {
                     stmts.push(stmt.clone());
                     if expr.is_expr_with_block() {
                         // TEST: n/a
-                        expect_token!(parser => [Punct(Punctuation::Semicolon), ()] else { continue; });
+                        expect_token!(parser => [Semi, ()] else { continue; });
                     } else {
                         // TEST: no. 3
-                        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
+                        expect_token!(parser => [Semi, ()], Semi);
                     }
                 }
                 (false, false) => {
@@ -93,7 +92,7 @@ impl AstNode for Block {
                     // inside we don't expect a semicolon
                     if !matches!(stmt.stmt, Stmt::Defer { ref expr } if expr.is_expr_with_block()) {
                         // TEST: no. 4
-                        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
+                        expect_token!(parser => [Semi, ()], Semi);
                     }
 
                     stmts.push(stmt.clone());
@@ -102,8 +101,7 @@ impl AstNode for Block {
         }
 
         // TEST: no. 5
-        let (_, hi) =
-            expect_token!(parser => [Punct(Punctuation::RCurly), ()], Punctuation::RCurly);
+        let (_, hi) = expect_token!(parser => [RCurly, ()], RCurly);
 
         Ok(Block {
             stmts,
@@ -153,8 +151,8 @@ pub enum Stmt {
 impl AstNode for Statement {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
         match parser.peek_tt() {
-            Some(Kw(Keyword::Let)) => parse_variable_def_stmt(parser),
-            Some(Kw(Keyword::Defer)) => parse_defer_statement(parser),
+            Some(KwLet) => parse_variable_def_stmt(parser),
+            Some(KwDefer) => parse_defer_statement(parser),
             Some(Ident(_)) if parser.is_short_variable_def() => parse_short_variable_stmt(parser),
             Some(_) => {
                 let expr = parse!(parser => Expression);
@@ -171,22 +169,17 @@ impl AstNode for Statement {
 
 impl Parser {
     pub fn is_short_variable_def(&self) -> bool {
-        matches!(self.nth_tt(1), Some(Punct(Punctuation::Colon)))
-            && !matches!(
-                self.nth_tt(2),
-                Some(
-                    Kw(Keyword::While | Keyword::For | Keyword::Loop) | Punct(Punctuation::LCurly)
-                )
-            )
+        matches!(self.nth_tt(1), Some(Colon))
+            && !matches!(self.nth_tt(2), Some(KwWhile | KwFor | KwLoop | LCurly))
     }
 }
 
 /// `"let" "mut"? ident [ ":" expr ] "=" expr`
 pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
     // TEST: n/a
-    let (_, lo) = expect_token!(parser => [Kw(Keyword::Let), ()], Kw(Keyword::Let));
+    let (_, lo) = expect_token!(parser => [KwLet, ()], KwLet);
 
-    let mutable = if let Some(Kw(Keyword::Mut)) = parser.peek_tt() {
+    let mutable = if let Some(KwMut) = parser.peek_tt() {
         parser.pop();
         true
     } else {
@@ -197,7 +190,7 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
     let (name, name_loc) =
         expect_token!(parser => [Ident(name), name.clone()], Ident(String::new()));
 
-    let typexpr = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
+    let typexpr = if let Some(Colon) = parser.peek_tt() {
         parser.pop();
         Some(parse!(@fn parser => parse_typexpr))
     } else {
@@ -205,7 +198,7 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
     };
 
     // TEST: no. 2
-    expect_token!(parser => [Punct(Punctuation::Equal), ()], Punctuation::Equal);
+    expect_token!(parser => [Eq, ()], Eq);
     let value = parse!(box: parser => Expression);
 
     let hi = value.loc.clone();
@@ -229,20 +222,20 @@ pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagn
     let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], [Ident(String::new())]);
 
     // TEST: n/a
-    expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);
+    expect_token!(parser => [Colon, ()], Colon);
 
     let typexpr = match parser.peek_tt() {
-        Some(Punct(Punctuation::Colon | Punctuation::Equal)) => None,
+        Some(Colon | Eq) => None,
         _ => Some(parse!(@fn parser => parse_typexpr)),
     };
 
     // TEST: no. 1
     let (mutable, _) = expect_token!(
         parser => [
-            Punct(Punctuation::Colon), false;
-            Punct(Punctuation::Equal), true;
+            Colon, false;
+            Eq, true;
         ],
-        [Punctuation::Colon, Punctuation::Equal]
+        [Colon, Eq]
     );
 
     let value = parse!(box: parser => Expression);
@@ -264,7 +257,7 @@ pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagn
 /// parses a defer statement
 pub fn parse_defer_statement(parser: &mut Parser) -> Result<Statement, Diagnostic> {
     // TEST: n/a
-    let ((), lo) = expect_token!(parser => [Kw(Keyword::Defer), ()], Kw(Keyword::Defer));
+    let ((), lo) = expect_token!(parser => [KwDefer, ()], KwDefer);
 
     let expr = parse!(parser => Expression);
 

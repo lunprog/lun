@@ -20,7 +20,9 @@ impl SemaChecker {
         for item in &mut module.items {
             match self.ck_item(item) {
                 Ok(()) => {}
-                Err(d) => self.sink.emit(d),
+                Err(d) => {
+                    self.sink.emit(d);
+                }
             }
         }
     }
@@ -36,7 +38,9 @@ impl SemaChecker {
         for item in items {
             match self.pre_ck_item(item) {
                 Ok(()) => {}
-                Err(d) => self.sink.emit(d),
+                Err(d) => {
+                    self.sink.emit(d);
+                }
             }
         }
     }
@@ -61,7 +65,7 @@ impl SemaChecker {
                 if typexpr.typ != Type::Type {
                     self.sink.emit(ExpectedTypeFoundExpr {
                         loc: typexpr.loc.clone().unwrap(),
-                    })
+                    });
                 }
 
                 let typ = {
@@ -101,7 +105,7 @@ impl SemaChecker {
                     if typexpr.typ != Type::Type {
                         self.sink.emit(ExpectedTypeFoundExpr {
                             loc: typexpr.loc.clone().unwrap(),
-                        })
+                        });
                     }
                 }
 
@@ -132,7 +136,9 @@ impl SemaChecker {
                 {
                     match self.ck_expr(typexpr_arg, Some(Type::Type)) {
                         Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
+                        Err(d) => {
+                            self.sink.emit(d);
+                        }
                     }
 
                     let value_typ_arg = match self.evaluate_expr(typexpr_arg) {
@@ -168,7 +174,9 @@ impl SemaChecker {
                 let ret_typ = if let Some(ret_typexpr) = rettypexpr {
                     match self.ck_expr(ret_typexpr, Some(Type::Type)) {
                         Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
+                        Err(d) => {
+                            self.sink.emit(d);
+                        }
                     }
 
                     let value_typ_ret = match self.evaluate_expr(ret_typexpr) {
@@ -234,7 +242,7 @@ impl SemaChecker {
                     if typexpr.typ != Type::Type {
                         self.sink.emit(ExpectedTypeFoundExpr {
                             loc: typexpr.loc.clone().unwrap(),
-                        })
+                        });
                     }
                 }
 
@@ -260,7 +268,9 @@ impl SemaChecker {
                 for arg in args {
                     match self.ck_expr(arg, Some(Type::Type)) {
                         Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
+                        Err(d) => {
+                            self.sink.emit(d);
+                        }
                     }
 
                     let value_typ_arg = match self.evaluate_expr(arg) {
@@ -293,7 +303,9 @@ impl SemaChecker {
                 let ret_typ = if let Some(ret_typexpr) = rettypexpr {
                     match self.ck_expr(ret_typexpr, Some(Type::Type)) {
                         Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
+                        Err(d) => {
+                            self.sink.emit(d);
+                        }
                     }
 
                     let value_typ_ret = match self.evaluate_expr(ret_typexpr) {
@@ -376,7 +388,7 @@ impl SemaChecker {
             if typexpr.typ != Type::Type {
                 self.sink.emit(ExpectedTypeFoundExpr {
                     loc: typexpr.loc.clone().unwrap(),
-                })
+                });
             }
         }
 
@@ -647,7 +659,7 @@ impl SemaChecker {
                     self.sink.emit(FunctionInGlobalMut {
                         fun: "function definition",
                         loc: loc.clone().unwrap(),
-                    })
+                    });
                 }
 
                 // set the function return type
@@ -683,7 +695,7 @@ impl SemaChecker {
                     self.sink.emit(FunctionInGlobalMut {
                         fun: "function declaration",
                         loc: loc.clone().unwrap(),
-                    })
+                    });
                 }
 
                 Ok(())
@@ -703,7 +715,7 @@ impl SemaChecker {
                     self.sink.emit(FunctionInGlobalMut {
                         fun: "function declaration",
                         loc: loc.clone().unwrap(),
-                    })
+                    });
                 }
 
                 Ok(())
@@ -766,7 +778,9 @@ impl SemaChecker {
                 for item in items {
                     match self.ck_item(item) {
                         Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
+                        Err(d) => {
+                            self.sink.emit(d);
+                        }
                     }
                 }
 
@@ -1029,7 +1043,7 @@ impl SemaChecker {
                         loc_def: sym.loc().unwrap(),
                         name_def: sym.name(),
                         loc: expr.loc.clone().unwrap(),
-                    })
+                    });
                 }
 
                 expr.typ = Type::Ptr {
@@ -1122,7 +1136,7 @@ impl SemaChecker {
                         opt_unreachable!()
                     };
 
-                    self.sink.emit(WUnusedLabel { loc, label })
+                    self.sink.emit(WUnusedLabel { loc, label });
                 }
 
                 expr.typ = if let Some(index) = index
@@ -1262,7 +1276,7 @@ impl SemaChecker {
                     if !kind.can_have_val() {
                         self.sink.emit(BreakWithValueUnsupported {
                             loc: expr.loc.clone().unwrap(),
-                        })
+                        });
                     } else if typ == Type::Unknown {
                         let info = self
                             .label_stack
@@ -1391,7 +1405,9 @@ impl SemaChecker {
             } => {
                 match self.ck_expr(typexpr, Some(Type::Type)) {
                     Ok(()) => {}
-                    Err(d) => self.sink.emit(d),
+                    Err(d) => {
+                        self.sink.emit(d);
+                    }
                 }
 
                 if typexpr.typ != Type::Type {
@@ -1406,7 +1422,9 @@ impl SemaChecker {
                 for arg in args {
                     match self.ck_expr(arg, Some(Type::Type)) {
                         Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
+                        Err(d) => {
+                            self.sink.emit(d);
+                        }
                     }
 
                     if arg.typ != Type::Type {
@@ -1419,7 +1437,9 @@ impl SemaChecker {
                 if let Some(ret) = ret {
                     match self.ck_expr(ret, Some(Type::Type)) {
                         Ok(()) => {}
-                        Err(d) => self.sink.emit(d),
+                        Err(d) => {
+                            self.sink.emit(d);
+                        }
                     }
 
                     if ret.typ != Type::Type {
@@ -1454,7 +1474,9 @@ impl SemaChecker {
         for stmt in &mut block.stmts {
             match self.ck_stmt(stmt) {
                 Ok(()) => {}
-                Err(d) => self.sink.emit(d),
+                Err(d) => {
+                    self.sink.emit(d);
+                }
             }
         }
 
@@ -1523,7 +1545,7 @@ impl SemaChecker {
                     if typexpr.typ != Type::Type {
                         self.sink.emit(ExpectedTypeFoundExpr {
                             loc: typexpr.loc.clone().unwrap(),
-                        })
+                        });
                     }
                 }
 
