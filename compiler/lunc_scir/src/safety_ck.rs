@@ -149,83 +149,86 @@ impl SemaChecker {
 
     pub fn safety_ck_expr(&mut self, expr: &ScExpression) -> Result<(), Diagnostic> {
         match &expr.expr {
-            ScExpr::IntLit(int) => {
-                if expr.typ == Type::U128 {
-                    return Ok(());
-                }
+            ScExprKind::Lit(Lit {
+                kind,
+                value,
+                tag: _,
+            }) => match (kind, value) {
+                (LitKind::Integer, LitVal::Int(int)) => {
+                    if expr.typ == Type::U128 {
+                        return Ok(());
+                    }
 
-                let range = expr.typ.integer_range(self.opts.target()).unwrap();
+                    let range = expr.typ.integer_range(self.opts.target()).unwrap();
 
-                let int: i128 = match (*int).try_into() {
-                    Ok(i) => i,
-                    Err(_) => {
+                    let int: i128 = match (*int).try_into() {
+                        Ok(i) => i,
+                        Err(_) => {
+                            let range = Idk128::I128(*range.start())..=Idk128::I128(*range.end());
+
+                            return Err(OverflowingLiteral {
+                                integer: Idk128::U128(*int),
+                                typ: expr.typ.clone(),
+                                range,
+                                loc: expr.loc.clone().unwrap(),
+                            }
+                            .into_diag());
+                        }
+                    };
+
+                    if !range.contains(&int) {
                         let range = Idk128::I128(*range.start())..=Idk128::I128(*range.end());
 
-                        return Err(OverflowingLiteral {
-                            integer: Idk128::U128(*int),
+                        self.sink.emit(OverflowingLiteral {
+                            integer: Idk128::I128(int),
+                            typ: expr.typ.clone(),
+                            range: range.clone(),
+                            loc: expr.loc.clone().unwrap(),
+                        });
+                    }
+
+                    Ok(())
+                }
+                (LitKind::Float, LitVal::Float(float)) => {
+                    let range = expr.typ.float_range().unwrap();
+
+                    if expr.typ == Type::F16 || expr.typ == Type::F128 {
+                        self.sink.emit(feature_todo! {
+                            feature: "f16 and f128 types",
+                            label: "f16 and f128 types",
+                            loc: expr.loc.clone().unwrap(),
+                        });
+                    }
+
+                    if !range.contains(float) {
+                        let range = Idk128::F64(*range.start())..=Idk128::F64(*range.end());
+
+                        self.sink.emit(OverflowingLiteral {
+                            integer: Idk128::F64(*float),
                             typ: expr.typ.clone(),
                             range,
                             loc: expr.loc.clone().unwrap(),
-                        }
-                        .into_diag());
+                        });
                     }
-                };
 
-                if !range.contains(&int) {
-                    let range = Idk128::I128(*range.start())..=Idk128::I128(*range.end());
-
-                    self.sink.emit(OverflowingLiteral {
-                        integer: Idk128::I128(int),
-                        typ: expr.typ.clone(),
-                        range: range.clone(),
-                        loc: expr.loc.clone().unwrap(),
-                    });
+                    Ok(())
                 }
-
-                Ok(())
-            }
-            ScExpr::FloatLit(float) => {
-                let range = expr.typ.float_range().unwrap();
-
-                if expr.typ == Type::F16 || expr.typ == Type::F128 {
-                    self.sink.emit(feature_todo! {
-                        feature: "f16 and f128 types",
-                        label: "f16 and f128 types",
-                        loc: expr.loc.clone().unwrap(),
-                    });
-                }
-
-                if !range.contains(float) {
-                    let range = Idk128::F64(*range.start())..=Idk128::F64(*range.end());
-
-                    self.sink.emit(OverflowingLiteral {
-                        integer: Idk128::F64(*float),
-                        typ: expr.typ.clone(),
-                        range,
-                        loc: expr.loc.clone().unwrap(),
-                    });
-                }
-
-                Ok(())
-            }
-            ScExpr::BoolLit(_)
-            | ScExpr::StringLit(_)
-            | ScExpr::CStrLit(_)
-            | ScExpr::CharLit(_)
-            | ScExpr::Ident(_) => Ok(()),
-            ScExpr::Binary { lhs, op: _, rhs } => {
+                _ => Ok(()),
+            },
+            ScExprKind::BoolLit(_) | ScExprKind::Ident(_) => Ok(()),
+            ScExprKind::Binary { lhs, op: _, rhs } => {
                 self.safety_ck_expr(lhs)?;
 
                 self.safety_ck_expr(rhs)?;
 
                 Ok(())
             }
-            ScExpr::Unary { op: _, expr } | ScExpr::Borrow { mutable: _, expr } => {
+            ScExprKind::Unary { op: _, expr } | ScExprKind::Borrow { mutable: _, expr } => {
                 self.safety_ck_expr(expr)?;
 
                 Ok(())
             }
-            ScExpr::FunCall { callee, args } => {
+            ScExprKind::FunCall { callee, args } => {
                 self.safety_ck_expr(callee)?;
 
                 for arg in args {
@@ -234,7 +237,7 @@ impl SemaChecker {
 
                 Ok(())
             }
-            ScExpr::If {
+            ScExprKind::If {
                 cond,
                 then_br,
                 else_br,
@@ -248,12 +251,12 @@ impl SemaChecker {
 
                 Ok(())
             }
-            ScExpr::Block {
+            ScExprKind::Block {
                 label: _,
                 block,
                 index: _,
             }
-            | ScExpr::Loop {
+            | ScExprKind::Loop {
                 label: _,
                 body: block,
                 index: _,
@@ -262,8 +265,8 @@ impl SemaChecker {
 
                 Ok(())
             }
-            ScExpr::Return { expr }
-            | ScExpr::Break {
+            ScExprKind::Return { expr }
+            | ScExprKind::Break {
                 label: _,
                 expr,
                 index: _,
@@ -274,14 +277,14 @@ impl SemaChecker {
 
                 Ok(())
             }
-            ScExpr::Continue { label: _, index: _ } | ScExpr::Null => Ok(()),
-            ScExpr::Field { expr, member: _ } => {
+            ScExprKind::Continue { label: _, index: _ } | ScExprKind::Null => Ok(()),
+            ScExprKind::Field { expr, member: _ } => {
                 self.safety_ck_expr(expr)?;
 
                 Ok(())
             }
-            ScExpr::QualifiedPath { path: _, sym: _ } | ScExpr::Underscore => Ok(()),
-            ScExpr::PointerType {
+            ScExprKind::QualifiedPath { path: _, sym: _ } | ScExprKind::Underscore => Ok(()),
+            ScExprKind::PointerType {
                 mutable: _,
                 typexpr,
             } => {
@@ -289,7 +292,7 @@ impl SemaChecker {
 
                 Ok(())
             }
-            ScExpr::FunPtrType { args, ret } => {
+            ScExprKind::FunPtrType { args, ret } => {
                 for arg in args {
                     match self.safety_ck_expr(arg) {
                         Ok(()) => {}
@@ -305,7 +308,7 @@ impl SemaChecker {
 
                 Ok(())
             }
-            ScExpr::Poisoned { diag: _ } => Ok(()),
+            ScExprKind::Poisoned { diag: _ } => Ok(()),
         }
     }
 

@@ -713,6 +713,12 @@ impl Lit {
     }
 }
 
+impl Display for Lit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.kind, self.value)
+    }
+}
+
 /// A kind of literal token
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum LitKind {

@@ -1,7 +1,7 @@
 //! Parsing of lun's expressions.
 
 use lunc_ast::{BinOp, UnOp};
-use lunc_token::{Lit, LitKind, LitVal};
+use lunc_token::Lit;
 use lunc_utils::opt_unreachable;
 
 use crate::stmt::Block;
@@ -19,7 +19,7 @@ pub enum Associativity {
 /// Expression in lun.
 #[derive(Debug, Clone)]
 pub struct Expression {
-    pub expr: Expr,
+    pub kind: ExprKind,
     pub loc: Span,
 }
 
@@ -27,14 +27,14 @@ impl Expression {
     /// Is the expression `ExpressionWithBlock`?
     pub fn is_expr_with_block(&self) -> bool {
         matches!(
-            self.expr,
-            Expr::If(_)
-                | Expr::Block(_)
-                | Expr::BlockWithLabel { .. }
-                | Expr::PredicateLoop { .. }
-                | Expr::IteratorLoop { .. }
-                | Expr::FunDefinition { .. }
-                | Expr::InfiniteLoop { .. }
+            self.kind,
+            ExprKind::If(_)
+                | ExprKind::Block(_)
+                | ExprKind::BlockWithLabel { .. }
+                | ExprKind::PredicateLoop { .. }
+                | ExprKind::IteratorLoop { .. }
+                | ExprKind::FunDefinition { .. }
+                | ExprKind::InfiniteLoop { .. }
         )
     }
 }
@@ -67,32 +67,17 @@ impl AstNode for Expression {
     }
 }
 
+/// Kind of expression.
 #[derive(Debug, Clone)]
-pub enum Expr {
-    /// integer literal expression
-    ///
-    /// `integer`
-    IntLit(u128),
+pub enum ExprKind {
     /// boolean literal expression
     ///
     /// `"true" | "false"`
     BoolLit(bool),
-    /// string literal expression
+    /// literal expression
     ///
-    /// `string`
-    StringLit(String),
-    /// C string literal expression
-    ///
-    /// *specialized string, with prefix 'c'*
-    CStrLit(String),
-    /// character literal expression
-    ///
-    /// `char`
-    CharLit(char),
-    /// float literal expression
-    ///
-    /// `float`
-    FloatLit(f64),
+    /// `integer | string | c_str | char | float`
+    Lit(Lit),
     /// grouping expression (just parenthesis)
     ///
     /// `"(" expr ")"`
@@ -275,26 +260,8 @@ pub fn parse_expr_precedence(
     // TODO: parsing of range expressions, `expr..<expr` and `expr..=expr`, and
     // maybe `..<expr`, `..=expr` and maybe `expr..`
     let mut lhs = match parser.peek_tt() {
-        Some(Lit(Lit {
-            kind: LitKind::Integer,
-            ..
-        })) => parse!(@fn parser => parse_intlit_expr),
+        Some(Lit(..)) => parse!(@fn parser => parse_lit_expr),
         Some(KwTrue | KwFalse) => parse!(@fn parser => parse_boollit_expr),
-        Some(Lit(Lit {
-            kind: LitKind::Str, ..
-        })) => parse!(@fn parser => parse_strlit_expr),
-        Some(Lit(Lit {
-            kind: LitKind::CStr,
-            ..
-        })) => parse!(@fn parser => parse_cstrlit_expr),
-        Some(Lit(Lit {
-            kind: LitKind::Char,
-            ..
-        })) => parse!(@fn parser => parse_charlit_expr),
-        Some(Lit(Lit {
-            kind: LitKind::Float,
-            ..
-        })) => parse!(@fn parser => parse_floatlit_expr),
         Some(LParen) => parse!(@fn parser => parse_grouping_expr),
         Some(And) => parse!(@fn parser => parse_borrow_expr),
         Some(Ident(_)) if !typexpr && parser.is_labeled_expr() => match parser.nth_tt(2) {
@@ -382,17 +349,13 @@ impl Parser {
     }
 }
 
-/// Parse an integer literal expression
-pub fn parse_intlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
+/// Parse a literal expression
+pub fn parse_lit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     // TEST: n/a
-    let (LitVal::Int(i), loc) = expect_token!(parser => [Lit(Lit { kind: LitKind::Integer, value, .. }), value.clone()], "integer literal")
-    else {
-        // SAFETY: guaranteed to be a int value, if kind is integer.
-        opt_unreachable!()
-    };
+    let (lit, loc) = expect_token!(parser => [Lit(lit), lit.clone()], "literal");
 
     Ok(Expression {
-        expr: Expr::IntLit(i),
+        kind: ExprKind::Lit(lit),
         loc,
     })
 }
@@ -403,67 +366,7 @@ pub fn parse_boollit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic>
     let (b, loc) = expect_token!(parser => [KwTrue, true; KwFalse, false], "bool literal");
 
     Ok(Expression {
-        expr: Expr::BoolLit(b),
-        loc,
-    })
-}
-
-/// Parse a string literal expression
-pub fn parse_strlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (LitVal::Str(str), loc) = expect_token!(parser => [Lit(Lit { kind: LitKind::Str, value, .. }), value.clone()], "string literal")
-    else {
-        // SAFETY: guaranteed to be a str value, if kind is string.
-        opt_unreachable!()
-    };
-
-    Ok(Expression {
-        expr: Expr::StringLit(str),
-        loc,
-    })
-}
-
-/// Parse a C string literal expression
-pub fn parse_cstrlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (LitVal::Str(str), loc) = expect_token!(parser => [Lit(Lit { kind: LitKind::CStr, value, .. }), value.clone()], "string literal")
-    else {
-        // SAFETY: guaranteed to be a str value, if kind is string.
-        opt_unreachable!()
-    };
-
-    Ok(Expression {
-        expr: Expr::CStrLit(str),
-        loc,
-    })
-}
-
-/// Parses a character literal expression
-pub fn parse_charlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (LitVal::Char(char), loc) = expect_token!(parser => [Lit(Lit { kind: LitKind::Char, value, .. }), value.clone()], "string literal")
-    else {
-        // SAFETY: guaranteed to be a char value, if kind is char.
-        opt_unreachable!()
-    };
-
-    Ok(Expression {
-        expr: Expr::CharLit(char),
-        loc,
-    })
-}
-
-/// Parses a float literal expression
-pub fn parse_floatlit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (LitVal::Float(float), loc) = expect_token!(parser => [Lit(Lit {kind: LitKind::Float, value, ..}), value.clone()], "float literal")
-    else {
-        // SAFETY: guaranteed to be a float value, if kind is float
-        opt_unreachable!()
-    };
-
-    Ok(Expression {
-        expr: Expr::FloatLit(float),
+        kind: ExprKind::BoolLit(b),
         loc,
     })
 }
@@ -477,7 +380,7 @@ pub fn parse_grouping_expr(parser: &mut Parser) -> Result<Expression, Diagnostic
     let ((), hi) = expect_token!(parser => [RParen, ()], [RParen]);
 
     Ok(Expression {
-        expr: Expr::Grouping(expr),
+        kind: ExprKind::Grouping(expr),
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -488,7 +391,7 @@ pub fn parse_ident_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (id, loc) = expect_token!(parser => [Ident(s), s.clone()], Ident(String::new()));
 
     Ok(Expression {
-        expr: Expr::Ident(id),
+        kind: ExprKind::Ident(id),
         loc,
     })
 }
@@ -647,7 +550,7 @@ pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> Result<Express
     let loc = Span::from_ends(lhs.loc.clone(), rhs.loc.clone());
 
     Ok(Expression {
-        expr: Expr::Binary {
+        kind: ExprKind::Binary {
             lhs: Box::new(lhs),
             op,
             rhs: Box::new(rhs),
@@ -679,7 +582,7 @@ pub fn parse_unary_left_expr(parser: &mut Parser) -> Result<Expression, Diagnost
 
     Ok(Expression {
         loc: Span::from_ends(lo, expr.loc.clone()),
-        expr: Expr::Unary { op, expr },
+        kind: ExprKind::Unary { op, expr },
     })
 }
 
@@ -709,7 +612,7 @@ pub fn parse_funcall_expr(
     let ((), hi) = expect_token!(parser => [RParen, ()], RParen);
 
     Ok(Expression {
-        expr: Expr::FunCall {
+        kind: ExprKind::FunCall {
             callee: called,
             args,
         },
@@ -769,7 +672,7 @@ pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
             let hi = body.loc.clone();
 
             Ok(Expression {
-                expr: Expr::FunDefinition {
+                kind: ExprKind::FunDefinition {
                     args,
                     rettypexpr,
                     body,
@@ -799,7 +702,7 @@ pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
                     .unwrap_or(hi_paren);
 
                 Ok(Expression {
-                    expr: Expr::FunDeclaration {
+                    kind: ExprKind::FunDeclaration {
                         args: Vec::new(),
                         rettypexpr,
                     },
@@ -812,7 +715,7 @@ pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
                 let hi = body.loc.clone();
 
                 Ok(Expression {
-                    expr: Expr::FunDefinition {
+                    kind: ExprKind::FunDefinition {
                         args: Vec::new(),
                         rettypexpr,
                         body,
@@ -854,7 +757,7 @@ pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
                 .unwrap_or(hi_paren);
 
             Ok(Expression {
-                expr: Expr::FunDeclaration { args, rettypexpr },
+                kind: ExprKind::FunDeclaration { args, rettypexpr },
                 loc: Span::from_ends(lo, hi),
             })
         }
@@ -881,7 +784,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
             let else_branch = match parser.peek_tt() {
                 Some(KwIf) => {
                     let Expression {
-                        expr: Expr::If(if_expr),
+                        kind: ExprKind::If(if_expr),
                         loc: _,
                     } = parse!(@fn parser => parse_if_else_expr, true)
                     else {
@@ -922,7 +825,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
         let loc = Span::from_ends(lo, hi);
 
         Ok(Expression {
-            expr: Expr::If(IfExpression {
+            kind: ExprKind::If(IfExpression {
                 cond,
                 body,
                 else_br,
@@ -944,7 +847,7 @@ pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expre
         let hi = false_val.loc.clone();
 
         Ok(Expression {
-            expr: Expr::IfThenElse {
+            kind: ExprKind::IfThenElse {
                 cond,
                 true_val,
                 false_val,
@@ -980,7 +883,7 @@ pub fn parse_block_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
         let hi = block.loc.clone();
 
         return Ok(Expression {
-            expr: Expr::BlockWithLabel { label, block },
+            kind: ExprKind::BlockWithLabel { label, block },
             loc: Span::from_ends(lo, hi),
         });
     }
@@ -989,7 +892,7 @@ pub fn parse_block_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let loc = block.loc.clone();
 
     Ok(Expression {
-        expr: Expr::Block(block),
+        kind: ExprKind::Block(block),
         loc,
     })
 }
@@ -1020,7 +923,7 @@ pub fn parse_predicate_loop_expr(parser: &mut Parser) -> Result<Expression, Diag
     let hi = body.loc.clone();
 
     Ok(Expression {
-        expr: Expr::PredicateLoop { label, cond, body },
+        kind: ExprKind::PredicateLoop { label, cond, body },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1060,7 +963,7 @@ pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
     let loc = Span::from_ends(lo, hi);
 
     Ok(Expression {
-        expr: Expr::IteratorLoop {
+        kind: ExprKind::IteratorLoop {
             label,
             variable,
             iterator,
@@ -1096,7 +999,7 @@ pub fn parse_infinite_loop_expr(parser: &mut Parser) -> Result<Expression, Diagn
     let hi = block.loc.clone();
 
     Ok(Expression {
-        expr: Expr::InfiniteLoop { label, body: block },
+        kind: ExprKind::InfiniteLoop { label, body: block },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1117,7 +1020,7 @@ pub fn parse_return_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
     };
 
     Ok(Expression {
-        expr: Expr::Return { expr: val },
+        kind: ExprKind::Return { expr: val },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1155,7 +1058,7 @@ pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     };
 
     Ok(Expression {
-        expr: Expr::Break { label, expr },
+        kind: ExprKind::Break { label, expr },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1182,7 +1085,7 @@ pub fn parse_continue_expr(parser: &mut Parser) -> Result<Expression, Diagnostic
     };
 
     Ok(Expression {
-        expr: Expr::Continue { label },
+        kind: ExprKind::Continue { label },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1193,7 +1096,7 @@ pub fn parse_null_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (_, loc) = expect_token!(parser => [KwNull, ()], KwNull);
 
     Ok(Expression {
-        expr: Expr::Null,
+        kind: ExprKind::Null,
         loc,
     })
 }
@@ -1204,7 +1107,7 @@ pub fn parse_orb_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
     let (_, loc) = expect_token!(parser => [KwOrb, ()], KwOrb);
 
     Ok(Expression {
-        expr: Expr::Orb,
+        kind: ExprKind::Orb,
         loc,
     })
 }
@@ -1247,7 +1150,7 @@ pub fn parse_funptr_type_expr(parser: &mut Parser) -> Result<Expression, Diagnos
     };
 
     Ok(Expression {
-        expr: Expr::FunPtrType { args, ret },
+        kind: ExprKind::FunPtrType { args, ret },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1268,7 +1171,7 @@ pub fn parse_pointer_type_expr(parser: &mut Parser) -> Result<Expression, Diagno
     let hi = typexpr.loc.clone();
 
     Ok(Expression {
-        expr: Expr::PointerType { mutable, typexpr },
+        kind: ExprKind::PointerType { mutable, typexpr },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1298,7 +1201,7 @@ pub fn parse_unary_right_expr(
     };
 
     Ok(Expression {
-        expr: Expr::Unary {
+        kind: ExprKind::Unary {
             op,
             expr: Box::new(lhs),
         },
@@ -1322,7 +1225,7 @@ pub fn parse_borrow_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> 
     let hi = val.loc.clone();
 
     Ok(Expression {
-        expr: Expr::Borrow { mutable, expr: val },
+        kind: ExprKind::Borrow { mutable, expr: val },
         loc: Span::from_ends(lo, hi),
     })
 }
@@ -1337,7 +1240,7 @@ pub fn parse_field_expr(parser: &mut Parser, expr: Expression) -> Result<Express
     let loc = Span::from_ends(expr.loc.clone(), hi);
 
     Ok(Expression {
-        expr: Expr::Field {
+        kind: ExprKind::Field {
             expr: Box::new(expr),
             member,
         },

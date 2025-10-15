@@ -20,10 +20,11 @@ use lunc_llib_meta::ModuleTree;
 use lunc_parser::{
     Parser,
     directive::Directive,
-    expr::{Arg, Else, Expr, Expression, IfExpression},
+    expr::{Arg, Else, ExprKind, Expression, IfExpression},
     item::{Item, Module},
     stmt::{Block, Statement, Stmt},
 };
+use lunc_token::Lit;
 use lunc_utils::{FromHigher, Span, lower, opt_unreachable};
 
 pub use lunc_parser::{directive::SpannedPath, item::Abi};
@@ -214,19 +215,19 @@ impl FromHigher for DsItem {
 /// [`Expression`]: lunc_parser::expr::Expression
 #[derive(Debug, Clone)]
 pub struct DsExpression {
-    pub expr: DsExpr,
+    pub expr: DsExprKind,
     pub loc: OSpan,
 }
 
 impl DsExpression {
     /// Is the expression a function definition?
     pub fn is_fundef(&self) -> bool {
-        matches!(self.expr, DsExpr::FunDefinition { .. })
+        matches!(self.expr, DsExprKind::FunDefinition { .. })
     }
 
     /// Is the expression a function declaration?
     pub fn is_fundecl(&self) -> bool {
-        matches!(self.expr, DsExpr::FunDeclaration { .. })
+        matches!(self.expr, DsExprKind::FunDeclaration { .. })
     }
 }
 
@@ -234,51 +235,47 @@ impl FromHigher for DsExpression {
     type Higher = Expression;
 
     fn lower(node: Self::Higher) -> Self {
-        let expr = match node.expr {
-            Expr::IntLit(i) => DsExpr::IntLit(i),
-            Expr::BoolLit(b) => DsExpr::BoolLit(b),
-            Expr::StringLit(str) => DsExpr::StringLit(str),
-            Expr::CStrLit(cstr) => DsExpr::CStrLit(cstr),
-            Expr::CharLit(c) => DsExpr::CharLit(c),
-            Expr::FloatLit(f) => DsExpr::FloatLit(f),
+        let expr = match node.kind {
+            ExprKind::Lit(lit) => DsExprKind::Lit(lit),
+            ExprKind::BoolLit(b) => DsExprKind::BoolLit(b),
             // we remove the parenthesis we don't need them anymore
-            Expr::Grouping(e) => return lower(*e),
-            Expr::Ident(id) => DsExpr::Ident(LazySymbol::Name(id)),
-            Expr::Binary { lhs, op, rhs } => DsExpr::Binary {
+            ExprKind::Grouping(e) => return lower(*e),
+            ExprKind::Ident(id) => DsExprKind::Ident(LazySymbol::Name(id)),
+            ExprKind::Binary { lhs, op, rhs } => DsExprKind::Binary {
                 lhs: lower(lhs),
                 op,
                 rhs: lower(rhs),
             },
-            Expr::Unary { op, expr } => DsExpr::Unary {
+            ExprKind::Unary { op, expr } => DsExprKind::Unary {
                 op,
                 expr: lower(expr),
             },
-            Expr::Borrow { mutable, expr } => DsExpr::Borrow {
+            ExprKind::Borrow { mutable, expr } => DsExprKind::Borrow {
                 mutable,
                 expr: lower(expr),
             },
-            Expr::FunCall {
+            ExprKind::FunCall {
                 callee: called,
                 args,
-            } => DsExpr::FunCall {
+            } => DsExprKind::FunCall {
                 callee: lower(called),
                 args: lower(args),
             },
-            Expr::If(ifexpr) => lower_if_expression(ifexpr),
-            Expr::IfThenElse {
+            ExprKind::If(ifexpr) => lower_if_expression(ifexpr),
+            ExprKind::IfThenElse {
                 cond,
                 true_val,
                 false_val,
-            } => DsExpr::If {
+            } => DsExprKind::If {
                 cond: lower(cond),
                 then_br: lower(true_val),
                 else_br: Some(lower(false_val)),
             },
-            Expr::Block(block) => DsExpr::Block {
+            ExprKind::Block(block) => DsExprKind::Block {
                 label: None,
                 block: lower(block),
             },
-            Expr::BlockWithLabel { label, block } => DsExpr::Block {
+            ExprKind::BlockWithLabel { label, block } => DsExprKind::Block {
                 label: Some(label),
                 block: lower(block),
             },
@@ -308,7 +305,7 @@ impl FromHigher for DsExpression {
             // NOTE: if you modify the desugaring of while expression, this
             // might break the detection of while expression in the SCIR in
             // file `lunc_scir/src/checking.rs` in the function `ck_expr`
-            Expr::PredicateLoop { label, cond, body } => DsExpr::Loop {
+            ExprKind::PredicateLoop { label, cond, body } => DsExprKind::Loop {
                 label: label.clone(),
                 body: block(
                     body.loc.clone(),
@@ -323,47 +320,47 @@ impl FromHigher for DsExpression {
                     None,
                 ),
             },
-            Expr::IteratorLoop { loc, .. } => DsExpr::Poisoned {
+            ExprKind::IteratorLoop { loc, .. } => DsExprKind::Poisoned {
                 diag: Some(feature_todo! {
                     feature: "iterator loop",
                     label: "traits and iterators aren't yet implemented",
                     loc: loc,
                 }),
             },
-            Expr::InfiniteLoop { label, body } => DsExpr::Loop {
+            ExprKind::InfiniteLoop { label, body } => DsExprKind::Loop {
                 label,
                 body: lower(body),
             },
-            Expr::Return { expr: val } => DsExpr::Return { expr: lower(val) },
-            Expr::Break { label, expr: val } => DsExpr::Break {
+            ExprKind::Return { expr: val } => DsExprKind::Return { expr: lower(val) },
+            ExprKind::Break { label, expr: val } => DsExprKind::Break {
                 label,
                 expr: lower(val),
             },
-            Expr::Continue { label } => DsExpr::Continue { label },
-            Expr::Null => DsExpr::Null,
-            Expr::Field { expr, member } => DsExpr::Field {
+            ExprKind::Continue { label } => DsExprKind::Continue { label },
+            ExprKind::Null => DsExprKind::Null,
+            ExprKind::Field { expr, member } => DsExprKind::Field {
                 expr: lower(expr),
                 member,
             },
-            Expr::Orb => DsExpr::Ident(LazySymbol::Name("orb".to_string())),
-            Expr::FunDefinition {
+            ExprKind::Orb => DsExprKind::Ident(LazySymbol::Name("orb".to_string())),
+            ExprKind::FunDefinition {
                 args,
                 rettypexpr,
                 body,
-            } => DsExpr::FunDefinition {
+            } => DsExprKind::FunDefinition {
                 args: lower(args),
                 rettypexpr: lower(rettypexpr),
                 body: lower(body),
             },
-            Expr::FunDeclaration { args, rettypexpr } => DsExpr::FunDeclaration {
+            ExprKind::FunDeclaration { args, rettypexpr } => DsExprKind::FunDeclaration {
                 args: lower(args),
                 rettypexpr: lower(rettypexpr),
             },
-            Expr::PointerType { mutable, typexpr } => DsExpr::PointerType {
+            ExprKind::PointerType { mutable, typexpr } => DsExprKind::PointerType {
                 mutable,
                 typexpr: lower(typexpr),
             },
-            Expr::FunPtrType { args, ret } => DsExpr::FunPtrType {
+            ExprKind::FunPtrType { args, ret } => DsExprKind::FunPtrType {
                 args: lower(args),
                 ret: lower(ret),
             },
@@ -376,8 +373,8 @@ impl FromHigher for DsExpression {
     }
 }
 
-pub fn lower_if_expression(ifexpr: IfExpression) -> DsExpr {
-    DsExpr::If {
+pub fn lower_if_expression(ifexpr: IfExpression) -> DsExprKind {
+    DsExprKind::If {
         cond: lower(ifexpr.cond),
         then_br: Box::new(DsExpression {
             expr: expr_block(lower(*ifexpr.body)).expr,
@@ -397,121 +394,101 @@ pub fn lower_if_expression(ifexpr: IfExpression) -> DsExpr {
     }
 }
 
-/// A desugared expression internal, see the sweet version [`Expr`]
+/// A desugared expression internal, see the sweet version [`ExprKind`]
 ///
-/// [`Expr`]: lunc_parser::expr::Expr
+/// [`ExprKind`]: lunc_parser::expr::ExprKind
 #[derive(Debug, Clone)]
-pub enum DsExpr {
-    /// See [`Expr::IntLit`]
+pub enum DsExprKind {
+    /// See [`ExprKind::Lit`]
     ///
-    /// [`Expr::IntLit`]: lunc_parser::expr::Expr::IntLit
-    IntLit(u128),
-    /// See [`Expr::BoolLit`]
+    /// [`ExprKind::Lit`]: lunc_parser::expr::ExprKind::Lit
+    Lit(Lit),
+    /// See [`ExprKind::BoolLit`]
     ///
-    /// [`Expr::BoolLit`]: lunc_parser::expr::Expr::BoolLit
+    /// [`ExprKind::BoolLit`]: lunc_parser::expr::ExprKind::BoolLit
     BoolLit(bool),
-    /// See [`Expr::StringLit`]
+    /// See [`ExprKind::Ident`]
     ///
-    /// [`Expr::StringLit`]: lunc_parser::expr::Expr::StringLit
-    StringLit(String),
-    /// See [`Expr::CStrLit`]
-    ///
-    /// [`Expr::CStrLit`]: lunc_parser::expr::Expr::CStrLit
-    CStrLit(String),
-    /// See [`Expr::CharLit`]
-    ///
-    /// [`Expr::CharLit`]: lunc_parser::expr::Expr::CharLit
-    CharLit(char),
-    /// See [`Expr::FloatLit`]
-    ///
-    /// [`Expr::FloatLit`]: lunc_parser::expr::Expr::FloatLit
-    FloatLit(f64),
-    /// See [`Expr::Ident`]
-    ///
-    /// [`Expr::Ident`]: lunc_parser::expr::Expr::Ident
+    /// [`ExprKind::Ident`]: lunc_parser::expr::ExprKind::Ident
     Ident(LazySymbol),
-    /// See [`Expr::Binary`]
+    /// See [`ExprKind::Binary`]
     ///
-    /// [`Expr::Binary`]: lunc_parser::expr::Expr::Binary
+    /// [`ExprKind::Binary`]: lunc_parser::expr::ExprKind::Binary
     Binary {
         lhs: Box<DsExpression>,
         op: BinOp,
         rhs: Box<DsExpression>,
     },
-    /// See [`Expr::Unary`]
+    /// See [`ExprKind::Unary`]
     ///
-    /// [`Expr::Unary`]: lunc_parser::expr::Expr::Unary
+    /// [`ExprKind::Unary`]: lunc_parser::expr::ExprKind::Unary
     Unary { op: UnOp, expr: Box<DsExpression> },
-    /// See [`Expr::Borrow`]
+    /// See [`ExprKind::Borrow`]
     ///
-    /// [`Expr::Borrow`]: lunc_parser::expr::Expr::Borrow
+    /// [`ExprKind::Borrow`]: lunc_parser::expr::ExprKind::Borrow
     Borrow {
         mutable: bool,
         expr: Box<DsExpression>,
     },
-    /// See [`Expr::FunCall`]
+    /// See [`ExprKind::FunCall`]
     ///
-    /// [`Expr::FunCall`]: lunc_parser::expr::Expr::FunCall
+    /// [`ExprKind::FunCall`]: lunc_parser::expr::ExprKind::FunCall
     FunCall {
         callee: Box<DsExpression>,
         args: Vec<DsExpression>,
     },
-    /// See [`Expr::If`] and [`Expr::IfThenElse`]
+    /// See [`ExprKind::If`] and [`ExprKind::IfThenElse`]
     ///
-    /// [`Expr::If`]: lunc_parser::expr::Expr::If
-    /// [`Expr::IfThenElse`]: lunc_parser::expr::Expr::IfThenElse
+    /// [`ExprKind::If`]: lunc_parser::expr::ExprKind::If
+    /// [`ExprKind::IfThenElse`]: lunc_parser::expr::ExprKind::IfThenElse
     If {
         cond: Box<DsExpression>,
         then_br: Box<DsExpression>,
         else_br: Option<Box<DsExpression>>,
     },
-    /// See [`Expr::Block`]
+    /// See [`ExprKind::Block`]
     ///
-    /// [`Expr::Block`]: lunc_parser::expr::Expr::Block
+    /// [`ExprKind::Block`]: lunc_parser::expr::ExprKind::Block
     Block {
         label: Option<(String, Span)>,
         block: DsBlock,
     },
-    /// See [`Expr::InfiniteLoop`], [`Expr::IteratorLoop`] and [`Expr::PredicateLoop`].
+    /// See [`ExprKind::InfiniteLoop`], [`ExprKind::IteratorLoop`] and [`ExprKind::PredicateLoop`].
     ///
-    /// [`Expr::InfiniteLoop`]: lunc_parser::expr::Expr::InfiniteLoop
-    /// [`Expr::IteratorLoop`]: lunc_parser::expr::Expr::IteratorLoop
-    /// [`Expr::PredicateLoop`]: lunc_parser::expr::Expr::PredicateLoop
+    /// [`ExprKind::InfiniteLoop`]: lunc_parser::expr::ExprKind::InfiniteLoop
+    /// [`ExprKind::IteratorLoop`]: lunc_parser::expr::ExprKind::IteratorLoop
+    /// [`ExprKind::PredicateLoop`]: lunc_parser::expr::ExprKind::PredicateLoop
     Loop {
         label: Option<(String, Span)>,
         body: DsBlock,
     },
-    /// See [`Expr::Return`]
+    /// See [`ExprKind::Return`]
     ///
-    /// [`Expr::Return`]: lunc_parser::expr::Expr::Return
+    /// [`ExprKind::Return`]: lunc_parser::expr::ExprKind::Return
     Return { expr: Option<Box<DsExpression>> },
-    /// See [`Expr::Break`]
+    /// See [`ExprKind::Break`]
     ///
-    /// [`Expr::Break`]: lunc_parser::expr::Expr::Break
+    /// [`ExprKind::Break`]: lunc_parser::expr::ExprKind::Break
     Break {
         label: Option<String>,
         expr: Option<Box<DsExpression>>,
     },
-    /// See [`Expr::Continue`]
+    /// See [`ExprKind::Continue`]
     ///
-    /// [`Expr::Continue`]: lunc_parser::expr::Expr::Continue
+    /// [`ExprKind::Continue`]: lunc_parser::expr::ExprKind::Continue
     Continue { label: Option<String> },
-    /// See [`Expr::Null`]
+    /// See [`ExprKind::Null`]
     ///
-    /// [`Expr::Null`]: lunc_parser::expr::Expr::Null
+    /// [`ExprKind::Null`]: lunc_parser::expr::ExprKind::Null
     Null,
-    /// See [`Expr::Field`]
+    /// See [`ExprKind::Field`]
     ///
     /// After the name resolution, member access of modules are converted to [`EffectivePath`]
-    /// [`Expr::Field`]: lunc_parser::expr::Expr::Field
+    /// [`ExprKind::Field`]: lunc_parser::expr::ExprKind::Field
     Field {
         expr: Box<DsExpression>,
         member: String,
     },
-    // /// See [`Expr::Orb`]
-    // ///
-    // /// [`Expr::Orb`]: lunc_parser::expr::Expr::Orb
-    // Orb,
     /// Constructed from member access, eg:
     ///
     /// `orb.driver.run` are member accesses and it refers to a function "run",
@@ -525,31 +502,31 @@ pub enum DsExpr {
     /// Constructed from the lazy ident `_`, but only in certain cases, like
     /// when it's part of an assignment like so: `_ = expr`
     Underscore,
-    /// See [`Expr::FunDefinition`]
+    /// See [`ExprKind::FunDefinition`]
     ///
-    /// [`Expr::FunDefinition`]: lunc_parser::expr::Expr::FunDefinition
+    /// [`ExprKind::FunDefinition`]: lunc_parser::expr::ExprKind::FunDefinition
     FunDefinition {
         args: Vec<DsArg>,
         rettypexpr: Option<Box<DsExpression>>,
         body: DsBlock,
     },
-    /// See [`Expr::FunDeclaration`]
+    /// See [`ExprKind::FunDeclaration`]
     ///
-    /// [`Expr::FunDeclaration`]: lunc_parser::expr::Expr::FunDeclaration
+    /// [`ExprKind::FunDeclaration`]: lunc_parser::expr::ExprKind::FunDeclaration
     FunDeclaration {
         args: Vec<DsExpression>,
         rettypexpr: Option<Box<DsExpression>>,
     },
-    /// See [`Expr::PointerType`]
+    /// See [`ExprKind::PointerType`]
     ///
-    /// [`Expr::PointerType`]: lunc_parser::expr::Expr::PointerType
+    /// [`ExprKind::PointerType`]: lunc_parser::expr::ExprKind::PointerType
     PointerType {
         mutable: bool,
         typexpr: Box<DsExpression>,
     },
-    /// See [`Expr::FunPtrType`]
+    /// See [`ExprKind::FunPtrType`]
     ///
-    /// [`Expr::FunPtrType`]: lunc_parser::expr::Expr::FunPtrType
+    /// [`ExprKind::FunPtrType`]: lunc_parser::expr::ExprKind::FunPtrType
     FunPtrType {
         args: Vec<DsExpression>,
         ret: Option<Box<DsExpression>>,
@@ -564,7 +541,7 @@ pub enum DsExpr {
     Poisoned { diag: Option<Diagnostic> },
 }
 
-impl DsExpr {
+impl DsExprKind {
     pub fn is_fundef(&self) -> bool {
         matches!(self, Self::FunDefinition { .. })
     }
@@ -577,7 +554,7 @@ impl DsExpr {
 /// Creates an integer expression without location.
 pub fn expr_int(i: impl Into<u128>) -> DsExpression {
     DsExpression {
-        expr: DsExpr::IntLit(i.into()),
+        expr: DsExprKind::Lit(Lit::int(i.into())),
         loc: None,
     }
 }
@@ -585,7 +562,7 @@ pub fn expr_int(i: impl Into<u128>) -> DsExpression {
 /// Creates an boolean expression without location.
 pub fn expr_bool(b: bool) -> DsExpression {
     DsExpression {
-        expr: DsExpr::BoolLit(b),
+        expr: DsExprKind::BoolLit(b),
         loc: None,
     }
 }
@@ -593,7 +570,7 @@ pub fn expr_bool(b: bool) -> DsExpression {
 /// Creates an string expression without location.
 pub fn expr_string(str: impl ToString) -> DsExpression {
     DsExpression {
-        expr: DsExpr::StringLit(str.to_string()),
+        expr: DsExprKind::Lit(Lit::string(str.to_string())),
         loc: None,
     }
 }
@@ -601,7 +578,7 @@ pub fn expr_string(str: impl ToString) -> DsExpression {
 /// Creates an character expression without location.
 pub fn expr_char(c: impl Into<char>) -> DsExpression {
     DsExpression {
-        expr: DsExpr::CharLit(c.into()),
+        expr: DsExprKind::Lit(Lit::char(c.into())),
         loc: None,
     }
 }
@@ -609,7 +586,7 @@ pub fn expr_char(c: impl Into<char>) -> DsExpression {
 /// Creates an character expression without location.
 pub fn expr_float(f: f64) -> DsExpression {
     DsExpression {
-        expr: DsExpr::FloatLit(f),
+        expr: DsExprKind::Lit(Lit::float(f)),
         loc: None,
     }
 }
@@ -617,7 +594,7 @@ pub fn expr_float(f: f64) -> DsExpression {
 /// Creates an ident expression without location.
 pub fn expr_ident(id: impl Into<LazySymbol>) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Ident(id.into()),
+        expr: DsExprKind::Ident(id.into()),
         loc: None,
     }
 }
@@ -625,7 +602,7 @@ pub fn expr_ident(id: impl Into<LazySymbol>) -> DsExpression {
 /// Creates a binary expression without location.
 pub fn expr_binary(lhs: DsExpression, op: BinOp, rhs: DsExpression) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Binary {
+        expr: DsExprKind::Binary {
             lhs: Box::new(lhs),
             op,
             rhs: Box::new(rhs),
@@ -637,7 +614,7 @@ pub fn expr_binary(lhs: DsExpression, op: BinOp, rhs: DsExpression) -> DsExpress
 /// Creates a unary expression without location.
 pub fn expr_unary(op: UnOp, expr: DsExpression) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Unary {
+        expr: DsExprKind::Unary {
             op,
             expr: Box::new(expr),
         },
@@ -648,7 +625,7 @@ pub fn expr_unary(op: UnOp, expr: DsExpression) -> DsExpression {
 /// Creates an address of expression without location.
 pub fn expr_borrow(mutable: bool, val: DsExpression) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Borrow {
+        expr: DsExprKind::Borrow {
             mutable,
             expr: Box::new(val),
         },
@@ -662,7 +639,7 @@ pub fn expr_funcall(
     args: impl Iterator<Item = DsExpression>,
 ) -> DsExpression {
     DsExpression {
-        expr: DsExpr::FunCall {
+        expr: DsExprKind::FunCall {
             callee: Box::new(called),
             args: args.collect(),
         },
@@ -677,7 +654,7 @@ pub fn expr_if(
     else_br: impl Into<Option<DsExpression>>,
 ) -> DsExpression {
     DsExpression {
-        expr: DsExpr::If {
+        expr: DsExprKind::If {
             cond: Box::new(cond),
             then_br: Box::new(then_br),
             else_br: else_br.into().map(Box::new),
@@ -689,7 +666,7 @@ pub fn expr_if(
 /// Creates a block expression without location.
 pub fn expr_block(block: DsBlock) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Block { label: None, block },
+        expr: DsExprKind::Block { label: None, block },
         loc: None,
     }
 }
@@ -697,7 +674,7 @@ pub fn expr_block(block: DsBlock) -> DsExpression {
 /// Creates a loop expression without location.
 pub fn expr_loop(label: Option<(String, Span)>, body: DsBlock) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Loop { label, body },
+        expr: DsExprKind::Loop { label, body },
         loc: None,
     }
 }
@@ -705,7 +682,7 @@ pub fn expr_loop(label: Option<(String, Span)>, body: DsBlock) -> DsExpression {
 /// Creates a return expression without location.
 pub fn expr_return(val: impl Into<Option<DsExpression>>) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Return {
+        expr: DsExprKind::Return {
             expr: val.into().map(Box::new),
         },
         loc: None,
@@ -715,7 +692,7 @@ pub fn expr_return(val: impl Into<Option<DsExpression>>) -> DsExpression {
 /// Creates a break expression without location.
 pub fn expr_break(label: Option<String>, val: impl Into<Option<DsExpression>>) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Break {
+        expr: DsExprKind::Break {
             label,
             expr: val.into().map(Box::new),
         },
@@ -726,7 +703,7 @@ pub fn expr_break(label: Option<String>, val: impl Into<Option<DsExpression>>) -
 /// Creates a continue expression without location.
 pub fn expr_continue(label: Option<String>) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Continue { label },
+        expr: DsExprKind::Continue { label },
         loc: None,
     }
 }
@@ -734,7 +711,7 @@ pub fn expr_continue(label: Option<String>) -> DsExpression {
 /// Creates a null expression without location.
 pub fn expr_null() -> DsExpression {
     DsExpression {
-        expr: DsExpr::Null,
+        expr: DsExprKind::Null,
         loc: None,
     }
 }
@@ -742,7 +719,7 @@ pub fn expr_null() -> DsExpression {
 /// Creates a member access expression without location.
 pub fn expr_member_access(expr: DsExpression, member: impl ToString) -> DsExpression {
     DsExpression {
-        expr: DsExpr::Field {
+        expr: DsExprKind::Field {
             expr: Box::new(expr),
             member: member.to_string(),
         },
@@ -757,7 +734,7 @@ pub fn expr_fundef(
     body: DsBlock,
 ) -> DsExpression {
     DsExpression {
-        expr: DsExpr::FunDefinition {
+        expr: DsExprKind::FunDefinition {
             args,
             rettypexpr: rettypexpr.into().map(Box::new),
             body,
@@ -769,7 +746,7 @@ pub fn expr_fundef(
 /// Creates a pointer type expression without location.
 pub fn expr_ptr_type(mutable: bool, typexpr: DsExpression) -> DsExpression {
     DsExpression {
-        expr: DsExpr::PointerType {
+        expr: DsExprKind::PointerType {
             mutable,
             typexpr: Box::new(typexpr),
         },
@@ -783,7 +760,7 @@ pub fn expr_fun_ptr_type(
     ret: impl Into<Option<DsExpression>>,
 ) -> DsExpression {
     DsExpression {
-        expr: DsExpr::FunPtrType {
+        expr: DsExprKind::FunPtrType {
             args,
             ret: ret.into().map(Box::new),
         },
@@ -1250,29 +1227,25 @@ impl Desugarrer {
     /// Resolve expression
     pub fn resolve_expr(&mut self, expr: &mut DsExpression) -> Result<(), Diagnostic> {
         match &mut expr.expr {
-            DsExpr::IntLit(_)
-            | DsExpr::BoolLit(_)
-            | DsExpr::StringLit(_)
-            | DsExpr::CStrLit(_)
-            | DsExpr::CharLit(_)
-            | DsExpr::FloatLit(_) => Ok(()),
-            DsExpr::Binary {
+            DsExprKind::BoolLit(_) | DsExprKind::Lit(_) => Ok(()),
+            DsExprKind::Binary {
                 lhs,
                 op: BinOp::Assignment,
                 rhs,
-            } if matches!(&lhs.expr, DsExpr::Ident(LazySymbol::Name(id)) if id.as_str() == "_") => {
+            } if matches!(&lhs.expr, DsExprKind::Ident(LazySymbol::Name(id)) if id.as_str() == "_") =>
+            {
                 // we allow _ in lhs of assignment
-                lhs.expr = DsExpr::Underscore;
+                lhs.expr = DsExprKind::Underscore;
                 self.resolve_expr(rhs)
             }
-            DsExpr::Binary { lhs, op: _, rhs } => {
+            DsExprKind::Binary { lhs, op: _, rhs } => {
                 self.resolve_expr(lhs)?;
                 self.resolve_expr(rhs)
             }
-            DsExpr::Unary { op: _, expr } | DsExpr::Borrow { mutable: _, expr } => {
+            DsExprKind::Unary { op: _, expr } | DsExprKind::Borrow { mutable: _, expr } => {
                 self.resolve_expr(expr)
             }
-            DsExpr::FunCall { callee, args } => {
+            DsExprKind::FunCall { callee, args } => {
                 self.resolve_expr(callee)?;
 
                 for arg in args {
@@ -1281,7 +1254,7 @@ impl Desugarrer {
 
                 Ok(())
             }
-            DsExpr::If {
+            DsExprKind::If {
                 cond,
                 then_br,
                 else_br,
@@ -1296,26 +1269,26 @@ impl Desugarrer {
 
                 Ok(())
             }
-            DsExpr::Block { label, block } | DsExpr::Loop { label, body: block } => {
+            DsExprKind::Block { label, block } | DsExprKind::Loop { label, body: block } => {
                 _ = label;
 
                 self.resolve_block(block);
 
                 Ok(())
             }
-            DsExpr::Return { expr } | DsExpr::Break { label: _, expr } => {
+            DsExprKind::Return { expr } | DsExprKind::Break { label: _, expr } => {
                 if let Some(expr) = expr {
                     self.resolve_expr(expr)?;
                 }
 
                 Ok(())
             }
-            DsExpr::Continue { label: _ } | DsExpr::Null => Ok(()),
-            DsExpr::PointerType {
+            DsExprKind::Continue { label: _ } | DsExprKind::Null => Ok(()),
+            DsExprKind::PointerType {
                 mutable: _,
                 typexpr,
             } => self.resolve_expr(typexpr),
-            DsExpr::FunPtrType { args, ret } => {
+            DsExprKind::FunPtrType { args, ret } => {
                 for arg in args {
                     self.resolve_expr(arg)?;
                 }
@@ -1326,7 +1299,7 @@ impl Desugarrer {
 
                 Ok(())
             }
-            DsExpr::Ident(LazySymbol::Name(name)) => {
+            DsExprKind::Ident(LazySymbol::Name(name)) => {
                 if name == "_" {
                     return Err(UnderscoreInExpression {
                         loc: expr.loc.clone().unwrap(),
@@ -1342,19 +1315,19 @@ impl Desugarrer {
                     .into_diag());
                 };
 
-                expr.expr = DsExpr::Ident(LazySymbol::Sym(symref.clone()));
+                expr.expr = DsExprKind::Ident(LazySymbol::Sym(symref.clone()));
 
                 Ok(())
             }
             // NOTE: they cannot be reached because they are constructed in this
             // method, its an internal error if it is reached, so we panic.
-            DsExpr::Ident(LazySymbol::Sym(_))
-            | DsExpr::Underscore
-            | DsExpr::QualifiedPath {
+            DsExprKind::Ident(LazySymbol::Sym(_))
+            | DsExprKind::Underscore
+            | DsExprKind::QualifiedPath {
                 path: _,
                 sym: LazySymbol::Sym(_),
             } => unreachable!(),
-            DsExpr::QualifiedPath { path, sym } => {
+            DsExprKind::QualifiedPath { path, sym } => {
                 let LazySymbol::Name(sym_name) = sym else {
                     // SAFETY: we already matched just above, it can only be that
                     opt_unreachable!()
@@ -1407,10 +1380,10 @@ impl Desugarrer {
                     .into_diag())
                 }
             }
-            DsExpr::Field { .. } => {
+            DsExprKind::Field { .. } => {
                 if let Some(path) = self.flatten_field_expr(expr) {
                     *expr = DsExpression {
-                        expr: DsExpr::QualifiedPath {
+                        expr: DsExprKind::QualifiedPath {
                             sym: LazySymbol::Name(path.last().unwrap().clone()),
                             path: SpannedPath {
                                 node: path,
@@ -1422,7 +1395,7 @@ impl Desugarrer {
 
                     self.resolve_expr(expr)
                 } else {
-                    let DsExpr::Field {
+                    let DsExprKind::Field {
                         expr: exp,
                         member: _,
                     } = &mut expr.expr
@@ -1437,7 +1410,7 @@ impl Desugarrer {
                     Ok(())
                 }
             }
-            DsExpr::FunDefinition {
+            DsExprKind::FunDefinition {
                 args,
                 rettypexpr,
                 body,
@@ -1477,7 +1450,7 @@ impl Desugarrer {
 
                 Ok(())
             }
-            DsExpr::FunDeclaration { args, rettypexpr } => {
+            DsExprKind::FunDeclaration { args, rettypexpr } => {
                 for arg in args {
                     match self.resolve_expr(arg) {
                         Ok(()) => {}
@@ -1493,7 +1466,7 @@ impl Desugarrer {
 
                 Ok(())
             }
-            DsExpr::Poisoned { diag } => {
+            DsExprKind::Poisoned { diag } => {
                 self.sink.emit(diag.take().unwrap());
 
                 Ok(())
@@ -1507,13 +1480,13 @@ impl Desugarrer {
         let mut path = Vec::new();
         let mut current = expr;
 
-        while let DsExpr::Field { expr, member } = &current.expr {
+        while let DsExprKind::Field { expr, member } = &current.expr {
             path.push(member.as_str());
             current = &**expr;
         }
 
         match &current.expr {
-            DsExpr::Ident(LazySymbol::Name(member)) => {
+            DsExprKind::Ident(LazySymbol::Name(member)) => {
                 path.push(member);
             }
             _ => return None,

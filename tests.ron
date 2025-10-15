@@ -109,7 +109,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
             } @ 65..69 (fid = 0);
             args: [
               Expression {
-                expr: c_str "foo";
+                expr: c_string "foo";
                 typ: * i8;
               } @ 70..76 (fid = 0),
             ];
@@ -176,7 +176,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
             } @ 119..123 (fid = 0);
             args: [
               Expression {
-                expr: c_str "bar";
+                expr: c_string "bar";
                 typ: * i8;
               } @ 124..130 (fid = 0),
             ];
@@ -229,7 +229,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
             } @ 165..169 (fid = 0);
             args: [
               Expression {
-                expr: c_str "ONLY `foo`:";
+                expr: c_string "ONLY `foo`:";
                 typ: * i8;
               } @ 170..184 (fid = 0),
             ];
@@ -299,7 +299,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
             } @ 211..215 (fid = 0);
             args: [
               Expression {
-                expr: c_str "";
+                expr: c_string "";
                 typ: * i8;
               } @ 216..219 (fid = 0),
             ];
@@ -324,7 +324,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
             } @ 227..231 (fid = 0);
             args: [
               Expression {
-                expr: c_str "BOTH `bar` and `foo`:";
+                expr: c_string "BOTH `bar` and `foo`:";
                 typ: * i8;
               } @ 232..256 (fid = 0),
             ];
@@ -589,7 +589,7 @@ foo
             } @ 65..69 (fid = 0);
             args: [
               Expression {
-                expr: c_str "foo";
+                expr: c_string "foo";
                 typ: * i8;
               } @ 70..76 (fid = 0),
             ];
@@ -656,7 +656,7 @@ foo
             } @ 119..123 (fid = 0);
             args: [
               Expression {
-                expr: c_str "bar";
+                expr: c_string "bar";
                 typ: * i8;
               } @ 124..130 (fid = 0),
             ];
@@ -709,7 +709,7 @@ foo
             } @ 165..169 (fid = 0);
             args: [
               Expression {
-                expr: c_str "BOTH `foo` and `bar`:";
+                expr: c_string "BOTH `foo` and `bar`:";
                 typ: * i8;
               } @ 170..194 (fid = 0),
             ];
@@ -779,7 +779,7 @@ foo
             } @ 221..225 (fid = 0);
             args: [
               Expression {
-                expr: c_str "";
+                expr: c_string "";
                 typ: * i8;
               } @ 226..229 (fid = 0),
             ];
@@ -804,7 +804,7 @@ foo
             } @ 237..241 (fid = 0);
             args: [
               Expression {
-                expr: c_str "ONLY `bar`:";
+                expr: c_string "ONLY `bar`:";
                 typ: * i8;
               } @ 242..256 (fid = 0),
             ];
@@ -1321,7 +1321,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         type: f64;
       };
     } @ 47..50 (fid = 0);
-    value: float 602199999999999960000000 @ 53..61 (fid = 0);
+    value: float 6.0219999999999996e23 @ 53..61 (fid = 0);
     sym: Symbol {
       kind: global;
       name: avogadro @ 36..44 (fid = 0);
@@ -1369,7 +1369,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     name: globFloat @ 102..111 (fid = 0);
     mutable: true;
     typexpr: none;
-    value: float 12 @ 115..119 (fid = 0);
+    value: float 12.0 @ 115..119 (fid = 0);
     sym: Symbol {
       kind: global;
       name: globFloat @ 102..111 (fid = 0);
@@ -1439,13 +1439,13 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         Binary {
           lhs: Underscore @ 184..185 (fid = 0);
           op: Assignment;
-          rhs: character 'C' @ 188..191 (fid = 0);
+          rhs: char 'C' @ 188..191 (fid = 0);
         } @ 184..191 (fid = 0) @ 184..191 (fid = 0),
 
         Binary {
           lhs: Underscore @ 219..220 (fid = 0);
           op: Assignment;
-          rhs: float 602199999999999960000000 @ 223..231 (fid = 0);
+          rhs: float 6.0219999999999996e23 @ 223..231 (fid = 0);
         } @ 219..231 (fid = 0) @ 219..231 (fid = 0),
 
         Binary {
@@ -1497,7 +1497,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           op: Assignment;
           rhs: Unary {
             op: Negation;
-            expr: float 12 @ 411..415 (fid = 0);
+            expr: float 12.0 @ 411..415 (fid = 0);
           } @ 410..415 (fid = 0);
         } @ 406..415 (fid = 0) @ 406..415 (fid = 0),
 
@@ -1956,7 +1956,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             type: f64;
           };
         } @ 47..50 (fid = 1);
-        value: float 602199999999999960000000 @ 53..61 (fid = 1);
+        value: float 6.0219999999999996e23 @ 53..61 (fid = 1);
         sym: Symbol {
           kind: global;
           name: avogadro @ 36..44 (fid = 1);
@@ -2004,7 +2004,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         name: globFloat @ 102..111 (fid = 1);
         mutable: true;
         typexpr: none;
-        value: float 12 @ 115..119 (fid = 1);
+        value: float 12.0 @ 115..119 (fid = 1);
         sym: Symbol {
           kind: global;
           name: globFloat @ 102..111 (fid = 1);
@@ -3891,12 +3891,12 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
                   } @ 167..173 (fid = 1);
                   args: [
                     Expression {
-                      expr: float 1;
+                      expr: float 1.0;
                       typ: f32;
                     } @ 174..176 (fid = 1),
 
                     Expression {
-                      expr: float 2;
+                      expr: float 2.0;
                       typ: f32;
                     } @ 178..180 (fid = 1),
                   ];
@@ -4905,13 +4905,13 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         Binary {
           lhs: ident _ @ 184..185 (fid = 0);
           op: Assignment;
-          rhs: character 'C' @ 188..191 (fid = 0);
+          rhs: char 'C' @ 188..191 (fid = 0);
         } @ 184..191 (fid = 0) @ 184..191 (fid = 0),
 
         Binary {
           lhs: ident _ @ 219..220 (fid = 0);
           op: Assignment;
-          rhs: float 602199999999999960000000 @ 223..231 (fid = 0);
+          rhs: float 6.0219999999999996e23 @ 223..231 (fid = 0);
         } @ 219..231 (fid = 0) @ 219..231 (fid = 0),
 
         Binary {
@@ -4956,7 +4956,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           op: Assignment;
           rhs: Unary {
             op: Negation;
-            expr: float 12 @ 383..387 (fid = 0);
+            expr: float 12.0 @ 383..387 (fid = 0);
           } @ 382..387 (fid = 0);
         } @ 378..387 (fid = 0) @ 378..387 (fid = 0),
 
@@ -5293,7 +5293,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
   GlobalConst {
     name: avogadro @ 36..44 (fid = 0);
     typexpr: ident f64 @ 47..50 (fid = 0);
-    value: float 602199999999999960000000 @ 53..61 (fid = 0);
+    value: float 6.0219999999999996e23 @ 53..61 (fid = 0);
   } @ 36..62 (fid = 0),
 
   GlobalVar {
@@ -5308,7 +5308,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
   GlobalVar {
     name: globFloat @ 102..111 (fid = 0);
     typexpr: none;
-    value: float 12 @ 115..119 (fid = 0);
+    value: float 12.0 @ 115..119 (fid = 0);
   } @ 102..120 (fid = 0),
 
   ExternBlock {
@@ -6745,12 +6745,12 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
     value: Expression {
       expr: Binary {
         lhs: Expression {
-          expr: float 34;
+          expr: float 34.0;
           typ: f32;
         } @ 336..339 (fid = 0);
         op: Add;
         rhs: Expression {
-          expr: float 35;
+          expr: float 35.0;
           typ: f32;
         } @ 342..345 (fid = 0);
       };
@@ -6791,12 +6791,12 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
     value: Expression {
       expr: Binary {
         lhs: Expression {
-          expr: float 34;
+          expr: float 34.0;
           typ: f64;
         } @ 363..366 (fid = 0);
         op: Add;
         rhs: Expression {
-          expr: float 35;
+          expr: float 35.0;
           typ: f64;
         } @ 369..372 (fid = 0);
       };
@@ -7389,12 +7389,12 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
     value: Expression {
       expr: Binary {
         lhs: Expression {
-          expr: float 101;
+          expr: float 101.0;
           typ: f32;
         } @ 711..715 (fid = 0);
         op: Sub;
         rhs: Expression {
-          expr: float 1;
+          expr: float 1.0;
           typ: f32;
         } @ 718..720 (fid = 0);
       };
@@ -7435,12 +7435,12 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
     value: Expression {
       expr: Binary {
         lhs: Expression {
-          expr: float 101;
+          expr: float 101.0;
           typ: f64;
         } @ 738..742 (fid = 0);
         op: Sub;
         rhs: Expression {
-          expr: float 1;
+          expr: float 1.0;
           typ: f64;
         } @ 745..747 (fid = 0);
       };
@@ -8033,12 +8033,12 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
     value: Expression {
       expr: Binary {
         lhs: Expression {
-          expr: float 6;
+          expr: float 6.0;
           typ: f32;
         } @ 1062..1064 (fid = 0);
         op: Mul;
         rhs: Expression {
-          expr: float 4;
+          expr: float 4.0;
           typ: f32;
         } @ 1067..1069 (fid = 0);
       };
@@ -8079,12 +8079,12 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
     value: Expression {
       expr: Binary {
         lhs: Expression {
-          expr: float 6;
+          expr: float 6.0;
           typ: f64;
         } @ 1087..1089 (fid = 0);
         op: Mul;
         rhs: Expression {
-          expr: float 4;
+          expr: float 4.0;
           typ: f64;
         } @ 1092..1094 (fid = 0);
       };
@@ -8677,12 +8677,12 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
     value: Expression {
       expr: Binary {
         lhs: Expression {
-          expr: float 10;
+          expr: float 10.0;
           typ: f32;
         } @ 1421..1424 (fid = 0);
         op: Div;
         rhs: Expression {
-          expr: float 5;
+          expr: float 5.0;
           typ: f32;
         } @ 1427..1429 (fid = 0);
       };
@@ -8723,12 +8723,12 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
     value: Expression {
       expr: Binary {
         lhs: Expression {
-          expr: float 10;
+          expr: float 10.0;
           typ: f64;
         } @ 1447..1450 (fid = 0);
         op: Div;
         rhs: Expression {
-          expr: float 5;
+          expr: float 5.0;
           typ: f64;
         } @ 1453..1455 (fid = 0);
       };
@@ -9601,7 +9601,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
                   last_expr: Expression {
                     expr: Return {
                       expr: Expression {
-                        expr: character 'B';
+                        expr: char 'B';
                         typ: char;
                       } @ 225..228 (fid = 0);
                     };
@@ -9619,7 +9619,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
         } @ 199..234 (fid = 0) @ 199..234 (fid = 0),
       ];
       last_expr: Expression {
-        expr: character 'A';
+        expr: char 'A';
         typ: char;
       } @ 240..243 (fid = 0);
       typ: char;

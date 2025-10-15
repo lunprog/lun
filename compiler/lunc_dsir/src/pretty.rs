@@ -8,7 +8,7 @@ use lunc_utils::{
 };
 
 use crate::{
-    DsArg, DsBlock, DsDirective, DsExpr, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
+    DsArg, DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
 };
 
 impl PrettyDump for DsModule {
@@ -121,19 +121,15 @@ impl PrettyDump for DsExpression {
     }
 }
 
-impl PrettyDump for DsExpr {
+impl PrettyDump for DsExprKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         let out = &mut ctx.out;
 
         match self {
-            DsExpr::IntLit(i) => write!(out, "integer {i}"),
-            DsExpr::BoolLit(b) => write!(out, "boolean {b}"),
-            DsExpr::StringLit(s) => write!(out, "string {s:?}"),
-            DsExpr::CStrLit(s) => write!(out, "c_str {s:?}"),
-            DsExpr::CharLit(c) => write!(out, "character {c:?}"),
-            DsExpr::FloatLit(f) => write!(out, "float {f:.}"),
-            DsExpr::Ident(lazysym) => lazysym.try_dump(ctx),
-            DsExpr::Binary { lhs, op, rhs } => {
+            DsExprKind::Lit(lit) => write!(out, "{lit}"),
+            DsExprKind::BoolLit(b) => write!(out, "boolean {b}"),
+            DsExprKind::Ident(lazysym) => lazysym.try_dump(ctx),
+            DsExprKind::Binary { lhs, op, rhs } => {
                 ctx.pretty_struct("Binary")
                     .field("lhs", lhs)
                     .field("op", op)
@@ -142,7 +138,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Unary { op, expr } => {
+            DsExprKind::Unary { op, expr } => {
                 ctx.pretty_struct("Unary")
                     .field("op", op)
                     .field("expr", expr)
@@ -150,7 +146,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Borrow { mutable, expr } => {
+            DsExprKind::Borrow { mutable, expr } => {
                 ctx.pretty_struct("Borrow")
                     .field("mutable", mutable)
                     .field("expr", expr)
@@ -158,7 +154,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::FunCall { callee, args } => {
+            DsExprKind::FunCall { callee, args } => {
                 ctx.pretty_struct("FunCall")
                     .field("callee", callee)
                     .field("args", args.as_slice())
@@ -166,7 +162,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::If {
+            DsExprKind::If {
                 cond,
                 then_br,
                 else_br,
@@ -179,7 +175,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Block { label, block } => {
+            DsExprKind::Block { label, block } => {
                 ctx.pretty_struct("Block")
                     .field(
                         "label",
@@ -193,7 +189,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Loop { label, body } => {
+            DsExprKind::Loop { label, body } => {
                 ctx.pretty_struct("Loop")
                     .field(
                         "label",
@@ -207,28 +203,28 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Return { expr } => {
+            DsExprKind::Return { expr } => {
                 ctx.pretty_struct("Return").field("expr", expr).finish()?;
                 Ok(())
             }
-            DsExpr::Break { label, expr } => {
+            DsExprKind::Break { label, expr } => {
                 ctx.pretty_struct("Break")
                     .field("label", label)
                     .field("expr", expr)
                     .finish()?;
                 Ok(())
             }
-            DsExpr::Continue { label } => {
+            DsExprKind::Continue { label } => {
                 if label.is_some() {
                     ctx.pretty_struct("Continue").field("label", label).finish()
                 } else {
                     write!(ctx.out, "Continue")
                 }
             }
-            DsExpr::Null => {
+            DsExprKind::Null => {
                 write!(ctx.out, "Null")
             }
-            DsExpr::Field { expr, member } => {
+            DsExprKind::Field { expr, member } => {
                 ctx.pretty_struct("Field")
                     .field("expr", expr)
                     .field("member", member)
@@ -236,7 +232,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::QualifiedPath { path, sym } => {
+            DsExprKind::QualifiedPath { path, sym } => {
                 ctx.pretty_struct("QualifiedPath")
                     .field("path", path)
                     .field("sym", sym)
@@ -244,8 +240,8 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Underscore => write!(ctx.out, "Underscore"),
-            DsExpr::FunDefinition {
+            DsExprKind::Underscore => write!(ctx.out, "Underscore"),
+            DsExprKind::FunDefinition {
                 args,
                 rettypexpr,
                 body,
@@ -258,7 +254,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::FunDeclaration { args, rettypexpr } => {
+            DsExprKind::FunDeclaration { args, rettypexpr } => {
                 ctx.pretty_struct("FunDeclaration")
                     .field("args", args.as_slice())
                     .field("rettypexpr", rettypexpr)
@@ -266,7 +262,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::PointerType { mutable, typexpr } => {
+            DsExprKind::PointerType { mutable, typexpr } => {
                 ctx.pretty_struct("PointerType")
                     .field("mutable", mutable)
                     .field("typexpr", typexpr)
@@ -274,7 +270,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::FunPtrType { args, ret } => {
+            DsExprKind::FunPtrType { args, ret } => {
                 ctx.pretty_struct("FunPtrType")
                     .field("args", args.as_slice())
                     .field("ret", ret)
@@ -282,7 +278,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Poisoned { diag } => {
+            DsExprKind::Poisoned { diag } => {
                 write!(ctx.out, "POISONED: {diag:#?}")
             }
         }

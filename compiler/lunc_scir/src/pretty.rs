@@ -8,7 +8,7 @@ use lunc_utils::{
 };
 
 use crate::{
-    FunDefInfo, ScArg, ScBlock, ScExpr, ScExpression, ScItem, ScModule, ScStatement, ScStmt,
+    FunDefInfo, ScArg, ScBlock, ScExprKind, ScExpression, ScItem, ScModule, ScStatement, ScStmt,
 };
 
 impl PrettyDump for ScModule {
@@ -161,19 +161,15 @@ impl PrettyDump for ScExpression {
     }
 }
 
-impl PrettyDump for ScExpr {
+impl PrettyDump for ScExprKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         let out = &mut ctx.out;
 
         match self {
-            ScExpr::IntLit(i) => write!(out, "integer {i}"),
-            ScExpr::BoolLit(b) => write!(out, "boolean {b}"),
-            ScExpr::StringLit(s) => write!(out, "string {s:?}"),
-            ScExpr::CStrLit(s) => write!(out, "c_str {s:?}"),
-            ScExpr::CharLit(c) => write!(out, "character {c:?}"),
-            ScExpr::FloatLit(f) => write!(out, "float {f:.}"),
-            ScExpr::Ident(sym) => sym.try_dump(ctx),
-            ScExpr::Binary { lhs, op, rhs } => {
+            ScExprKind::Lit(lit) => write!(out, "{lit}"),
+            ScExprKind::BoolLit(b) => write!(out, "boolean {b}"),
+            ScExprKind::Ident(sym) => sym.try_dump(ctx),
+            ScExprKind::Binary { lhs, op, rhs } => {
                 ctx.pretty_struct("Binary")
                     .field("lhs", lhs)
                     .field("op", op)
@@ -182,7 +178,7 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::Unary { op, expr } => {
+            ScExprKind::Unary { op, expr } => {
                 ctx.pretty_struct("Unary")
                     .field("op", op)
                     .field("expr", expr)
@@ -190,7 +186,7 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::Borrow { mutable, expr } => {
+            ScExprKind::Borrow { mutable, expr } => {
                 ctx.pretty_struct("Borrow")
                     .field("mutable", mutable)
                     .field("expr", expr)
@@ -198,7 +194,7 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::FunCall { callee, args } => {
+            ScExprKind::FunCall { callee, args } => {
                 ctx.pretty_struct("FunCall")
                     .field("callee", callee)
                     .field("args", args.as_slice())
@@ -206,7 +202,7 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::If {
+            ScExprKind::If {
                 cond,
                 then_br,
                 else_br,
@@ -219,7 +215,7 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::Block {
+            ScExprKind::Block {
                 label,
                 block,
                 index,
@@ -238,7 +234,7 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::Loop { label, body, index } => {
+            ScExprKind::Loop { label, body, index } => {
                 ctx.pretty_struct("Loop")
                     .field(
                         "label",
@@ -253,11 +249,11 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::Return { expr } => {
+            ScExprKind::Return { expr } => {
                 ctx.pretty_struct("Return").field("expr", expr).finish()?;
                 Ok(())
             }
-            ScExpr::Break { label, expr, index } => {
+            ScExprKind::Break { label, expr, index } => {
                 ctx.pretty_struct("Break")
                     .field("label", label)
                     .field("expr", expr)
@@ -266,7 +262,7 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::Continue { label, index } => {
+            ScExprKind::Continue { label, index } => {
                 ctx.pretty_struct("Continue")
                     .field("label", label)
                     .field("index", index)
@@ -274,10 +270,10 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::Null => {
+            ScExprKind::Null => {
                 write!(ctx.out, "Null")
             }
-            ScExpr::Field { expr, member } => {
+            ScExprKind::Field { expr, member } => {
                 ctx.pretty_struct("Field")
                     .field("expr", expr)
                     .field("member", member)
@@ -285,7 +281,7 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::QualifiedPath { path, sym } => {
+            ScExprKind::QualifiedPath { path, sym } => {
                 ctx.pretty_struct("QualifiedPath")
                     .field("path", path)
                     .field("sym", sym)
@@ -293,8 +289,8 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::Underscore => write!(ctx.out, "Underscore"),
-            ScExpr::PointerType { mutable, typexpr } => {
+            ScExprKind::Underscore => write!(ctx.out, "Underscore"),
+            ScExprKind::PointerType { mutable, typexpr } => {
                 ctx.pretty_struct("PointerType")
                     .field("mutable", mutable)
                     .field("typexpr", typexpr)
@@ -302,7 +298,7 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::FunPtrType { args, ret } => {
+            ScExprKind::FunPtrType { args, ret } => {
                 ctx.pretty_struct("FunPtrType")
                     .field("args", args.as_slice())
                     .field("ret", ret)
@@ -310,7 +306,7 @@ impl PrettyDump for ScExpr {
 
                 Ok(())
             }
-            ScExpr::Poisoned { diag } => {
+            ScExprKind::Poisoned { diag } => {
                 write!(ctx.out, "POISONED: {diag:#?}")
             }
         }

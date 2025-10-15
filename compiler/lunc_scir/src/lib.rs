@@ -11,10 +11,11 @@ use lunc_ast::{
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
 use lunc_dsir::{
-    DsArg, DsBlock, DsDirective, DsExpr, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
+    DsArg, DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
     OSpan, SpannedPath,
 };
 use lunc_llib_meta::ModuleTree;
+use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::{
     BuildOptions, FromHigher, OrbType, Span, lower, opt_unreachable, target::PointerWidth,
 };
@@ -93,9 +94,9 @@ pub enum ScItem {
         /// corresponding symbol of this definition
         sym: Symbol,
     },
-    /// A [`DsItem::GlobalDef`] and a [`DsExpr::FunDefinition`] combined.
+    /// A [`DsItem::GlobalDef`] and a [`DsExprKind::FunDefinition`] combined.
     ///
-    /// [`DsExpr::FunDefinition`]: lunc_dsir::DsExpr::FunDefinition
+    /// [`DsExprKind::FunDefinition`]: lunc_dsir::DsExprKind::FunDefinition
     /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
     FunDefinition {
         name: String,
@@ -109,9 +110,9 @@ pub enum ScItem {
         /// corresponding symbol of this definition
         sym: Symbol,
     },
-    /// A [`DsItem::GlobalDef`] and a [`DsExpr::FunDeclaration`] combined.
+    /// A [`DsItem::GlobalDef`] and a [`DsExprKind::FunDeclaration`] combined.
     ///
-    /// [`DsExpr::FunDeclaration`]: lunc_dsir::DsExpr::FunDeclaration
+    /// [`DsExprKind::FunDeclaration`]: lunc_dsir::DsExprKind::FunDeclaration
     /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
     FunDeclaration {
         name: String,
@@ -188,7 +189,7 @@ impl FromHigher for ScItem {
                 loc,
                 sym,
             } if value.is_fundef() => {
-                let DsExpr::FunDefinition {
+                let DsExprKind::FunDefinition {
                     args,
                     rettypexpr,
                     body,
@@ -221,7 +222,7 @@ impl FromHigher for ScItem {
                 loc,
                 sym,
             } if value.is_fundecl() => {
-                let DsExpr::FunDeclaration { args, rettypexpr } = value.expr else {
+                let DsExprKind::FunDeclaration { args, rettypexpr } = value.expr else {
                     // SAFETY: we already checked in the `if` clause of the match arm.
                     opt_unreachable!();
                 };
@@ -304,7 +305,7 @@ pub struct FunDefInfo {
 /// [`DsExpr`]: lunc_dsir::DsExpression
 #[derive(Debug, Clone)]
 pub struct ScExpression {
-    pub expr: ScExpr,
+    pub expr: ScExprKind,
     pub typ: Type,
     pub loc: OSpan,
 }
@@ -320,14 +321,14 @@ impl ScExpression {
     /// dereference expression.
     pub fn is_place(&self) -> Option<String> {
         match &self.expr {
-            ScExpr::Ident(sym) => {
+            ScExprKind::Ident(sym) => {
                 if sym.is_place() {
                     None
                 } else {
                     Some("variable isn't mutable".to_string())
                 }
             }
-            ScExpr::Unary {
+            ScExprKind::Unary {
                 op: UnOp::Dereference,
                 expr,
             } => {
@@ -343,27 +344,30 @@ impl ScExpression {
 
     /// Is the expression an underscore expression?
     pub fn is_underscore(&self) -> bool {
-        matches!(self.expr, ScExpr::Underscore)
+        matches!(self.expr, ScExprKind::Underscore)
     }
 
     /// Returns the typeness of an expression
     pub fn typeness(&self) -> Typeness {
         match &self.expr {
-            ScExpr::IntLit(_) | ScExpr::FloatLit(_) => Typeness::Implicit,
-            ScExpr::BoolLit(_) | ScExpr::StringLit(_) | ScExpr::CStrLit(_) | ScExpr::CharLit(_) => {
-                Typeness::Explicit
-            }
-            ScExpr::Ident(symref) => symref.typeness(),
-            ScExpr::Binary { lhs, op: _, rhs } => {
+            ScExprKind::Lit(Lit {
+                kind: LitKind::Integer | LitKind::Float,
+                ..
+            }) => Typeness::Implicit,
+            ScExprKind::BoolLit(_) | ScExprKind::Lit(_) => Typeness::Explicit,
+            ScExprKind::Ident(symref) => symref.typeness(),
+            ScExprKind::Binary { lhs, op: _, rhs } => {
                 if lhs.typeness() == Typeness::Explicit || rhs.typeness() == Typeness::Explicit {
                     Typeness::Explicit
                 } else {
                     Typeness::Implicit
                 }
             }
-            ScExpr::Unary { op: _, expr } | ScExpr::Borrow { mutable: _, expr } => expr.typeness(),
-            ScExpr::FunCall { .. } => Typeness::Explicit,
-            ScExpr::If {
+            ScExprKind::Unary { op: _, expr } | ScExprKind::Borrow { mutable: _, expr } => {
+                expr.typeness()
+            }
+            ScExprKind::FunCall { .. } => Typeness::Explicit,
+            ScExprKind::If {
                 cond: _,
                 then_br,
                 else_br,
@@ -378,18 +382,18 @@ impl ScExpression {
                     Typeness::Implicit
                 }
             }
-            ScExpr::Block { .. }
-            | ScExpr::Loop { .. }
-            | ScExpr::Return { .. }
-            | ScExpr::Break { .. }
-            | ScExpr::Continue { .. }
-            | ScExpr::Null
-            | ScExpr::Field { .. }
-            | ScExpr::QualifiedPath { .. }
-            | ScExpr::Underscore
-            | ScExpr::PointerType { .. }
-            | ScExpr::FunPtrType { .. } => Typeness::Explicit,
-            ScExpr::Poisoned { .. } => unreachable!("poisoned expr"),
+            ScExprKind::Block { .. }
+            | ScExprKind::Loop { .. }
+            | ScExprKind::Return { .. }
+            | ScExprKind::Break { .. }
+            | ScExprKind::Continue { .. }
+            | ScExprKind::Null
+            | ScExprKind::Field { .. }
+            | ScExprKind::QualifiedPath { .. }
+            | ScExprKind::Underscore
+            | ScExprKind::PointerType { .. }
+            | ScExprKind::FunPtrType { .. } => Typeness::Explicit,
+            ScExprKind::Poisoned { .. } => unreachable!("poisoned expr"),
         }
     }
 }
@@ -399,74 +403,70 @@ impl FromHigher for ScExpression {
 
     fn lower(node: Self::Higher) -> Self {
         let expr = match node.expr {
-            DsExpr::IntLit(i) => ScExpr::IntLit(i),
-            DsExpr::BoolLit(b) => ScExpr::BoolLit(b),
-            DsExpr::StringLit(str) => ScExpr::StringLit(str),
-            DsExpr::CStrLit(str) => ScExpr::CStrLit(str),
-            DsExpr::CharLit(c) => ScExpr::CharLit(c),
-            DsExpr::FloatLit(f) => ScExpr::FloatLit(f),
-            DsExpr::Ident(lazy) => ScExpr::Ident(lazy.unwrap_sym()),
-            DsExpr::Binary { lhs, op, rhs } => ScExpr::Binary {
+            DsExprKind::Lit(lit) => ScExprKind::Lit(lit),
+            DsExprKind::BoolLit(b) => ScExprKind::BoolLit(b),
+            DsExprKind::Ident(lazy) => ScExprKind::Ident(lazy.unwrap_sym()),
+            DsExprKind::Binary { lhs, op, rhs } => ScExprKind::Binary {
                 lhs: lower(lhs),
                 op,
                 rhs: lower(rhs),
             },
-            DsExpr::Unary { op, expr } => ScExpr::Unary {
+            DsExprKind::Unary { op, expr } => ScExprKind::Unary {
                 op,
                 expr: lower(expr),
             },
-            DsExpr::Borrow { mutable, expr } => ScExpr::Borrow {
+            DsExprKind::Borrow { mutable, expr } => ScExprKind::Borrow {
                 mutable,
                 expr: lower(expr),
             },
-            DsExpr::FunCall { callee, args } => ScExpr::FunCall {
+            DsExprKind::FunCall { callee, args } => ScExprKind::FunCall {
                 callee: lower(callee),
                 args: lower(args),
             },
-            DsExpr::If {
+            DsExprKind::If {
                 cond,
                 then_br,
                 else_br,
-            } => ScExpr::If {
+            } => ScExprKind::If {
                 cond: lower(cond),
                 then_br: lower(then_br),
                 else_br: lower(else_br),
             },
-            DsExpr::Block { label, block } => ScExpr::Block {
+            DsExprKind::Block { label, block } => ScExprKind::Block {
                 label,
                 block: lower(block),
                 index: None,
             },
-            DsExpr::Loop { label, body } => ScExpr::Loop {
+            DsExprKind::Loop { label, body } => ScExprKind::Loop {
                 label,
                 body: lower(body),
                 index: None,
             },
-            DsExpr::Return { expr } => ScExpr::Return { expr: lower(expr) },
-            DsExpr::Break { label, expr } => ScExpr::Break {
+            DsExprKind::Return { expr } => ScExprKind::Return { expr: lower(expr) },
+            DsExprKind::Break { label, expr } => ScExprKind::Break {
                 label,
                 expr: lower(expr),
                 index: None,
             },
-            DsExpr::Continue { label } => ScExpr::Continue { label, index: None },
-            DsExpr::Null => ScExpr::Null,
-            DsExpr::Field { expr, member } => ScExpr::Field {
+            DsExprKind::Continue { label } => ScExprKind::Continue { label, index: None },
+            DsExprKind::Null => ScExprKind::Null,
+            DsExprKind::Field { expr, member } => ScExprKind::Field {
                 expr: lower(expr),
                 member,
             },
-            DsExpr::QualifiedPath { path, sym: lazy } => ScExpr::QualifiedPath {
+            DsExprKind::QualifiedPath { path, sym: lazy } => ScExprKind::QualifiedPath {
                 path,
                 sym: lazy.unwrap_sym(),
             },
-            DsExpr::Underscore => ScExpr::Underscore,
-            DsExpr::FunDefinition { .. } => ScExpr::Poisoned {
+            DsExprKind::Underscore => ScExprKind::Underscore,
+            DsExprKind::FunDefinition { .. } => ScExprKind::Poisoned {
                 diag: Some(feature_todo! {
                     feature: "local function definition",
                     label: "fundefs inside an expression isn't supported",
                     loc: node.loc.clone().unwrap(),
                 }),
             },
-            DsExpr::FunDeclaration { .. } => ScExpr::Poisoned {
+            DsExprKind::FunDeclaration { .. } => ScExprKind::Poisoned {
                 diag: Some(
                     OutsideExternBlock {
                         item_name: "function declaration",
@@ -475,15 +475,15 @@ impl FromHigher for ScExpression {
                     .into_diag(),
                 ),
             },
-            DsExpr::PointerType { mutable, typexpr } => ScExpr::PointerType {
+            DsExprKind::PointerType { mutable, typexpr } => ScExprKind::PointerType {
                 mutable,
                 typexpr: lower(typexpr),
             },
-            DsExpr::FunPtrType { args, ret } => ScExpr::FunPtrType {
+            DsExprKind::FunPtrType { args, ret } => ScExprKind::FunPtrType {
                 args: lower(args),
                 ret: lower(ret),
             },
-            DsExpr::Poisoned { diag: _ } => {
+            DsExprKind::Poisoned { diag: _ } => {
                 // NOTE: didn't used `opt_unreachable`, i didn't wanted to
                 // ensure it was truly unreachable
                 unreachable!()
@@ -498,121 +498,105 @@ impl FromHigher for ScExpression {
     }
 }
 
-/// A semantic checked internal expression, see the dsir version [`DsExpr`]
+/// A semantic checked internal expression, see the dsir version [`DsExprKind`]
 ///
-/// [`DsExpr`]: lunc_dsir::DsExpr
+/// [`DsExprKind`]: lunc_dsir::DsExprKind
 #[derive(Debug, Clone)]
-pub enum ScExpr {
-    /// See [`DsExpr::IntLit`]
+pub enum ScExprKind {
+    /// See [`DsExprKind::Lit`]
     ///
-    /// [`DsExpr::IntLit`]: lunc_dsir::DsExpr::IntLit
-    IntLit(u128),
-    /// See [`DsExpr::BoolLit`]
+    /// [`DsExprKind::Lit`]: lunc_dsir::DsExprKind::Lit
+    Lit(Lit),
+    /// See [`DsExprKind::BoolLit`]
     ///
-    /// [`DsExpr::BoolLit`]: lunc_dsir::DsExpr::BoolLit
+    /// [`DsExprKind::BoolLit`]: lunc_dsir::DsExprKind::BoolLit
     BoolLit(bool),
-    /// See [`DsExpr::StringLit`]
+    /// See [`DsExprKind::Ident`]
     ///
-    /// [`DsExpr::StringLit`]: lunc_dsir::DsExpr::StringLit
-    StringLit(String),
-    /// See [`DsExpr::CStrLit`]
-    ///
-    /// [`DsExpr::CStrLit`]: lunc_dsir::DsExpr::CStrLit
-    CStrLit(String),
-    /// See [`DsExpr::CharLit`]
-    ///
-    /// [`DsExpr::CharLit`]: lunc_dsir::DsExpr::CharLit
-    CharLit(char),
-    /// See [`DsExpr::FloatLit`]
-    ///
-    /// [`DsExpr::FloatLit`]: lunc_dsir::DsExpr::FloatLit
-    FloatLit(f64),
-    /// See [`DsExpr::Ident`]
-    ///
-    /// [`DsExpr::Ident`]: lunc_dsir::DsExpr::Ident
+    /// [`DsExprKind::Ident`]: lunc_dsir::DsExprKind::Ident
     Ident(Symbol),
-    /// See [`DsExpr::Binary`]
+    /// See [`DsExprKind::Binary`]
     ///
-    /// [`DsExpr::Binary`]: lunc_dsir::DsExpr::Binary
+    /// [`DsExprKind::Binary`]: lunc_dsir::DsExprKind::Binary
     Binary {
         lhs: Box<ScExpression>,
         op: BinOp,
         rhs: Box<ScExpression>,
     },
-    /// See [`DsExpr::Unary`]
+    /// See [`DsExprKind::Unary`]
     ///
-    /// [`DsExpr::Unary`]: lunc_dsir::DsExpr::Unary
+    /// [`DsExprKind::Unary`]: lunc_dsir::DsExprKind::Unary
     Unary { op: UnOp, expr: Box<ScExpression> },
-    /// See [`DsExpr::Borrow`]
+    /// See [`DsExprKind::Borrow`]
     ///
-    /// [`DsExpr::Borrow`]: lunc_dsir::DsExpr::Borrow
+    /// [`DsExprKind::Borrow`]: lunc_dsir::DsExprKind::Borrow
     Borrow {
         mutable: bool,
         expr: Box<ScExpression>,
     },
-    /// See [`DsExpr::FunCall`]
+    /// See [`DsExprKind::FunCall`]
     ///
-    /// [`DsExpr::FunCall`]: lunc_dsir::DsExpr::FunCall
+    /// [`DsExprKind::FunCall`]: lunc_dsir::DsExprKind::FunCall
     FunCall {
         callee: Box<ScExpression>,
         args: Vec<ScExpression>,
     },
-    /// See [`DsExpr::If`]
+    /// See [`DsExprKind::If`]
     ///
-    /// [`DsExpr::If`]: lunc_dsir::DsExpr::If
+    /// [`DsExprKind::If`]: lunc_dsir::DsExprKind::If
     If {
         cond: Box<ScExpression>,
         then_br: Box<ScExpression>,
         else_br: Option<Box<ScExpression>>,
     },
-    /// See [`DsExpr::Block`]
+    /// See [`DsExprKind::Block`]
     ///
-    /// [`DsExpr::Block`]: lunc_dsir::DsExpr::Block
+    /// [`DsExprKind::Block`]: lunc_dsir::DsExprKind::Block
     Block {
         label: Option<(String, Span)>,
         block: ScBlock,
         /// label index after checking MUST be `Some(..)`
         index: Option<usize>,
     },
-    /// See [`DsExpr::Loop`]
+    /// See [`DsExprKind::Loop`]
     ///
-    /// [`DsExpr::Loop`]: lunc_dsir::DsExpr::Loop
+    /// [`DsExprKind::Loop`]: lunc_dsir::DsExprKind::Loop
     Loop {
         label: Option<(String, Span)>,
         body: ScBlock,
         /// label index after checking MUST be `Some(..)`
         index: Option<usize>,
     },
-    /// See [`DsExpr::Return`]
+    /// See [`DsExprKind::Return`]
     ///
-    /// [`DsExpr::Return`]: lunc_dsir::DsExpr::Return
+    /// [`DsExprKind::Return`]: lunc_dsir::DsExprKind::Return
     Return { expr: Option<Box<ScExpression>> },
-    /// See [`DsExpr::Break`]
+    /// See [`DsExprKind::Break`]
     ///
-    /// [`DsExpr::Break`]: lunc_dsir::DsExpr::Break
+    /// [`DsExprKind::Break`]: lunc_dsir::DsExprKind::Break
     Break {
         label: Option<String>,
         expr: Option<Box<ScExpression>>,
         /// label index after checking MUST be `Some(..)`
         index: Option<usize>,
     },
-    /// See [`DsExpr::Continue`]
+    /// See [`DsExprKind::Continue`]
     ///
-    /// [`DsExpr::Continue`]: lunc_dsir::DsExpr::Continue
+    /// [`DsExprKind::Continue`]: lunc_dsir::DsExprKind::Continue
     Continue {
         label: Option<String>,
         /// label index after checking MUST be `Some(..)`
         index: Option<usize>,
     },
-    /// See [`DsExpr::Null`]
+    /// See [`DsExprKind::Null`]
     ///
-    /// [`DsExpr::Null`]: lunc_dsir::DsExpr::Null
+    /// [`DsExprKind::Null`]: lunc_dsir::DsExprKind::Null
     Null,
-    /// See [`DsExpr::Field`]
+    /// See [`DsExprKind::Field`]
     ///
     /// After the name resolution, member access of modules are converted to [`EffectivePath`]
     ///
-    /// [`DsExpr::Field`]: lunc_dsir::DsExpr::Field
+    /// [`DsExprKind::Field`]: lunc_dsir::DsExprKind::Field
     /// [`EffectivePath`]: lunc_ast::symbol::EffectivePath
     Field {
         expr: Box<ScExpression>,
@@ -631,28 +615,28 @@ pub enum ScExpr {
     /// Constructed from the lazy ident `_`, but only in certain cases, like
     /// when it's part of an assignment like so: `_ = expr`
     Underscore,
-    /// See [`DsExpr::PointerType`]
+    /// See [`DsExprKind::PointerType`]
     ///
-    /// [`DsExpr::PointerType`]: lunc_dsir::DsExpr::PointerType
+    /// [`DsExprKind::PointerType`]: lunc_dsir::DsExprKind::PointerType
     PointerType {
         mutable: bool,
         typexpr: Box<ScExpression>,
     },
-    /// See [`DsExpr::FunPtrType`]
+    /// See [`DsExprKind::FunPtrType`]
     ///
-    /// [`DsExpr::FunPtrType`]: lunc_dsir::DsExpr::FunPtrType
+    /// [`DsExprKind::FunPtrType`]: lunc_dsir::DsExprKind::FunPtrType
     FunPtrType {
         args: Vec<ScExpression>,
         ret: Option<Box<ScExpression>>,
     },
-    /// See [`DsExpr::Poisoned`]
+    /// See [`DsExprKind::Poisoned`]
     ///
     /// # Note
     ///
     /// This node is not emitted from the DsExpr equivalent it is emitted when
     /// we encounter an error in the lowering.
     ///
-    /// [`DsExpr::Poisoned`]: lunc_dsir::DsExpr::Poisoned
+    /// [`DsExprKind::Poisoned`]: lunc_dsir::DsExprKind::Poisoned
     Poisoned { diag: Option<Diagnostic> },
 }
 
@@ -890,7 +874,11 @@ impl SemaChecker {
         let expr_loc = expr.loc.clone().unwrap();
 
         match &expr.expr {
-            ScExpr::IntLit(i) => match expr.typ {
+            ScExprKind::Lit(Lit {
+                kind: LitKind::Integer,
+                value: LitVal::Int(i),
+                tag: _,
+            }) => match expr.typ {
                 Type::I8 => Ok(ValueExpr::I8(*i as i8)),
                 Type::I16 => Ok(ValueExpr::I16(*i as i16)),
                 Type::I32 => Ok(ValueExpr::I32(*i as i32)),
@@ -913,10 +901,22 @@ impl SemaChecker {
                 },
                 _ => Ok(ValueExpr::I32(*i as i32)),
             },
-            ScExpr::BoolLit(b) => Ok(ValueExpr::Boolean(*b)),
-            ScExpr::StringLit(str) => Ok(ValueExpr::Str(str.clone())),
-            ScExpr::CharLit(c) => Ok(ValueExpr::Char(*c)),
-            ScExpr::FloatLit(f) => match expr.typ {
+            ScExprKind::BoolLit(b) => Ok(ValueExpr::Boolean(*b)),
+            ScExprKind::Lit(Lit {
+                kind: LitKind::Str,
+                value: LitVal::Str(str),
+                tag: _,
+            }) => Ok(ValueExpr::Str(str.clone())),
+            ScExprKind::Lit(Lit {
+                kind: LitKind::Char,
+                value: LitVal::Char(c),
+                tag: _,
+            }) => Ok(ValueExpr::Char(*c)),
+            ScExprKind::Lit(Lit {
+                kind: LitKind::Float,
+                value: LitVal::Float(f),
+                tag: _,
+            }) => match expr.typ {
                 Type::F16 | Type::F128 => {
                     self.sink.emit(feature_todo! {
                         feature: "f16 / f128 compile-time evaluation",
@@ -929,8 +929,10 @@ impl SemaChecker {
                 Type::F64 => Ok(ValueExpr::F64(*f /* as f64 */)),
                 _ => Ok(ValueExpr::F32(*f as f32)),
             },
-            ScExpr::Ident(sym) if sym.is_comptime_known() => sym.value().ok_or((expr_loc, None)),
-            ScExpr::Binary { lhs, op, rhs } => {
+            ScExprKind::Ident(sym) if sym.is_comptime_known() => {
+                sym.value().ok_or((expr_loc, None))
+            }
+            ScExprKind::Binary { lhs, op, rhs } => {
                 let lhs_val = self.evaluate_expr(lhs)?;
                 let rhs_val = self.evaluate_expr(rhs)?;
 
@@ -943,7 +945,7 @@ impl SemaChecker {
                     _ => Err((expr_loc, None)),
                 }
             }
-            ScExpr::Block {
+            ScExprKind::Block {
                 label: _,
                 block,
                 index: _,
@@ -951,7 +953,7 @@ impl SemaChecker {
                 // minimal support for blocks evaluation
                 Ok(ValueExpr::Void)
             }
-            ScExpr::PointerType { mutable, typexpr } => {
+            ScExprKind::PointerType { mutable, typexpr } => {
                 let typ = self.evaluate_expr(typexpr)?.as_type().unwrap_or(Type::Void);
                 // NOTE: we do not emit a diagnostic because we already did in
                 // the type checking
@@ -961,7 +963,7 @@ impl SemaChecker {
                     typ: Box::new(typ),
                 }))
             }
-            ScExpr::FunPtrType { args, ret } => {
+            ScExprKind::FunPtrType { args, ret } => {
                 // collect the arguments types
                 let mut args_typ = Vec::new();
 

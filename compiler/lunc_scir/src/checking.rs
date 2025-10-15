@@ -2,6 +2,7 @@ use std::iter::{self, zip};
 
 use lunc_ast::symbol::{Signedness, Type};
 use lunc_diag::{ToDiagnostic, feature_todo};
+use lunc_token::LitKind;
 use lunc_utils::opt_unreachable;
 
 use crate::diags::{
@@ -471,7 +472,7 @@ impl SemaChecker {
             // special case for if, we add a note.
             if matches!(
                 &found.expr,
-                ScExpr::If {
+                ScExprKind::If {
                     cond: _,
                     then_br: _,
                     else_br: None
@@ -501,9 +502,11 @@ impl SemaChecker {
     #[must_use]
     pub fn apply_typ_on_expr(expr: &mut ScExpression, typ: Type) -> Option<()> {
         match &mut expr.expr {
-            ScExpr::IntLit(_) => {}
-            ScExpr::FloatLit(_) => {}
-            ScExpr::Ident(symref) => match symref.typeness() {
+            ScExprKind::Lit(Lit {
+                kind: LitKind::Integer | LitKind::Float,
+                ..
+            }) => {}
+            ScExprKind::Ident(symref) => match symref.typeness() {
                 Typeness::Implicit => {
                     symref.inspect_mut(|sym| {
                         sym.typ = typ.clone();
@@ -512,14 +515,14 @@ impl SemaChecker {
                 }
                 Typeness::Explicit => {}
             },
-            ScExpr::Binary { lhs, op: _, rhs } => {
+            ScExprKind::Binary { lhs, op: _, rhs } => {
                 Self::apply_typ_on_expr(lhs, typ.clone())?;
                 Self::apply_typ_on_expr(rhs, typ.clone())?;
             }
-            ScExpr::Unary { op: _, expr } | ScExpr::Borrow { mutable: _, expr } => {
+            ScExprKind::Unary { op: _, expr } | ScExprKind::Borrow { mutable: _, expr } => {
                 Self::apply_typ_on_expr(expr, typ.clone())?;
             }
-            ScExpr::If {
+            ScExprKind::If {
                 cond: _,
                 then_br,
                 else_br,
@@ -530,7 +533,7 @@ impl SemaChecker {
                     Self::apply_typ_on_expr(else_br, typ.clone())?;
                 }
             }
-            ScExpr::Block {
+            ScExprKind::Block {
                 block,
                 label: _,
                 index,
@@ -539,7 +542,7 @@ impl SemaChecker {
                     match &mut stmt.stmt {
                         ScStmt::Expression(ScExpression {
                             expr:
-                                ScExpr::Break {
+                                ScExprKind::Break {
                                     label: _,
                                     expr: Some(expr),
                                     index: index_break,
@@ -801,50 +804,52 @@ impl SemaChecker {
         }
 
         match &mut expr.expr {
-            ScExpr::IntLit(_) => {
-                if let Some(coercion) = coerce_to
-                    && coercion.is_int()
-                {
-                    expr.typ = coercion;
-                } else {
-                    expr.typ = Type::I32;
+            ScExprKind::Lit(Lit { kind, .. }) => match kind {
+                LitKind::Integer => {
+                    if let Some(coercion) = coerce_to
+                        && coercion.is_int()
+                    {
+                        expr.typ = coercion;
+                    } else {
+                        expr.typ = Type::I32;
+                    }
                 }
-            }
-            ScExpr::BoolLit(_) => {
+                LitKind::Str => {
+                    // NOTE: string literals have a `*str` type.
+
+                    expr.typ = Type::Ptr {
+                        mutable: false,
+                        typ: Box::new(Type::Str),
+                    };
+                }
+                LitKind::CStr => {
+                    // NOTE: c_str literals have a `*i8` type.
+
+                    expr.typ = Type::Ptr {
+                        mutable: false,
+                        typ: Box::new(Type::I8),
+                    }
+                }
+                LitKind::Char => {
+                    expr.typ = Type::Char;
+                }
+                LitKind::Float => {
+                    if let Some(coercion) = coerce_to
+                        && coercion.is_float()
+                    {
+                        expr.typ = coercion;
+                    } else {
+                        expr.typ = Type::F32;
+                    }
+                }
+            },
+            ScExprKind::BoolLit(_) => {
                 expr.typ = Type::Bool;
             }
-            ScExpr::StringLit(_) => {
-                // NOTE: string literals have a `*str` type.
-
-                expr.typ = Type::Ptr {
-                    mutable: false,
-                    typ: Box::new(Type::Str),
-                };
-            }
-            ScExpr::CStrLit(_) => {
-                // NOTE: c_str literals have a `*i8` type.
-
-                expr.typ = Type::Ptr {
-                    mutable: false,
-                    typ: Box::new(Type::I8),
-                }
-            }
-            ScExpr::CharLit(_) => {
-                expr.typ = Type::Char;
-            }
-            ScExpr::FloatLit(_) => {
-                if let Some(coercion) = coerce_to
-                    && coercion.is_float()
-                {
-                    expr.typ = coercion;
-                } else {
-                    expr.typ = Type::F32;
-                }
-            }
-            ScExpr::Ident(symref) => {
+            ScExprKind::Ident(symref) => {
                 expr.typ = symref.typ();
             }
-            ScExpr::Binary {
+            ScExprKind::Binary {
                 lhs,
                 op: BinOp::Assignment,
                 rhs,
@@ -853,7 +858,7 @@ impl SemaChecker {
 
                 expr.typ = Type::Void;
             }
-            ScExpr::Binary {
+            ScExprKind::Binary {
                 lhs,
                 op: BinOp::Assignment,
                 rhs,
@@ -869,7 +874,7 @@ impl SemaChecker {
                     });
                 }
 
-                if let ScExpr::Ident(symref) = &lhs.expr
+                if let ScExprKind::Ident(symref) = &lhs.expr
                     && lhs.typeness() == Typeness::Implicit
                     && rhs.typeness() == Typeness::Explicit
                 {
@@ -885,7 +890,7 @@ impl SemaChecker {
 
                 expr.typ = Type::Void;
             }
-            ScExpr::Binary { lhs, op, rhs } => {
+            ScExprKind::Binary { lhs, op, rhs } => {
                 self.ck_expr(lhs, coerce_to.clone())?;
                 self.ck_expr(rhs, coerce_to)?;
 
@@ -952,7 +957,7 @@ impl SemaChecker {
                     _ => {}
                 }
             }
-            ScExpr::Unary { op, expr: exp } => match op {
+            ScExprKind::Unary { op, expr: exp } => match op {
                 UnOp::Negation => {
                     self.ck_expr(exp, coerce_to)?;
 
@@ -1027,7 +1032,7 @@ impl SemaChecker {
                     };
                 }
             },
-            ScExpr::Borrow { mutable, expr: exp } => {
+            ScExprKind::Borrow { mutable, expr: exp } => {
                 let real_coerce = if let Some(Type::Ptr { mutable: _, typ }) = &coerce_to {
                     Some((**typ).clone())
                 } else {
@@ -1036,7 +1041,7 @@ impl SemaChecker {
 
                 self.ck_expr(exp, real_coerce)?;
 
-                if let ScExpr::Ident(sym) = &exp.expr
+                if let ScExprKind::Ident(sym) = &exp.expr
                     && !sym.is_place()
                 {
                     self.sink.emit(BorrowMutWhenNotDefinedMut {
@@ -1051,7 +1056,7 @@ impl SemaChecker {
                     typ: Box::new(exp.typ.clone()),
                 };
             }
-            ScExpr::FunCall { callee, args } => {
+            ScExprKind::FunCall { callee, args } => {
                 self.ck_expr(callee, None)?;
 
                 let Type::FunPtr {
@@ -1091,7 +1096,7 @@ impl SemaChecker {
 
                 expr.typ = (**ret_ty).clone();
             }
-            ScExpr::If {
+            ScExprKind::If {
                 cond,
                 then_br,
                 else_br,
@@ -1112,7 +1117,7 @@ impl SemaChecker {
                     expr.typ = Type::Void;
                 }
             }
-            ScExpr::Block {
+            ScExprKind::Block {
                 label,
                 block,
                 index,
@@ -1147,7 +1152,7 @@ impl SemaChecker {
                     block.typ.clone()
                 };
             }
-            ScExpr::Loop { label, body, index } => {
+            ScExprKind::Loop { label, body, index } => {
                 // define label info
 
                 // NOTE: here we are seeing if it is a predicate loop before
@@ -1156,7 +1161,7 @@ impl SemaChecker {
                     body.stmts.first(),
                     Some(ScStatement {
                         stmt: ScStmt::Expression(ScExpression {
-                            expr: ScExpr::If { .. },
+                            expr: ScExprKind::If { .. },
                             typ: _,
                             loc: None
                         }),
@@ -1192,7 +1197,7 @@ impl SemaChecker {
                     Type::Void
                 };
             }
-            ScExpr::Return { expr: exp } => {
+            ScExprKind::Return { expr: exp } => {
                 if let Some(exp) = exp {
                     self.ck_expr(exp, Some(self.fun_retty.clone()))?;
 
@@ -1215,7 +1220,7 @@ impl SemaChecker {
 
                 expr.typ = Type::Noreturn;
             }
-            ScExpr::Break {
+            ScExprKind::Break {
                 label,
                 expr: exp,
                 index,
@@ -1317,7 +1322,7 @@ impl SemaChecker {
 
                 expr.typ = Type::Noreturn;
             }
-            ScExpr::Continue { label, index } => {
+            ScExprKind::Continue { label, index } => {
                 // define the label index
                 'blk: {
                     if let Some(label) = label {
@@ -1370,7 +1375,7 @@ impl SemaChecker {
 
                 expr.typ = Type::Noreturn;
             }
-            ScExpr::Null => {
+            ScExprKind::Null => {
                 self.sink.emit(feature_todo! {
                     feature: "optional types",
                     label: "'null' represent not having a value",
@@ -1379,7 +1384,7 @@ impl SemaChecker {
 
                 expr.typ = Type::Void;
             }
-            ScExpr::Field { expr: _, member: _ } => {
+            ScExprKind::Field { expr: _, member: _ } => {
                 self.sink.emit(feature_todo! {
                     feature: "field access",
                     label: "field access and struct type definition",
@@ -1388,18 +1393,18 @@ impl SemaChecker {
 
                 expr.typ = Type::Void;
             }
-            ScExpr::QualifiedPath {
+            ScExprKind::QualifiedPath {
                 path: _,
                 sym: symref,
             } => {
                 expr.typ = symref.typ();
             }
-            ScExpr::Underscore => {
+            ScExprKind::Underscore => {
                 // NOTE: we keep the typ unknown because the underscore
                 // expression is only valid in lhs of assignment and we
                 // have a special case for it.
             }
-            ScExpr::PointerType {
+            ScExprKind::PointerType {
                 mutable: _,
                 typexpr,
             } => {
@@ -1418,7 +1423,7 @@ impl SemaChecker {
 
                 expr.typ = Type::Type;
             }
-            ScExpr::FunPtrType { args, ret } => {
+            ScExprKind::FunPtrType { args, ret } => {
                 for arg in args {
                     match self.ck_expr(arg, Some(Type::Type)) {
                         Ok(()) => {}
@@ -1451,7 +1456,7 @@ impl SemaChecker {
 
                 expr.typ = Type::Type;
             }
-            ScExpr::Poisoned { diag } => {
+            ScExprKind::Poisoned { diag } => {
                 self.sink.emit(diag.take().unwrap());
 
                 // NOTE: set a dummy type to hopefully reduce the amount of
