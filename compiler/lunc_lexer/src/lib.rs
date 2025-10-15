@@ -9,7 +9,7 @@ use diags::{
     TooManyCodepointsInCharLiteral, UnknownCharacterEscape, UnknownToken,
     UnterminatedStringLiteral,
 };
-use lunc_diag::{DiagnosticSink, FileId, ReachedEOF, Result};
+use lunc_diag::{DiagnosticSink, FileId, ReachedEOF, SResult};
 
 use lunc_token::{Lit, LitKind, TokenStream, TokenType};
 use lunc_utils::{Span, opt_unreachable, span};
@@ -128,7 +128,7 @@ impl Lexer {
         }
     }
 
-    pub fn lex_token(&mut self) -> Result<TokenType> {
+    pub fn lex_token(&mut self) -> SResult<TokenType> {
         use lunc_token::TokenType::*;
 
         let t = match self.peek() {
@@ -403,7 +403,7 @@ impl Lexer {
         hex
     }
 
-    pub fn lex_number(&mut self) -> Result<TokenType> {
+    pub fn lex_number(&mut self) -> SResult<TokenType> {
         let number = self.lex_number_internal()?;
 
         match self.peek() {
@@ -427,7 +427,7 @@ impl Lexer {
 
     /// function to lex a number BUT does not support specialization, call
     /// [`lex_number`] instead
-    fn lex_number_internal(&mut self) -> Result<TokenType> {
+    fn lex_number_internal(&mut self) -> SResult<TokenType> {
         // Integer literal grammar:
         //
         // int_lit = decimal_lit | binary_lit | octal_lit | hexadecimal_lit ;
@@ -675,11 +675,11 @@ impl Lexer {
         }
     }
 
-    pub fn lex_string(&mut self) -> Result<TokenType> {
+    pub fn lex_string(&mut self) -> SResult<TokenType> {
         self.lex_string_with_options(true)
     }
 
-    pub fn lex_string_with_options(&mut self, support_escape: bool) -> Result<TokenType> {
+    pub fn lex_string_with_options(&mut self, support_escape: bool) -> SResult<TokenType> {
         let mut str = String::new();
 
         // pop the first "
@@ -723,7 +723,7 @@ impl Lexer {
         Ok(TokenType::Lit(Lit::string(str)))
     }
 
-    pub fn lex_char(&mut self) -> Result<TokenType> {
+    pub fn lex_char(&mut self) -> SResult<TokenType> {
         self.expect('\'');
 
         let mut empty_char = false;
@@ -783,7 +783,7 @@ impl Lexer {
 
     /// makes an escape sequence return a tuple of the character that corresponds
     /// to the escape and the increments to make to the head
-    pub fn lex_escape_sequence(&mut self, es: char, string: bool) -> Result<char> {
+    pub fn lex_escape_sequence(&mut self, es: char, string: bool) -> SResult<char> {
         #[inline(always)]
         fn char(i: u8) -> char {
             i as char
@@ -882,7 +882,7 @@ impl Lexer {
 
     /// set string to true if the escape sequence is part of a string, false if
     /// it is part of a char literal
-    pub fn lex_hex_escape(&mut self, string: bool) -> Result<char> {
+    pub fn lex_hex_escape(&mut self, string: bool) -> SResult<char> {
         let mut str = String::with_capacity(2);
         for _ in 0..2 {
             str.push(match self.peek() {
@@ -947,7 +947,7 @@ impl Lexer {
     /// Returns a [`Diagnostic`] if the input is invalid or too large.
     ///
     /// [`Diagnostic`]: lunc_diag::Diagnostic
-    pub fn parse_u128(&mut self, input: &str, radix: u8) -> Result<u128> {
+    pub fn parse_u128(&mut self, input: &str, radix: u8) -> SResult<u128> {
         self.parse_u128_with_digit_count(input, radix)
             .map(|(int, _)| int)
     }
@@ -975,7 +975,7 @@ impl Lexer {
         input: &str,
         radix: u8,
         options: ParseOptions,
-    ) -> Result<u128> {
+    ) -> SResult<u128> {
         self.parse_u128_advanced(input, radix, options)
             .map(|(int, _)| int)
     }
@@ -1002,7 +1002,7 @@ impl Lexer {
     /// Returns a [`Diagnostic`] if the input is invalid or overflows.
     ///
     /// [`Diagnostic`]: lunc_diag::Diagnostic
-    pub fn parse_u128_with_digit_count(&mut self, input: &str, radix: u8) -> Result<(u128, u32)> {
+    pub fn parse_u128_with_digit_count(&mut self, input: &str, radix: u8) -> SResult<(u128, u32)> {
         self.parse_u128_advanced(
             input,
             radix,
@@ -1048,7 +1048,7 @@ impl Lexer {
         input: &str,
         radix: u8,
         options: ParseOptions,
-    ) -> Result<(u128, u32)> {
+    ) -> SResult<(u128, u32)> {
         if !(2..=36).contains(&radix) {
             panic!("invalid radix provided, {radix}, it must be between 2 and 36 included.")
         }

@@ -653,7 +653,32 @@ impl ToDiagnostic for ReachedEOF {
 #[derive(Debug, Clone)]
 pub struct DiagGuaranteed(pub(crate) ());
 
-pub type Result<T, E = DiagGuaranteed> = core::result::Result<T, E>;
+/// Stage result, used by functions that output something
+pub type SResult<T> = core::result::Result<T, Diagnostic>;
+
+/// Extension to [`Result`].
+pub trait ResultExt<T>: private::Sealed {
+    fn unwrap_and_emit(self, sink: &mut DiagnosticSink) -> T;
+}
+
+impl<T: Default> ResultExt<T> for SResult<T> {
+    fn unwrap_and_emit(self, sink: &mut DiagnosticSink) -> T {
+        match self {
+            Ok(p) => p,
+            Err(d) => {
+                sink.emit(d);
+
+                T::default()
+            }
+        }
+    }
+}
+
+mod private {
+    pub trait Sealed {}
+
+    impl<T, E> Sealed for Result<T, E> {}
+}
 
 #[cfg(test)]
 mod tests {

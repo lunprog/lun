@@ -1359,7 +1359,7 @@ impl Desugarrer {
                     // SAFETY: we already matched just above, it can only be that
                     opt_unreachable!()
                 };
-                let mut mod_path = path.path.clone();
+                let mut mod_path = path.node.clone();
 
                 mod_path.pop();
 
@@ -1401,7 +1401,7 @@ impl Desugarrer {
                     Ok(())
                 } else {
                     Err(NotFoundInScope {
-                        name: path.path.to_string(),
+                        name: path.node.to_string(),
                         loc: path.loc.clone(),
                     }
                     .into_diag())
@@ -1413,7 +1413,7 @@ impl Desugarrer {
                         expr: DsExpr::QualifiedPath {
                             sym: LazySymbol::Name(path.last().unwrap().clone()),
                             path: SpannedPath {
-                                path,
+                                node: path,
                                 loc: expr.loc.clone().unwrap(),
                             },
                         },
@@ -1723,7 +1723,7 @@ impl Desugarrer {
                 if self.current_path != resolve_path {
                     return Ok(());
                 }
-                let mut mod_path = path.path.clone();
+                let mut mod_path = path.node.clone();
 
                 let name = mod_path.pop().unwrap();
 
@@ -1734,7 +1734,7 @@ impl Desugarrer {
                         .bind(alias.clone().unwrap_or(name.to_string()), symref)
                 } else {
                     Err(NotFoundInScope {
-                        name: path.path.to_string(),
+                        name: path.node.to_string(),
                         loc: path.loc.clone(),
                     }
                     .into_diag())

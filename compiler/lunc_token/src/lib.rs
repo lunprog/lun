@@ -924,13 +924,13 @@ impl ExpTokenSet {
     }
 
     /// Insert an ExpToken inside the set.
-    pub fn insert(&mut self, tr: ExpToken) {
-        self.0 |= 1u64 << tr as u64;
+    pub fn insert(&mut self, exp: ExpToken) {
+        self.0 |= 1u64 << exp as u64;
     }
 
-    /// Does this ExpTokenSet contains `tr`?
-    pub fn contains(&self, tr: ExpToken) -> bool {
-        self.0 & (1u64 << tr as u64) != 0
+    /// Does this ExpTokenSet contains `exp`?
+    pub fn contains(&self, exp: ExpToken) -> bool {
+        self.0 & (1u64 << exp as u64) != 0
     }
 
     /// Clear the set.

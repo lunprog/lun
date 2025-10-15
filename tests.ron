@@ -4742,7 +4742,7 @@ error: compilation of `E006_mod_directive_2` failed due to 1 error and 0 warning
         test_code: 0,
     ),
     "parser/E006_qualified_path_1": (
-        compiler_out: "error[E006]: expected identifier, found integer literal
+        compiler_out: "error[E006]: expected keyword `orb` or identifier, found integer literal
   ┌─ ./tests/parser/E006_qualified_path_1.lun:2:9
   │
 2 │ #import 1;

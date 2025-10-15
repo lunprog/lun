@@ -6,10 +6,7 @@ use lunc_diag::FileId;
 use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::opt_unreachable;
 
-use crate::{
-    directive::{Directive, parse_import_directive, parse_mod_directive},
-    expr::parse_typexpr,
-};
+use crate::{directive::Directive, expr::parse_typexpr};
 
 use super::*;
 
@@ -204,27 +201,23 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
     }
 }
 
-pub fn parse_directive_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
-    match parser.nth_tt(1) {
-        Some(Ident(id)) => match id.as_str() {
-            Directive::MOD_NAME => parse_mod_directive(parser),
-            Directive::IMPORT_NAME => parse_import_directive(parser),
-            _ => {
-                let t = parser.nth_tok(1).unwrap().clone();
-                Err(UnknownDirective {
-                    name: id.clone(),
-                    loc: t.loc,
-                }
-                .into_diag())
+pub fn parse_directive_item(parser: &mut Parser) -> SResult<Item> {
+    // NOTE: already rewritten.
+    let directive_name = parser.look_ahead(1, |t| t);
+
+    match &directive_name.tt {
+        Ident(id) => match id.as_str() {
+            Directive::MOD_NAME => parser.parse_mod_directive().map(Item::Directive),
+            Directive::IMPORT_NAME => parser.parse_import_directive().map(Item::Directive),
+            _ => Err(UnknownDirective {
+                name: id.clone(),
+                loc: directive_name.loc.clone(),
             }
+            .into_diag()),
         },
         _ => {
-            let t = parser.nth_tok(1).unwrap().clone();
             // TEST: no. 2
-            Err(
-                OldExpectedToken::new(TokenType::Ident(String::new()), t.tt, None::<String>, t.loc)
-                    .into_diag(),
-            )
+            Err(parser.recover_directive().unwrap_err())
         }
     }
 }

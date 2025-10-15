@@ -1,8 +1,7 @@
 //! Parsing of lun's directives.
 
 use lunc_ast::symbol::EffectivePath;
-
-use crate::item::Item;
+use lunc_diag::ResultExt;
 
 use super::*;
 
@@ -34,81 +33,105 @@ impl Directive {
     ];
 }
 
-pub fn parse_mod_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [Pound, ()], Pound);
-
-    // TEST: n/a
-    expect_token!(parser => [Ident(id), id.clone(), if id.as_str() == Directive::MOD_NAME], Ident(String::new()));
-
-    // TEST: no. 1
-    let (name, _) = expect_token!(parser => [Ident(s), s.clone()], Ident(String::new()));
-
-    // TEST: no. 2
-    let (_, hi) = expect_token!(parser => [Semi, ()], Semi);
-
-    Ok(Item::Directive(Directive::Mod {
-        name,
-        loc: Span::from_ends(lo, hi),
-    }))
-}
-
-pub fn parse_import_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [Pound, ()], Pound);
-
-    // TEST: n/a
-    expect_token!(parser => [Ident(id), id.clone(), if id.as_str() == Directive::IMPORT_NAME], Ident(String::new()));
-
-    let path = parse!(parser => SpannedPath);
-
-    let alias = if let Some(KwAs) = parser.peek_tt() {
-        parser.pop();
-        // TEST: no. 1
-        let alias = expect_token!(noloc: parser => [Ident(id), id.clone()], Ident(String::new()));
-
-        Some(alias)
-    } else {
-        None
-    };
-
-    // TEST: no. 2
-    let (_, hi) = expect_token!(parser => [Semi, ()], Semi);
-
-    Ok(Item::Directive(Directive::Import {
-        path,
-        alias,
-        loc: Span::from_ends(lo, hi),
-    }))
-}
-
 /// Spanned [EffectivePath].
-#[derive(Debug, Clone)]
-pub struct SpannedPath {
-    pub path: EffectivePath,
-    pub loc: Span,
-}
+pub type SpannedPath = Spanned<EffectivePath>;
 
-impl AstNode for SpannedPath {
-    fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
+/// Directive parsing
+impl Parser {
+    /// Parse a [`SpannedPath`].
+    pub fn parse_spanned_path(&mut self) -> SResult<SpannedPath> {
         let mut path = Vec::new();
+
         // TEST: no. 1
-        let (id, lo) = expect_token!(parser => [Ident(id), id.clone(); KwOrb, String::from("orb")], Ident(String::new()));
-        path.push(id);
+        if self.eat(ExpToken::Ident) {
+            path.push(self.as_ident());
+        } else if self.eat(ExpToken::KwOrb) {
+            path.push("orb".to_string())
+        } else {
+            return Err(self.etd_and_bump());
+        }
+
+        let lo = self.token_loc();
 
         let mut hi = lo.clone();
-        while let Some(Dot) = parser.peek_tt() {
-            parser.pop();
+        while self.check_no_expect(ExpToken::Dot) {
+            // eat the dot token
+            self.bump();
 
             // TEST: no. 2
-            let (id, h) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
-            hi = h;
-            path.push(id);
+            self.expect(ExpToken::Ident)?;
+            hi = self.token_loc();
+            path.push(self.as_ident());
         }
 
         Ok(SpannedPath {
-            path: EffectivePath::from_vec(path),
+            node: EffectivePath::from_vec(path),
             loc: Span::from_ends(lo, hi),
         })
+    }
+
+    /// Parse an import directive.
+    pub fn parse_import_directive(&mut self) -> SResult<Directive> {
+        // TEST: n/a
+        self.expect(ExpToken::Pound)?;
+        let lo = self.token_loc();
+
+        // TEST: n/a
+        self.expect(ExpToken::Ident)?;
+        debug_assert_eq!(self.as_ident().as_str(), "import");
+
+        let path = self.parse_spanned_path().unwrap_and_emit(&mut self.sink);
+
+        let alias = if self.eat(ExpToken::KwAs) {
+            // TEST: no. 1
+            self.expect(ExpToken::Ident)?;
+
+            Some(self.as_ident())
+        } else {
+            None
+        };
+
+        // TEST: no. 2
+        self.expect(ExpToken::Semi)?;
+        let hi = self.token_loc();
+
+        Ok(Directive::Import {
+            path,
+            alias,
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+
+    /// Parses a mod directive
+    pub fn parse_mod_directive(&mut self) -> SResult<Directive> {
+        // TEST: n/a
+        self.expect(ExpToken::Pound)?;
+        let lo = self.token_loc();
+
+        // TEST: n/a
+        self.expect(ExpToken::Ident)?;
+        debug_assert_eq!(self.as_ident().as_str(), "mod");
+
+        // TEST: no. 1
+        self.expect(ExpToken::Ident)?;
+        let name = self.as_ident();
+
+        // TEST: no. 2
+        self.expect(ExpToken::Semi)?;
+        let hi = self.token_loc();
+
+        Ok(Directive::Mod {
+            name,
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+
+    /// Recovers the parsing, tries to parse `#` and then bumps the parser.
+    pub fn recover_directive(&mut self) -> SResult<()> {
+        // expect `#`
+        self.expect(ExpToken::Pound)?;
+
+        // bump the parser
+        self.expect(ExpToken::Ident)
     }
 }

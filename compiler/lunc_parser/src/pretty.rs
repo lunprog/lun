@@ -8,7 +8,7 @@ use lunc_utils::{
 };
 
 use crate::{
-    directive::{Directive, SpannedPath},
+    directive::Directive,
     expr::{Arg, Else, Expr, Expression, IfExpression},
     item::{Abi, Item, Module},
     stmt::{Block, Statement, Stmt},
@@ -434,14 +434,5 @@ impl PrettyDump for Directive {
                 Ok(())
             }
         }
-    }
-}
-
-impl PrettyDump for SpannedPath {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        let SpannedPath { path, loc } = self;
-
-        path.try_dump(ctx)?;
-        ctx.print_loc(loc)
     }
 }

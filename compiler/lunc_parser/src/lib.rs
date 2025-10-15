@@ -3,18 +3,21 @@
     html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
-use std::{fmt::Debug, mem};
+use std::{fmt::Debug, io, mem};
 
 use diags::*;
 use expr::Expression;
 use item::Module;
-use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, Result, ToDiagnostic};
+use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, SResult, ToDiagnostic};
 
 use lunc_token::{
     ExpToken, ExpTokenSet, Lit, LitKind, Token, TokenStream,
     TokenType::{self, *},
 };
-use lunc_utils::{Span, opt_unreachable, pretty::PrettyDump};
+use lunc_utils::{
+    Span, opt_unreachable,
+    pretty::{PrettyCtxt, PrettyDump},
+};
 
 pub mod diags;
 pub mod directive;
@@ -73,8 +76,8 @@ impl Parser {
 
     /// Checks if the next token is `exp.tok`, if so returns `true`.
     ///
-    /// This method add `exp.tr` to the `Parser::expected_token_reprs` set if
-    /// `exp.tok` is not encountered.
+    /// This method add `exp` to the `Parser::expected_token_exps` set if `exp`
+    /// is not encountered.
     pub fn check(&mut self, exp: ExpToken) -> bool {
         let is_present = self.token.tt == exp;
 
@@ -83,6 +86,13 @@ impl Parser {
         }
 
         is_present
+    }
+
+    /// [`Parser::check`] but do not add `exp` to
+    /// [`Parser::expected_token_exps`].
+    #[inline(always)]
+    pub fn check_no_expect(&self, exp: ExpToken) -> bool {
+        self.token.tt == exp
     }
 
     /// Consumes the `exp.tok` if it exists. Returns `true` if it existed or
@@ -111,12 +121,16 @@ impl Parser {
         }
     }
 
-    /// Expects and consumes the token `exp.tok`. Signals an error is the next
-    /// token isn't `exp.tok`.
-    pub fn expect(&mut self, exp: ExpToken) -> Result<()> {
+    /// Expects and consumes the token `exp.tok`, or something else if it's no
+    /// `exp.tok`. Signals an error is the next token isn't `exp.tok`.
+    pub fn expect(&mut self, exp: ExpToken) -> SResult<()> {
         if !self.eat(exp) {
             // token was not present
-            return Err(self.sink.emit(self.expected_diag()));
+            let diag = self.expected_diag().into_diag();
+
+            self.bump();
+
+            return Err(diag);
         }
 
         Ok(())
@@ -124,8 +138,16 @@ impl Parser {
 
     /// Create a new expected diag with the current token and the
     /// [`Parser::expected_token_exps`].
-    pub fn expected_diag(&self) -> ExpectedToken {
-        ExpectedToken::new([], self.token.clone()).add_expects(self.expected_token_exps)
+    ///
+    /// # Note
+    ///
+    /// This function also resets the [`Parser::expected_token_exps`].
+    pub fn expected_diag(&mut self) -> ExpectedToken {
+        let res = ExpectedToken::new([], self.token.clone()).add_expects(self.expected_token_exps);
+
+        self.expected_token_exps.clear();
+
+        res
     }
 
     /// Look-ahead `dist` tokens away from [`Parser::token`], when `dist == 0`,
@@ -168,6 +190,20 @@ impl Parser {
         };
 
         id.clone()
+    }
+
+    /// Clones the location of the previous token, [`Parser::prev_token`].
+    pub fn token_loc(&self) -> Span {
+        self.prev_token.loc.clone()
+    }
+
+    /// Returns the current expected token diagnostic and then bump the parser.
+    pub fn etd_and_bump(&mut self) -> Diagnostic {
+        let diag = self.expected_diag().into_diag();
+
+        self.bump();
+
+        diag
     }
 
     // TODO: deprecate and then remove when no longer used the following methods
@@ -249,6 +285,22 @@ pub trait AstNode: Debug + PrettyDump {
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic>
     where
         Self: Sized;
+}
+
+/// An ast node with a span.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Spanned<T> {
+    pub node: T,
+    pub loc: Span,
+}
+
+impl<T: PrettyDump> PrettyDump for Spanned<T> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        self.node.try_dump(ctx)?;
+        ctx.print_loc(&self.loc)?;
+
+        Ok(())
+    }
 }
 
 /// This macro is used to expect a token from the parser, one of the most

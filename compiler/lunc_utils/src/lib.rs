@@ -120,6 +120,12 @@ impl<I: Into<usize>, J: Into<usize>> From<(I, J, FileId)> for Span {
     }
 }
 
+impl Default for Span {
+    fn default() -> Self {
+        Span::ZERO
+    }
+}
+
 /// A file id, used to represent, which file we are talking about
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct FileId(u32);
