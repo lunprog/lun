@@ -204,7 +204,7 @@ impl<'a> FunDefTranslator<'a> {
                 // SAFETY: type checking ensure it can only be int / float types
                 _ => opt_unreachable!(),
             },
-            ScExprKind::FunCall { callee, args } => match &callee.expr {
+            ScExprKind::Call { callee, args } => match &callee.expr {
                 ScExprKind::Ident(sym) if sym.kind() == SymKind::Function => {
                     let Some(ClifId::Func {
                         id,

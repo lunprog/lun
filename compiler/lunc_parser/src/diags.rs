@@ -8,6 +8,7 @@ use std::fmt::Display;
 
 use crate::directive::Directive;
 
+#[deprecated]
 pub(crate) struct OldExpectedToken {
     /// what token was expected?
     expected: Vec<Box<dyn Display>>,
@@ -101,10 +102,13 @@ pub struct ExpectedToken {
 }
 
 impl ExpectedToken {
+    /// Empty expected token, used when the expected are added later.
+    pub const EMPTY: [String; 0] = [];
+
     /// Create a new ExpectedToken diag.
-    pub fn new<I: IntoIterator<Item = String>>(expected: I, found: Token) -> ExpectedToken {
+    pub fn new<I: IntoIterator<Item = S>, S: ToString>(expected: I, found: Token) -> ExpectedToken {
         ExpectedToken {
-            expected: expected.into_iter().collect(),
+            expected: expected.into_iter().map(|s| s.to_string()).collect(),
             found: found.tt,
             loc: found.loc,
         }

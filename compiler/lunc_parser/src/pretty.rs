@@ -2,10 +2,7 @@
 
 use std::io::{self, Write};
 
-use lunc_utils::{
-    Span,
-    pretty::{PrettyCtxt, PrettyDump},
-};
+use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 use crate::{
     directive::Directive,
@@ -137,8 +134,8 @@ impl PrettyDump for ExprKind {
 
                 Ok(())
             }
-            ExprKind::FunCall { callee, args } => {
-                ctx.pretty_struct("FunCall")
+            ExprKind::Call { callee, args } => {
+                ctx.pretty_struct("Call")
                     .field("callee", callee)
                     .field("args", args.as_slice())
                     .finish()?;
@@ -167,7 +164,7 @@ impl PrettyDump for ExprKind {
             }
             ExprKind::BlockWithLabel { label, block } => {
                 ctx.pretty_struct("BlockWithLabel")
-                    .field("label", (&label.0, &label.1))
+                    .field("label", label)
                     .field("block", block)
                     .finish()?;
 
@@ -175,13 +172,7 @@ impl PrettyDump for ExprKind {
             }
             ExprKind::PredicateLoop { label, cond, body } => {
                 ctx.pretty_struct("PredicateLoop")
-                    .field(
-                        "label",
-                        (
-                            label.clone().map(|l| l.0),
-                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
-                        ),
-                    )
+                    .field("label", label)
                     .field("cond", cond)
                     .field("body", body)
                     .finish()?;
@@ -196,13 +187,7 @@ impl PrettyDump for ExprKind {
                 loc: _,
             } => {
                 ctx.pretty_struct("IteratorLoop")
-                    .field(
-                        "label",
-                        (
-                            label.clone().map(|l| l.0),
-                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
-                        ),
-                    )
+                    .field("label", label)
                     .field("variable", variable)
                     .field("iterator", iterator)
                     .field("body", body)
@@ -212,13 +197,7 @@ impl PrettyDump for ExprKind {
             }
             ExprKind::InfiniteLoop { label, body } => {
                 ctx.pretty_struct("InfiniteLoop")
-                    .field(
-                        "label",
-                        (
-                            label.clone().map(|l| l.0),
-                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
-                        ),
-                    )
+                    .field("label", label)
                     .field("body", body)
                     .finish()?;
 

@@ -11,7 +11,7 @@ use diags::{
 };
 
 use lunc_ast::{
-    BinOp, UnOp,
+    BinOp, Spanned, UnOp,
     symbol::{EffectivePath, LazySymbol, SymKind, Symbol, Type, Typeness},
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
@@ -25,7 +25,7 @@ use lunc_parser::{
     stmt::{Block, Statement, Stmt},
 };
 use lunc_token::Lit;
-use lunc_utils::{FromHigher, Span, lower, opt_unreachable};
+use lunc_utils::{FromHigher, lower, opt_unreachable};
 
 pub use lunc_parser::{directive::SpannedPath, item::Abi};
 
@@ -254,10 +254,10 @@ impl FromHigher for DsExpression {
                 mutable,
                 expr: lower(expr),
             },
-            ExprKind::FunCall {
+            ExprKind::Call {
                 callee: called,
                 args,
-            } => DsExprKind::FunCall {
+            } => DsExprKind::Call {
                 callee: lower(called),
                 args: lower(args),
             },
@@ -312,7 +312,7 @@ impl FromHigher for DsExpression {
                     vec![
                         stmt_expr(expr_if(
                             expr_unary(UnOp::Not, lower(*cond)),
-                            expr_break(label.map(|(name, _)| name), None),
+                            expr_break(label.map(|Spanned { node: name, loc: _ }| name), None),
                             None,
                         )),
                         stmt_expr(expr_block(lower(body))),
@@ -433,7 +433,7 @@ pub enum DsExprKind {
     /// See [`ExprKind::FunCall`]
     ///
     /// [`ExprKind::FunCall`]: lunc_parser::expr::ExprKind::FunCall
-    FunCall {
+    Call {
         callee: Box<DsExpression>,
         args: Vec<DsExpression>,
     },
@@ -450,7 +450,7 @@ pub enum DsExprKind {
     ///
     /// [`ExprKind::Block`]: lunc_parser::expr::ExprKind::Block
     Block {
-        label: Option<(String, Span)>,
+        label: Option<Spanned<String>>,
         block: DsBlock,
     },
     /// See [`ExprKind::InfiniteLoop`], [`ExprKind::IteratorLoop`] and [`ExprKind::PredicateLoop`].
@@ -459,7 +459,7 @@ pub enum DsExprKind {
     /// [`ExprKind::IteratorLoop`]: lunc_parser::expr::ExprKind::IteratorLoop
     /// [`ExprKind::PredicateLoop`]: lunc_parser::expr::ExprKind::PredicateLoop
     Loop {
-        label: Option<(String, Span)>,
+        label: Option<Spanned<String>>,
         body: DsBlock,
     },
     /// See [`ExprKind::Return`]
@@ -639,7 +639,7 @@ pub fn expr_funcall(
     args: impl Iterator<Item = DsExpression>,
 ) -> DsExpression {
     DsExpression {
-        expr: DsExprKind::FunCall {
+        expr: DsExprKind::Call {
             callee: Box::new(called),
             args: args.collect(),
         },
@@ -672,7 +672,7 @@ pub fn expr_block(block: DsBlock) -> DsExpression {
 }
 
 /// Creates a loop expression without location.
-pub fn expr_loop(label: Option<(String, Span)>, body: DsBlock) -> DsExpression {
+pub fn expr_loop(label: Option<Spanned<String>>, body: DsBlock) -> DsExpression {
     DsExpression {
         expr: DsExprKind::Loop { label, body },
         loc: None,
@@ -1245,7 +1245,7 @@ impl Desugarrer {
             DsExprKind::Unary { op: _, expr } | DsExprKind::Borrow { mutable: _, expr } => {
                 self.resolve_expr(expr)
             }
-            DsExprKind::FunCall { callee, args } => {
+            DsExprKind::Call { callee, args } => {
                 self.resolve_expr(callee)?;
 
                 for arg in args {

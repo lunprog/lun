@@ -39,31 +39,11 @@ impl Expression {
     }
 }
 
-/// parses a type expression with a precedence of logical or and cannot be a
-/// labelled expression.
-///
-/// # Why?
-///
-/// - We parse only to the precedence equal to logical or, because in binding
-///   definition like `a : u32 = 12;` gets parsed as `a : (u32 = 12);` (instead
-///   of `a : (u32) = 12;`) if we dont lower the precedence.
-///
-/// - We don't allow labelled expression because a binding definition like `a
-///   : u32 : loop {};` gets parsed as `a : (u32: loop {});` (instead of `a :
-///   (u32) : loop {};`) so it is disallowed.
-///
-/// **BUT** those expression can still be written if wrapped in parenthesis:
-/// - `a : (a = u32) = 12;` and
-/// - `a : (a: loop {}) : 12;`
-pub fn parse_typexpr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    parse_expr_precedence(parser, Precedence::LogicalOr, true)
-}
-
 impl AstNode for Expression {
     #[inline]
     #[track_caller]
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
-        parse_expr_precedence(parser, HIGHEST_PRECEDENCE, false)
+        parser.parse_expr()
     }
 }
 
@@ -112,7 +92,7 @@ pub enum ExprKind {
     /// function call expression
     ///
     /// `expr "(" ( expr ),* ")"`
-    FunCall {
+    Call {
         callee: Box<Expression>,
         args: Vec<Expression>,
     },
@@ -132,12 +112,15 @@ pub enum ExprKind {
     // TODO: make the grammar for block expr
     Block(Block),
     /// block with label
-    BlockWithLabel { label: (String, Span), block: Block },
+    BlockWithLabel {
+        label: Spanned<String>,
+        block: Block,
+    },
     /// predicate loop expression
     ///
     /// `"while" expression block`
     PredicateLoop {
-        label: Option<(String, Span)>,
+        label: Option<Spanned<String>>,
         cond: Box<Expression>,
         body: Block,
     },
@@ -145,7 +128,7 @@ pub enum ExprKind {
     ///
     /// `"for" ident "in" expression block`
     IteratorLoop {
-        label: Option<(String, Span)>,
+        label: Option<Spanned<String>>,
         variable: String,
         iterator: Box<Expression>,
         body: Block,
@@ -156,7 +139,7 @@ pub enum ExprKind {
     ///
     /// `"loop" block`
     InfiniteLoop {
-        label: Option<(String, Span)>,
+        label: Option<Spanned<String>>,
         body: Block,
     },
     /// return expression
@@ -246,154 +229,6 @@ pub struct Arg {
     pub name_loc: Span,
     pub typexpr: Expression,
     pub loc: Span,
-}
-
-/// Parses an expression given the following precedence.
-///
-/// `typexpr` when set to true, it will parse with some constraints described in
-/// [`parse_typexpr`].
-pub fn parse_expr_precedence(
-    parser: &mut Parser,
-    precedence: Precedence,
-    typexpr: bool,
-) -> Result<Expression, Diagnostic> {
-    // TODO: parsing of range expressions, `expr..<expr` and `expr..=expr`, and
-    // maybe `..<expr`, `..=expr` and maybe `expr..`
-    let mut lhs = match parser.peek_tt() {
-        Some(Lit(..)) => parse!(@fn parser => parse_lit_expr),
-        Some(KwTrue | KwFalse) => parse!(@fn parser => parse_boollit_expr),
-        Some(LParen) => parse!(@fn parser => parse_grouping_expr),
-        Some(And) => parse!(@fn parser => parse_borrow_expr),
-        Some(Ident(_)) if !typexpr && parser.is_labeled_expr() => match parser.nth_tt(2) {
-            Some(KwLoop) => parse!(@fn parser => parse_infinite_loop_expr),
-            Some(KwWhile) => parse!(@fn parser => parse_predicate_loop_expr),
-            Some(KwFor) => parse!(@fn parser => parse_iterator_loop_expr),
-            Some(LCurly) => parse!(@fn parser => parse_block_expr),
-            // SAFETY: we checked in the if of the match arm that it can only
-            // be a keyword and one of loop, while or for
-            _ => opt_unreachable!(),
-        },
-        Some(Ident(_)) => parse!(@fn parser => parse_ident_expr),
-        Some(KwFun) => parse!(@fn parser => parse_funkw_expr),
-        Some(KwIf) => parse!(@fn parser => parse_if_else_expr, false),
-        Some(KwWhile) => parse!(@fn parser => parse_predicate_loop_expr),
-        Some(KwFor) => parse!(@fn parser => parse_iterator_loop_expr),
-        Some(KwLoop) => parse!(@fn parser => parse_infinite_loop_expr),
-        Some(KwReturn) => parse!(@fn parser => parse_return_expr),
-        Some(KwBreak) => parse!(@fn parser => parse_break_expr),
-        Some(KwContinue) => parse!(@fn parser => parse_continue_expr),
-        Some(KwNull) => parse!(@fn parser => parse_null_expr),
-        Some(KwOrb) => parse!(@fn parser => parse_orb_expr),
-        Some(LCurly) => parse!(@fn parser => parse_block_expr),
-        Some(Star) if parser.nth_tt(1) == Some(&TokenType::KwFun) => {
-            parse!(@fn parser => parse_funptr_type_expr)
-        }
-        Some(Star) => parse!(@fn parser => parse_pointer_type_expr),
-        Some(tt) if UnOp::left_from_token(tt.clone()).is_some() => {
-            parse!(@fn parser => parse_unary_left_expr)
-        }
-        Some(_) => {
-            // unwrap is safe because we already know the next has a token type
-            let t = parser.peek_tok().unwrap().clone();
-            // TODO: make the parser retry if he failed to parse lhs with a
-            // loop, see parsing of statements also.
-
-            // TEST: no. 1
-            return Err(
-                OldExpectedToken::new("expression", t.tt, None::<String>, t.loc).into_diag(),
-            );
-        }
-        None => {
-            return Err(parser.eof_diag());
-        }
-    };
-
-    loop {
-        let Some(tt) = parser.peek_tt().cloned() else {
-            break;
-        };
-
-        let Some(pr) = Precedence::from(tt) else {
-            // the next token isn't part of a post expression
-            break;
-        };
-
-        if precedence > pr {
-            break;
-        }
-
-        lhs = match parser.peek_tt() {
-            Some(LParen) => {
-                parse!(@fn parser => parse_funcall_expr, Box::new(lhs))
-            }
-            Some(Dot) => {
-                parse!(@fn parser => parse_field_expr, lhs)
-            }
-            Some(maybe_bin_op) if BinOp::from_tt(maybe_bin_op.clone()).is_some() => {
-                parse!(@fn parser => parse_binary_expr, lhs)
-            }
-            Some(maybe_right_op) if UnOp::right_from_token(maybe_right_op.clone()).is_some() => {
-                parse!(@fn parser => parse_unary_right_expr, lhs)
-            }
-            _ => break,
-        };
-    }
-
-    Ok(lhs)
-}
-
-impl Parser {
-    pub fn is_labeled_expr(&self) -> bool {
-        matches!(self.nth_tt(1), Some(Colon))
-            && matches!(self.nth_tt(2), Some(KwWhile | KwFor | KwLoop | LCurly))
-    }
-}
-
-/// Parse a literal expression
-pub fn parse_lit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (lit, loc) = expect_token!(parser => [Lit(lit), lit.clone()], "literal");
-
-    Ok(Expression {
-        kind: ExprKind::Lit(lit),
-        loc,
-    })
-}
-
-/// Parse a boolean literal expression
-pub fn parse_boollit_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (b, loc) = expect_token!(parser => [KwTrue, true; KwFalse, false], "bool literal");
-
-    Ok(Expression {
-        kind: ExprKind::BoolLit(b),
-        loc,
-    })
-}
-
-/// Parse a grouping expression
-pub fn parse_grouping_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let ((), lo) = expect_token!(parser => [LParen, ()], [LParen]);
-    let expr = parse!(box: parser => Expression);
-    // TEST: yes
-    let ((), hi) = expect_token!(parser => [RParen, ()], [RParen]);
-
-    Ok(Expression {
-        kind: ExprKind::Grouping(expr),
-        loc: Span::from_ends(lo, hi),
-    })
-}
-
-/// Parse an identifier expression
-pub fn parse_ident_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (id, loc) = expect_token!(parser => [Ident(s), s.clone()], Ident(String::new()));
-
-    Ok(Expression {
-        kind: ExprKind::Ident(id),
-        loc,
-    })
 }
 
 /// The precedence table of Lun
@@ -492,7 +327,7 @@ impl Precedence {
 }
 
 impl Precedence {
-    fn from(value: TokenType) -> Option<Precedence> {
+    fn from(value: &TokenType) -> Option<Precedence> {
         match value {
             Eq => Some(Precedence::Assignment),
             AndAnd => Some(Precedence::LogicalOr),
@@ -516,185 +351,428 @@ impl Precedence {
 /// The highest precedence of [`Precedence`]
 pub const HIGHEST_PRECEDENCE: Precedence = Precedence::Assignment;
 
-/// Parse binary expression, `expression op expression`
-pub fn parse_binary_expr(parser: &mut Parser, lhs: Expression) -> Result<Expression, Diagnostic> {
-    let (op, tok) = match parser.peek_tok() {
-        // TODO: here we compute twice the binary op its a little dumb, find a solution to that problem.
-        Some(Token { tt: op, .. }) if BinOp::from_tt(op.clone()).is_some() => {
-            let op = op.clone();
-            parser.pop();
-            (BinOp::from_tt(op.clone()).unwrap(), op)
-        }
-        Some(tok) => {
-            let t = tok.clone();
-            // TEST: n/a
-            return Err(
-                OldExpectedToken::new("binary operator", t.tt, Some("expression"), t.loc)
-                    .into_diag(),
-            );
-        }
-        None => return Err(parser.eof_diag()),
-    };
-
-    let Some(mut pr) = Precedence::from(tok.clone()) else {
-        // we can't reach here because we already checked that our token is a
-        // binary operator like those we want in this function
-        unreachable!()
-    };
-
-    if pr.associativity() == Associativity::LeftToRight {
-        pr = pr.next();
+/// Expression parsing
+impl Parser {
+    /// Parses a Lun Expression
+    pub fn parse_expr(&mut self) -> IResult<Expression> {
+        self.parse_expr_precedence(HIGHEST_PRECEDENCE, false)
     }
 
-    let rhs = parse!(@fn parser => parse_expr_precedence, pr, false);
-    let loc = Span::from_ends(lhs.loc.clone(), rhs.loc.clone());
+    /// Parses a type expression.
+    ///
+    ///
+    /// # Restrictions
+    ///
+    /// Has a precedence of logical or and cannot be a
+    /// labelled expression.
+    ///
+    /// ## Why?
+    ///
+    /// - We parse only to the precedence equal to logical or, because in binding
+    ///   definition like `a : u32 = 12;` gets parsed as `a : (u32 = 12);` (instead
+    ///   of `a : (u32) = 12;`) if we dont lower the precedence.
+    ///
+    /// - We don't allow labelled expression because a binding definition like `a
+    ///   : u32 : loop {};` gets parsed as `a : (u32: loop {});` (instead of `a :
+    ///   (u32) : loop {};`) so it is disallowed.
+    ///
+    /// **BUT** those expression can still be written if wrapped in parenthesis:
+    /// - `a : (a = u32) = 12;` and
+    /// - `a : (a: loop {}) : 12;`
+    pub fn parse_typexpr(&mut self) -> IResult<Expression> {
+        self.parse_expr_precedence(Precedence::LogicalOr, true)
+    }
 
-    Ok(Expression {
-        kind: ExprKind::Binary {
-            lhs: Box::new(lhs),
-            op,
-            rhs: Box::new(rhs),
-        },
-        loc,
-    })
-}
+    /// Parses an expression given the following precedence.
+    ///
+    /// `typexpr` when set to true, it will parse with some constraints described in
+    /// [`Parser::parse_typexpr`].
+    pub fn parse_expr_precedence(
+        &mut self,
+        precedence: Precedence,
+        typexpr: bool,
+    ) -> IResult<Expression> {
+        let mut lhs = match &self.token.tt {
+            Lit(..) => self.parse_lit_expr()?,
+            KwTrue | KwFalse => self.parse_boollit_expr()?,
+            LParen => self.parse_grouping_expr()?,
+            Ident(_) if !typexpr && self.is_labeled_expr() => match self.look_ahead(2, look_tt) {
+                KwLoop => self.parse_infinite_loop_expr()?,
+                KwWhile => self.parse_predicate_loop_expr()?,
+                KwFor => self.parse_iterator_loop_expr()?,
+                LCurly => self.parse_block_expr()?,
+                // SAFETY: we checked in the if of the match arm that it can only
+                // be a keyword and one of loop, while or for
+                _ => opt_unreachable!(),
+            },
+            Ident(_) => self.parse_ident_expr()?,
+            KwFun => self.parse_funkw_expr()?,
+            KwIf => self.parse_if_else_expr(false)?,
+            KwWhile => self.parse_predicate_loop_expr()?,
+            KwFor => self.parse_iterator_loop_expr()?,
+            KwLoop => self.parse_infinite_loop_expr()?,
+            KwReturn => self.parse_return_expr()?,
+            KwBreak => self.parse_break_expr()?,
+            KwContinue => self.parse_continue_expr()?,
+            KwNull => self.parse_null_expr()?,
+            KwOrb => self.parse_orb_expr()?,
+            LCurly => self.parse_block_expr()?,
+            And => self.parse_borrow_expr()?,
+            Star if self.look_ahead(1, |t| t.tt == TokenType::KwFun) => {
+                self.parse_funptr_typexpr()?
+            }
+            Star => self.parse_pointer_typexpr()?,
+            tt if UnOp::left_from_token(tt).is_some() => self.parse_unary_left_expr()?,
+            _ => {
+                let t = self.token.clone();
 
-/// Parse unary expression, `op expression`
-pub fn parse_unary_left_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let (op, lo) = if let Some(Token { tt, loc }) = parser.peek_tok() {
-        if let Some(op) = UnOp::left_from_token(tt.clone()) {
-            let loc = loc.clone();
-            parser.pop();
-            (op, loc)
+                // TEST: no. 1
+                return Err(ExpectedToken::new(["expression"], t).into_diag());
+            }
+        };
+
+        loop {
+            let Some(pr) = Precedence::from(&self.token.tt) else {
+                // the next token isn't part of a post expression
+                break;
+            };
+
+            if precedence > pr {
+                break;
+            }
+
+            lhs = match &self.token.tt {
+                LParen => self.parse_call_expr(Box::new(lhs))?,
+                Dot => self.parse_field_expr(lhs)?,
+                maybe_bin_op if BinOp::from_tt(maybe_bin_op).is_some() => {
+                    self.parse_binary_expr(lhs)?
+                }
+                maybe_right_op if UnOp::right_from_token(maybe_right_op).is_some() => {
+                    self.parse_unary_right_expr(lhs)?
+                }
+                _ => break,
+            };
+        }
+
+        Ok(lhs)
+    }
+
+    /// Checks for `:`, `"while" | "for" | "loop" | "{"` tokens.
+    pub fn is_labeled_expr(&self) -> bool {
+        self.look_ahead(1, |t| matches!(t.tt, Colon))
+            && self.look_ahead(2, |t| matches!(t.tt, KwWhile | KwFor | KwLoop | LCurly))
+    }
+
+    /// Parses a literal expression
+    pub fn parse_lit_expr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        if let Some(lit) = self.eat_lit() {
+            Ok(Expression {
+                kind: ExprKind::Lit(lit),
+                loc: self.token_loc(),
+            })
         } else {
-            let t = parser.peek_tok().unwrap().clone();
-            // TEST: n/a
-            return Err(
-                OldExpectedToken::new("unary operator", t.tt, Some("expression"), t.loc)
-                    .into_diag(),
-            );
+            self.bump();
+
+            Err(ExpectedToken::new(["literal"], self.prev_token.clone()).into_diag())
         }
-    } else {
-        return Err(parser.eof_diag());
-    };
+    }
 
-    let expr = parse!(box: @fn parser => parse_expr_precedence, Precedence::Unary, false);
-
-    Ok(Expression {
-        loc: Span::from_ends(lo, expr.loc.clone()),
-        kind: ExprKind::Unary { op, expr },
-    })
-}
-
-/// parses the call expression
-pub fn parse_funcall_expr(
-    parser: &mut Parser,
-    called: Box<Expression>,
-) -> Result<Expression, Diagnostic> {
-    let lo = called.loc.clone();
-    // TEST: n/a
-    expect_token!(parser => [LParen, ()], LParen);
-
-    let mut args = Vec::new();
-
-    loop {
-        if let Some(RParen) = parser.peek_tt() {
-            break;
+    /// Parses a boolean literal expression
+    pub fn parse_boollit_expr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        if self.eat(ExpToken::KwTrue) {
+            Ok(Expression {
+                kind: ExprKind::BoolLit(true),
+                loc: self.token_loc(),
+            })
+        } else if self.eat(ExpToken::KwFalse) {
+            Ok(Expression {
+                kind: ExprKind::BoolLit(false),
+                loc: self.token_loc(),
+            })
+        } else {
+            Err(self.etd_and_bump())
         }
+    }
 
-        args.push(parse!(parser => Expression));
+    /// Parses a grouping expression
+    pub fn parse_grouping_expr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        self.expect(ExpToken::LParen)?;
+        let lo = self.token_loc();
 
         // TEST: yes
-        expect_token!(parser => [Comma, (); RParen, (), in break], [Comma, RParen]);
+        let expr = self.parse_expr()?;
+
+        // TEST: n/a
+        self.expect(ExpToken::RParen)?;
+        let hi = self.token_loc();
+
+        Ok(Expression {
+            kind: ExprKind::Grouping(Box::new(expr)),
+            loc: Span::from_ends(lo, hi),
+        })
     }
 
-    // TEST: n/a
-    let ((), hi) = expect_token!(parser => [RParen, ()], RParen);
+    /// Parses an identifier expression
+    pub fn parse_ident_expr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        self.expect(ExpToken::Ident)?;
+        let id = self.as_ident();
 
-    Ok(Expression {
-        kind: ExprKind::FunCall {
-            callee: called,
-            args,
-        },
-        loc: Span::from_ends(lo, hi),
-    })
-}
+        Ok(Expression {
+            kind: ExprKind::Ident(id),
+            loc: self.token_loc(),
+        })
+    }
 
-/// parses the function definition / declaration expression
-pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [KwFun, ()], KwFun);
+    /// Parses binary expression, `expression op expression`
+    pub fn parse_binary_expr(&mut self, lhs: Expression) -> IResult<Expression> {
+        let (op, tt) = match BinOp::from_tt(&self.token.tt) {
+            Some(op) => {
+                self.bump();
+                let tt = &self.prev_token.tt;
 
-    // TEST: no. 1
-    expect_token!(parser => [LParen, ()], LParen);
+                (op, tt)
+            }
+            None => {
+                // TEST: n/a
+                return Err(ExpectedToken::new(["binary operator"], self.token.clone()).into_diag());
+            }
+        };
 
-    match (parser.peek_tt(), parser.nth_tt(1)) {
-        (Some(Ident(_)), Some(Colon)) => {
-            // function definition
+        let Some(mut pr) = Precedence::from(tt) else {
+            // SAFETY: we can't reach here because we already checked that our token is a
+            // binary operator like those we want in this function
+            opt_unreachable!()
+        };
 
-            let mut args = Vec::new();
+        if pr.associativity() == Associativity::LeftToRight {
+            pr = pr.next();
+        }
 
-            loop {
-                if let Some(RParen) = parser.peek_tt() {
-                    break;
+        let rhs = self.parse_expr_precedence(pr, false)?;
+        let loc = Span::from_ends(lhs.loc.clone(), rhs.loc.clone());
+
+        Ok(Expression {
+            kind: ExprKind::Binary {
+                lhs: Box::new(lhs),
+                op,
+                rhs: Box::new(rhs),
+            },
+            loc,
+        })
+    }
+
+    /// Parses unary expression, `op expression`
+    pub fn parse_unary_left_expr(&mut self) -> IResult<Expression> {
+        let (op, lo) = if let Some(op) = UnOp::left_from_token(&self.token.tt) {
+            self.bump();
+
+            (op, self.token_loc())
+        } else {
+            return Err(ExpectedToken::new(["unary operator"], self.token.clone()).into_diag());
+        };
+
+        let expr = self.parse_expr_precedence(Precedence::Unary, false)?;
+
+        Ok(Expression {
+            loc: Span::from_ends(lo, expr.loc.clone()),
+            kind: ExprKind::Unary {
+                op,
+                expr: Box::new(expr),
+            },
+        })
+    }
+
+    /// Parses the call expression
+    pub fn parse_call_expr(&mut self, called: Box<Expression>) -> IResult<Expression> {
+        let lo = called.loc.clone();
+        // TEST: n/a
+        self.expect(ExpToken::LParen)?;
+
+        let mut args = Vec::new();
+
+        loop {
+            if self.eat_no_expect(ExpToken::RParen) {
+                break;
+            }
+
+            args.push(self.parse_expr()?);
+
+            // TEST: yes
+            if self.eat(ExpToken::Comma) {
+                // nothing it was expected..
+            } else if self.eat(ExpToken::RParen) {
+                // finished to parse the call expr
+                break;
+            } else {
+                return Err(self.etd_and_bump());
+            }
+        }
+
+        let hi = self.token_loc();
+
+        Ok(Expression {
+            kind: ExprKind::Call {
+                callee: called,
+                args,
+            },
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+
+    /// Parses the function definition / declaration expression
+    pub fn parse_funkw_expr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        self.expect(ExpToken::KwFun)?;
+        let lo = self.token_loc();
+
+        // TEST: no. 1
+        self.expect(ExpToken::LParen)?;
+
+        match (&self.token.tt, self.look_ahead(1, look_tt)) {
+            (Ident(_), Colon) => {
+                // function definition
+                //
+                // we currently know about the tokens:
+                // KwFun, LParen, Ident, Colon, ...
+                //                ^^^^^ self.token
+
+                let mut args = Vec::new();
+
+                loop {
+                    if self.check(ExpToken::RParen) {
+                        break;
+                    }
+
+                    // TEST: n/a
+                    self.expect(ExpToken::Ident)?;
+                    let name = self.as_ident();
+                    let lo_arg = self.token_loc();
+
+                    // TEST: n/a
+                    self.expect(ExpToken::Colon)?;
+
+                    let typexpr = self.parse_typexpr()?;
+
+                    args.push(Arg {
+                        name,
+                        name_loc: lo_arg.clone(),
+                        typexpr: typexpr.clone(),
+                        loc: Span::from_ends(lo_arg, typexpr.loc),
+                    });
+
+                    // TEST: no. 2 and no. 3
+                    if self.eat(ExpToken::Comma) {
+                        // nothing it was expected..
+                    } else if self.eat(ExpToken::RParen) {
+                        // finished to parse the call expr
+                        break;
+                    } else {
+                        return Err(self.etd_and_bump());
+                    }
                 }
 
-                // TEST: n/a
-                let (name, lo_arg) =
-                    expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+                let rettypexpr = if self.eat_no_expect(ExpToken::MinusGt) {
+                    Some(Box::new(self.parse_typexpr()?))
+                } else {
+                    None
+                };
 
-                // TEST: n/a
-                expect_token!(parser => [Colon, ()], Colon);
+                let body = self.parse_block()?;
+                let hi = body.loc.clone();
 
-                let typexpr = parse!(@fn parser => parse_typexpr);
-
-                args.push(Arg {
-                    name,
-                    name_loc: lo_arg.clone(),
-                    typexpr: typexpr.clone(),
-                    loc: Span::from_ends(lo_arg, typexpr.loc),
-                });
-
-                // TEST: no. 2
-                expect_token!(parser => [Comma, (); RParen, (), in break], Comma);
+                Ok(Expression {
+                    kind: ExprKind::FunDefinition {
+                        args,
+                        rettypexpr,
+                        body,
+                    },
+                    loc: Span::from_ends(lo, hi),
+                })
             }
-            // TEST: no. 3
-            expect_token!(parser => [RParen, ()], RParen);
+            (RParen, _) => {
+                // ambiguous
+                //
+                // we currently know about the tokens:
+                // KwFun, LParen, RParen, ...
+                //                ^^^^^^ self.token
 
-            let rettypexpr = if let Some(MinusGt) = parser.peek_tt() {
-                parser.pop();
-                Some(parse!(box: @fn parser => parse_typexpr))
-            } else {
-                None
-            };
+                // TEST: n/a
+                self.expect(ExpToken::RParen)?;
+                let hi_paren = self.token_loc();
 
-            let body = parse!(parser => Block);
-            let hi = body.loc.clone();
+                let rettypexpr = if self.eat_no_expect(ExpToken::MinusGt) {
+                    Some(Box::new(self.parse_typexpr()?))
+                } else {
+                    None
+                };
 
-            Ok(Expression {
-                kind: ExprKind::FunDefinition {
-                    args,
-                    rettypexpr,
-                    body,
-                },
-                loc: Span::from_ends(lo, hi),
-            })
-        }
-        (Some(RParen), _) => {
-            // ambiguous
+                if self.token.is_stmt_end() {
+                    // function declaration
 
-            // TEST: n/a
-            let ((), hi_paren) = expect_token!(parser => [RParen, ()], RParen);
+                    let hi = rettypexpr
+                        .as_ref()
+                        .map(|typexpr| typexpr.loc.clone())
+                        .unwrap_or(hi_paren);
 
-            let rettypexpr = if let Some(MinusGt) = parser.peek_tt() {
-                parser.pop();
-                Some(parse!(box: @fn parser => parse_typexpr))
-            } else {
-                None
-            };
+                    Ok(Expression {
+                        kind: ExprKind::FunDeclaration {
+                            args: Vec::new(),
+                            rettypexpr,
+                        },
+                        loc: Span::from_ends(lo, hi),
+                    })
+                } else {
+                    // function definition
 
-            if parser.is_stmt_end() {
+                    let body = self.parse_block()?;
+                    let hi = body.loc.clone();
+
+                    Ok(Expression {
+                        kind: ExprKind::FunDefinition {
+                            args: Vec::new(),
+                            rettypexpr,
+                            body,
+                        },
+                        loc: Span::from_ends(lo, hi),
+                    })
+                }
+            }
+            _ => {
                 // function declaration
+
+                let mut args = Vec::new();
+
+                loop {
+                    if self.eat_no_expect(ExpToken::RParen) {
+                        break;
+                    }
+
+                    let typexpr = self.parse_typexpr()?;
+
+                    args.push(typexpr);
+
+                    // TEST: no. 4
+                    if self.eat(ExpToken::Comma) {
+                        // nothing it was expected..
+                    } else if self.eat(ExpToken::RParen) {
+                        // finished to parse the call expr
+                        break;
+                    } else {
+                        return Err(self.etd_and_bump());
+                    }
+                }
+                // TEST: n/a
+                let hi_paren = self.token.loc.clone();
+
+                let rettypexpr = if self.eat_no_expect(ExpToken::MinusGt) {
+                    Some(Box::new(self.parse_typexpr()?))
+                } else {
+                    None
+                };
 
                 let hi = rettypexpr
                     .as_ref()
@@ -702,548 +780,444 @@ pub fn parse_funkw_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
                     .unwrap_or(hi_paren);
 
                 Ok(Expression {
-                    kind: ExprKind::FunDeclaration {
-                        args: Vec::new(),
-                        rettypexpr,
-                    },
-                    loc: Span::from_ends(lo, hi),
-                })
-            } else {
-                // function definition
-
-                let body = parse!(parser => Block);
-                let hi = body.loc.clone();
-
-                Ok(Expression {
-                    kind: ExprKind::FunDefinition {
-                        args: Vec::new(),
-                        rettypexpr,
-                        body,
-                    },
+                    kind: ExprKind::FunDeclaration { args, rettypexpr },
                     loc: Span::from_ends(lo, hi),
                 })
             }
         }
-        _ => {
-            // function declaration
+    }
 
-            let mut args = Vec::new();
+    /// Parses the if-else expression
+    pub fn parse_if_else_expr(&mut self, only_block: bool) -> IResult<Expression> {
+        // TEST: n/a
+        self.expect(ExpToken::KwIf)?;
+        let lo = self.token_loc();
 
-            loop {
-                if let Some(RParen) = parser.peek_tt() {
-                    break;
-                }
+        let cond = Box::new(self.parse_expr()?);
 
-                let typexpr = parse!(@fn parser => parse_typexpr);
+        if self.check(ExpToken::LCurly) {
+            // if expr
+            // "if" expression block [ "else" (if-expr | block-expr) ]
+            let body = Box::new(self.parse_block()?);
 
-                args.push(typexpr);
+            let mut hi = body.loc.clone();
 
-                // TEST: no. 4
-                expect_token!(parser => [Comma, (); RParen, (), in break], [Comma, RParen]);
-            }
-            // TEST: n/a
-            let ((), hi_paren) = expect_token!(parser => [RParen, ()], RParen);
+            let else_br = if self.eat_no_expect(ExpToken::KwElse) {
+                let else_branch = match &self.token.tt {
+                    KwIf => {
+                        let Expression {
+                            kind: ExprKind::If(if_expr),
+                            loc: _,
+                        } = self.parse_if_else_expr(true)?
+                        else {
+                            // SAFETY: parse_if_else_expr only produces like that one.
+                            opt_unreachable!();
+                        };
+                        hi = if_expr.loc.clone();
 
-            let rettypexpr = if let Some(MinusGt) = parser.peek_tt() {
-                parser.pop();
-                Some(parse!(box: @fn parser => parse_typexpr))
+                        Else::IfExpr(if_expr)
+                    }
+                    LCurly => {
+                        // block
+                        let block = self.parse_block()?;
+
+                        hi = block.loc.clone();
+
+                        Else::Block(block)
+                    }
+                    _ => {
+                        // TEST: no. 2
+                        return Err(ExpectedToken::new(
+                            [ExpToken::LCurly, ExpToken::KwIf],
+                            self.token.clone(),
+                        )
+                        .into_diag());
+                    }
+                };
+
+                Some(Box::new(else_branch))
             } else {
                 None
             };
 
-            let hi = rettypexpr
-                .as_ref()
-                .map(|typexpr| typexpr.loc.clone())
-                .unwrap_or(hi_paren);
+            let loc = Span::from_ends(lo, hi);
 
             Ok(Expression {
-                kind: ExprKind::FunDeclaration { args, rettypexpr },
+                kind: ExprKind::If(IfExpression {
+                    cond,
+                    body,
+                    else_br,
+                    loc: loc.clone(),
+                }),
+                loc,
+            })
+        } else if !only_block {
+            // if then else expr
+            // "if" expression then expression "else" expression
+
+            // TEST: n/a
+            self.expect(ExpToken::KwThen)?;
+            let true_val = Box::new(self.parse_expr()?);
+            // TEST: no. 1
+            self.expect(ExpToken::KwElse)?;
+            let false_val = Box::new(self.parse_expr()?);
+
+            let hi = false_val.loc.clone();
+
+            Ok(Expression {
+                kind: ExprKind::IfThenElse {
+                    cond,
+                    true_val,
+                    false_val,
+                },
                 loc: Span::from_ends(lo, hi),
+            })
+        } else {
+            // TEST: no. 3
+            Err(self.etd_and_bump().into_diag())
+        }
+    }
+
+    /// Parses the label of an expression that can be labeled if any.
+    pub fn parse_label_in_expr(&mut self) -> IResult<Option<Spanned<String>>> {
+        if self.eat_no_expect(ExpToken::Ident) {
+            let id = self.as_ident();
+            let loc = self.token_loc();
+
+            // TEST: n/a
+            self.expect(ExpToken::Colon)?;
+
+            Ok(Some(Spanned { node: id, loc }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Parses block expression
+    pub fn parse_block_expr(&mut self) -> IResult<Expression> {
+        let label = self.parse_label_in_expr()?;
+        let block = self.parse_block()?;
+
+        if let Some(label) = label {
+            let lo = label.loc.clone();
+            let hi = block.loc.clone();
+
+            Ok(Expression {
+                kind: ExprKind::BlockWithLabel { label, block },
+                loc: Span::from_ends(lo, hi),
+            })
+        } else {
+            Ok(Expression {
+                loc: block.loc.clone(),
+                kind: ExprKind::Block(block),
             })
         }
     }
-}
 
-/// parses the if-else expression
-pub fn parse_if_else_expr(parser: &mut Parser, only_block: bool) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [KwIf, ()], KwIf);
+    /// Parses predicate loop expression
+    pub fn parse_predicate_loop_expr(&mut self) -> IResult<Expression> {
+        let label = self.parse_label_in_expr()?;
 
-    let cond = parse!(box: parser => Expression);
+        // TEST: n/a
+        self.expect(ExpToken::KwWhile)?;
+        let lo_while = self.token_loc();
+        let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_while);
 
-    if let Some(TokenType::LCurly) = parser.peek_tt() {
-        // if expr
-        // "if" expression block [ "else" (if-expr | block-expr) ]
-        let body = parse!(box: parser => Block);
+        let cond = Box::new(self.parse_expr()?);
+        let body = self.parse_block()?;
 
-        let mut hi = body.loc.clone();
+        let hi = body.loc.clone();
 
-        let else_br = if let Some(KwElse) = parser.peek_tt() {
-            parser.pop();
+        Ok(Expression {
+            kind: ExprKind::PredicateLoop { label, cond, body },
+            loc: Span::from_ends(lo, hi),
+        })
+    }
 
-            let else_branch = match parser.peek_tt() {
-                Some(KwIf) => {
-                    let Expression {
-                        kind: ExprKind::If(if_expr),
-                        loc: _,
-                    } = parse!(@fn parser => parse_if_else_expr, true)
-                    else {
-                        unreachable!();
-                    };
-                    hi = if_expr.loc.clone();
+    /// Parses iterator loop expression
+    pub fn parse_iterator_loop_expr(&mut self) -> IResult<Expression> {
+        let label = self.parse_label_in_expr()?;
 
-                    Else::IfExpr(if_expr)
-                }
-                Some(LCurly) => {
-                    // block
-                    let block = parse!(parser => Block);
+        // TEST: n/a
+        self.expect(ExpToken::KwFor)?;
+        let lo_for = self.token_loc();
+        let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_for);
 
-                    hi = block.loc.clone();
+        // TEST: no. 1
+        self.expect(ExpToken::Ident)?;
+        let variable = self.as_ident();
 
-                    Else::Block(block)
-                }
-                Some(_) => {
-                    let t = parser.peek_tok().unwrap();
+        // TEST: no. 2
+        self.expect(ExpToken::KwIn)?;
 
-                    // TEST: no. 2
-                    return Err(OldExpectedToken::new(
-                        [LCurly, KwIf],
-                        t.tt.clone(),
-                        Some("if expression"),
-                        t.loc.clone(),
-                    )
-                    .into_diag());
-                }
-                None => return Err(parser.eof_diag()),
-            };
+        let iterator = Box::new(self.parse_expr()?);
 
-            Some(Box::new(else_branch))
-        } else {
-            None
-        };
+        let body = self.parse_block()?;
+
+        let hi = body.loc.clone();
 
         let loc = Span::from_ends(lo, hi);
 
         Ok(Expression {
-            kind: ExprKind::If(IfExpression {
-                cond,
+            kind: ExprKind::IteratorLoop {
+                label,
+                variable,
+                iterator,
                 body,
-                else_br,
                 loc: loc.clone(),
-            }),
+            },
             loc,
         })
-    } else if !only_block {
-        // if then else expr
-        // "if" expression then expression "else" expression
+    }
+
+    /// Parses infinite loop expression
+    pub fn parse_infinite_loop_expr(&mut self) -> IResult<Expression> {
+        let label = self.parse_label_in_expr()?;
 
         // TEST: n/a
-        expect_token!(parser => [KwThen, ()], KwThen);
-        let true_val = parse!(box: parser => Expression);
-        // TEST: no. 1
-        expect_token!(parser => [KwElse, ()], KwElse);
-        let false_val = parse!(box: parser => Expression);
+        self.expect(ExpToken::KwLoop)?;
+        let lo_loop = self.token_loc();
+        let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_loop);
 
-        let hi = false_val.loc.clone();
+        let block = self.parse_block()?;
+
+        let hi = block.loc.clone();
 
         Ok(Expression {
-            kind: ExprKind::IfThenElse {
-                cond,
-                true_val,
-                false_val,
+            kind: ExprKind::InfiniteLoop { label, body: block },
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+
+    /// Parses return expression
+    pub fn parse_return_expr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        self.expect(ExpToken::KwReturn)?;
+        let lo = self.token_loc();
+        let mut hi = lo.clone();
+
+        let val = if self.token.is_stmt_end() {
+            None
+        } else {
+            let expr = Box::new(self.parse_expr()?);
+            hi = expr.loc.clone();
+
+            Some(expr)
+        };
+
+        Ok(Expression {
+            kind: ExprKind::Return { expr: val },
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+
+    /// Parses break expression
+    pub fn parse_break_expr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        self.expect(ExpToken::KwBreak)?;
+        let lo = self.token_loc();
+
+        let mut hi = lo.clone();
+
+        let label = if self.eat_no_expect(ExpToken::Colon) {
+            // TEST: no. 1
+            self.expect(ExpToken::Ident)?;
+            let label = self.as_ident();
+
+            hi = self.token_loc();
+
+            Some(label)
+        } else {
+            None
+        };
+
+        let expr = if self.token.is_stmt_end() {
+            None
+        } else {
+            let expr = Box::new(self.parse_expr()?);
+            hi = expr.loc.clone();
+
+            Some(expr)
+        };
+
+        Ok(Expression {
+            kind: ExprKind::Break { label, expr },
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+
+    /// Parses continue expression
+    pub fn parse_continue_expr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        self.expect(ExpToken::KwContinue)?;
+        let lo = self.token_loc();
+        let mut hi = lo.clone();
+
+        let label = if self.eat_no_expect(ExpToken::Colon) {
+            // TEST: no. 1
+            self.expect(ExpToken::Ident)?;
+            let label = self.as_ident();
+
+            hi = self.token_loc();
+
+            Some(label)
+        } else {
+            None
+        };
+
+        Ok(Expression {
+            kind: ExprKind::Continue { label },
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+
+    /// Parses null expression
+    pub fn parse_null_expr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        self.expect(ExpToken::KwNull)?;
+        let loc = self.token_loc();
+
+        Ok(Expression {
+            kind: ExprKind::Null,
+            loc,
+        })
+    }
+
+    /// Parses orb expression
+    pub fn parse_orb_expr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        self.expect(ExpToken::KwOrb)?;
+        let loc = self.token_loc();
+
+        Ok(Expression {
+            kind: ExprKind::Orb,
+            loc,
+        })
+    }
+
+    /// Parses function pointer type
+    pub fn parse_funptr_typexpr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        self.expect(ExpToken::Star)?;
+        let lo = self.token_loc();
+
+        // TEST: n/a
+        self.expect(ExpToken::KwFun)?;
+
+        // TEST: no. 1
+        self.expect(ExpToken::LParen)?;
+
+        let mut args = Vec::new();
+
+        loop {
+            if self.eat_no_expect(ExpToken::RParen) {
+                break;
+            }
+
+            args.push(self.parse_typexpr()?);
+
+            // TEST: no. 2
+            if self.eat(ExpToken::Comma) {
+                // nothing it was expected..
+            } else if self.eat(ExpToken::RParen) {
+                // finished to parse the call expr
+                break;
+            } else {
+                return Err(self.etd_and_bump());
+            }
+        }
+
+        // TEST: n/a
+        let hi_paren = self.token_loc();
+
+        let (hi, ret) = if self.eat_no_expect(ExpToken::MinusGt) {
+            let t = Box::new(self.parse_typexpr()?);
+
+            (t.loc.clone(), Some(t))
+        } else {
+            (hi_paren, None)
+        };
+
+        Ok(Expression {
+            kind: ExprKind::FunPtrType { args, ret },
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+
+    /// Parses pointer type expression
+    pub fn parse_pointer_typexpr(&mut self) -> IResult<Expression> {
+        // TEST: n/a
+        self.expect(ExpToken::Star)?;
+        let lo = self.token_loc();
+
+        let mutable = self.eat_no_expect(ExpToken::KwMut);
+
+        let typexpr = Box::new(self.parse_typexpr()?);
+        let hi = typexpr.loc.clone();
+
+        Ok(Expression {
+            kind: ExprKind::PointerType { mutable, typexpr },
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+
+    /// Parses unary right expression
+    pub fn parse_unary_right_expr(&mut self, lhs: Expression) -> IResult<Expression> {
+        let lo = lhs.loc.clone();
+
+        let (op, hi) = if let Some(op) = UnOp::right_from_token(&self.token.tt) {
+            self.bump();
+
+            (op, self.token_loc())
+        } else {
+            return Err(ExpectedToken::new(["unary operator"], self.token.clone()).into_diag());
+        };
+
+        Ok(Expression {
+            kind: ExprKind::Unary {
+                op,
+                expr: Box::new(lhs),
             },
             loc: Span::from_ends(lo, hi),
         })
-    } else {
-        let t = parser.peek_tok().unwrap();
-
-        // TEST: no. 3
-        Err(
-            OldExpectedToken::new([LCurly], t.tt.clone(), Some("if expression"), t.loc.clone())
-                .into_diag(),
-        )
     }
-}
 
-/// parses block expression
-pub fn parse_block_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    if let Some(Ident(id)) = parser.peek_tt() {
-        let id = id.clone();
-
-        let Some(Token { tt: _, loc: lo }) = parser.pop() else {
-            opt_unreachable!()
-        };
-
-        let label = (id, lo.clone());
-
+    /// Parses borrow expression
+    pub fn parse_borrow_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        expect_token!(parser => [Colon, ()], Colon);
+        self.expect(ExpToken::And)?;
+        let lo = self.token_loc();
 
-        let block = parse!(parser => Block);
-        let hi = block.loc.clone();
+        let mutable = self.eat_no_expect(ExpToken::KwMut);
 
-        return Ok(Expression {
-            kind: ExprKind::BlockWithLabel { label, block },
+        let val = Box::new(self.parse_expr()?);
+
+        let hi = val.loc.clone();
+
+        Ok(Expression {
+            kind: ExprKind::Borrow { mutable, expr: val },
             loc: Span::from_ends(lo, hi),
-        });
+        })
     }
 
-    let block = parse!(parser => Block);
-    let loc = block.loc.clone();
-
-    Ok(Expression {
-        kind: ExprKind::Block(block),
-        loc,
-    })
-}
-
-/// parses predicate loop expression
-pub fn parse_predicate_loop_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let label = if let Some(Ident(id)) = parser.peek_tt() {
-        let label = id.clone();
-        let Some(Token { tt: _, loc }) = parser.pop() else {
-            opt_unreachable!()
-        };
-
+    /// Parses field expression
+    pub fn parse_field_expr(&mut self, expr: Expression) -> IResult<Expression> {
         // TEST: n/a
-        expect_token!(parser => [Colon, ()], Colon);
-
-        Some((label, loc))
-    } else {
-        None
-    };
-
-    // TEST: n/a
-    let (_, lo_while) = expect_token!(parser => [KwWhile, ()], KwWhile);
-    let lo = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo_while);
-
-    let cond = parse!(box: parser => Expression);
-    let body = parse!(parser => Block);
-
-    let hi = body.loc.clone();
-
-    Ok(Expression {
-        kind: ExprKind::PredicateLoop { label, cond, body },
-        loc: Span::from_ends(lo, hi),
-    })
-}
-
-/// parses iterator loop expression
-pub fn parse_iterator_loop_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let label = if let Some(Ident(id)) = parser.peek_tt() {
-        let label = id.clone();
-        let Some(Token { tt: _, loc }) = parser.pop() else {
-            opt_unreachable!()
-        };
-
-        // TEST: n/a
-        expect_token!(parser => [Colon, ()], Colon);
-
-        Some((label, loc))
-    } else {
-        None
-    };
-
-    // TEST: n/a
-    let (_, lo_for) = expect_token!(parser => [KwFor, ()], KwFor);
-    let lo = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo_for);
-
-    // TEST: no. 1
-    let (variable, _) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
-
-    // TEST: no. 2
-    expect_token!(parser => [KwIn, ()], KwIn);
-
-    let iterator = parse!(box: parser => Expression);
-
-    let body = parse!(parser => Block);
-
-    let hi = body.loc.clone();
-
-    let loc = Span::from_ends(lo, hi);
-
-    Ok(Expression {
-        kind: ExprKind::IteratorLoop {
-            label,
-            variable,
-            iterator,
-            body,
-            loc: loc.clone(),
-        },
-        loc,
-    })
-}
-
-/// parses infinite loop expression
-pub fn parse_infinite_loop_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    let label = if let Some(Ident(id)) = parser.peek_tt() {
-        let label = id.clone();
-        let Some(Token { tt: _, loc }) = parser.pop() else {
-            opt_unreachable!()
-        };
-
-        // TEST: n/a
-        expect_token!(parser => [Colon, ()], Colon);
-
-        Some((label, loc))
-    } else {
-        None
-    };
-
-    // TEST: n/a
-    let (_, lo_loop) = expect_token!(parser => [KwLoop, ()], KwLoop);
-    let lo = label.as_ref().map(|l| l.1.clone()).unwrap_or(lo_loop);
-
-    let block = parse!(parser => Block);
-
-    let hi = block.loc.clone();
-
-    Ok(Expression {
-        kind: ExprKind::InfiniteLoop { label, body: block },
-        loc: Span::from_ends(lo, hi),
-    })
-}
-
-/// parses return expression
-pub fn parse_return_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [KwReturn, ()], KwReturn);
-    let mut hi = lo.clone();
-
-    let val = if parser.is_stmt_end() {
-        None
-    } else {
-        let expr = parse!(box: parser => Expression);
-        hi = expr.loc.clone();
-
-        Some(expr)
-    };
-
-    Ok(Expression {
-        kind: ExprKind::Return { expr: val },
-        loc: Span::from_ends(lo, hi),
-    })
-}
-
-/// parses break expression
-pub fn parse_break_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [KwBreak, ()], KwBreak);
-
-    let mut hi = lo.clone();
-
-    let label = if let Some(Colon) = parser.peek_tt() {
-        let Some(_) = parser.pop() else {
-            // SAFETY: we already checked that the next token is here.
-            opt_unreachable!()
-        };
+        self.expect(ExpToken::Dot)?;
 
         // TEST: no. 1
-        let (label, loc) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+        self.expect(ExpToken::Ident)?;
+        let member = self.as_ident();
+        let hi = self.token_loc();
 
-        hi = loc;
+        let loc = Span::from_ends(expr.loc.clone(), hi);
 
-        Some(label)
-    } else {
-        None
-    };
-
-    let expr = if parser.is_stmt_end() {
-        None
-    } else {
-        let expr = parse!(box: parser => Expression);
-        hi = expr.loc.clone();
-
-        Some(expr)
-    };
-
-    Ok(Expression {
-        kind: ExprKind::Break { label, expr },
-        loc: Span::from_ends(lo, hi),
-    })
-}
-
-/// parses continue expression
-pub fn parse_continue_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [KwContinue, ()], KwContinue);
-    let mut hi = lo.clone();
-
-    let label = if let Some(Colon) = parser.peek_tt() {
-        let Some(_) = parser.pop() else {
-            // SAFETY: we already checked that the next token is here.
-            opt_unreachable!()
-        };
-
-        // TEST: no. 1
-        let (label, loc) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
-        hi = loc;
-
-        Some(label)
-    } else {
-        None
-    };
-
-    Ok(Expression {
-        kind: ExprKind::Continue { label },
-        loc: Span::from_ends(lo, hi),
-    })
-}
-
-/// parses null expression
-pub fn parse_null_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (_, loc) = expect_token!(parser => [KwNull, ()], KwNull);
-
-    Ok(Expression {
-        kind: ExprKind::Null,
-        loc,
-    })
-}
-
-/// parses orb expression
-pub fn parse_orb_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (_, loc) = expect_token!(parser => [KwOrb, ()], KwOrb);
-
-    Ok(Expression {
-        kind: ExprKind::Orb,
-        loc,
-    })
-}
-
-/// parses function pointer type
-pub fn parse_funptr_type_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [Star, ()], Star);
-
-    // TEST: n/a
-    expect_token!(parser => [KwFun, ()], KwFun);
-
-    // TEST: no. 1
-    expect_token!(parser => [LParen, ()], LParen);
-
-    let mut args = Vec::new();
-
-    loop {
-        if let Some(RParen) = parser.peek_tt() {
-            break;
-        }
-
-        args.push(parse!(@fn parser => parse_typexpr));
-
-        // TEST: no. 2
-        expect_token!(parser => [Comma, (); RParen, (), in break], [Comma, RParen]);
+        Ok(Expression {
+            kind: ExprKind::Field {
+                expr: Box::new(expr),
+                member,
+            },
+            loc,
+        })
     }
-
-    // TEST: n/a
-    let ((), hi_paren) = expect_token!(parser => [RParen, ()], RParen);
-
-    let (hi, ret) = if let Some(MinusGt) = parser.peek_tt() {
-        parser.pop();
-
-        let t = parse!(box: @fn parser => parse_typexpr);
-
-        (t.loc.clone(), Some(t))
-    } else {
-        (hi_paren, None)
-    };
-
-    Ok(Expression {
-        kind: ExprKind::FunPtrType { args, ret },
-        loc: Span::from_ends(lo, hi),
-    })
-}
-
-/// parses pointer type expression
-pub fn parse_pointer_type_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [Star, ()], Star);
-
-    let mutable = if let Some(KwMut) = parser.peek_tt() {
-        parser.pop();
-        true
-    } else {
-        false
-    };
-
-    let typexpr = parse!(box: @fn parser => parse_typexpr);
-    let hi = typexpr.loc.clone();
-
-    Ok(Expression {
-        kind: ExprKind::PointerType { mutable, typexpr },
-        loc: Span::from_ends(lo, hi),
-    })
-}
-
-pub fn parse_unary_right_expr(
-    parser: &mut Parser,
-    lhs: Expression,
-) -> Result<Expression, Diagnostic> {
-    let lo = lhs.loc.clone();
-
-    let (op, hi) = if let Some(Token { tt, loc }) = parser.peek_tok() {
-        if let Some(op) = UnOp::right_from_token(tt.clone()) {
-            let loc = loc.clone();
-            parser.pop();
-            (op, loc)
-        } else {
-            let t = parser.peek_tok().unwrap().clone();
-
-            // TEST: n/a
-            return Err(
-                OldExpectedToken::new("unary operator", t.tt, Some("expression"), t.loc)
-                    .into_diag(),
-            );
-        }
-    } else {
-        return Err(parser.eof_diag());
-    };
-
-    Ok(Expression {
-        kind: ExprKind::Unary {
-            op,
-            expr: Box::new(lhs),
-        },
-        loc: Span::from_ends(lo, hi),
-    })
-}
-
-pub fn parse_borrow_expr(parser: &mut Parser) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [And, ()], And);
-
-    let mutable = if let Some(KwMut) = parser.peek_tt() {
-        parser.pop();
-        true
-    } else {
-        false
-    };
-
-    let val = parse!(box: parser => Expression);
-
-    let hi = val.loc.clone();
-
-    Ok(Expression {
-        kind: ExprKind::Borrow { mutable, expr: val },
-        loc: Span::from_ends(lo, hi),
-    })
-}
-
-pub fn parse_field_expr(parser: &mut Parser, expr: Expression) -> Result<Expression, Diagnostic> {
-    // TEST: n/a
-    expect_token!(parser => [Dot, ()], Dot);
-
-    // TEST: no. 1
-    let (member, hi) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
-
-    let loc = Span::from_ends(expr.loc.clone(), hi);
-
-    Ok(Expression {
-        kind: ExprKind::Field {
-            expr: Box::new(expr),
-            member,
-        },
-        loc,
-    })
 }

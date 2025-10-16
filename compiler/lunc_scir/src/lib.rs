@@ -6,7 +6,7 @@
 use std::fmt::Debug;
 
 use lunc_ast::{
-    BinOp, UnOp,
+    BinOp, Spanned, UnOp,
     symbol::{SymKind, Symbol, Type, Typeness, ValueExpr},
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
@@ -366,7 +366,7 @@ impl ScExpression {
             ScExprKind::Unary { op: _, expr } | ScExprKind::Borrow { mutable: _, expr } => {
                 expr.typeness()
             }
-            ScExprKind::FunCall { .. } => Typeness::Explicit,
+            ScExprKind::Call { .. } => Typeness::Explicit,
             ScExprKind::If {
                 cond: _,
                 then_br,
@@ -419,7 +419,7 @@ impl FromHigher for ScExpression {
                 mutable,
                 expr: lower(expr),
             },
-            DsExprKind::FunCall { callee, args } => ScExprKind::FunCall {
+            DsExprKind::Call { callee, args } => ScExprKind::Call {
                 callee: lower(callee),
                 args: lower(args),
             },
@@ -537,7 +537,7 @@ pub enum ScExprKind {
     /// See [`DsExprKind::FunCall`]
     ///
     /// [`DsExprKind::FunCall`]: lunc_dsir::DsExprKind::FunCall
-    FunCall {
+    Call {
         callee: Box<ScExpression>,
         args: Vec<ScExpression>,
     },
@@ -553,7 +553,7 @@ pub enum ScExprKind {
     ///
     /// [`DsExprKind::Block`]: lunc_dsir::DsExprKind::Block
     Block {
-        label: Option<(String, Span)>,
+        label: Option<Spanned<String>>,
         block: ScBlock,
         /// label index after checking MUST be `Some(..)`
         index: Option<usize>,
@@ -562,7 +562,7 @@ pub enum ScExprKind {
     ///
     /// [`DsExprKind::Loop`]: lunc_dsir::DsExprKind::Loop
     Loop {
-        label: Option<(String, Span)>,
+        label: Option<Spanned<String>>,
         body: ScBlock,
         /// label index after checking MUST be `Some(..)`
         index: Option<usize>,
@@ -1071,7 +1071,7 @@ impl LabelKind {
 pub struct LabelInfo {
     /// name of the label, `:label` in continue / break and `label:` in
     /// block and loops expression and its location
-    pub name: Option<(String, Span)>,
+    pub name: Option<Spanned<String>>,
     /// index of the loop
     pub index: usize,
     /// expected type of the loop
@@ -1111,7 +1111,7 @@ impl LabelStack {
     }
 
     /// Defines a new label
-    pub fn define_label(&mut self, name: Option<(String, Span)>, kind: LabelKind) -> usize {
+    pub fn define_label(&mut self, name: Option<Spanned<String>>, kind: LabelKind) -> usize {
         let index = self.last;
         self.last += 1;
 
@@ -1149,7 +1149,7 @@ impl LabelStack {
     /// Get the label info by name
     pub fn get_by_name(&self, needle: impl AsRef<str>) -> Option<&LabelInfo> {
         for info in &self.labels {
-            if let Some((name, _)) = &info.name
+            if let Some(Spanned { node: name, loc: _ }) = &info.name
                 && name == needle.as_ref()
             {
                 return Some(info);
@@ -1162,7 +1162,7 @@ impl LabelStack {
     /// Get a mutable reference to the label info by name
     pub fn get_mut_by_name(&mut self, needle: impl AsRef<str>) -> Option<&mut LabelInfo> {
         for info in &mut self.labels {
-            if let Some((name, _)) = &info.name
+            if let Some(Spanned { node: name, loc: _ }) = &info.name
                 && name == needle.as_ref()
             {
                 return Some(info);

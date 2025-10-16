@@ -2,9 +2,14 @@
 
 use lunc_utils::opt_unreachable;
 
-use crate::expr::parse_typexpr;
-
 use super::*;
+
+/// Parsing of statements and block.
+impl Parser {
+    pub fn parse_block(&mut self) -> IResult<Block> {
+        Block::parse(self)
+    }
+}
 
 /// Block of Lun statements
 #[derive(Debug, Clone)]
@@ -192,7 +197,7 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
 
     let typexpr = if let Some(Colon) = parser.peek_tt() {
         parser.pop();
-        Some(parse!(@fn parser => parse_typexpr))
+        Some(parse!(@fn parser => Parser::parse_typexpr))
     } else {
         None
     };
@@ -226,7 +231,7 @@ pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagn
 
     let typexpr = match parser.peek_tt() {
         Some(Colon | Eq) => None,
-        _ => Some(parse!(@fn parser => parse_typexpr)),
+        _ => Some(parse!(@fn parser => Parser::parse_typexpr)),
     };
 
     // TEST: no. 1

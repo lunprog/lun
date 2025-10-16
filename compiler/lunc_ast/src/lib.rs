@@ -9,7 +9,10 @@ use std::{
 };
 
 use lunc_token::TokenType;
-use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
+use lunc_utils::{
+    Span,
+    pretty::{PrettyCtxt, PrettyDump},
+};
 
 pub mod symbol;
 
@@ -340,7 +343,7 @@ impl Display for BinOp {
 }
 
 impl BinOp {
-    pub fn from_tt(tt: TokenType) -> Option<BinOp> {
+    pub fn from_tt(tt: &TokenType) -> Option<BinOp> {
         match tt {
             TokenType::Eq => Some(BinOp::Assignment),
             TokenType::Star => Some(BinOp::Mul),
@@ -420,7 +423,7 @@ impl UnOp {
     ///
     /// eg:
     /// `-a` `!a` `&a`
-    pub fn left_from_token(tt: TokenType) -> Option<UnOp> {
+    pub fn left_from_token(tt: &TokenType) -> Option<UnOp> {
         match tt {
             TokenType::Minus => Some(UnOp::Negation),
             TokenType::Bang => Some(UnOp::Not),
@@ -432,7 +435,7 @@ impl UnOp {
     ///
     /// eg:
     /// `a.*`
-    pub fn right_from_token(tt: TokenType) -> Option<UnOp> {
+    pub fn right_from_token(tt: &TokenType) -> Option<UnOp> {
         match tt {
             TokenType::DotStar => Some(UnOp::Dereference),
             _ => None,
@@ -443,5 +446,21 @@ impl UnOp {
 impl PrettyDump for UnOp {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         write!(ctx.out, "{self:?}")
+    }
+}
+
+/// An ast node with a span.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Spanned<T> {
+    pub node: T,
+    pub loc: Span,
+}
+
+impl<T: PrettyDump> PrettyDump for Spanned<T> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        self.node.try_dump(ctx)?;
+        ctx.print_loc(&self.loc)?;
+
+        Ok(())
     }
 }

@@ -5,7 +5,7 @@
 
 use std::{
     fmt::{self, Debug, Display},
-    hash::{DefaultHasher, Hash, Hasher},
+    hash::Hash,
     io::{self, Write},
     mem,
 };
@@ -294,6 +294,14 @@ impl Token {
             tt: TokenType::Dummy,
             loc: Span::ZERO,
         }
+    }
+
+    /// Returns true if the token can be the end of a statement.
+    pub const fn is_stmt_end(&self) -> bool {
+        matches!(
+            self.tt,
+            TokenType::KwElse | TokenType::Semi | TokenType::RCurly
+        )
     }
 }
 
@@ -614,17 +622,89 @@ impl Display for TokenType {
     }
 }
 
+macro_rules! eq_tokentype_impl {
+    (($self:expr, $other:expr) => $( $name:ident ),* ,) => {
+        match $self {
+            $(
+                Self::$name{..} => {
+                    if *$other == ExpToken::$name {
+                        true
+                    } else {
+                        false
+                    }
+                }
+            )*
+        }
+    };
+}
+
 impl PartialEq<ExpToken> for TokenType {
     fn eq(&self, other: &ExpToken) -> bool {
-        let mut state = DefaultHasher::new();
-        mem::discriminant(self).hash(&mut state);
-        let self_hash = state.finish();
-
-        state = DefaultHasher::new();
-        other.hash(&mut state);
-        let other_hash = state.finish();
-
-        self_hash == other_hash
+        eq_tokentype_impl!(
+            (self, other) =>
+            LParen,
+            RParen,
+            LBracket,
+            RBracket,
+            LCurly,
+            RCurly,
+            Plus,
+            Minus,
+            Star,
+            Slash,
+            Colon,
+            Comma,
+            Eq,
+            EqEq,
+            BangEq,
+            Bang,
+            LtEq,
+            Lt,
+            LtLt,
+            Gt,
+            GtGt,
+            GtEq,
+            Semi,
+            MinusGt,
+            Caret,
+            And,
+            AndAnd,
+            Or,
+            OrOr,
+            Percent,
+            Dot,
+            DotStar,
+            Pound,
+            KwAs,
+            KwBreak,
+            KwComptime,
+            KwContinue,
+            KwDefer,
+            KwElse,
+            KwExtern,
+            KwFalse,
+            KwFor,
+            KwFun,
+            KwIf,
+            KwImpl,
+            KwIn,
+            KwLet,
+            KwLoop,
+            KwMut,
+            KwNull,
+            KwOrb,
+            KwPub,
+            KwReturn,
+            KwSelfVal,
+            KwThen,
+            KwTrait,
+            KwTrue,
+            KwWhile,
+            Ident,
+            Lit,
+            EOF,
+            Dummy,
+        )
     }
 }
 

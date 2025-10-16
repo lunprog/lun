@@ -1056,7 +1056,7 @@ impl SemaChecker {
                     typ: Box::new(exp.typ.clone()),
                 };
             }
-            ScExprKind::FunCall { callee, args } => {
+            ScExprKind::Call { callee, args } => {
                 self.ck_expr(callee, None)?;
 
                 let Type::FunPtr {
@@ -1135,7 +1135,7 @@ impl SemaChecker {
                     && let Some(info) = self.label_stack.get_by_idx(*index)
                     && !info.break_out
                 {
-                    let Some((label, loc)) = info.name.clone() else {
+                    let Some(Spanned { node: label, loc }) = info.name.clone() else {
                         // SAFETY: cannot be reached because we only define a
                         // label info if there is a named label.
                         opt_unreachable!()

@@ -93,7 +93,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
     body: Block {
       stmts: [
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: Symbol {
                 kind: function;
@@ -160,7 +160,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
     body: Block {
       stmts: [
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: Symbol {
                 kind: function;
@@ -213,7 +213,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
     body: Block {
       stmts: [
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: Symbol {
                 kind: function;
@@ -240,7 +240,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
         Expression {
           expr: Binary {
             lhs: Expression {
-              expr: FunCall {
+              expr: Call {
                 callee: Expression {
                   expr: Symbol {
                     kind: function;
@@ -260,7 +260,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
             } @ 191..196 (fid = 0);
             op: LogicalAnd;
             rhs: Expression {
-              expr: FunCall {
+              expr: Call {
                 callee: Expression {
                   expr: Symbol {
                     kind: function;
@@ -283,7 +283,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
         } @ 191..205 (fid = 0) @ 191..205 (fid = 0),
 
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: Symbol {
                 kind: function;
@@ -308,7 +308,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
         } @ 211..220 (fid = 0) @ 211..220 (fid = 0),
 
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: Symbol {
                 kind: function;
@@ -335,7 +335,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
         Expression {
           expr: Binary {
             lhs: Expression {
-              expr: FunCall {
+              expr: Call {
                 callee: Expression {
                   expr: Symbol {
                     kind: function;
@@ -355,7 +355,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
             } @ 263..268 (fid = 0);
             op: LogicalAnd;
             rhs: Expression {
-              expr: FunCall {
+              expr: Call {
                 callee: Expression {
                   expr: Symbol {
                     kind: function;
@@ -573,7 +573,7 @@ foo
     body: Block {
       stmts: [
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: Symbol {
                 kind: function;
@@ -640,7 +640,7 @@ foo
     body: Block {
       stmts: [
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: Symbol {
                 kind: function;
@@ -693,7 +693,7 @@ foo
     body: Block {
       stmts: [
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: Symbol {
                 kind: function;
@@ -720,7 +720,7 @@ foo
         Expression {
           expr: Binary {
             lhs: Expression {
-              expr: FunCall {
+              expr: Call {
                 callee: Expression {
                   expr: Symbol {
                     kind: function;
@@ -740,7 +740,7 @@ foo
             } @ 201..206 (fid = 0);
             op: LogicalOr;
             rhs: Expression {
-              expr: FunCall {
+              expr: Call {
                 callee: Expression {
                   expr: Symbol {
                     kind: function;
@@ -763,7 +763,7 @@ foo
         } @ 201..215 (fid = 0) @ 201..215 (fid = 0),
 
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: Symbol {
                 kind: function;
@@ -788,7 +788,7 @@ foo
         } @ 221..230 (fid = 0) @ 221..230 (fid = 0),
 
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: Symbol {
                 kind: function;
@@ -815,7 +815,7 @@ foo
         Expression {
           expr: Binary {
             lhs: Expression {
-              expr: FunCall {
+              expr: Call {
                 callee: Expression {
                   expr: Symbol {
                     kind: function;
@@ -835,7 +835,7 @@ foo
             } @ 263..268 (fid = 0);
             op: LogicalOr;
             rhs: Expression {
-              expr: FunCall {
+              expr: Call {
                 callee: Expression {
                   expr: Symbol {
                     kind: function;
@@ -1109,7 +1109,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           name: res @ 99..102 (fid = 0);
           mutable: false;
           typexpr: none;
-          value: FunCall {
+          value: Call {
             callee: Symbol {
               kind: function;
               name: add @ 133..136 (fid = 0);
@@ -1504,7 +1504,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         Binary {
           lhs: Underscore @ 438..439 (fid = 0);
           op: Assignment;
-          rhs: FunCall {
+          rhs: Call {
             callee: Symbol {
               kind: function;
               name: some_fun @ 1162..1170 (fid = 0);
@@ -1522,7 +1522,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         Binary {
           lhs: Underscore @ 458..459 (fid = 0);
           op: Assignment;
-          rhs: FunCall {
+          rhs: Call {
             callee: Symbol {
               kind: function;
               name: some_fun @ 1162..1170 (fid = 0);
@@ -1542,7 +1542,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         Binary {
           lhs: Underscore @ 479..480 (fid = 0);
           op: Assignment;
-          rhs: FunCall {
+          rhs: Call {
             callee: Symbol {
               kind: function;
               name: some_fun @ 1162..1170 (fid = 0);
@@ -1564,7 +1564,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         Binary {
           lhs: Underscore @ 503..504 (fid = 0);
           op: Assignment;
-          rhs: FunCall {
+          rhs: Call {
             callee: Symbol {
               kind: function;
               name: some_fun @ 1162..1170 (fid = 0);
@@ -1586,9 +1586,9 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         If {
           cond: boolean true @ 542..546 (fid = 0);
           then_br: Block {
-            label: none @ 0..0 (fid = 0);
+            label: none;
             block: Block [
-              FunCall {
+              Call {
                 callee: Symbol {
                   kind: function;
                   name: main @ 11..15 (fid = 0);
@@ -1606,9 +1606,9 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             ] @ 547..570 (fid = 0);
           } @ 539..599 (fid = 0);
           else_br: Block {
-            label: none @ 0..0 (fid = 0);
+            label: none;
             block: Block [
-              FunCall {
+              Call {
                 callee: Symbol {
                   kind: function;
                   name: main @ 11..15 (fid = 0);
@@ -1642,7 +1642,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         } @ 625..660 (fid = 0) @ 625..660 (fid = 0),
 
         Block {
-          label: none @ 0..0 (fid = 0);
+          label: none;
           block: Block [
             Binary {
               lhs: Underscore @ 690..691 (fid = 0);
@@ -1653,7 +1653,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             Binary {
               lhs: Underscore @ 705..706 (fid = 0);
               op: Assignment;
-              rhs: FunCall {
+              rhs: Call {
                 callee: Symbol {
                   kind: function;
                   name: main @ 11..15 (fid = 0);
@@ -1673,7 +1673,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         } @ 680..722 (fid = 0) @ 680..722 (fid = 0),
 
         Loop {
-          label: none @ 0..0 (fid = 0);
+          label: none;
           body: Block [
             Break {
               label: none;
@@ -2215,7 +2215,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         } @ 179..185 (fid = 0),
 
         Loop {
-          label: none @ 0..0 (fid = 0);
+          label: none;
           body: Block [
             If {
               cond: Unary {
@@ -2243,9 +2243,9 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             } @ none @ none,
 
             Block {
-              label: none @ 0..0 (fid = 0);
+              label: none;
               block: Block [
-                FunCall {
+                Call {
                   callee: Symbol {
                     kind: function;
                     name: println @ 138..145 (fid = 0);
@@ -2343,9 +2343,9 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             } @ none @ none,
 
             Block {
-              label: none @ 0..0 (fid = 0);
+              label: none;
               block: Block [
-                FunCall {
+                Call {
                   callee: Symbol {
                     kind: function;
                     name: println @ 138..145 (fid = 0);
@@ -2456,7 +2456,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           mutable: false;
           typexpr: none;
           value: Block {
-            label: none @ 0..0 (fid = 0);
+            label: none;
             block: Block [
               @last_expr: none,
             ] @ 38..40 (fid = 0);
@@ -3622,7 +3622,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
                   } @ 35..41 (fid = 2);
                   then_br: Expression {
                     expr: Block {
-                      label: none @ 0..0 (fid = 0);
+                      label: none;
                       block: Block {
                         stmts: [];
                         last_expr: Expression {
@@ -3646,13 +3646,13 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
                   } @ 32..104 (fid = 2);
                   else_br: Expression {
                     expr: Block {
-                      label: none @ 0..0 (fid = 0);
+                      label: none;
                       block: Block {
                         stmts: [];
                         last_expr: Expression {
                           expr: Binary {
                             lhs: Expression {
-                              expr: FunCall {
+                              expr: Call {
                                 callee: Expression {
                                   expr: Symbol {
                                     kind: function;
@@ -3696,7 +3696,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
                             } @ 75..85 (fid = 2);
                             op: Add;
                             rhs: Expression {
-                              expr: FunCall {
+                              expr: Call {
                                 callee: Expression {
                                   expr: Symbol {
                                     kind: function;
@@ -3875,7 +3875,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
               mutable: false;
               typexpr: none;
               value: Expression {
-                expr: FunCall {
+                expr: Call {
                   callee: Expression {
                     expr: Symbol {
                       kind: function;
@@ -3953,7 +3953,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     body: Block {
       stmts: [
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: QualifiedPath {
                 path: orb.dbg.puts @ 81..93 (fid = 0);
@@ -3981,7 +3981,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
         } @ 81..109 (fid = 0) @ 81..109 (fid = 0),
 
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: QualifiedPath {
                 path: dbg.puts @ 115..123 (fid = 0);
@@ -4009,7 +4009,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
         } @ 115..139 (fid = 0) @ 115..139 (fid = 0),
 
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: QualifiedPath {
                 path: nested.fib @ 145..155 (fid = 0);
@@ -4364,7 +4364,7 @@ error: compilation of `E006_extern_block_3` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_funcall_expr": (
-        compiler_out: "error[E006]: expected `,` or `)`, found integer literal
+        compiler_out: "error[E006]: expected `)` or `,`, found integer literal
   ┌─ ./tests/parser/E006_funcall_expr.lun:2:14
   │
 2 │ a :: call(12 12)
@@ -4392,7 +4392,7 @@ error: compilation of `E006_funkw_expr_1` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_funkw_expr_2": (
-        compiler_out: "error[E006]: expected `,`, found identifier
+        compiler_out: "error[E006]: expected `)` or `,`, found identifier
   ┌─ ./tests/parser/E006_funkw_expr_2.lun:2:16
   │
 2 │ a :: fun (a: b c);
@@ -4406,7 +4406,7 @@ error: compilation of `E006_funkw_expr_2` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_funkw_expr_3": (
-        compiler_out: "error[E006]: expected `,`, found `;`
+        compiler_out: "error[E006]: expected `)` or `,`, found `;`
   ┌─ ./tests/parser/E006_funkw_expr_3.lun:2:15
   │
 2 │ a :: fun (a: b;
@@ -4420,7 +4420,7 @@ error: compilation of `E006_funkw_expr_3` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_funkw_expr_4": (
-        compiler_out: "error[E006]: expected `,` or `)`, found identifier
+        compiler_out: "error[E006]: expected `)` or `,`, found identifier
   ┌─ ./tests/parser/E006_funkw_expr_4.lun:2:13
   │
 2 │ a :: fun (b b);
@@ -4462,7 +4462,7 @@ error: compilation of `E006_funptr_1` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_funptr_2": (
-        compiler_out: "error[E006]: expected `,` or `)`, found identifier
+        compiler_out: "error[E006]: expected `)` or `,`, found identifier
   ┌─ ./tests/parser/E006_funptr_2.lun:2:14
   │
 2 │ a :: *fun (a a;
@@ -4546,7 +4546,7 @@ error: compilation of `E006_if_else_1` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_if_else_2": (
-        compiler_out: "error[E006]: expected `{` or keyword `if` for a if expression, found identifier
+        compiler_out: "error[E006]: expected `{` or keyword `if`, found identifier
   ┌─ ./tests/parser/E006_if_else_2.lun:2:19
   │
 2 │ a :: if b {} else a;
@@ -4560,7 +4560,7 @@ error: compilation of `E006_if_else_2` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_if_else_3": (
-        compiler_out: "error[E006]: expected `{` for a if expression, found identifier
+        compiler_out: "error[E006]: expected `{`, found identifier
   ┌─ ./tests/parser/E006_if_else_3.lun:2:24
   │
 2 │ a :: if b {} else if c d;
@@ -4963,7 +4963,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         Binary {
           lhs: ident _ @ 410..411 (fid = 0);
           op: Assignment;
-          rhs: FunCall {
+          rhs: Call {
             callee: ident some_fun @ 414..422 (fid = 0);
             args: [];
           } @ 414..424 (fid = 0);
@@ -4972,7 +4972,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         Binary {
           lhs: ident _ @ 430..431 (fid = 0);
           op: Assignment;
-          rhs: FunCall {
+          rhs: Call {
             callee: ident some_fun @ 434..442 (fid = 0);
             args: [
               integer 1 @ 443..444 (fid = 0),
@@ -4983,7 +4983,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         Binary {
           lhs: ident _ @ 451..452 (fid = 0);
           op: Assignment;
-          rhs: FunCall {
+          rhs: Call {
             callee: ident some_fun @ 455..463 (fid = 0);
             args: [
               integer 1 @ 464..465 (fid = 0),
@@ -4996,7 +4996,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         Binary {
           lhs: ident _ @ 475..476 (fid = 0);
           op: Assignment;
-          rhs: FunCall {
+          rhs: Call {
             callee: ident some_fun @ 479..487 (fid = 0);
             args: [
               integer 1 @ 488..489 (fid = 0),
@@ -5009,7 +5009,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         If {
           cond: boolean true @ 514..518 (fid = 0);
           body: Block [
-            FunCall {
+            Call {
               callee: ident main @ 529..533 (fid = 0);
               args: [];
             } @ 529..535 (fid = 0) @ 529..535 (fid = 0),
@@ -5017,7 +5017,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
             @last_expr: none,
           ] @ 519..542 (fid = 0);
           else_br: Block [
-            FunCall {
+            Call {
               callee: ident main @ 558..562 (fid = 0);
               args: [];
             } @ 558..564 (fid = 0) @ 558..564 (fid = 0),
@@ -5050,7 +5050,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           Binary {
             lhs: ident _ @ 677..678 (fid = 0);
             op: Assignment;
-            rhs: FunCall {
+            rhs: Call {
               callee: ident main @ 681..685 (fid = 0);
               args: [];
             } @ 681..687 (fid = 0);
@@ -5072,13 +5072,13 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         } @ 700..748 (fid = 0) @ 700..748 (fid = 0),
 
         PredicateLoop {
-          label: none @ 0..0 (fid = 0);
-          cond: FunCall {
+          label: none;
+          cond: Call {
             callee: ident predicate @ 782..791 (fid = 0);
             args: [];
           } @ 782..793 (fid = 0);
           body: Block [
-            FunCall {
+            Call {
               callee: ident println @ 804..811 (fid = 0);
               args: [
                 string "Hello!" @ 812..820 (fid = 0),
@@ -5093,7 +5093,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           label: label @ 834..839 (fid = 0);
           cond: ident condition @ 847..856 (fid = 0);
           body: Block [
-            FunCall {
+            Call {
               callee: ident println @ 867..874 (fid = 0);
               args: [
                 string "Hello from loop with label" @ 875..903 (fid = 0),
@@ -5109,9 +5109,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         } @ 834..936 (fid = 0) @ 834..936 (fid = 0),
 
         IteratorLoop {
-          label: none @ 0..0 (fid = 0);
+          label: none;
           variable: i;
-          iterator: FunCall {
+          iterator: Call {
             callee: ident range @ 972..977 (fid = 0);
             args: [
               integer 1 @ 978..979 (fid = 0),
@@ -5127,7 +5127,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         IteratorLoop {
           label: label2 @ 1014..1020 (fid = 0);
           variable: j;
-          iterator: FunCall {
+          iterator: Call {
             callee: ident range @ 1031..1036 (fid = 0);
             args: [
               integer 13 @ 1037..1039 (fid = 0),
@@ -5141,7 +5141,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         } @ 1014..1068 (fid = 0) @ 1014..1068 (fid = 0),
 
         InfiniteLoop {
-          label: none @ 0..0 (fid = 0);
+          label: none;
           body: Block [
             Break {
               label: none;
@@ -5191,7 +5191,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         Binary {
           lhs: ident _ @ 1349..1350 (fid = 0);
           op: Assignment;
-          rhs: FunCall {
+          rhs: Call {
             callee: Field {
               expr: string "Hello" @ 1353..1360 (fid = 0);
               member: len;
@@ -5203,7 +5203,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         Binary {
           lhs: ident _ @ 1373..1374 (fid = 0);
           op: Assignment;
-          rhs: FunCall {
+          rhs: Call {
             callee: Field {
               expr: Field {
                 expr: Orb @ 1377..1380 (fid = 0);
@@ -5381,7 +5381,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           ] @ 163..165 (fid = 0) @ 163..165 (fid = 0);
         } @ 157..165 (fid = 0),
 
-        FunCall {
+        Call {
           callee: ident hello_world @ 199..210 (fid = 0);
           args: [];
         } @ 199..212 (fid = 0) @ 199..212 (fid = 0),
@@ -9367,7 +9367,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
     body: Block {
       stmts: [
         Expression {
-          expr: FunCall {
+          expr: Call {
             callee: Expression {
               expr: Symbol {
                 kind: function;
@@ -9445,7 +9445,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
             } @ 36..41 (fid = 0);
             then_br: Expression {
               expr: Block {
-                label: none @ 0..0 (fid = 0);
+                label: none;
                 block: Block {
                   stmts: [
                     Expression {
@@ -9520,7 +9520,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
             } @ 117..122 (fid = 0);
             then_br: Expression {
               expr: Block {
-                label: none @ 0..0 (fid = 0);
+                label: none;
                 block: Block {
                   stmts: [
                     Expression {
@@ -9595,7 +9595,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
             } @ 202..207 (fid = 0);
             then_br: Expression {
               expr: Block {
-                label: none @ 0..0 (fid = 0);
+                label: none;
                 block: Block {
                   stmts: [];
                   last_expr: Expression {
@@ -9674,7 +9674,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
             } @ 287..292 (fid = 0);
             then_br: Expression {
               expr: Block {
-                label: none @ 0..0 (fid = 0);
+                label: none;
                 block: Block {
                   stmts: [];
                   last_expr: Expression {
@@ -9733,7 +9733,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
             } @ 383..388 (fid = 0);
             then_br: Expression {
               expr: Block {
-                label: none @ 0..0 (fid = 0);
+                label: none;
                 block: Block {
                   stmts: [];
                   last_expr: Expression {
@@ -9799,7 +9799,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
             stmts: [];
             last_expr: Expression {
               expr: Loop {
-                label: none @ 0..0 (fid = 0);
+                label: none;
                 body: Block {
                   stmts: [
                     Expression {
@@ -10013,7 +10013,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       stmts: [];
       last_expr: Expression {
         expr: Loop {
-          label: none @ 0..0 (fid = 0);
+          label: none;
           body: Block {
             stmts: [];
             last_expr: none;
@@ -10063,7 +10063,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       stmts: [];
       last_expr: Expression {
         expr: Loop {
-          label: none @ 0..0 (fid = 0);
+          label: none;
           body: Block {
             stmts: [];
             last_expr: Expression {
@@ -10139,7 +10139,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
 
         Expression {
           expr: Loop {
-            label: none @ 0..0 (fid = 0);
+            label: none;
             body: Block {
               stmts: [];
               last_expr: Expression {
@@ -10150,7 +10150,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
                   } @ 445..450 (fid = 0);
                   then_br: Expression {
                     expr: Block {
-                      label: none @ 0..0 (fid = 0);
+                      label: none;
                       block: Block {
                         stmts: [];
                         last_expr: Expression {

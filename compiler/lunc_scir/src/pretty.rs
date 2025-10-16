@@ -2,10 +2,7 @@
 
 use std::io::{self, Write};
 
-use lunc_utils::{
-    Span,
-    pretty::{PrettyCtxt, PrettyDump},
-};
+use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 use crate::{
     FunDefInfo, ScArg, ScBlock, ScExprKind, ScExpression, ScItem, ScModule, ScStatement, ScStmt,
@@ -194,8 +191,8 @@ impl PrettyDump for ScExprKind {
 
                 Ok(())
             }
-            ScExprKind::FunCall { callee, args } => {
-                ctx.pretty_struct("FunCall")
+            ScExprKind::Call { callee, args } => {
+                ctx.pretty_struct("Call")
                     .field("callee", callee)
                     .field("args", args.as_slice())
                     .finish()?;
@@ -221,13 +218,7 @@ impl PrettyDump for ScExprKind {
                 index,
             } => {
                 ctx.pretty_struct("Block")
-                    .field(
-                        "label",
-                        (
-                            label.clone().map(|l| l.0),
-                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
-                        ),
-                    )
+                    .field("label", label)
                     .field("block", block)
                     .field("index", index)
                     .finish()?;
@@ -236,13 +227,7 @@ impl PrettyDump for ScExprKind {
             }
             ScExprKind::Loop { label, body, index } => {
                 ctx.pretty_struct("Loop")
-                    .field(
-                        "label",
-                        (
-                            label.clone().map(|l| l.0),
-                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
-                        ),
-                    )
+                    .field("label", label)
                     .field("body", body)
                     .field("index", index)
                     .finish()?;

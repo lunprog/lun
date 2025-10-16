@@ -6,7 +6,7 @@ use lunc_diag::FileId;
 use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::opt_unreachable;
 
-use crate::{directive::Directive, expr::parse_typexpr};
+use crate::directive::Directive;
 
 use super::*;
 
@@ -133,7 +133,7 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
 
     let typexpr = match parser.peek_tt() {
         Some(Colon | Eq) => None,
-        _ => Some(parse!(@fn parser => parse_typexpr)),
+        _ => Some(parse!(@fn parser => Parser::parse_typexpr)),
     };
 
     let is_const = match parser.peek_tt() {
@@ -201,9 +201,9 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
     }
 }
 
-pub fn parse_directive_item(parser: &mut Parser) -> SResult<Item> {
+pub fn parse_directive_item(parser: &mut Parser) -> IResult<Item> {
     // NOTE: already rewritten.
-    let directive_name = parser.look_ahead(1, |t| t);
+    let directive_name = parser.look_ahead(1, look_tok);
 
     match &directive_name.tt {
         Ident(id) => match id.as_str() {

@@ -2,22 +2,22 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
+// TODO: remove me
+#![allow(deprecated)]
 
-use std::{fmt::Debug, io, mem};
+use std::{fmt::Debug, mem};
 
 use diags::*;
 use expr::Expression;
 use item::Module;
-use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ReachedEOF, SResult, ToDiagnostic};
 
+use lunc_ast::Spanned;
+use lunc_diag::{Diagnostic, DiagnosticSink, FileId, IResult, ReachedEOF, ToDiagnostic};
 use lunc_token::{
-    ExpToken, ExpTokenSet, Lit, LitKind, Token, TokenStream,
+    ExpToken, ExpTokenSet, Lit, Token, TokenStream,
     TokenType::{self, *},
 };
-use lunc_utils::{
-    Span, opt_unreachable,
-    pretty::{PrettyCtxt, PrettyDump},
-};
+use lunc_utils::{Span, opt_unreachable, pretty::PrettyDump};
 
 pub mod diags;
 pub mod directive;
@@ -107,11 +107,23 @@ impl Parser {
         is_present
     }
 
-    /// Consumes the next token if it is a [`TokenType::Lit`] and if it's kind
-    /// is `litexp`. Returns `Some(lit)` if it existed or `None` if it did not.
-    pub fn eat_lit(&mut self, litexp: LitKind) -> Option<Lit> {
+    /// [`Parser::eat`] but do not add `exp` to
+    /// [`Parser::expected_token_exps`].
+    pub fn eat_no_expect(&mut self, exp: ExpToken) -> bool {
+        let is_present = self.check_no_expect(exp);
+
+        if is_present {
+            self.bump();
+        }
+
+        is_present
+    }
+
+    /// Consumes the next token if it is a [`TokenType::Lit`]. Returns
+    /// `Some(lit)` if it existed or `None` if it did not.
+    pub fn eat_lit(&mut self) -> Option<Lit> {
         match &self.token.tt {
-            TokenType::Lit(lit) if lit.kind == litexp => {
+            TokenType::Lit(lit) => {
                 let lit = lit.clone();
                 self.bump();
 
@@ -123,7 +135,7 @@ impl Parser {
 
     /// Expects and consumes the token `exp.tok`, or something else if it's no
     /// `exp.tok`. Signals an error is the next token isn't `exp.tok`.
-    pub fn expect(&mut self, exp: ExpToken) -> SResult<()> {
+    pub fn expect(&mut self, exp: ExpToken) -> IResult<()> {
         if !self.eat(exp) {
             // token was not present
             let diag = self.expected_diag().into_diag();
@@ -143,7 +155,8 @@ impl Parser {
     ///
     /// This function also resets the [`Parser::expected_token_exps`].
     pub fn expected_diag(&mut self) -> ExpectedToken {
-        let res = ExpectedToken::new([], self.token.clone()).add_expects(self.expected_token_exps);
+        let res = ExpectedToken::new(ExpectedToken::EMPTY, self.token.clone())
+            .add_expects(self.expected_token_exps);
 
         self.expected_token_exps.clear();
 
@@ -213,6 +226,7 @@ impl Parser {
     /// If there is no more tokens in the stream, it will not increment the
     /// `ti` field.
     #[inline]
+    #[deprecated(note = "use `self.bump()` and `self.prev_token`")]
     pub fn pop(&mut self) -> Option<Token> {
         self.bump();
         Some(self.prev_token.clone())
@@ -220,34 +234,53 @@ impl Parser {
 
     /// Get the `nth` token ahead of the next to be popped
     #[inline]
+    #[deprecated(note = "use `self.look_ahead(idx, look_tok)`")]
     pub fn nth_tok(&self, idx: usize) -> Option<&Token> {
-        Some(self.look_ahead(idx, |t| t))
+        Some(self.look_ahead(idx, look_tok))
     }
 
     /// Get the `nth` token type ahead of the next to be popped
     #[inline]
+    #[deprecated(note = "use `self.look_ahead(idx, look_tt)`")]
     pub fn nth_tt(&self, idx: usize) -> Option<&TokenType> {
-        Some(self.look_ahead(idx, |t| &t.tt))
+        Some(self.look_ahead(idx, look_tt))
     }
 
     /// Get the token that will be popped if you call `pop` after this call.
     #[inline]
+    #[deprecated(note = "use `self.token`")]
     pub fn peek_tok(&self) -> Option<&Token> {
         Some(&self.token)
     }
 
     /// Get the token type that will be popped if you call `pop` after this call.
     #[inline]
+    #[deprecated(note = "use `self.token.tt`")]
     pub fn peek_tt(&self) -> Option<&TokenType> {
         Some(&self.token.tt)
     }
 
-    // until here.
-
     /// Returns true if the next token the end of a statement or chunk.
+    #[deprecated(note = "use `self.token.is_stmt_end()`")]
     pub fn is_stmt_end(&self) -> bool {
         matches!(self.peek_tt(), Some(KwElse | Semi | RCurly))
     }
+
+    #[deprecated]
+    pub fn parse_node<T: AstNode>(&mut self) -> Result<T, Diagnostic> {
+        T::parse(&mut *self)
+    }
+
+    #[deprecated(note = "it's useless.")]
+    pub(crate) fn eof_diag(&self) -> Diagnostic {
+        let eof = self.tokstream.get_eof();
+        ReachedEOF {
+            loc: eof.loc.clone(),
+        }
+        .into_diag()
+    }
+
+    // until here.
 
     /// Parses and produce a module.
     pub fn produce(&mut self) -> Option<Module> {
@@ -265,18 +298,6 @@ impl Parser {
 
         Some(module)
     }
-
-    pub fn parse_node<T: AstNode>(&mut self) -> Result<T, Diagnostic> {
-        T::parse(&mut *self)
-    }
-
-    pub(crate) fn eof_diag(&self) -> Diagnostic {
-        let eof = self.tokstream.get_eof();
-        ReachedEOF {
-            loc: eof.loc.clone(),
-        }
-        .into_diag()
-    }
 }
 
 /// A node of the AST that can be parsed.
@@ -287,20 +308,14 @@ pub trait AstNode: Debug + PrettyDump {
         Self: Sized;
 }
 
-/// An ast node with a span.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Spanned<T> {
-    pub node: T,
-    pub loc: Span,
+/// Look token used in [`Parser::look_ahead`]
+pub fn look_tok(tok: &Token) -> &Token {
+    tok
 }
 
-impl<T: PrettyDump> PrettyDump for Spanned<T> {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        self.node.try_dump(ctx)?;
-        ctx.print_loc(&self.loc)?;
-
-        Ok(())
-    }
+/// Look token type used in [`Parser::look_ahead`]
+pub fn look_tt(tok: &Token) -> &TokenType {
+    &tok.tt
 }
 
 /// This macro is used to expect a token from the parser, one of the most
@@ -312,6 +327,7 @@ impl<T: PrettyDump> PrettyDump for Spanned<T> {
 /// literal, an integer literal, or an identifier, remember to either
 /// dereference it, if it implements [`Copy`] or [clone][`Clone`] it if it
 /// doesn't.
+#[deprecated]
 #[macro_export]
 macro_rules! expect_token {
     ($parser:expr => [ $($token:pat, $result:expr $(,in $between:stmt)?);* ] else $unexpected:block) => (
@@ -367,6 +383,7 @@ macro_rules! expect_token {
     )
 }
 
+#[deprecated]
 #[macro_export]
 macro_rules! parse {
     (box: $($tt:tt)*) => {

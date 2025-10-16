@@ -39,7 +39,7 @@ pub type SpannedPath = Spanned<EffectivePath>;
 /// Directive parsing
 impl Parser {
     /// Parse a [`SpannedPath`].
-    pub fn parse_spanned_path(&mut self) -> SResult<SpannedPath> {
+    pub fn parse_spanned_path(&mut self) -> IResult<SpannedPath> {
         let mut path = Vec::new();
 
         // TEST: no. 1
@@ -54,10 +54,7 @@ impl Parser {
         let lo = self.token_loc();
 
         let mut hi = lo.clone();
-        while self.check_no_expect(ExpToken::Dot) {
-            // eat the dot token
-            self.bump();
-
+        while self.eat_no_expect(ExpToken::Dot) {
             // TEST: no. 2
             self.expect(ExpToken::Ident)?;
             hi = self.token_loc();
@@ -71,7 +68,7 @@ impl Parser {
     }
 
     /// Parse an import directive.
-    pub fn parse_import_directive(&mut self) -> SResult<Directive> {
+    pub fn parse_import_directive(&mut self) -> IResult<Directive> {
         // TEST: n/a
         self.expect(ExpToken::Pound)?;
         let lo = self.token_loc();
@@ -103,7 +100,7 @@ impl Parser {
     }
 
     /// Parses a mod directive
-    pub fn parse_mod_directive(&mut self) -> SResult<Directive> {
+    pub fn parse_mod_directive(&mut self) -> IResult<Directive> {
         // TEST: n/a
         self.expect(ExpToken::Pound)?;
         let lo = self.token_loc();
@@ -127,7 +124,7 @@ impl Parser {
     }
 
     /// Recovers the parsing, tries to parse `#` and then bumps the parser.
-    pub fn recover_directive(&mut self) -> SResult<()> {
+    pub fn recover_directive(&mut self) -> IResult<()> {
         // expect `#`
         self.expect(ExpToken::Pound)?;
 

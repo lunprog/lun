@@ -228,7 +228,7 @@ impl SemaChecker {
 
                 Ok(())
             }
-            ScExprKind::FunCall { callee, args } => {
+            ScExprKind::Call { callee, args } => {
                 self.safety_ck_expr(callee)?;
 
                 for arg in args {
