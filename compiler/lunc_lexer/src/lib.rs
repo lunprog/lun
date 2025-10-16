@@ -9,7 +9,7 @@ use diags::{
     TooManyCodepointsInCharLiteral, UnknownCharacterEscape, UnknownToken,
     UnterminatedStringLiteral,
 };
-use lunc_diag::{DiagnosticSink, FileId, ReachedEOF, IResult};
+use lunc_diag::{DiagnosticSink, FileId, IResult, ReachedEOF};
 
 use lunc_token::{Lit, LitKind, TokenStream, TokenType};
 use lunc_utils::{Span, opt_unreachable, span};
