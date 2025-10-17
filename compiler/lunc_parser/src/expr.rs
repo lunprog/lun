@@ -39,14 +39,6 @@ impl Expression {
     }
 }
 
-impl AstNode for Expression {
-    #[inline]
-    #[track_caller]
-    fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
-        parser.parse_expr()
-    }
-}
-
 /// Kind of expression.
 #[derive(Debug, Clone)]
 pub enum ExprKind {
