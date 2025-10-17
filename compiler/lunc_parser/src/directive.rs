@@ -56,8 +56,7 @@ impl Parser {
         let mut hi = lo.clone();
         while self.eat_no_expect(ExpToken::Dot) {
             // TEST: no. 2
-            self.expect(ExpToken::Ident)?;
-            hi = self.token_loc();
+            hi = self.expect(ExpToken::Ident)?;
             path.push(self.as_ident());
         }
 
@@ -70,8 +69,7 @@ impl Parser {
     /// Parse an import directive.
     pub fn parse_import_directive(&mut self) -> IResult<Directive> {
         // TEST: n/a
-        self.expect(ExpToken::Pound)?;
-        let lo = self.token_loc();
+        let lo = self.expect(ExpToken::Pound)?;
 
         // TEST: n/a
         self.expect(ExpToken::Ident)?;
@@ -89,8 +87,7 @@ impl Parser {
         };
 
         // TEST: no. 2
-        self.expect(ExpToken::Semi)?;
-        let hi = self.token_loc();
+        let hi = self.expect(ExpToken::Semi)?;
 
         Ok(Directive::Import {
             path,
@@ -102,8 +99,7 @@ impl Parser {
     /// Parses a mod directive
     pub fn parse_mod_directive(&mut self) -> IResult<Directive> {
         // TEST: n/a
-        self.expect(ExpToken::Pound)?;
-        let lo = self.token_loc();
+        let lo = self.expect(ExpToken::Pound)?;
 
         // TEST: n/a
         self.expect(ExpToken::Ident)?;
@@ -114,8 +110,7 @@ impl Parser {
         let name = self.as_ident();
 
         // TEST: no. 2
-        self.expect(ExpToken::Semi)?;
-        let hi = self.token_loc();
+        let hi = self.expect(ExpToken::Semi)?;
 
         Ok(Directive::Mod {
             name,
@@ -129,6 +124,8 @@ impl Parser {
         self.expect(ExpToken::Pound)?;
 
         // bump the parser
-        self.expect(ExpToken::Ident)
+        self.expect(ExpToken::Ident)?;
+
+        Ok(())
     }
 }

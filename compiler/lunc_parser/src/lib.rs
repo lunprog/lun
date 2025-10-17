@@ -134,8 +134,9 @@ impl Parser {
     }
 
     /// Expects and consumes the token `exp.tok`, or something else if it's no
-    /// `exp.tok`. Signals an error is the next token isn't `exp.tok`.
-    pub fn expect(&mut self, exp: ExpToken) -> IResult<()> {
+    /// `exp.tok`. Signals an error is the next token isn't `exp.tok`. Returns
+    /// the span of the consumed token if it was the correct one.
+    pub fn expect(&mut self, exp: ExpToken) -> IResult<Span> {
         if !self.eat(exp) {
             // token was not present
             let diag = self.expected_diag().into_diag();
@@ -145,7 +146,7 @@ impl Parser {
             return Err(diag);
         }
 
-        Ok(())
+        Ok(self.token_loc())
     }
 
     /// Create a new expected diag with the current token and the
@@ -206,6 +207,7 @@ impl Parser {
     }
 
     /// Clones the location of the previous token, [`Parser::prev_token`].
+    #[inline(always)]
     pub fn token_loc(&self) -> Span {
         self.prev_token.loc.clone()
     }

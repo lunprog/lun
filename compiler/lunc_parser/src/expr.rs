@@ -499,15 +499,13 @@ impl Parser {
     /// Parses a grouping expression
     pub fn parse_grouping_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::LParen)?;
-        let lo = self.token_loc();
+        let lo = self.expect(ExpToken::LParen)?;
 
         // TEST: yes
         let expr = self.parse_expr()?;
 
         // TEST: n/a
-        self.expect(ExpToken::RParen)?;
-        let hi = self.token_loc();
+        let hi = self.expect(ExpToken::RParen)?;
 
         Ok(Expression {
             kind: ExprKind::Grouping(Box::new(expr)),
@@ -518,12 +516,12 @@ impl Parser {
     /// Parses an identifier expression
     pub fn parse_ident_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::Ident)?;
+        let loc = self.expect(ExpToken::Ident)?;
         let id = self.as_ident();
 
         Ok(Expression {
             kind: ExprKind::Ident(id),
-            loc: self.token_loc(),
+            loc,
         })
     }
 
@@ -626,8 +624,7 @@ impl Parser {
     /// Parses the function definition / declaration expression
     pub fn parse_funkw_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::KwFun)?;
-        let lo = self.token_loc();
+        let lo = self.expect(ExpToken::KwFun)?;
 
         // TEST: no. 1
         self.expect(ExpToken::LParen)?;
@@ -648,9 +645,8 @@ impl Parser {
                     }
 
                     // TEST: n/a
-                    self.expect(ExpToken::Ident)?;
+                    let lo_arg = self.expect(ExpToken::Ident)?;
                     let name = self.as_ident();
-                    let lo_arg = self.token_loc();
 
                     // TEST: n/a
                     self.expect(ExpToken::Colon)?;
@@ -701,8 +697,7 @@ impl Parser {
                 //                ^^^^^^ self.token
 
                 // TEST: n/a
-                self.expect(ExpToken::RParen)?;
-                let hi_paren = self.token_loc();
+                let hi_paren = self.expect(ExpToken::RParen)?;
 
                 let rettypexpr = if self.eat_no_expect(ExpToken::MinusGt) {
                     Some(Box::new(self.parse_typexpr()?))
@@ -790,8 +785,7 @@ impl Parser {
     /// Parses the if-else expression
     pub fn parse_if_else_expr(&mut self, only_block: bool) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::KwIf)?;
-        let lo = self.token_loc();
+        let lo = self.expect(ExpToken::KwIf)?;
 
         let cond = Box::new(self.parse_expr()?);
 
@@ -919,8 +913,7 @@ impl Parser {
         let label = self.parse_label_in_expr()?;
 
         // TEST: n/a
-        self.expect(ExpToken::KwWhile)?;
-        let lo_while = self.token_loc();
+        let lo_while = self.expect(ExpToken::KwWhile)?;
         let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_while);
 
         let cond = Box::new(self.parse_expr()?);
@@ -939,8 +932,7 @@ impl Parser {
         let label = self.parse_label_in_expr()?;
 
         // TEST: n/a
-        self.expect(ExpToken::KwFor)?;
-        let lo_for = self.token_loc();
+        let lo_for = self.expect(ExpToken::KwFor)?;
         let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_for);
 
         // TEST: no. 1
@@ -975,8 +967,7 @@ impl Parser {
         let label = self.parse_label_in_expr()?;
 
         // TEST: n/a
-        self.expect(ExpToken::KwLoop)?;
-        let lo_loop = self.token_loc();
+        let lo_loop = self.expect(ExpToken::KwLoop)?;
         let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_loop);
 
         let block = self.parse_block()?;
@@ -992,8 +983,7 @@ impl Parser {
     /// Parses return expression
     pub fn parse_return_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::KwReturn)?;
-        let lo = self.token_loc();
+        let lo = self.expect(ExpToken::KwReturn)?;
         let mut hi = lo.clone();
 
         let val = if self.token.is_stmt_end() {
@@ -1014,17 +1004,14 @@ impl Parser {
     /// Parses break expression
     pub fn parse_break_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::KwBreak)?;
-        let lo = self.token_loc();
+        let lo = self.expect(ExpToken::KwBreak)?;
 
         let mut hi = lo.clone();
 
         let label = if self.eat_no_expect(ExpToken::Colon) {
             // TEST: no. 1
-            self.expect(ExpToken::Ident)?;
+            hi = self.expect(ExpToken::Ident)?;
             let label = self.as_ident();
-
-            hi = self.token_loc();
 
             Some(label)
         } else {
@@ -1049,16 +1036,13 @@ impl Parser {
     /// Parses continue expression
     pub fn parse_continue_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::KwContinue)?;
-        let lo = self.token_loc();
+        let lo = self.expect(ExpToken::KwContinue)?;
         let mut hi = lo.clone();
 
         let label = if self.eat_no_expect(ExpToken::Colon) {
             // TEST: no. 1
-            self.expect(ExpToken::Ident)?;
+            hi = self.expect(ExpToken::Ident)?;
             let label = self.as_ident();
-
-            hi = self.token_loc();
 
             Some(label)
         } else {
@@ -1074,8 +1058,7 @@ impl Parser {
     /// Parses null expression
     pub fn parse_null_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::KwNull)?;
-        let loc = self.token_loc();
+        let loc = self.expect(ExpToken::KwNull)?;
 
         Ok(Expression {
             kind: ExprKind::Null,
@@ -1086,8 +1069,7 @@ impl Parser {
     /// Parses orb expression
     pub fn parse_orb_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::KwOrb)?;
-        let loc = self.token_loc();
+        let loc = self.expect(ExpToken::KwOrb)?;
 
         Ok(Expression {
             kind: ExprKind::Orb,
@@ -1098,8 +1080,7 @@ impl Parser {
     /// Parses function pointer type
     pub fn parse_funptr_typexpr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::Star)?;
-        let lo = self.token_loc();
+        let lo = self.expect(ExpToken::Star)?;
 
         // TEST: n/a
         self.expect(ExpToken::KwFun)?;
@@ -1147,8 +1128,7 @@ impl Parser {
     /// Parses pointer type expression
     pub fn parse_pointer_typexpr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::Star)?;
-        let lo = self.token_loc();
+        let lo = self.expect(ExpToken::Star)?;
 
         let mutable = self.eat_no_expect(ExpToken::KwMut);
 
@@ -1185,8 +1165,7 @@ impl Parser {
     /// Parses borrow expression
     pub fn parse_borrow_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
-        self.expect(ExpToken::And)?;
-        let lo = self.token_loc();
+        let lo = self.expect(ExpToken::And)?;
 
         let mutable = self.eat_no_expect(ExpToken::KwMut);
 
@@ -1206,9 +1185,8 @@ impl Parser {
         self.expect(ExpToken::Dot)?;
 
         // TEST: no. 1
-        self.expect(ExpToken::Ident)?;
+        let hi = self.expect(ExpToken::Ident)?;
         let member = self.as_ident();
-        let hi = self.token_loc();
 
         let loc = Span::from_ends(expr.loc.clone(), hi);
 
