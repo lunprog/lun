@@ -48,7 +48,7 @@ impl Parser {
         } else if self.eat(ExpToken::KwOrb) {
             path.push("orb".to_string())
         } else {
-            return Err(self.etd_and_bump());
+            return self.etd_and_bump();
         }
 
         let lo = self.token_loc();
@@ -75,7 +75,7 @@ impl Parser {
         self.expect(ExpToken::Ident)?;
         debug_assert_eq!(self.as_ident().as_str(), "import");
 
-        let path = self.parse_spanned_path().unwrap_and_emit(&mut self.sink);
+        let path = self.parse_spanned_path().emit_wdef(self.x());
 
         let alias = if self.eat(ExpToken::KwAs) {
             // TEST: no. 1

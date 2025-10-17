@@ -10,12 +10,12 @@ use expr::Expression;
 use item::Module;
 
 use lunc_ast::{Mutability, Spanned};
-use lunc_diag::{Diagnostic, DiagnosticSink, FileId, IResult, ToDiagnostic};
+use lunc_diag::{DiagnosticSink, FileId, IResult, Recovered, ToDiagnostic};
 use lunc_token::{
     ExpToken, ExpTokenSet, Lit, Token, TokenStream,
     TokenType::{self, *},
 };
-use lunc_utils::{Span, opt_unreachable};
+use lunc_utils::{Recovery, Span, opt_unreachable};
 
 pub mod diags;
 pub mod directive;
@@ -41,6 +41,8 @@ pub struct Parser {
     pub prev_token: Token,
     /// The expected token reprs.
     pub expected_token_exps: ExpTokenSet,
+    /// is the parser in recovery mode?
+    pub recovery: Recovery,
 }
 
 impl Parser {
@@ -56,7 +58,22 @@ impl Parser {
             token,
             prev_token: Token::dummy(),
             expected_token_exps: ExpTokenSet::new(),
+            recovery: Recovery::No,
         }
+    }
+
+    /// Methods used to shorten the length of [`ResultExt`] methods like:
+    /// `RES.emit_wdef(self.x());`.
+    ///
+    /// [`ResultExt`]: lunc_diag::ResultExt
+    pub fn x(&mut self) -> lunc_diag::X<'_> {
+        (&mut self.sink, &mut self.recovery)
+    }
+
+    /// Is the parser currently in recovery mode?
+    #[inline(always)]
+    pub fn in_recovery(&mut self) -> bool {
+        self.recovery == Recovery::Yes
     }
 
     /// Advances the parser by one token.
@@ -107,6 +124,11 @@ impl Parser {
 
     /// Consumes one of the `edible` if it exists, and return true, or check if
     /// it's in `inedible` and return true. In other cases return false.
+    ///
+    /// # Note
+    ///
+    /// This function adds neither `exp`s from `edible` or `inedible` into
+    /// [`Parser::expected_token_exps`]
     pub fn eat_one_of(
         &mut self,
         edible: impl IntoIterator<Item = ExpToken>,
@@ -146,20 +168,39 @@ impl Parser {
         }
     }
 
-    /// Expects and consumes the token `exp.tok`, or something else if it's no
-    /// `exp.tok`. Signals an error is the next token isn't `exp.tok`. Returns
-    /// the span of the consumed token if it was the correct one.
+    /// Expects and consumes the token `exp`, or something else if it's not
+    /// `exp`. Signals an error is the next token isn't `exp`. Returns the span
+    /// of the consumed token if it was the correct one.
+    #[inline(never)]
     pub fn expect(&mut self, exp: ExpToken) -> IResult<Span> {
+        self._expect_advance(exp, true)?;
+        Ok(self.token_loc())
+    }
+
+    /// Expects and consumes the token `exp` if it exists. Signals an error if
+    /// the next token isn't `exp`.
+    ///
+    /// *`expect_nae` for `EXPECT Not Always Eat`*
+    #[inline(never)]
+    pub fn expect_nae(&mut self, exp: ExpToken) -> IResult<()> {
+        self._expect_advance(exp, false)?;
+        Ok(())
+    }
+
+    #[inline(always)]
+    fn _expect_advance(&mut self, exp: ExpToken, eat_unexpected: bool) -> IResult<()> {
         if !self.eat(exp) {
             // token was not present
             let diag = self.expected_diag().into_diag();
 
-            self.bump();
+            if eat_unexpected {
+                self.bump();
+            }
 
-            return Err(diag);
+            return Err(Recovered::Unable(diag));
         }
 
-        Ok(self.token_loc())
+        Ok(())
     }
 
     /// Create a new expected diag with the current token and the
@@ -276,12 +317,12 @@ impl Parser {
     }
 
     /// Returns the current expected token diagnostic and then bump the parser.
-    pub fn etd_and_bump(&mut self) -> Diagnostic {
+    pub fn etd_and_bump<T>(&mut self) -> IResult<T> {
         let diag = self.expected_diag().into_diag();
 
         self.bump();
 
-        diag
+        Err(Recovered::Unable(diag))
     }
 
     /// Parse mutability, either `mut` / *nothing*.
@@ -297,8 +338,10 @@ impl Parser {
     pub fn produce(&mut self) -> Option<Module> {
         let module = match self.parse_module() {
             Ok(ast) => ast,
-            Err(diag) => {
-                self.sink.emit(diag);
+            Err(recovered) => {
+                if let Recovered::Unable(d) = recovered {
+                    self.sink.emit(d);
+                }
                 return None;
             }
         };

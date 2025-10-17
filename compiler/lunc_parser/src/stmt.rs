@@ -230,7 +230,7 @@ impl Parser {
         } else if self.eat(ExpToken::Eq) {
             Mutability::Mut
         } else {
-            return Err(self.etd_and_bump());
+            return self.etd_and_bump();
         };
 
         let value = Box::new(self.parse_expr()?);

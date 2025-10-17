@@ -4244,7 +4244,13 @@ error: compilation of `E006_block_2` failed due to 1 error and 0 warnings
 4 │     b
   │     ^
 
-error: compilation of `E006_block_3` failed due to 1 error and 0 warnings
+error[E006]: expected item, found `;`
+  ┌─ ./tests/parser/E006_block_3.lun:5:2
+  │
+5 │ };
+  │  ^
+
+error: compilation of `E006_block_3` failed due to 2 errors and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4266,7 +4272,7 @@ error: compilation of `E006_block_4` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_block_5": (
-        compiler_out: "error[E006]: expected `}`, found <eof>
+        compiler_out: "error[E006]: expected `}`, found end of file
   ┌─ ./tests/parser/E006_block_5.lun:3:1
   │
 3 │ 
@@ -4314,7 +4320,13 @@ error: compilation of `E006_continue` failed due to 1 error and 0 warnings
 2 │ a :: defer;
   │      ^^^^^
 
-error: compilation of `E006_expr_1` failed due to 1 error and 0 warnings
+error[E006]: expected item, found `;`
+  ┌─ ./tests/parser/E006_expr_1.lun:2:11
+  │
+2 │ a :: defer;
+  │           ^
+
+error: compilation of `E006_expr_1` failed due to 2 errors and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4342,7 +4354,25 @@ error: compilation of `E006_extern_block_1` failed due to 1 error and 0 warnings
 2 │ extern "C" a
   │            ^
 
-error: compilation of `E006_extern_block_2` failed due to 1 error and 0 warnings
+error[E006]: expected `:`, found end of file
+  ┌─ ./tests/parser/E006_extern_block_2.lun:3:1
+  │
+3 │ 
+  │ ^
+
+error[E006]: expected expression, found end of file
+  ┌─ ./tests/parser/E006_extern_block_2.lun:3:1
+  │
+3 │ 
+  │ ^
+
+error[E006]: expected `}`, found end of file
+  ┌─ ./tests/parser/E006_extern_block_2.lun:3:1
+  │
+3 │ 
+  │ ^
+
+error: compilation of `E006_extern_block_2` failed due to 4 errors and 0 warnings
 
 "#,
         compiler_code: 255,
@@ -4350,7 +4380,7 @@ error: compilation of `E006_extern_block_2` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_extern_block_3": (
-        compiler_out: "error[E006]: expected item, found <eof>
+        compiler_out: "error[E006]: expected `}`, found end of file
   ┌─ ./tests/parser/E006_extern_block_3.lun:3:1
   │
 3 │ 
@@ -4398,7 +4428,13 @@ error: compilation of `E006_funkw_expr_1` failed due to 1 error and 0 warnings
 2 │ a :: fun (a: b c);
   │                ^
 
-error: compilation of `E006_funkw_expr_2` failed due to 1 error and 0 warnings
+error[E006]: expected item, found `;`
+  ┌─ ./tests/parser/E006_funkw_expr_2.lun:2:18
+  │
+2 │ a :: fun (a: b c);
+  │                  ^
+
+error: compilation of `E006_funkw_expr_2` failed due to 2 errors and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4426,7 +4462,13 @@ error: compilation of `E006_funkw_expr_3` failed due to 1 error and 0 warnings
 2 │ a :: fun (b b);
   │             ^
 
-error: compilation of `E006_funkw_expr_4` failed due to 1 error and 0 warnings
+error[E006]: expected item, found `;`
+  ┌─ ./tests/parser/E006_funkw_expr_4.lun:2:15
+  │
+2 │ a :: fun (b b);
+  │               ^
+
+error: compilation of `E006_funkw_expr_4` failed due to 2 errors and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4482,7 +4524,13 @@ error: compilation of `E006_funptr_2` failed due to 1 error and 0 warnings
 2 │ a;
   │  ^
 
-error: compilation of `E006_global_def_1` failed due to 1 error and 0 warnings
+error[E006]: expected expression, found end of file
+  ┌─ ./tests/parser/E006_global_def_1.lun:3:1
+  │
+3 │ 
+  │ ^
+
+error: compilation of `E006_global_def_1` failed due to 2 errors and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4490,7 +4538,7 @@ error: compilation of `E006_global_def_1` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_global_def_2": (
-        compiler_out: "error[E006]: expected `;`, found <eof>
+        compiler_out: "error[E006]: expected `:`, `=` or `;`, found end of file
   ┌─ ./tests/parser/E006_global_def_2.lun:3:1
   │
 3 │ 
@@ -4504,7 +4552,7 @@ error: compilation of `E006_global_def_2` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_global_def_3": (
-        compiler_out: "error[E006]: expected `;`, found <eof>
+        compiler_out: "error[E006]: expected `;`, found end of file
   ┌─ ./tests/parser/E006_global_def_3.lun:3:1
   │
 3 │ 
@@ -4552,7 +4600,13 @@ error: compilation of `E006_if_else_1` failed due to 1 error and 0 warnings
 2 │ a :: if b {} else a;
   │                   ^
 
-error: compilation of `E006_if_else_2` failed due to 1 error and 0 warnings
+error[E006]: expected item, found `;`
+  ┌─ ./tests/parser/E006_if_else_2.lun:2:20
+  │
+2 │ a :: if b {} else a;
+  │                    ^
+
+error: compilation of `E006_if_else_2` failed due to 2 errors and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4588,7 +4642,7 @@ error: compilation of `E006_import_directive_1` failed due to 1 error and 0 warn
         test_code: 0,
     ),
     "parser/E006_import_directive_2": (
-        compiler_out: "error[E006]: expected `;`, found <eof>
+        compiler_out: "error[E006]: expected `;`, found end of file
   ┌─ ./tests/parser/E006_import_directive_2.lun:3:1
   │
 3 │ 
@@ -4622,7 +4676,13 @@ error: compilation of `E006_item_1` failed due to 1 error and 0 warnings
 2 │ #break
   │  ^^^^^
 
-error: compilation of `E006_item_2` failed due to 1 error and 0 warnings
+error[E006]: expected item, found integer literal
+  ┌─ ./tests/parser/E006_item_2.lun:3:2
+  │
+3 │ #2
+  │  ^
+
+error: compilation of `E006_item_2` failed due to 2 errors and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4678,7 +4738,25 @@ error: compilation of `E006_iterator_loop_2` failed due to 1 error and 0 warning
 3 │     let 12 = 2;
   │         ^^
 
-error: compilation of `E006_let_stmt_1` failed due to 1 error and 0 warnings
+error[E006]: expected item, found integer literal
+  ┌─ ./tests/parser/E006_let_stmt_1.lun:3:14
+  │
+3 │     let 12 = 2;
+  │              ^
+
+error[E006]: expected item, found `;`
+  ┌─ ./tests/parser/E006_let_stmt_1.lun:3:15
+  │
+3 │     let 12 = 2;
+  │               ^
+
+error[E006]: expected item, found `}`
+  ┌─ ./tests/parser/E006_let_stmt_1.lun:4:1
+  │
+4 │ }
+  │ ^
+
+error: compilation of `E006_let_stmt_1` failed due to 4 errors and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4692,7 +4770,19 @@ error: compilation of `E006_let_stmt_1` failed due to 1 error and 0 warnings
 3 │     let a - b;
   │           ^
 
-error: compilation of `E006_let_stmt_2` failed due to 1 error and 0 warnings
+error[E006]: expected item, found `;`
+  ┌─ ./tests/parser/E006_let_stmt_2.lun:3:14
+  │
+3 │     let a - b;
+  │              ^
+
+error[E006]: expected item, found `}`
+  ┌─ ./tests/parser/E006_let_stmt_2.lun:4:1
+  │
+4 │ }
+  │ ^
+
+error: compilation of `E006_let_stmt_2` failed due to 3 errors and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4728,7 +4818,7 @@ error: compilation of `E006_mod_directive_1` failed due to 1 error and 0 warning
         test_code: 0,
     ),
     "parser/E006_mod_directive_2": (
-        compiler_out: "error[E006]: expected `;`, found <eof>
+        compiler_out: "error[E006]: expected `;`, found end of file
   ┌─ ./tests/parser/E006_mod_directive_2.lun:3:1
   │
 3 │ 
@@ -4776,7 +4866,13 @@ error: compilation of `E006_qualified_path_2` failed due to 1 error and 0 warnin
 3 │     a : b c;
   │           ^
 
-error: compilation of `E006_short_var_def_1` failed due to 1 error and 0 warnings
+error[E006]: expected item, found `}`
+  ┌─ ./tests/parser/E006_short_var_def_1.lun:4:1
+  │
+4 │ }
+  │ ^
+
+error: compilation of `E006_short_var_def_1` failed due to 2 errors and 0 warnings
 
 ",
         compiler_code: 255,

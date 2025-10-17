@@ -6,7 +6,7 @@
 use std::fmt::Debug;
 
 use lunc_ast::{
-    Abi, BinOp, Mutability, Spanned, UnOp,
+    Abi, BinOp, ItemContainer, Mutability, Spanned, UnOp,
     symbol::{SymKind, Symbol, Type, Typeness, ValueExpr},
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
@@ -755,13 +755,6 @@ pub enum ScStmtKind {
     ///
     /// [`DsStmtKind::Expression`]: lunc_dsir::DsStmtKind::Expression
     Expression(ScExpression),
-}
-
-/// The thing that contains the items
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ItemContainer {
-    Module,
-    ExternBlock,
 }
 
 /// The semantic checker, it turn **DSIR** into **SCIR** and along the way it

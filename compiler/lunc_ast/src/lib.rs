@@ -537,3 +537,10 @@ impl PrettyDump for Abi {
         }
     }
 }
+
+/// The thing that contains the items
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ItemContainer {
+    Module,
+    ExternBlock,
+}

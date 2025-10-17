@@ -411,7 +411,7 @@ impl Parser {
             tt if UnOp::left_from_token(tt).is_some() => self.parse_unary_left_expr()?,
             _ => {
                 // TEST: no. 1
-                return Err(ExpectedToken::new(["expression"], self.token.clone()).into_diag());
+                return Err(ExpectedToken::new(["expression"], self.token.clone()).into());
             }
         };
 
@@ -459,7 +459,7 @@ impl Parser {
         } else {
             self.bump();
 
-            Err(ExpectedToken::new(["literal"], self.prev_token.clone()).into_diag())
+            Err(ExpectedToken::new(["literal"], self.prev_token.clone()).into())
         }
     }
 
@@ -477,7 +477,7 @@ impl Parser {
                 loc: self.token_loc(),
             })
         } else {
-            Err(self.etd_and_bump())
+            self.etd_and_bump()
         }
     }
 
@@ -521,7 +521,7 @@ impl Parser {
             }
             None => {
                 // TEST: n/a
-                return Err(ExpectedToken::new(["binary operator"], self.token.clone()).into_diag());
+                return Err(ExpectedToken::new(["binary operator"], self.token.clone()).into());
             }
         };
 
@@ -555,7 +555,7 @@ impl Parser {
 
             (op, self.token_loc())
         } else {
-            return Err(ExpectedToken::new(["unary operator"], self.token.clone()).into_diag());
+            return Err(ExpectedToken::new(["unary operator"], self.token.clone()).into());
         };
 
         let expr = self.parse_expr_precedence(Precedence::Unary, false)?;
@@ -591,7 +591,7 @@ impl Parser {
                 // finished to parse the call expr
                 break;
             } else {
-                return Err(self.etd_and_bump());
+                return self.etd_and_bump();
             }
         }
 
@@ -652,7 +652,7 @@ impl Parser {
                         // finished to parse the call expr
                         break;
                     } else {
-                        return Err(self.etd_and_bump());
+                        return self.etd_and_bump();
                     }
                 }
 
@@ -742,7 +742,7 @@ impl Parser {
                         // finished to parse the call expr
                         break;
                     } else {
-                        return Err(self.etd_and_bump());
+                        return self.etd_and_bump();
                     }
                 }
                 // TEST: n/a
@@ -810,7 +810,7 @@ impl Parser {
                             [ExpToken::LCurly, ExpToken::KwIf],
                             self.token.clone(),
                         )
-                        .into_diag());
+                        .into());
                     }
                 };
 
@@ -853,7 +853,7 @@ impl Parser {
             })
         } else {
             // TEST: no. 3
-            Err(self.etd_and_bump().into_diag())
+            self.etd_and_bump()
         }
     }
 
@@ -1089,7 +1089,7 @@ impl Parser {
                 // finished to parse the call expr
                 break;
             } else {
-                return Err(self.etd_and_bump());
+                return self.etd_and_bump();
             }
         }
 
@@ -1135,7 +1135,7 @@ impl Parser {
 
             (op, self.token_loc())
         } else {
-            return Err(ExpectedToken::new(["unary operator"], self.token.clone()).into_diag());
+            return Err(ExpectedToken::new(["unary operator"], self.token.clone()).into());
         };
 
         Ok(Expression {

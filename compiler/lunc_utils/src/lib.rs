@@ -571,6 +571,18 @@ impl Display for OrbType {
     }
 }
 
+/// Recovery mode of the parser.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Recovery {
+    /// Default mode of the parser.
+    #[default]
+    No,
+    /// In recovery mode the parser will try to parse while emitting
+    /// diagnostics, in this mode the parser is parsing a superset of the actual
+    /// grammar, it keeps going while there are errors.
+    Yes,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

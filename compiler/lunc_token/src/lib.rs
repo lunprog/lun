@@ -670,7 +670,7 @@ impl Display for TokenType {
             Tt::KwWhile => write!(f, "keyword `while`"),
             Tt::Ident(_) => write!(f, "identifier"),
             Tt::Lit(Lit { kind, .. }) => write!(f, "{kind} literal"),
-            Tt::EOF => write!(f, "<eof>"),
+            Tt::EOF => write!(f, "end of file"),
             Tt::Dummy => write!(f, "not a token"),
         }
     }
