@@ -7,7 +7,7 @@ use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 use crate::{
     directive::Directive,
     expr::{Arg, Else, ExprKind, Expression, IfExpression},
-    item::{Abi, Item, Module},
+    item::{Item, Module},
     stmt::{Block, Statement, Stmt},
 };
 
@@ -76,14 +76,6 @@ impl PrettyDump for Item {
                 Ok(())
             }
             Item::Directive(directive) => directive.try_dump(ctx),
-        }
-    }
-}
-
-impl PrettyDump for Abi {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        match self {
-            Abi::C => write!(ctx.out, "C"),
         }
     }
 }

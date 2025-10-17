@@ -2,6 +2,7 @@
 
 use std::str::FromStr;
 
+use lunc_ast::Abi;
 use lunc_diag::FileId;
 use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::opt_unreachable;
@@ -23,44 +24,6 @@ pub enum Vis {
 pub struct Module {
     pub items: Vec<Item>,
     pub fid: FileId,
-}
-
-impl AstNode for Module {
-    fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
-        let mut items = Vec::new();
-
-        loop {
-            if let None | Some(TokenType::EOF) = parser.peek_tt() {
-                break;
-            }
-
-            items.push(parse!(parser => Item));
-        }
-
-        Ok(Module {
-            items,
-            fid: parser.fid,
-        })
-    }
-}
-
-/// ABI names usable in an extern block
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub enum Abi {
-    /// `C`
-    #[default]
-    C,
-}
-
-impl FromStr for Abi {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "C" => Ok(Abi::C),
-            _ => Err(()),
-        }
-    }
 }
 
 /// Lun item.
@@ -109,44 +72,60 @@ pub enum Item {
     Directive(Directive),
 }
 
-impl AstNode for Item {
-    fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
-        match parser.peek_tt() {
-            Some(Ident(_)) => parse_global_item(parser),
-            Some(Pound) => parse_directive_item(parser),
-            Some(KwExtern) => parse_extern_block_item(parser),
-            Some(_) => {
-                let t = parser.peek_tok().unwrap().clone();
-                // TEST: no. 1
-                Err(OldExpectedToken::new("item", t.tt, None::<String>, t.loc).into_diag())
+/// Parsing for Lun items
+impl Parser {
+    /// Parses a Lun Module.
+    pub fn parse_module(&mut self) -> IResult<Module> {
+        let mut items = Vec::new();
+
+        loop {
+            if self.token.tt == EOF {
+                break;
             }
-            None => Err(parser.eof_diag()),
+
+            items.push(self.parse_item()?);
+        }
+
+        Ok(Module {
+            items,
+            fid: self.fid,
+        })
+    }
+
+    /// Parses a Lun Item.
+    pub fn parse_item(&mut self) -> IResult<Item> {
+        match self.token.tt {
+            Ident(_) => self.parse_global_item(),
+            Pound => self.parse_directive_item(),
+            KwExtern => self.parse_extern_block_item(),
+            _ => {
+                // TEST: no. 1
+                Err(ExpectedToken::new(["item"], self.token.clone()).into_diag())
+            }
         }
     }
-}
 
-pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
-    // TEST: n/a
-    let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
+    /// Parses a global const / var
+    pub fn parse_global_item(&mut self) -> IResult<Item> {
+        // TEST: n/a
+        let lo = self.expect(ExpToken::Ident)?;
+        let name = self.as_ident();
 
-    // TEST: no. 1
-    expect_token!(parser => [Colon, ()], Colon);
+        // TEST: no. 1
+        self.expect(ExpToken::Colon)?;
 
-    let typexpr = match parser.peek_tt() {
-        Some(Colon | Eq) => None,
-        _ => Some(parse!(@fn parser => Parser::parse_typexpr)),
-    };
+        let typexpr = match self.token.tt {
+            Colon | Eq => None,
+            _ => Some(self.parse_typexpr()?),
+        };
 
-    let is_const = match parser.peek_tt() {
-        Some(Colon) => {
+        let is_const = if self.eat_no_expect(ExpToken::Colon) {
             // const global def
             true
-        }
-        Some(Eq) => {
+        } else if self.eat_no_expect(ExpToken::Eq) {
             // var global def
             false
-        }
-        _ => {
+        } else {
             // uninit global def
             let Some(typexpr) = typexpr else {
                 // SAFETY: we always parse a typexpr if the token after :
@@ -155,7 +134,7 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
             };
 
             // TEST: no. 2
-            let hi = expect_token!(parser => [Semi, ()], Semi).1;
+            let hi = self.expect(ExpToken::Semi)?;
 
             return Ok(Item::GlobalUninit {
                 name,
@@ -163,113 +142,117 @@ pub fn parse_global_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
                 typexpr,
                 loc: Span::from_ends(lo, hi),
             });
+        };
+
+        let value = self.parse_expr()?;
+
+        let hi = if value.is_expr_with_block() {
+            self.eat_no_expect(ExpToken::Semi);
+
+            value.loc.clone()
+        } else {
+            // TEST: no. 3
+            self.expect(ExpToken::Semi)?
+        };
+
+        let loc = Span::from_ends(lo.clone(), hi);
+
+        if is_const {
+            Ok(Item::GlobalConst {
+                name,
+                name_loc: lo,
+                typexpr,
+                value,
+                loc,
+            })
+        } else {
+            Ok(Item::GlobalVar {
+                name,
+                name_loc: lo,
+                typexpr,
+                value,
+                loc,
+            })
         }
-    };
-
-    parser.pop();
-
-    let value = parse!(parser => Expression);
-
-    let hi = if value.is_expr_with_block() {
-        if let Some(Semi) = parser.peek_tt() {
-            parser.pop();
-        }
-
-        value.loc.clone()
-    } else {
-        // TEST: no. 3
-        expect_token!(parser => [Semi, ()], Semi).1
-    };
-
-    let loc = Span::from_ends(lo.clone(), hi);
-
-    if is_const {
-        Ok(Item::GlobalConst {
-            name,
-            name_loc: lo,
-            typexpr,
-            value,
-            loc,
-        })
-    } else {
-        Ok(Item::GlobalVar {
-            name,
-            name_loc: lo,
-            typexpr,
-            value,
-            loc,
-        })
     }
-}
 
-pub fn parse_directive_item(parser: &mut Parser) -> IResult<Item> {
-    // NOTE: already rewritten.
-    let directive_name = parser.look_ahead(1, look_tok);
+    /// Parses item directive.
+    pub fn parse_directive_item(&mut self) -> IResult<Item> {
+        let directive_name = self.look_ahead(1, look_tok);
 
-    match &directive_name.tt {
-        Ident(id) => match id.as_str() {
-            Directive::MOD_NAME => parser.parse_mod_directive().map(Item::Directive),
-            Directive::IMPORT_NAME => parser.parse_import_directive().map(Item::Directive),
-            _ => Err(UnknownDirective {
-                name: id.clone(),
-                loc: directive_name.loc.clone(),
+        match &directive_name.tt {
+            Ident(id) => match id.as_str() {
+                Directive::MOD_NAME => self.parse_mod_directive().map(Item::Directive),
+                Directive::IMPORT_NAME => self.parse_import_directive().map(Item::Directive),
+                _ => Err(UnknownDirective {
+                    name: id.clone(),
+                    loc: directive_name.loc.clone(),
+                }
+                .into_diag()),
+            },
+            _ => {
+                // TEST: no. 2
+                Err(self.recover_directive().unwrap_err())
             }
-            .into_diag()),
-        },
-        _ => {
-            // TEST: no. 2
-            Err(parser.recover_directive().unwrap_err())
-        }
-    }
-}
-
-pub fn parse_extern_block_item(parser: &mut Parser) -> Result<Item, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [KwExtern, ()], KwExtern);
-
-    // TEST: no. 1
-    let (LitVal::Str(abi_str), abi_loc) = expect_token!(parser => [Lit(Lit { kind: LitKind::Str, value, .. }), value.clone()], "string literal")
-    else {
-        // SAFETY: literal is guaranteed to contain a string value, if kind is str.
-        opt_unreachable!()
-    };
-    let abi = match Abi::from_str(&abi_str) {
-        Ok(abi) => abi,
-        Err(()) => {
-            parser.sink.emit(UnknownAbi {
-                abi: abi_str,
-                loc: abi_loc,
-            });
-
-            Abi::default()
-        }
-    };
-
-    // TEST: no. 2
-    expect_token!(parser => [LCurly, ()], LCurly);
-
-    let mut items = Vec::new();
-
-    loop {
-        if let Some(RCurly) = parser.peek_tt() {
-            break;
-        }
-
-        let item = parse!(parser => Item);
-
-        items.push(item);
-
-        if let Some(RCurly) = parser.peek_tt() {
-            break;
         }
     }
 
-    // TEST: n/a
-    let (_, hi) = expect_token!(parser => [RCurly, ()], RCurly);
+    /// Parses extern block item
+    pub fn parse_extern_block_item(&mut self) -> IResult<Item> {
+        // TEST: n/a
+        let lo = self.expect(ExpToken::KwExtern)?;
 
-    Ok(Item::ExternBlock {
-        abi,
-        items,
-        loc: Span::from_ends(lo, hi),
-    })
+        // TEST: no. 1
+        let (abi_str, abi_loc) = if let Some(Lit {
+            kind: LitKind::Str,
+            value: LitVal::Str(str),
+            ..
+        }) = self.eat_lit()
+        {
+            (str, self.token_loc())
+        } else {
+            // self.bump();
+
+            return Err(
+                ExpectedToken::new(["string literal"], self.prev_token.clone()).into_diag(),
+            );
+        };
+
+        let abi = match Abi::from_str(&abi_str) {
+            Ok(abi) => abi,
+            Err(()) => {
+                self.sink.emit(UnknownAbi {
+                    abi: abi_str,
+                    loc: abi_loc,
+                });
+
+                Abi::default()
+            }
+        };
+
+        // TEST: no. 2
+        self.expect(ExpToken::LCurly)?;
+
+        let mut items = Vec::new();
+
+        loop {
+            if self.eat_no_expect(ExpToken::RCurly) {
+                break;
+            }
+
+            items.push(self.parse_item()?);
+
+            if self.eat_no_expect(ExpToken::RCurly) {
+                break;
+            }
+        }
+
+        let hi = self.token_loc();
+
+        Ok(Item::ExternBlock {
+            abi,
+            items,
+            loc: Span::from_ends(lo, hi),
+        })
+    }
 }

@@ -345,15 +345,13 @@ impl Parser {
 
     /// Parses and produce a module.
     pub fn produce(&mut self) -> Option<Module> {
-        let module = match Module::parse(self) {
+        let module = match self.parse_module() {
             Ok(ast) => ast,
             Err(diag) => {
                 self.sink.emit(diag);
                 return None;
             }
         };
-
-        // let arr: [&Token; 2] = self.look_many(0, |t| t);
 
         if self.sink.failed() {
             return None;
@@ -364,6 +362,7 @@ impl Parser {
 }
 
 /// A node of the AST that can be parsed.
+#[deprecated]
 pub trait AstNode: Debug + PrettyDump {
     /// parse the node with the given parser and returns the node.
     fn parse(parser: &mut Parser) -> Result<Self, Diagnostic>

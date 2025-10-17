@@ -6,7 +6,7 @@
 use std::fmt::Debug;
 
 use lunc_ast::{
-    BinOp, Mutability, Spanned, UnOp,
+    Abi, BinOp, Mutability, Spanned, UnOp,
     symbol::{SymKind, Symbol, Type, Typeness, ValueExpr},
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
@@ -19,8 +19,6 @@ use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::{
     BuildOptions, FromHigher, OrbType, Span, lower, opt_unreachable, target::PointerWidth,
 };
-
-pub use lunc_dsir::Abi;
 
 use crate::diags::{
     BadMainSignature, CantResolveComptimeValue, ExpectedTypeFoundExpr, MainUndefined,

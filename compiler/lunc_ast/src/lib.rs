@@ -6,6 +6,7 @@
 use std::{
     fmt::Display,
     io::{self, Write},
+    str::FromStr,
 };
 
 use lunc_token::TokenType;
@@ -506,6 +507,33 @@ impl PrettyDump for Mutability {
         match self {
             Self::Not => write!(ctx.out, "not"),
             Self::Mut => write!(ctx.out, "mut"),
+        }
+    }
+}
+
+/// ABI names usable in an extern block
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum Abi {
+    /// `C`
+    #[default]
+    C,
+}
+
+impl FromStr for Abi {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "C" => Ok(Abi::C),
+            _ => Err(()),
+        }
+    }
+}
+
+impl PrettyDump for Abi {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        match self {
+            Abi::C => write!(ctx.out, "C"),
         }
     }
 }

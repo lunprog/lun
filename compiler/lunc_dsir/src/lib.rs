@@ -11,7 +11,7 @@ use diags::{
 };
 
 use lunc_ast::{
-    BinOp, Mutability, Spanned, UnOp,
+    Abi, BinOp, Mutability, Spanned, UnOp,
     symbol::{EffectivePath, LazySymbol, SymKind, Symbol, Type, Typeness},
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
@@ -27,7 +27,7 @@ use lunc_parser::{
 use lunc_token::Lit;
 use lunc_utils::{FromHigher, lower, opt_unreachable};
 
-pub use lunc_parser::{directive::SpannedPath, item::Abi};
+pub use lunc_parser::directive::SpannedPath;
 
 pub mod diags;
 pub mod pretty;

@@ -418,10 +418,8 @@ impl Parser {
             Star => self.parse_pointer_typexpr()?,
             tt if UnOp::left_from_token(tt).is_some() => self.parse_unary_left_expr()?,
             _ => {
-                let t = self.token.clone();
-
                 // TEST: no. 1
-                return Err(ExpectedToken::new(["expression"], t).into_diag());
+                return Err(ExpectedToken::new(["expression"], self.token.clone()).into_diag());
             }
         };
 
