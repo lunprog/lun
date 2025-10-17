@@ -4,10 +4,12 @@
 )]
 
 use std::{
+    borrow::Cow,
     fmt::{self, Debug, Display},
     hash::Hash,
     io::{self, Write},
     mem,
+    ops::Range,
 };
 
 use lunc_utils::{FileId, Span, opt_unreachable};
@@ -77,6 +79,57 @@ impl TokenStream {
         self.toks.get(idx).unwrap_or_else(|| self.get_eof())
     }
 
+    /// Get a range of token, if the range exceeds the number of token it will
+    /// return `EOF` token.
+    ///
+    /// # Panic
+    ///
+    /// This function will panic if you call it on a non-finished token stream
+    #[track_caller]
+    pub fn get_slice<'a>(&'a self, range: Range<usize>) -> Cow<'a, [Token]> {
+        assert!(
+            self.finished,
+            "can't access tokens while the token stream isn't finished."
+        );
+        let start = range.start;
+        let end = range.end;
+
+        // Empty range
+        if start > end {
+            return Cow::Borrowed(&[]);
+        }
+
+        // Compute requested length safely (avoid overflow)
+        let len = match end.checked_sub(start).filter(|d| *d <= isize::MAX as usize) {
+            Some(l) => l,
+            None => {
+                // Overflowed indices or capacity would overflow.
+                return Cow::Borrowed(&[]);
+            }
+        };
+
+        // If the entire inclusive range sits inside `data`, return a borrowed slice.
+        if end < self.toks.len() {
+            return Cow::Borrowed(&self.toks[start..end]);
+        }
+
+        // Otherwise build an owned Vec:
+        // 1) copy the in-bounds contiguous portion efficiently with extend_from_slice
+        // 2) resize to fill remaining requested length with zeros
+        let mut out = Vec::with_capacity(len);
+        if start < self.toks.len() {
+            let available = self.toks.len() - start;
+            let to_copy = std::cmp::min(len, available);
+            out.extend_from_slice(&self.toks[start..start + to_copy]);
+        }
+
+        if out.len() < len {
+            out.resize(len, self.get_eof().clone()); // append EOFs
+        }
+
+        Cow::Owned(out)
+    }
+
     /// Get the last token of a finished token stream, it will always be the
     /// EOF token
     ///
@@ -116,7 +169,8 @@ impl Debug for TokenStream {
     }
 }
 
-#[derive(Debug, Clone)]
+/// Lun token.
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub tt: TokenType,
     pub loc: Span,
@@ -1072,6 +1126,210 @@ mod tests {
         assert!(!is_identifier("ça"));
         assert!(!is_identifier("Hello, World!"));
         assert!(!is_identifier("orb"));
+    }
+
+    fn build_ts() -> TokenStream {
+        let mut ts = TokenStream::new();
+
+        ts.push(TokenType::LParen, (0, 1), FileId::ROOT_MODULE);
+        ts.push(TokenType::RParen, (1, 2), FileId::ROOT_MODULE);
+        ts.push(TokenType::KwAs, (2, 4), FileId::ROOT_MODULE);
+        ts.push(TokenType::KwComptime, (4, 12), FileId::ROOT_MODULE);
+        ts.push(TokenType::EOF, (12, 12), FileId::ROOT_MODULE);
+        ts.finish();
+
+        ts
+    }
+
+    #[test]
+    fn token_stream_get_slice_in_bounds_returns_borrowed_slice() {
+        let ts = build_ts();
+        let cow = ts.get_slice(1..4);
+
+        match cow {
+            Cow::Borrowed(s) => assert_eq!(
+                s,
+                &[
+                    Token {
+                        tt: TokenType::RParen,
+                        loc: Span {
+                            lo: 1,
+                            hi: 2,
+                            fid: FileId::ROOT_MODULE
+                        }
+                    },
+                    Token {
+                        tt: TokenType::KwAs,
+                        loc: Span {
+                            lo: 2,
+                            hi: 4,
+                            fid: FileId::ROOT_MODULE
+                        }
+                    },
+                    Token {
+                        tt: TokenType::KwComptime,
+                        loc: Span {
+                            lo: 4,
+                            hi: 12,
+                            fid: FileId::ROOT_MODULE
+                        }
+                    },
+                ]
+            ),
+            Cow::Owned(_) => panic!("expected Borrowed for in-bounds range"),
+        }
+    }
+
+    #[test]
+    fn token_stream_get_slice_out_of_bounds_pads_with_zeros_and_returns_owned() {
+        let ts = build_ts();
+        let cow = ts.get_slice(0..6);
+
+        match cow {
+            Cow::Owned(v) => assert_eq!(
+                v,
+                vec![
+                    Token {
+                        tt: TokenType::LParen,
+                        loc: Span {
+                            lo: 0,
+                            hi: 1,
+                            fid: FileId::ROOT_MODULE
+                        }
+                    },
+                    Token {
+                        tt: TokenType::RParen,
+                        loc: Span {
+                            lo: 1,
+                            hi: 2,
+                            fid: FileId::ROOT_MODULE
+                        }
+                    },
+                    Token {
+                        tt: TokenType::KwAs,
+                        loc: Span {
+                            lo: 2,
+                            hi: 4,
+                            fid: FileId::ROOT_MODULE
+                        }
+                    },
+                    Token {
+                        tt: TokenType::KwComptime,
+                        loc: Span {
+                            lo: 4,
+                            hi: 12,
+                            fid: FileId::ROOT_MODULE
+                        }
+                    },
+                    ts.get_eof().clone(),
+                    ts.get_eof().clone(),
+                ]
+            ),
+            Cow::Borrowed(_) => panic!("expected Owned for out-of-bounds range"),
+        }
+    }
+
+    #[test]
+    fn token_stream_get_slice_partial_overlap_owned_and_padded() {
+        let ts = build_ts();
+        let cow = ts.get_slice(1..6);
+
+        match cow {
+            Cow::Owned(v) => assert_eq!(
+                v,
+                vec![
+                    Token {
+                        tt: TokenType::RParen,
+                        loc: Span {
+                            lo: 1,
+                            hi: 2,
+                            fid: FileId::ROOT_MODULE
+                        }
+                    },
+                    Token {
+                        tt: TokenType::KwAs,
+                        loc: Span {
+                            lo: 2,
+                            hi: 4,
+                            fid: FileId::ROOT_MODULE
+                        }
+                    },
+                    Token {
+                        tt: TokenType::KwComptime,
+                        loc: Span {
+                            lo: 4,
+                            hi: 12,
+                            fid: FileId::ROOT_MODULE
+                        }
+                    },
+                    ts.get_eof().clone(),
+                    ts.get_eof().clone(),
+                ]
+            ),
+            Cow::Borrowed(_) => panic!("expected Owned for partially out-of-bounds range"),
+        }
+    }
+
+    #[test]
+    #[allow(clippy::reversed_empty_ranges)] // it's intentional
+    fn token_stream_get_slice_inverted_range_returns_borrowed_empty_slice() {
+        let ts = build_ts();
+        let cow = ts.get_slice(5..2); // start > end
+
+        match cow {
+            Cow::Borrowed(s) => assert!(s.is_empty()),
+            Cow::Owned(_) => panic!("expected Borrowed empty slice for inverted range"),
+        }
+    }
+
+    #[test]
+    fn token_stream_get_slice_start_beyond_len_returns_owned_all_zeros() {
+        let ts = build_ts();
+        let cow = ts.get_slice(5..8);
+
+        match cow {
+            Cow::Owned(v) => assert_eq!(
+                v,
+                vec![
+                    ts.get_eof().clone(),
+                    ts.get_eof().clone(),
+                    ts.get_eof().clone(),
+                ]
+            ),
+            Cow::Borrowed(_) => panic!("expected Owned (zeros) when start >= len"),
+        }
+    }
+
+    #[test]
+    fn token_stream_get_slice_arithmetic_overflow_range_returns_borrowed_empty_slice() {
+        let ts = build_ts();
+        let cow = ts.get_slice(0..usize::MAX);
+
+        match cow {
+            Cow::Borrowed(s) => assert!(s.is_empty()),
+            Cow::Owned(_) => panic!("expected Borrowed empty slice on overflow-safe path"),
+        }
+    }
+
+    #[test]
+    fn token_stream_get_slice_single_element_range_behaves_correctly() {
+        let ts = build_ts();
+        let cow = ts.get_slice(0..1);
+
+        match cow {
+            Cow::Borrowed(s) => assert_eq!(
+                s,
+                &[Token {
+                    tt: TokenType::LParen,
+                    loc: Span {
+                        lo: 0,
+                        hi: 1,
+                        fid: FileId::ROOT_MODULE
+                    }
+                },]
+            ),
+            Cow::Owned(_) => panic!("expected Borrowed for single in-bounds element"),
+        }
     }
 
     macro_rules! eq_test {

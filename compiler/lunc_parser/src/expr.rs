@@ -453,8 +453,9 @@ impl Parser {
 
     /// Checks for `:`, `"while" | "for" | "loop" | "{"` tokens.
     pub fn is_labeled_expr(&self) -> bool {
-        self.look_ahead(1, |t| matches!(t.tt, Colon))
-            && self.look_ahead(2, |t| matches!(t.tt, KwWhile | KwFor | KwLoop | LCurly))
+        self.look_many_tt(1, |t| {
+            matches!(t, [Colon, KwWhile | KwFor | KwLoop | LCurly])
+        })
     }
 
     /// Parses a literal expression

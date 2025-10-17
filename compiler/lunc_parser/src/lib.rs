@@ -5,7 +5,7 @@
 // TODO: remove me
 #![allow(deprecated)]
 
-use std::{fmt::Debug, mem};
+use std::{borrow::Cow, fmt::Debug, mem};
 
 use diags::*;
 use expr::Expression;
@@ -174,6 +174,56 @@ impl Parser {
         }
     }
 
+    /// Look many (`N`) tokens ahead of `dist` tokens from the current one. If
+    /// the number of token to look exceeds the number of tokens in the token
+    /// stream it will return enough of the EOF token to make it `N` long.
+    pub fn look_many_ahead<R, const N: usize>(
+        &self,
+        dist: usize,
+        looker: impl FnOnce([&Token; N]) -> R,
+    ) -> R {
+        const {
+            if N == 0 {
+                panic!("cannot use look_many_ahead with N = 0.")
+            } else if N == 1 {
+                panic!("use look_ahead")
+            }
+        }
+
+        let dist_abs = dist + self.ti;
+        let cow: Cow<'_, [Token]> = self.tokstream.get_slice(dist_abs..dist_abs + N);
+        debug_assert_eq!(cow.len(), N);
+
+        let slice: &[Token] = cow.as_ref();
+
+        if cfg!(debug_assertions) && cow.is_empty() && N != 0 {
+            panic!("failed to compute the length of the array to output")
+        }
+
+        let Ok(arr1): Result<&[Token; N], _> = slice.try_into() else {
+            // SAFETY: guaranteed by TokenStream::get_slice.
+            opt_unreachable!()
+        };
+
+        let arr = arr1.each_ref();
+
+        looker(arr)
+    }
+
+    /// Like [`Parser::look_many_ahead`] but gives access to the [`TokenType`]
+    /// instead of the [`Token`].
+    #[inline(always)]
+    pub fn look_many_tt<R, const N: usize>(
+        &self,
+        dist: usize,
+        looker: impl FnOnce([&TokenType; N]) -> R,
+    ) -> R {
+        self.look_many_ahead(dist, |t: [&Token; N]| {
+            let tts = t.map(|t| &t.tt);
+            looker(tts)
+        })
+    }
+
     /// Return the literal contained in the previously parsed token,
     /// [`Parser::prev_token`].
     ///
@@ -302,6 +352,8 @@ impl Parser {
                 return None;
             }
         };
+
+        // let arr: [&Token; 2] = self.look_many(0, |t| t);
 
         if self.sink.failed() {
             return None;
