@@ -430,9 +430,9 @@ pub enum DsExprKind {
         mutable: bool,
         expr: Box<DsExpression>,
     },
-    /// See [`ExprKind::FunCall`]
+    /// See [`ExprKind::Call`]
     ///
-    /// [`ExprKind::FunCall`]: lunc_parser::expr::ExprKind::FunCall
+    /// [`ExprKind::Call`]: lunc_parser::expr::ExprKind::Call
     Call {
         callee: Box<DsExpression>,
         args: Vec<DsExpression>,

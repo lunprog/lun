@@ -534,9 +534,9 @@ pub enum ScExprKind {
         mutable: bool,
         expr: Box<ScExpression>,
     },
-    /// See [`DsExprKind::FunCall`]
+    /// See [`DsExprKind::Call`]
     ///
-    /// [`DsExprKind::FunCall`]: lunc_dsir::DsExprKind::FunCall
+    /// [`DsExprKind::Call`]: lunc_dsir::DsExprKind::Call
     Call {
         callee: Box<ScExpression>,
         args: Vec<ScExpression>,

@@ -1,4 +1,4 @@
-//! Parsing of lun's definitions.
+//! Parsing of Lun's item.
 
 use std::str::FromStr;
 
@@ -63,6 +63,7 @@ impl FromStr for Abi {
     }
 }
 
+/// Lun item.
 #[derive(Debug, Clone)]
 pub enum Item {
     /// Global constant.
