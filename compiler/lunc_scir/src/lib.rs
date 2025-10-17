@@ -11,8 +11,8 @@ use lunc_ast::{
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
 use lunc_dsir::{
-    DsArg, DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
-    OSpan, SpannedPath,
+    DsArg, DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsStatement,
+    DsStmtKind, OSpan, SpannedPath,
 };
 use lunc_llib_meta::ModuleTree;
 use lunc_token::{Lit, LitKind, LitVal};
@@ -702,7 +702,7 @@ impl FromHigher for ScBlock {
 /// [`DsStatement`]: lunc_dsir::DsStatement
 #[derive(Debug, Clone)]
 pub struct ScStatement {
-    pub stmt: ScStmt,
+    pub stmt: ScStmtKind,
     pub loc: OSpan,
 }
 
@@ -711,23 +711,21 @@ impl FromHigher for ScStatement {
 
     fn lower(node: Self::Higher) -> Self {
         let stmt = match node.stmt {
-            DsStmt::VariableDef {
+            DsStmtKind::VariableDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value,
                 sym: lazy,
-            } => ScStmt::VariableDef {
+            } => ScStmtKind::VariableDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr: lower(typexpr),
                 value: lower(value),
                 sym: lazy.unwrap_sym(),
             },
-            DsStmt::Defer { expr } => ScStmt::Defer { expr: lower(expr) },
-            DsStmt::Expression(expr) => ScStmt::Expression(lower(expr)),
+            DsStmtKind::Defer { expr } => ScStmtKind::Defer { expr: lower(expr) },
+            DsStmtKind::Expression(expr) => ScStmtKind::Expression(lower(expr)),
         };
 
         ScStatement {
@@ -738,25 +736,24 @@ impl FromHigher for ScStatement {
 }
 
 #[derive(Debug, Clone)]
-pub enum ScStmt {
-    /// See [`DsStmt::VariableDef`]
+pub enum ScStmtKind {
+    /// See [`DsStmtKind::VariableDef`]
     ///
-    /// [`DsStmt::VariableDef`]: lunc_dsir::DsStmt::VariableDef
+    /// [`DsStmtKind::VariableDef`]: lunc_dsir::DsStmtKind::VariableDef
     VariableDef {
-        name: String,
-        name_loc: OSpan,
+        name: Spanned<String>,
         mutability: Mutability,
         typexpr: Option<ScExpression>,
         value: Box<ScExpression>,
         sym: Symbol,
     },
-    /// See [`DsStmt::Defer`]
+    /// See [`DsStmtKind::Defer`]
     ///
-    /// [`DsStmt::Defer`]: lunc_dsir::DsStmt::Defer
+    /// [`DsStmtKind::Defer`]: lunc_dsir::DsStmtKind::Defer
     Defer { expr: ScExpression },
-    /// See [`DsStmt::Expression`]
+    /// See [`DsStmtKind::Expression`]
     ///
-    /// [`DsStmt::Expression`]: lunc_dsir::DsStmt::Expression
+    /// [`DsStmtKind::Expression`]: lunc_dsir::DsStmtKind::Expression
     Expression(ScExpression),
 }
 

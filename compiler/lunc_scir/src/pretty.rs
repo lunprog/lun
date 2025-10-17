@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 use crate::{
-    FunDefInfo, ScArg, ScBlock, ScExprKind, ScExpression, ScItem, ScModule, ScStatement, ScStmt,
+    FunDefInfo, ScArg, ScBlock, ScExprKind, ScExpression, ScItem, ScModule, ScStatement, ScStmtKind,
 };
 
 impl PrettyDump for ScModule {
@@ -352,19 +352,18 @@ impl PrettyDump for ScStatement {
     }
 }
 
-impl PrettyDump for ScStmt {
+impl PrettyDump for ScStmtKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            ScStmt::VariableDef {
+            ScStmtKind::VariableDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value,
                 sym,
             } => {
                 ctx.pretty_struct("VariableDef")
-                    .field("name", (name, name_loc))
+                    .field("name", name)
                     .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
@@ -373,12 +372,12 @@ impl PrettyDump for ScStmt {
 
                 Ok(())
             }
-            ScStmt::Defer { expr } => {
+            ScStmtKind::Defer { expr } => {
                 ctx.pretty_struct("Defer").field("expr", expr).finish()?;
 
                 Ok(())
             }
-            ScStmt::Expression(expr) => expr.try_dump(ctx),
+            ScStmtKind::Expression(expr) => expr.try_dump(ctx),
         }
     }
 }

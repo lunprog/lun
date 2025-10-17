@@ -540,7 +540,7 @@ impl SemaChecker {
             } => {
                 for stmt in &mut block.stmts {
                     match &mut stmt.stmt {
-                        ScStmt::Expression(ScExpression {
+                        ScStmtKind::Expression(ScExpression {
                             expr:
                                 ScExprKind::Break {
                                     label: _,
@@ -1148,7 +1148,7 @@ impl SemaChecker {
                 let is_predicate_loop = matches!(
                     body.stmts.first(),
                     Some(ScStatement {
-                        stmt: ScStmt::Expression(ScExpression {
+                        stmt: ScStmtKind::Expression(ScExpression {
                             expr: ScExprKind::If { .. },
                             typ: _,
                             loc: None
@@ -1478,8 +1478,8 @@ impl SemaChecker {
         // compute if one of the statements or the last expression has
         // `noreturn` type.
         let is_noreturn = block.stmts.iter().position(|stmt| match &stmt.stmt {
-            ScStmt::VariableDef { value, .. } if value.typ == Type::Noreturn => true,
-            ScStmt::Expression(expr) if expr.typ == Type::Noreturn => true,
+            ScStmtKind::VariableDef { value, .. } if value.typ == Type::Noreturn => true,
+            ScStmtKind::Expression(expr) if expr.typ == Type::Noreturn => true,
             _ => false,
         });
 
@@ -1520,9 +1520,8 @@ impl SemaChecker {
 
     pub fn ck_stmt(&mut self, stmt: &mut ScStatement) -> Result<(), Diagnostic> {
         match &mut stmt.stmt {
-            ScStmt::VariableDef {
+            ScStmtKind::VariableDef {
                 name: _,
-                name_loc: _,
                 mutability: _,
                 typexpr,
                 value,
@@ -1576,7 +1575,7 @@ impl SemaChecker {
                 // we finally update the type of the symbol.
                 symref.set_typ(typ);
             }
-            ScStmt::Defer { expr } => {
+            ScStmtKind::Defer { expr } => {
                 self.ck_expr(expr, None)?;
 
                 self.sink.emit(feature_todo! {
@@ -1585,7 +1584,7 @@ impl SemaChecker {
                     loc: stmt.loc.clone().unwrap()
                 });
             }
-            ScStmt::Expression(expr) => {
+            ScStmtKind::Expression(expr) => {
                 self.ck_expr(expr, None)?;
             }
         }

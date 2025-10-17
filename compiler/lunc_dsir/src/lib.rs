@@ -22,7 +22,7 @@ use lunc_parser::{
     directive::Directive,
     expr::{Arg, Else, ExprKind, Expression, IfExpression},
     item::{Item, Module},
-    stmt::{Block, Statement, Stmt},
+    stmt::{Block, Statement, StmtKind},
 };
 use lunc_token::Lit;
 use lunc_utils::{FromHigher, lower, opt_unreachable};
@@ -798,7 +798,7 @@ impl FromHigher for DsBlock {
 /// [`Statement`]: lunc_parser::stmt::Statement
 #[derive(Debug, Clone)]
 pub struct DsStatement {
-    pub stmt: DsStmt,
+    pub stmt: DsStmtKind,
     pub loc: OSpan,
 }
 
@@ -807,22 +807,20 @@ impl FromHigher for DsStatement {
 
     fn lower(node: Self::Higher) -> Self {
         let stmt = match node.stmt {
-            Stmt::VariableDef {
+            StmtKind::VariableDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value,
-            } => DsStmt::VariableDef {
-                sym: LazySymbol::Name(name.clone()),
+            } => DsStmtKind::VariableDef {
+                sym: LazySymbol::Name(name.node.clone()),
                 name,
-                name_loc: Some(name_loc),
                 mutability,
                 typexpr: lower(typexpr),
                 value: lower(value),
             },
-            Stmt::Defer { expr } => DsStmt::Defer { expr: lower(expr) },
-            Stmt::Expression(expr) => DsStmt::Expression(lower(expr)),
+            StmtKind::Defer { expr } => DsStmtKind::Defer { expr: lower(expr) },
+            StmtKind::Expression(expr) => DsStmtKind::Expression(lower(expr)),
         };
 
         DsStatement {
@@ -833,32 +831,31 @@ impl FromHigher for DsStatement {
 }
 
 #[derive(Debug, Clone)]
-pub enum DsStmt {
-    /// See [`Stmt::VariableDef`]
+pub enum DsStmtKind {
+    /// See [`StmtKind::VariableDef`]
     ///
-    /// [`Stmt::VariableDef`]: lunc_parser::stmt::Stmt::VariableDef
+    /// [`StmtKind::VariableDef`]: lunc_parser::stmt::StmtKind::VariableDef
     VariableDef {
-        name: String,
-        name_loc: OSpan,
+        name: Spanned<String>,
         mutability: Mutability,
         typexpr: Option<DsExpression>,
         value: Box<DsExpression>,
         sym: LazySymbol,
     },
-    /// See [`Stmt::Defer`]
+    /// See [`StmtKind::Defer`]
     ///
-    /// [`Stmt::Defer`]: lunc_parser::stmt::Stmt::Defer
+    /// [`StmtKind::Defer`]: lunc_parser::stmt::StmtKind::Defer
     Defer { expr: DsExpression },
-    /// See [`Stmt::Expression`]
+    /// See [`StmtKind::Expression`]
     ///
-    /// [`Stmt::Expression`]: lunc_parser::stmt::Stmt::Expression
+    /// [`StmtKind::Expression`]: lunc_parser::stmt::StmtKind::Expression
     Expression(DsExpression),
 }
 
 /// Creates an expression statement without location.
 pub fn stmt_expr(expr: DsExpression) -> DsStatement {
     DsStatement {
-        stmt: DsStmt::Expression(expr),
+        stmt: DsStmtKind::Expression(expr),
         loc: None,
     }
 }
@@ -1164,9 +1161,8 @@ impl Desugarrer {
     /// Resolve statement
     pub fn resolve_stmt(&mut self, stmt: &mut DsStatement) -> Result<(), Diagnostic> {
         match &mut stmt.stmt {
-            DsStmt::VariableDef {
+            DsStmtKind::VariableDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value,
@@ -1188,23 +1184,23 @@ impl Desugarrer {
 
                 let symref = Symbol::local(
                     *mutability,
-                    name.clone(),
+                    name.node.clone(),
                     self.table.local_count(),
                     if typexpr.is_some() {
                         Typeness::Explicit
                     } else {
                         Typeness::Implicit
                     },
-                    name_loc.clone(),
+                    Some(name.loc.clone()),
                 );
 
                 *sym = LazySymbol::Sym(symref.clone());
 
-                self.table.bind(name.clone(), symref)?;
+                self.table.bind(name.node.clone(), symref)?;
 
                 Ok(())
             }
-            DsStmt::Defer { expr } | DsStmt::Expression(expr) => self.resolve_expr(expr),
+            DsStmtKind::Defer { expr } | DsStmtKind::Expression(expr) => self.resolve_expr(expr),
         }
     }
 

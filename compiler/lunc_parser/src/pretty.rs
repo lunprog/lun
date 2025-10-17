@@ -8,7 +8,7 @@ use crate::{
     directive::Directive,
     expr::{Arg, Else, ExprKind, Expression, IfExpression},
     item::{Item, Module},
-    stmt::{Block, Statement, Stmt},
+    stmt::{Block, Statement, StmtKind},
 };
 
 impl PrettyDump for Module {
@@ -342,29 +342,28 @@ impl PrettyDump for Statement {
     }
 }
 
-impl PrettyDump for Stmt {
+impl PrettyDump for StmtKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            Stmt::VariableDef {
+            StmtKind::VariableDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value,
             } => {
                 ctx.pretty_struct("VariableDef")
-                    .field("name", (name, name_loc))
+                    .field("name", name)
                     .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
                     .finish()?;
                 Ok(())
             }
-            Stmt::Defer { expr } => {
+            StmtKind::Defer { expr } => {
                 ctx.pretty_struct("Defer").field("expr", expr).finish()?;
                 Ok(())
             }
-            Stmt::Expression(expr) => {
+            StmtKind::Expression(expr) => {
                 expr.try_dump(ctx)?;
                 Ok(())
             }

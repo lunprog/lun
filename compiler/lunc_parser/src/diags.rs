@@ -9,7 +9,7 @@ use std::fmt::Display;
 use crate::directive::Directive;
 
 #[deprecated]
-pub(crate) struct OldExpectedToken {
+pub struct OldExpectedToken {
     /// what token was expected?
     expected: Vec<Box<dyn Display>>,
     /// what was found instead of the expected token

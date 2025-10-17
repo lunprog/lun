@@ -14,7 +14,7 @@ use lunc_ast::{
     BinOp, UnOp,
     symbol::{self, Signedness, SymKind},
 };
-use lunc_scir::{ScBlock, ScExprKind, ScExpression, ScStatement, ScStmt};
+use lunc_scir::{ScBlock, ScExprKind, ScExpression, ScStatement, ScStmtKind};
 use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::{Span, opt_unreachable};
 
@@ -532,7 +532,7 @@ impl<'a> FunDefTranslator<'a> {
     /// Translate a statement to CLIF instructions
     pub fn translate_stmt(&mut self, stmt: &ScStatement) {
         match &stmt.stmt {
-            ScStmt::VariableDef { value, sym, .. } => {
+            ScStmtKind::VariableDef { value, sym, .. } => {
                 // 1. evaluate the value
                 let value = self.translate_expr(value);
 
@@ -553,10 +553,10 @@ impl<'a> FunDefTranslator<'a> {
                 // 4. store the value into the ss
                 self.fb.ins().stack_store(value, ss, 0);
             }
-            ScStmt::Defer { .. } => {
+            ScStmtKind::Defer { .. } => {
                 todo!("DEFER")
             }
-            ScStmt::Expression(expr) => {
+            ScStmtKind::Expression(expr) => {
                 // it can be a ZST
                 _ = self.try_translate_expr(expr);
             }

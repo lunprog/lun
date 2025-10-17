@@ -328,9 +328,8 @@ impl SemaChecker {
 
     pub fn safety_ck_stmt(&mut self, stmt: &ScStatement) -> Result<(), Diagnostic> {
         match &stmt.stmt {
-            ScStmt::VariableDef {
+            ScStmtKind::VariableDef {
                 name: _,
-                name_loc: _,
                 mutability: _,
                 typexpr,
                 value,
@@ -344,7 +343,7 @@ impl SemaChecker {
 
                 Ok(())
             }
-            ScStmt::Defer { expr } | ScStmt::Expression(expr) => {
+            ScStmtKind::Defer { expr } | ScStmtKind::Expression(expr) => {
                 self.safety_ck_expr(expr)?;
 
                 Ok(())

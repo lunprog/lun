@@ -107,6 +107,21 @@ impl Parser {
         is_present
     }
 
+    /// Consumes one of the `edible` if it exists, and return true, or check if
+    /// it's in `inedible` and return true. In other cases return false.
+    pub fn eat_one_of(
+        &mut self,
+        edible: impl IntoIterator<Item = ExpToken>,
+        inedible: impl IntoIterator<Item = ExpToken>,
+    ) -> bool {
+        if edible.into_iter().any(|exp| self.check_no_expect(exp)) {
+            self.bump();
+            true
+        } else {
+            inedible.into_iter().any(|exp| self.check_no_expect(exp))
+        }
+    }
+
     /// [`Parser::eat`] but do not add `exp` to
     /// [`Parser::expected_token_exps`].
     pub fn eat_no_expect(&mut self, exp: ExpToken) -> bool {
@@ -333,7 +348,7 @@ impl Parser {
     }
 
     #[deprecated(note = "it's useless.")]
-    pub(crate) fn eof_diag(&self) -> Diagnostic {
+    pub fn eof_diag(&self) -> Diagnostic {
         let eof = self.tokstream.get_eof();
         ReachedEOF {
             loc: eof.loc.clone(),

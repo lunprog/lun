@@ -5,7 +5,8 @@ use std::io::{self, Write};
 use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 use crate::{
-    DsArg, DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
+    DsArg, DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsStatement,
+    DsStmtKind,
 };
 
 impl PrettyDump for DsModule {
@@ -325,19 +326,18 @@ impl PrettyDump for DsStatement {
     }
 }
 
-impl PrettyDump for DsStmt {
+impl PrettyDump for DsStmtKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            DsStmt::VariableDef {
+            DsStmtKind::VariableDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value,
                 sym,
             } => {
                 ctx.pretty_struct("VariableDef")
-                    .field("name", (name, name_loc))
+                    .field("name", name)
                     .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
@@ -345,11 +345,11 @@ impl PrettyDump for DsStmt {
                     .finish()?;
                 Ok(())
             }
-            DsStmt::Defer { expr } => {
+            DsStmtKind::Defer { expr } => {
                 ctx.pretty_struct("Defer").field("expr", expr).finish()?;
                 Ok(())
             }
-            DsStmt::Expression(expr) => {
+            DsStmtKind::Expression(expr) => {
                 expr.try_dump(ctx)?;
                 Ok(())
             }
