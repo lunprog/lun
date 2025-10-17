@@ -1,6 +1,6 @@
 //! Parsing of lun's expressions.
 
-use lunc_ast::{BinOp, UnOp};
+use lunc_ast::{BinOp, Mutability, UnOp};
 use lunc_token::Lit;
 use lunc_utils::opt_unreachable;
 
@@ -85,10 +85,7 @@ pub enum ExprKind {
     /// Borrow operator
     ///
     /// `"&" "mut"? expression`
-    Borrow {
-        mutable: bool,
-        expr: Box<Expression>,
-    },
+    Borrow(Mutability, Box<Expression>),
     /// function call expression
     ///
     /// `expr "(" ( expr ),* ")"`
@@ -196,10 +193,7 @@ pub enum ExprKind {
     /// pointer type expression
     ///
     /// `"*" "mut"? expression`
-    PointerType {
-        mutable: bool,
-        typexpr: Box<Expression>,
-    },
+    PointerType(Mutability, Box<Expression>),
     /// function pointer type
     ///
     /// `"*" "fun" "(" ( expr ),* ")" [ "->" expr ]`
@@ -1130,13 +1124,13 @@ impl Parser {
         // TEST: n/a
         let lo = self.expect(ExpToken::Star)?;
 
-        let mutable = self.eat_no_expect(ExpToken::KwMut);
+        let mutability = self.parse_mutability();
 
         let typexpr = Box::new(self.parse_typexpr()?);
         let hi = typexpr.loc.clone();
 
         Ok(Expression {
-            kind: ExprKind::PointerType { mutable, typexpr },
+            kind: ExprKind::PointerType(mutability, typexpr),
             loc: Span::from_ends(lo, hi),
         })
     }
@@ -1167,14 +1161,14 @@ impl Parser {
         // TEST: n/a
         let lo = self.expect(ExpToken::And)?;
 
-        let mutable = self.eat_no_expect(ExpToken::KwMut);
+        let mutability = self.parse_mutability();
 
         let val = Box::new(self.parse_expr()?);
 
         let hi = val.loc.clone();
 
         Ok(Expression {
-            kind: ExprKind::Borrow { mutable, expr: val },
+            kind: ExprKind::Borrow(mutability, val),
             loc: Span::from_ends(lo, hi),
         })
     }

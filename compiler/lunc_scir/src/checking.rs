@@ -368,7 +368,7 @@ impl SemaChecker {
         let ScItem::GlobalDef {
             name: _,
             name_loc: _,
-            mutable: _,
+            mutability: _,
             typexpr,
             value: _,
             loc: _,
@@ -519,7 +519,7 @@ impl SemaChecker {
                 Self::apply_typ_on_expr(lhs, typ.clone())?;
                 Self::apply_typ_on_expr(rhs, typ.clone())?;
             }
-            ScExprKind::Unary { op: _, expr } | ScExprKind::Borrow { mutable: _, expr } => {
+            ScExprKind::Unary { op: _, expr } | ScExprKind::Borrow(_, expr) => {
                 Self::apply_typ_on_expr(expr, typ.clone())?;
             }
             ScExprKind::If {
@@ -576,7 +576,7 @@ impl SemaChecker {
             ScItem::GlobalDef {
                 name: _,
                 name_loc: _,
-                mutable: _,
+                mutability: _,
                 typexpr,
                 value,
                 loc: _,
@@ -817,18 +817,12 @@ impl SemaChecker {
                 LitKind::Str => {
                     // NOTE: string literals have a `*str` type.
 
-                    expr.typ = Type::Ptr {
-                        mutable: false,
-                        typ: Box::new(Type::Str),
-                    };
+                    expr.typ = Type::Ptr(Mutability::Not, Box::new(Type::Str));
                 }
                 LitKind::CStr => {
                     // NOTE: c_str literals have a `*i8` type.
 
-                    expr.typ = Type::Ptr {
-                        mutable: false,
-                        typ: Box::new(Type::I8),
-                    }
+                    expr.typ = Type::Ptr(Mutability::Not, Box::new(Type::I8))
                 }
                 LitKind::Char => {
                     expr.typ = Type::Char;
@@ -1010,13 +1004,10 @@ impl SemaChecker {
                     // NOTE: here we tell the type checker `we if you have no idea try to coerce the expression to *T`.
                     self.ck_expr(
                         exp,
-                        coerce_to.map(|t| Type::Ptr {
-                            mutable: false,
-                            typ: Box::new(t),
-                        }),
+                        coerce_to.map(|t| Type::Ptr(Mutability::Not, Box::new(t))),
                     )?;
 
-                    expr.typ = if let Type::Ptr { mutable: _, typ } = &exp.typ {
+                    expr.typ = if let Type::Ptr(_, typ) = &exp.typ {
                         *typ.clone()
                     } else {
                         self.sink.emit(MismatchedTypes {
@@ -1032,8 +1023,8 @@ impl SemaChecker {
                     };
                 }
             },
-            ScExprKind::Borrow { mutable, expr: exp } => {
-                let real_coerce = if let Some(Type::Ptr { mutable: _, typ }) = &coerce_to {
+            ScExprKind::Borrow(mutability, exp) => {
+                let real_coerce = if let Some(Type::Ptr(_, typ)) = &coerce_to {
                     Some((**typ).clone())
                 } else {
                     None
@@ -1051,10 +1042,7 @@ impl SemaChecker {
                     });
                 }
 
-                expr.typ = Type::Ptr {
-                    mutable: *mutable,
-                    typ: Box::new(exp.typ.clone()),
-                };
+                expr.typ = Type::Ptr(*mutability, Box::new(exp.typ.clone()));
             }
             ScExprKind::Call { callee, args } => {
                 self.ck_expr(callee, None)?;
@@ -1404,10 +1392,7 @@ impl SemaChecker {
                 // expression is only valid in lhs of assignment and we
                 // have a special case for it.
             }
-            ScExprKind::PointerType {
-                mutable: _,
-                typexpr,
-            } => {
+            ScExprKind::PointerType(_, typexpr) => {
                 match self.ck_expr(typexpr, Some(Type::Type)) {
                     Ok(()) => {}
                     Err(d) => {
@@ -1538,7 +1523,7 @@ impl SemaChecker {
             ScStmt::VariableDef {
                 name: _,
                 name_loc: _,
-                mutable: _,
+                mutability: _,
                 typexpr,
                 value,
                 sym: symref,

@@ -35,7 +35,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
         args: [
           Expression {
             expr: PointerType {
-              mutable: false;
+              mutability: not;
               typexpr: Expression {
                 expr: Symbol {
                   kind: global;
@@ -63,7 +63,7 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
           realname: none;
           which: 0;
           path: logic_and.puts;
-          typ: *fun (* i8) -> void;
+          typ: *fun (*i8) -> void;
           typeness: explicit;
           value: none;
         };
@@ -101,16 +101,16 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
                 realname: none;
                 which: 0;
                 path: logic_and.puts;
-                typ: *fun (* i8) -> void;
+                typ: *fun (*i8) -> void;
                 typeness: explicit;
                 value: none;
               };
-              typ: *fun (* i8) -> void;
+              typ: *fun (*i8) -> void;
             } @ 65..69 (fid = 0);
             args: [
               Expression {
                 expr: c_string "foo";
-                typ: * i8;
+                typ: *i8;
               } @ 70..76 (fid = 0),
             ];
           };
@@ -168,16 +168,16 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
                 realname: none;
                 which: 0;
                 path: logic_and.puts;
-                typ: *fun (* i8) -> void;
+                typ: *fun (*i8) -> void;
                 typeness: explicit;
                 value: none;
               };
-              typ: *fun (* i8) -> void;
+              typ: *fun (*i8) -> void;
             } @ 119..123 (fid = 0);
             args: [
               Expression {
                 expr: c_string "bar";
-                typ: * i8;
+                typ: *i8;
               } @ 124..130 (fid = 0),
             ];
           };
@@ -221,16 +221,16 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
                 realname: none;
                 which: 0;
                 path: logic_and.puts;
-                typ: *fun (* i8) -> void;
+                typ: *fun (*i8) -> void;
                 typeness: explicit;
                 value: none;
               };
-              typ: *fun (* i8) -> void;
+              typ: *fun (*i8) -> void;
             } @ 165..169 (fid = 0);
             args: [
               Expression {
                 expr: c_string "ONLY `foo`:";
-                typ: * i8;
+                typ: *i8;
               } @ 170..184 (fid = 0),
             ];
           };
@@ -291,16 +291,16 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
                 realname: none;
                 which: 0;
                 path: logic_and.puts;
-                typ: *fun (* i8) -> void;
+                typ: *fun (*i8) -> void;
                 typeness: explicit;
                 value: none;
               };
-              typ: *fun (* i8) -> void;
+              typ: *fun (*i8) -> void;
             } @ 211..215 (fid = 0);
             args: [
               Expression {
                 expr: c_string "";
-                typ: * i8;
+                typ: *i8;
               } @ 216..219 (fid = 0),
             ];
           };
@@ -316,16 +316,16 @@ error: compilation of `E042` failed due to 1 error and 0 warnings
                 realname: none;
                 which: 0;
                 path: logic_and.puts;
-                typ: *fun (* i8) -> void;
+                typ: *fun (*i8) -> void;
                 typeness: explicit;
                 value: none;
               };
-              typ: *fun (* i8) -> void;
+              typ: *fun (*i8) -> void;
             } @ 227..231 (fid = 0);
             args: [
               Expression {
                 expr: c_string "BOTH `bar` and `foo`:";
-                typ: * i8;
+                typ: *i8;
               } @ 232..256 (fid = 0),
             ];
           };
@@ -515,7 +515,7 @@ foo
         args: [
           Expression {
             expr: PointerType {
-              mutable: false;
+              mutability: not;
               typexpr: Expression {
                 expr: Symbol {
                   kind: global;
@@ -543,7 +543,7 @@ foo
           realname: none;
           which: 0;
           path: logic_or.puts;
-          typ: *fun (* i8) -> void;
+          typ: *fun (*i8) -> void;
           typeness: explicit;
           value: none;
         };
@@ -581,16 +581,16 @@ foo
                 realname: none;
                 which: 0;
                 path: logic_or.puts;
-                typ: *fun (* i8) -> void;
+                typ: *fun (*i8) -> void;
                 typeness: explicit;
                 value: none;
               };
-              typ: *fun (* i8) -> void;
+              typ: *fun (*i8) -> void;
             } @ 65..69 (fid = 0);
             args: [
               Expression {
                 expr: c_string "foo";
-                typ: * i8;
+                typ: *i8;
               } @ 70..76 (fid = 0),
             ];
           };
@@ -648,16 +648,16 @@ foo
                 realname: none;
                 which: 0;
                 path: logic_or.puts;
-                typ: *fun (* i8) -> void;
+                typ: *fun (*i8) -> void;
                 typeness: explicit;
                 value: none;
               };
-              typ: *fun (* i8) -> void;
+              typ: *fun (*i8) -> void;
             } @ 119..123 (fid = 0);
             args: [
               Expression {
                 expr: c_string "bar";
-                typ: * i8;
+                typ: *i8;
               } @ 124..130 (fid = 0),
             ];
           };
@@ -701,16 +701,16 @@ foo
                 realname: none;
                 which: 0;
                 path: logic_or.puts;
-                typ: *fun (* i8) -> void;
+                typ: *fun (*i8) -> void;
                 typeness: explicit;
                 value: none;
               };
-              typ: *fun (* i8) -> void;
+              typ: *fun (*i8) -> void;
             } @ 165..169 (fid = 0);
             args: [
               Expression {
                 expr: c_string "BOTH `foo` and `bar`:";
-                typ: * i8;
+                typ: *i8;
               } @ 170..194 (fid = 0),
             ];
           };
@@ -771,16 +771,16 @@ foo
                 realname: none;
                 which: 0;
                 path: logic_or.puts;
-                typ: *fun (* i8) -> void;
+                typ: *fun (*i8) -> void;
                 typeness: explicit;
                 value: none;
               };
-              typ: *fun (* i8) -> void;
+              typ: *fun (*i8) -> void;
             } @ 221..225 (fid = 0);
             args: [
               Expression {
                 expr: c_string "";
-                typ: * i8;
+                typ: *i8;
               } @ 226..229 (fid = 0),
             ];
           };
@@ -796,16 +796,16 @@ foo
                 realname: none;
                 which: 0;
                 path: logic_or.puts;
-                typ: *fun (* i8) -> void;
+                typ: *fun (*i8) -> void;
                 typeness: explicit;
                 value: none;
               };
-              typ: *fun (* i8) -> void;
+              typ: *fun (*i8) -> void;
             } @ 237..241 (fid = 0);
             args: [
               Expression {
                 expr: c_string "ONLY `bar`:";
-                typ: * i8;
+                typ: *i8;
               } @ 242..256 (fid = 0),
             ];
           };
@@ -1099,7 +1099,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         compiler_out: "dsir = [
   GlobalDef {
     name: main @ 79..83 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -1107,7 +1107,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       body: Block [
         VariableDef {
           name: res @ 99..102 (fid = 0);
-          mutable: false;
+          mutability: not;
           typexpr: none;
           value: Call {
             callee: Symbol {
@@ -1170,7 +1170,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
   GlobalDef {
     name: add @ 133..136 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [
@@ -1285,7 +1285,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         compiler_out: r#"dsir = [
   GlobalDef {
     name: main @ 19..23 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -1308,7 +1308,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
   GlobalDef {
     name: avogadro @ 36..44 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Symbol {
       kind: global;
       name: f64 @ none;
@@ -1336,9 +1336,9 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
   GlobalDef {
     name: hello @ 78..83 (fid = 0);
-    mutable: true;
+    mutability: mut;
     typexpr: PointerType {
-      mutable: false;
+      mutability: not;
       typexpr: Symbol {
         kind: global;
         name: str @ none;
@@ -1367,7 +1367,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
   GlobalDef {
     name: globFloat @ 102..111 (fid = 0);
-    mutable: true;
+    mutability: mut;
     typexpr: none;
     value: float 12.0 @ 115..119 (fid = 0);
     sym: Symbol {
@@ -1406,7 +1406,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         compiler_out: r#"dsir = [
   GlobalDef {
     name: main @ 11..15 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -1726,7 +1726,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           lhs: Underscore @ 975..976 (fid = 0);
           op: Assignment;
           rhs: PointerType {
-            mutable: false;
+            mutability: not;
             typexpr: Symbol {
               kind: global;
               name: u32 @ none;
@@ -1746,7 +1746,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           lhs: Underscore @ 989..990 (fid = 0);
           op: Assignment;
           rhs: PointerType {
-            mutable: true;
+            mutability: mut;
             typexpr: Symbol {
               kind: global;
               name: u32 @ none;
@@ -1867,7 +1867,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
   GlobalDef {
     name: some_fun @ 1162..1170 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -1890,10 +1890,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
   GlobalDef {
     name: some_pointer @ 1183..1195 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: Borrow {
-      mutable: false;
+      mutability: not;
       expr: integer 12 @ 1200..1202 (fid = 0);
     } @ 1199..1202 (fid = 0);
     sym: Symbol {
@@ -1920,7 +1920,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     module: [
       GlobalDef {
         name: main @ 19..23 (fid = 1);
-        mutable: false;
+        mutability: not;
         typexpr: none;
         value: FunDefinition {
           args: [];
@@ -1943,7 +1943,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
       GlobalDef {
         name: avogadro @ 36..44 (fid = 1);
-        mutable: false;
+        mutability: not;
         typexpr: Symbol {
           kind: global;
           name: f64 @ none;
@@ -1971,9 +1971,9 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
       GlobalDef {
         name: hello @ 78..83 (fid = 1);
-        mutable: true;
+        mutability: mut;
         typexpr: PointerType {
-          mutable: false;
+          mutability: not;
           typexpr: Symbol {
             kind: global;
             name: str @ none;
@@ -2002,7 +2002,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
       GlobalDef {
         name: globFloat @ 102..111 (fid = 1);
-        mutable: true;
+        mutability: mut;
         typexpr: none;
         value: float 12.0 @ 115..119 (fid = 1);
         sym: Symbol {
@@ -2022,7 +2022,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         module: [
           GlobalDef {
             name: add @ 65..68 (fid = 2);
-            mutable: false;
+            mutability: not;
             typexpr: none;
             value: FunDefinition {
               args: [
@@ -2168,7 +2168,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         compiler_out: r#"dsir = [
   GlobalDef {
     name: println @ 138..145 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -2191,7 +2191,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
   GlobalDef {
     name: main @ 159..163 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -2199,7 +2199,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       body: Block [
         VariableDef {
           name: i @ 179..180 (fid = 0);
-          mutable: true;
+          mutability: mut;
           typexpr: none;
           value: integer 0 @ 184..185 (fid = 0);
           sym: Symbol {
@@ -2282,7 +2282,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
         VariableDef {
           name: j @ 248..249 (fid = 0);
-          mutable: true;
+          mutability: mut;
           typexpr: none;
           value: integer 3 @ 253..254 (fid = 0);
           sym: Symbol {
@@ -2402,7 +2402,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         compiler_out: "dsir = [
   GlobalDef {
     name: a @ 0..1 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: integer 1 @ 5..6 (fid = 0);
     sym: Symbol {
@@ -2419,7 +2419,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
   GlobalDef {
     name: b @ 9..10 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [
@@ -2453,7 +2453,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       body: Block [
         VariableDef {
           name: a @ 33..34 (fid = 0);
-          mutable: false;
+          mutability: not;
           typexpr: none;
           value: Block {
             label: none;
@@ -2490,7 +2490,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
   GlobalDef {
     name: c @ 45..46 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -2498,7 +2498,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       body: Block [
         VariableDef {
           name: d @ 62..63 (fid = 0);
-          mutable: false;
+          mutability: not;
           typexpr: none;
           value: integer 1 @ 67..68 (fid = 0);
           sym: Symbol {
@@ -2515,7 +2515,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
         VariableDef {
           name: d @ 74..75 (fid = 0);
-          mutable: false;
+          mutability: not;
           typexpr: none;
           value: integer 2 @ 79..80 (fid = 0);
           sym: Symbol {
@@ -3787,7 +3787,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
             name: msg @ 70..73 (fid = 1);
             typexpr: Expression {
               expr: PointerType {
-                mutable: false;
+                mutability: not;
                 typexpr: Expression {
                   expr: Symbol {
                     kind: global;
@@ -3812,7 +3812,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
               realname: none;
               which: 0;
               path: msg;
-              typ: * str;
+              typ: *str;
               typeness: explicit;
               value: none;
             };
@@ -3835,11 +3835,11 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
                     realname: none;
                     which: 0;
                     path: msg;
-                    typ: * str;
+                    typ: *str;
                     typeness: explicit;
                     value: none;
                   };
-                  typ: * str;
+                  typ: *str;
                 } @ 91..94 (fid = 1);
               };
               typ: void;
@@ -3857,7 +3857,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           realname: none;
           which: 0;
           path: multifile.dbg.puts;
-          typ: *fun (* str) -> void;
+          typ: *fun (*str) -> void;
           typeness: explicit;
           value: none;
         };
@@ -3872,7 +3872,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
           stmts: [
             VariableDef {
               name: half @ 159..163 (fid = 1);
-              mutable: false;
+              mutability: not;
               typexpr: none;
               value: Expression {
                 expr: Call {
@@ -3963,17 +3963,17 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
                   realname: none;
                   which: 0;
                   path: multifile.dbg.puts;
-                  typ: *fun (* str) -> void;
+                  typ: *fun (*str) -> void;
                   typeness: explicit;
                   value: none;
                 };
               };
-              typ: *fun (* str) -> void;
+              typ: *fun (*str) -> void;
             } @ 81..93 (fid = 0);
             args: [
               Expression {
                 expr: string "Hello world!";
-                typ: * str;
+                typ: *str;
               } @ 94..108 (fid = 0),
             ];
           };
@@ -3991,17 +3991,17 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
                   realname: none;
                   which: 0;
                   path: multifile.dbg.puts;
-                  typ: *fun (* str) -> void;
+                  typ: *fun (*str) -> void;
                   typeness: explicit;
                   value: none;
                 };
               };
-              typ: *fun (* str) -> void;
+              typ: *fun (*str) -> void;
             } @ 115..123 (fid = 0);
             args: [
               Expression {
                 expr: string "Hello world!";
-                typ: * str;
+                typ: *str;
               } @ 124..138 (fid = 0),
             ];
           };
@@ -4184,7 +4184,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
 
   GlobalDef {
     name: MY_LIL_CONSTANT @ 224..239 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: Expression {
       expr: integer 1234;
@@ -5219,7 +5219,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           lhs: ident _ @ 1435..1436 (fid = 0);
           op: Assignment;
           rhs: PointerType {
-            mutable: false;
+            mutability: not;
             typexpr: ident u32 @ 1440..1443 (fid = 0);
           } @ 1439..1443 (fid = 0);
         } @ 1435..1443 (fid = 0) @ 1435..1443 (fid = 0),
@@ -5228,7 +5228,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           lhs: ident _ @ 1449..1450 (fid = 0);
           op: Assignment;
           rhs: PointerType {
-            mutable: true;
+            mutability: mut;
             typexpr: ident u32 @ 1458..1461 (fid = 0);
           } @ 1453..1461 (fid = 0);
         } @ 1449..1461 (fid = 0) @ 1449..1461 (fid = 0),
@@ -5299,7 +5299,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
   GlobalVar {
     name: hello @ 78..83 (fid = 0);
     typexpr: PointerType {
-      mutable: false;
+      mutability: not;
       typexpr: ident str @ 87..90 (fid = 0);
     } @ 86..90 (fid = 0);
     value: string "Hello" @ 93..100 (fid = 0);
@@ -5326,7 +5326,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
       GlobalUninit {
         name: some_static @ 175..186 (fid = 0);
         typexpr: PointerType {
-          mutable: false;
+          mutability: not;
           typexpr: ident str @ 190..193 (fid = 0);
         } @ 189..193 (fid = 0);
       } @ 175..194 (fid = 0),
@@ -5349,28 +5349,28 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
       body: Block [
         VariableDef {
           name: a @ 48..49 (fid = 0);
-          mutable: false;
+          mutability: not;
           typexpr: none;
           value: integer 12 @ 52..54 (fid = 0);
         } @ 44..54 (fid = 0),
 
         VariableDef {
           name: b @ 68..69 (fid = 0);
-          mutable: true;
+          mutability: mut;
           typexpr: none;
           value: integer 34 @ 72..74 (fid = 0);
         } @ 60..74 (fid = 0),
 
         VariableDef {
           name: c @ 107..108 (fid = 0);
-          mutable: false;
+          mutability: not;
           typexpr: none;
           value: integer 56 @ 112..114 (fid = 0);
         } @ 107..114 (fid = 0),
 
         VariableDef {
           name: d @ 120..121 (fid = 0);
-          mutable: true;
+          mutability: mut;
           typexpr: none;
           value: integer 78 @ 125..127 (fid = 0);
         } @ 120..127 (fid = 0),
@@ -6174,7 +6174,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
         compiler_out: "scir = [
   GlobalDef {
     name: add_i8 @ 18..24 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6220,7 +6220,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_i16 @ 41..48 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6266,7 +6266,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_i32 @ 66..73 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6312,7 +6312,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_i64 @ 91..98 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6358,7 +6358,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_i128 @ 116..124 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6404,7 +6404,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_isz @ 143..150 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6450,7 +6450,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_u8 @ 169..175 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6496,7 +6496,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_u16 @ 192..199 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6542,7 +6542,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_u32 @ 217..224 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6588,7 +6588,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_u64 @ 242..249 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6634,7 +6634,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_u128 @ 267..275 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6680,7 +6680,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_usz @ 294..301 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6726,7 +6726,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_f32 @ 320..327 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6772,7 +6772,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: add_f64 @ 347..354 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6818,7 +6818,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_i8 @ 393..399 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6864,7 +6864,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_i16 @ 416..423 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6910,7 +6910,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_i32 @ 441..448 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -6956,7 +6956,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_i64 @ 466..473 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7002,7 +7002,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_i128 @ 491..499 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7048,7 +7048,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_isz @ 518..525 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7094,7 +7094,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_u8 @ 544..550 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7140,7 +7140,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_u16 @ 567..574 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7186,7 +7186,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_u32 @ 592..599 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7232,7 +7232,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_u64 @ 617..624 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7278,7 +7278,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_u128 @ 642..650 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7324,7 +7324,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_usz @ 669..676 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7370,7 +7370,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_f32 @ 695..702 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7416,7 +7416,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: sub_f64 @ 722..729 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7462,7 +7462,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_i8 @ 768..774 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7508,7 +7508,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_i16 @ 789..796 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7554,7 +7554,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_i32 @ 812..819 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7600,7 +7600,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_i64 @ 835..842 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7646,7 +7646,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_i128 @ 858..866 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7692,7 +7692,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_isz @ 883..890 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7738,7 +7738,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_u8 @ 907..913 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7784,7 +7784,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_u16 @ 928..935 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7830,7 +7830,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_u32 @ 951..958 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7876,7 +7876,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_u64 @ 974..981 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7922,7 +7922,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_u128 @ 997..1005 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -7968,7 +7968,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_usz @ 1022..1029 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8014,7 +8014,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_f32 @ 1046..1053 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8060,7 +8060,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: mul_f64 @ 1071..1078 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8106,7 +8106,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_i8 @ 1115..1121 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8152,7 +8152,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_i16 @ 1137..1144 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8198,7 +8198,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_i32 @ 1161..1168 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8244,7 +8244,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_i64 @ 1185..1192 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8290,7 +8290,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_i128 @ 1209..1217 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8336,7 +8336,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_isz @ 1235..1242 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8382,7 +8382,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_u8 @ 1260..1266 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8428,7 +8428,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_u16 @ 1282..1289 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8474,7 +8474,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_u32 @ 1306..1313 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8520,7 +8520,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_u64 @ 1330..1337 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8566,7 +8566,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_u128 @ 1354..1362 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8612,7 +8612,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_usz @ 1380..1387 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8658,7 +8658,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_f32 @ 1405..1412 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8704,7 +8704,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: div_f64 @ 1431..1438 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8750,7 +8750,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_i8 @ 1476..1482 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8796,7 +8796,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_i16 @ 1498..1505 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8842,7 +8842,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_i32 @ 1522..1529 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8888,7 +8888,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_i64 @ 1546..1553 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8934,7 +8934,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_i128 @ 1570..1578 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -8980,7 +8980,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_isz @ 1596..1603 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -9026,7 +9026,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_u8 @ 1621..1627 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -9072,7 +9072,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_u16 @ 1643..1650 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -9118,7 +9118,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_u32 @ 1667..1674 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -9164,7 +9164,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_u64 @ 1691..1698 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -9210,7 +9210,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_u128 @ 1715..1723 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -9256,7 +9256,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
 
   GlobalDef {
     name: rem_usz @ 1741..1748 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: Expression {
       expr: Symbol {
         kind: global;
@@ -9323,7 +9323,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
         args: [
           Expression {
             expr: PointerType {
-              mutable: false;
+              mutability: not;
               typexpr: Expression {
                 expr: Symbol {
                   kind: global;
@@ -9351,7 +9351,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
           realname: none;
           which: 0;
           path: extern_block.puts;
-          typ: *fun (* str) -> void;
+          typ: *fun (*str) -> void;
           typeness: explicit;
           value: none;
         };
@@ -9375,16 +9375,16 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
                 realname: none;
                 which: 0;
                 path: extern_block.puts;
-                typ: *fun (* str) -> void;
+                typ: *fun (*str) -> void;
                 typeness: explicit;
                 value: none;
               };
-              typ: *fun (* str) -> void;
+              typ: *fun (*str) -> void;
             } @ 59..63 (fid = 0);
             args: [
               Expression {
                 expr: string "Hello world!";
-                typ: * str;
+                typ: *str;
               } @ 64..78 (fid = 0),
             ];
           };
@@ -9645,7 +9645,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
     args: [];
     rettypexpr: Expression {
       expr: PointerType {
-        mutable: false;
+        mutability: not;
         typexpr: Expression {
           expr: Symbol {
             kind: global;
@@ -9681,7 +9681,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
                     expr: Return {
                       expr: Expression {
                         expr: string "!World Hello";
-                        typ: * str;
+                        typ: *str;
                       } @ 310..324 (fid = 0);
                     };
                     typ: noreturn;
@@ -9699,9 +9699,9 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       ];
       last_expr: Expression {
         expr: string "Hello World";
-        typ: * str;
+        typ: *str;
       } @ 336..349 (fid = 0);
-      typ: * str;
+      typ: *str;
     } @ 278..351 (fid = 0);
     info: {
       defined_mut: false;
@@ -9712,7 +9712,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       realname: none;
       which: 0;
       path: fun_ret_ty.string_return;
-      typ: *fun () -> * str;
+      typ: *fun () -> *str;
       typeness: explicit;
       value: none;
     };
@@ -9850,7 +9850,7 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
       stmts: [
         VariableDef {
           name: a @ 193..194 (fid = 0);
-          mutable: false;
+          mutability: not;
           typexpr: Expression {
             expr: Symbol {
               kind: global;
@@ -10119,7 +10119,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       stmts: [
         VariableDef {
           name: reachable @ 405..414 (fid = 0);
-          mutable: false;
+          mutability: not;
           typexpr: none;
           value: Expression {
             expr: integer 12;
@@ -10219,7 +10219,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
         compiler_out: "scir = [
   GlobalDef {
     name: cant_reach @ 0..10 (fid = 0);
-    mutable: false;
+    mutability: not;
     typexpr: none;
     value: Expression {
       expr: integer 1;
@@ -10262,7 +10262,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       stmts: [
         VariableDef {
           name: a @ 45..46 (fid = 0);
-          mutable: false;
+          mutability: not;
           typexpr: Expression {
             expr: Symbol {
               kind: global;

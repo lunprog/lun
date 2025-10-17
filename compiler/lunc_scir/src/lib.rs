@@ -6,7 +6,7 @@
 use std::fmt::Debug;
 
 use lunc_ast::{
-    BinOp, Spanned, UnOp,
+    BinOp, Mutability, Spanned, UnOp,
     symbol::{SymKind, Symbol, Type, Typeness, ValueExpr},
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
@@ -76,7 +76,7 @@ pub enum ScItem {
     GlobalDef {
         name: String,
         name_loc: OSpan,
-        mutable: bool,
+        mutability: Mutability,
         typexpr: Box<Option<ScExpression>>,
         value: Box<ScExpression>,
         loc: OSpan,
@@ -183,7 +183,7 @@ impl FromHigher for ScItem {
             DsItem::GlobalDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
                 loc,
@@ -207,7 +207,7 @@ impl FromHigher for ScItem {
                     rettypexpr: lower(rettypexpr),
                     body: lower(body),
                     info: FunDefInfo {
-                        defined_mut: mutable,
+                        defined_mut: mutability.is_mut(),
                     },
                     loc,
                     sym: sym.unwrap_sym(),
@@ -216,7 +216,7 @@ impl FromHigher for ScItem {
             DsItem::GlobalDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
                 loc,
@@ -233,7 +233,7 @@ impl FromHigher for ScItem {
                     typexpr: Box::new(lower(typexpr)),
                     args: lower(args),
                     rettypexpr: lower(rettypexpr),
-                    defined_mut: mutable,
+                    defined_mut: mutability.is_mut(),
                     loc,
                     sym: sym.unwrap_sym(),
                 }
@@ -241,7 +241,7 @@ impl FromHigher for ScItem {
             DsItem::GlobalDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
                 loc,
@@ -249,7 +249,7 @@ impl FromHigher for ScItem {
             } => ScItem::GlobalDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr: Box::new(lower(typexpr)),
                 value: lower(value),
                 loc,
@@ -363,9 +363,7 @@ impl ScExpression {
                     Typeness::Implicit
                 }
             }
-            ScExprKind::Unary { op: _, expr } | ScExprKind::Borrow { mutable: _, expr } => {
-                expr.typeness()
-            }
+            ScExprKind::Unary { op: _, expr } | ScExprKind::Borrow(_, expr) => expr.typeness(),
             ScExprKind::Call { .. } => Typeness::Explicit,
             ScExprKind::If {
                 cond: _,
@@ -415,10 +413,7 @@ impl FromHigher for ScExpression {
                 op,
                 expr: lower(expr),
             },
-            DsExprKind::Borrow { mutable, expr } => ScExprKind::Borrow {
-                mutable,
-                expr: lower(expr),
-            },
+            DsExprKind::Borrow(mutability, expr) => ScExprKind::Borrow(mutability, lower(expr)),
             DsExprKind::Call { callee, args } => ScExprKind::Call {
                 callee: lower(callee),
                 args: lower(args),
@@ -475,10 +470,9 @@ impl FromHigher for ScExpression {
                     .into_diag(),
                 ),
             },
-            DsExprKind::PointerType { mutable, typexpr } => ScExprKind::PointerType {
-                mutable,
-                typexpr: lower(typexpr),
-            },
+            DsExprKind::PointerType(mutability, typexpr) => {
+                ScExprKind::PointerType(mutability, lower(typexpr))
+            }
             DsExprKind::FunPtrType { args, ret } => ScExprKind::FunPtrType {
                 args: lower(args),
                 ret: lower(ret),
@@ -530,10 +524,7 @@ pub enum ScExprKind {
     /// See [`DsExprKind::Borrow`]
     ///
     /// [`DsExprKind::Borrow`]: lunc_dsir::DsExprKind::Borrow
-    Borrow {
-        mutable: bool,
-        expr: Box<ScExpression>,
-    },
+    Borrow(Mutability, Box<ScExpression>),
     /// See [`DsExprKind::Call`]
     ///
     /// [`DsExprKind::Call`]: lunc_dsir::DsExprKind::Call
@@ -618,10 +609,7 @@ pub enum ScExprKind {
     /// See [`DsExprKind::PointerType`]
     ///
     /// [`DsExprKind::PointerType`]: lunc_dsir::DsExprKind::PointerType
-    PointerType {
-        mutable: bool,
-        typexpr: Box<ScExpression>,
-    },
+    PointerType(Mutability, Box<ScExpression>),
     /// See [`DsExprKind::FunPtrType`]
     ///
     /// [`DsExprKind::FunPtrType`]: lunc_dsir::DsExprKind::FunPtrType
@@ -728,14 +716,14 @@ impl FromHigher for ScStatement {
             DsStmt::VariableDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
                 sym: lazy,
             } => ScStmt::VariableDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr: lower(typexpr),
                 value: lower(value),
                 sym: lazy.unwrap_sym(),
@@ -759,7 +747,7 @@ pub enum ScStmt {
     VariableDef {
         name: String,
         name_loc: OSpan,
-        mutable: bool,
+        mutability: Mutability,
         typexpr: Option<ScExpression>,
         value: Box<ScExpression>,
         sym: Symbol,
@@ -953,15 +941,12 @@ impl SemaChecker {
                 // minimal support for blocks evaluation
                 Ok(ValueExpr::Void)
             }
-            ScExprKind::PointerType { mutable, typexpr } => {
+            ScExprKind::PointerType(mutability, typexpr) => {
                 let typ = self.evaluate_expr(typexpr)?.as_type().unwrap_or(Type::Void);
                 // NOTE: we do not emit a diagnostic because we already did in
                 // the type checking
 
-                Ok(ValueExpr::Type(Type::Ptr {
-                    mutable: *mutable,
-                    typ: Box::new(typ),
-                }))
+                Ok(ValueExpr::Type(Type::Ptr(*mutability, Box::new(typ))))
             }
             ScExprKind::FunPtrType { args, ret } => {
                 // collect the arguments types

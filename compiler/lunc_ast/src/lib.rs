@@ -13,6 +13,7 @@ use lunc_utils::{
     Span,
     pretty::{PrettyCtxt, PrettyDump},
 };
+use serde::{Deserialize, Serialize};
 
 pub mod symbol;
 
@@ -462,5 +463,49 @@ impl<T: PrettyDump> PrettyDump for Spanned<T> {
         ctx.print_loc(&self.loc)?;
 
         Ok(())
+    }
+}
+
+/// Mutability of something.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Mutability {
+    Not,
+    Mut,
+}
+
+impl Mutability {
+    /// Returns `""` if `No` or `"mut "` if `Mut`.
+    pub fn prefix_str(self) -> &'static str {
+        match self {
+            Self::Not => "",
+            Self::Mut => "mut ",
+        }
+    }
+
+    /// Inverts the mutability
+    pub fn invert(self) -> Mutability {
+        match self {
+            Self::Not => Self::Mut,
+            Self::Mut => Self::Not,
+        }
+    }
+
+    /// Returns true if `Mut`
+    pub fn is_mut(self) -> bool {
+        matches!(self, Self::Mut)
+    }
+
+    /// Returns true if `Not`
+    pub fn is_not(self) -> bool {
+        matches!(self, Self::Not)
+    }
+}
+
+impl PrettyDump for Mutability {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        match self {
+            Self::Not => write!(ctx.out, "not"),
+            Self::Mut => write!(ctx.out, "mut"),
+        }
     }
 }

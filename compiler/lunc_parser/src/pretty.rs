@@ -126,9 +126,9 @@ impl PrettyDump for ExprKind {
 
                 Ok(())
             }
-            ExprKind::Borrow { mutable, expr } => {
+            ExprKind::Borrow(mutability, expr) => {
                 ctx.pretty_struct("Borrow")
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("expr", expr)
                     .finish()?;
 
@@ -257,9 +257,9 @@ impl PrettyDump for ExprKind {
 
                 Ok(())
             }
-            ExprKind::PointerType { mutable, typexpr } => {
+            ExprKind::PointerType(mutability, typexpr) => {
                 ctx.pretty_struct("PointerType")
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .finish()?;
 
@@ -356,13 +356,13 @@ impl PrettyDump for Stmt {
             Stmt::VariableDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
             } => {
                 ctx.pretty_struct("VariableDef")
                     .field("name", (name, name_loc))
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
                     .finish()?;

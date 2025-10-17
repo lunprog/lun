@@ -39,7 +39,7 @@ impl SemaChecker {
             ScItem::GlobalDef {
                 name: _,
                 name_loc: _,
-                mutable: _,
+                mutability: _,
                 typexpr,
                 value,
                 loc: _,
@@ -223,7 +223,7 @@ impl SemaChecker {
 
                 Ok(())
             }
-            ScExprKind::Unary { op: _, expr } | ScExprKind::Borrow { mutable: _, expr } => {
+            ScExprKind::Unary { op: _, expr } | ScExprKind::Borrow(_, expr) => {
                 self.safety_ck_expr(expr)?;
 
                 Ok(())
@@ -284,10 +284,7 @@ impl SemaChecker {
                 Ok(())
             }
             ScExprKind::QualifiedPath { path: _, sym: _ } | ScExprKind::Underscore => Ok(()),
-            ScExprKind::PointerType {
-                mutable: _,
-                typexpr,
-            } => {
+            ScExprKind::PointerType(_, typexpr) => {
                 self.safety_ck_expr(typexpr)?;
 
                 Ok(())
@@ -334,7 +331,7 @@ impl SemaChecker {
             ScStmt::VariableDef {
                 name: _,
                 name_loc: _,
-                mutable: _,
+                mutability: _,
                 typexpr,
                 value,
                 sym: _,

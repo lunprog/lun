@@ -139,7 +139,7 @@ pub enum Stmt {
     VariableDef {
         name: String,
         name_loc: Span,
-        mutable: bool,
+        mutability: Mutability,
         typexpr: Option<Expression>,
         value: Box<Expression>,
     },
@@ -184,12 +184,7 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
     // TEST: n/a
     let (_, lo) = expect_token!(parser => [KwLet, ()], KwLet);
 
-    let mutable = if let Some(KwMut) = parser.peek_tt() {
-        parser.pop();
-        true
-    } else {
-        false
-    };
+    let mutability = parser.parse_mutability();
 
     // TEST: no. 1
     let (name, name_loc) =
@@ -212,7 +207,7 @@ pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnos
         stmt: Stmt::VariableDef {
             name,
             name_loc,
-            mutable,
+            mutability,
             typexpr,
             value,
         },
@@ -235,10 +230,10 @@ pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagn
     };
 
     // TEST: no. 1
-    let (mutable, _) = expect_token!(
+    let (mutability, _) = expect_token!(
         parser => [
-            Colon, false;
-            Eq, true;
+            Colon, Mutability::Not;
+            Eq, Mutability::Mut;
         ],
         [Colon, Eq]
     );
@@ -251,7 +246,7 @@ pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagn
         stmt: Stmt::VariableDef {
             name,
             name_loc: lo.clone(),
-            mutable,
+            mutability,
             typexpr,
             value,
         },

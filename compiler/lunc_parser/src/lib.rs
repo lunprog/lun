@@ -11,7 +11,7 @@ use diags::*;
 use expr::Expression;
 use item::Module;
 
-use lunc_ast::Spanned;
+use lunc_ast::{Mutability, Spanned};
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, IResult, ReachedEOF, ToDiagnostic};
 use lunc_token::{
     ExpToken, ExpTokenSet, Lit, Token, TokenStream,
@@ -219,6 +219,15 @@ impl Parser {
         self.bump();
 
         diag
+    }
+
+    /// Parse mutability, either `mut` / *nothing*.
+    pub fn parse_mutability(&mut self) -> Mutability {
+        if self.eat_no_expect(ExpToken::KwMut) {
+            Mutability::Mut
+        } else {
+            Mutability::Not
+        }
     }
 
     // TODO: deprecate and then remove when no longer used the following methods

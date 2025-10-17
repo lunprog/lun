@@ -20,7 +20,7 @@ impl PrettyDump for ScItem {
             ScItem::GlobalDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
                 loc,
@@ -28,7 +28,7 @@ impl PrettyDump for ScItem {
             } => {
                 ctx.pretty_struct("GlobalDef")
                     .field("name", (name, name_loc))
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
                     .field("sym", sym)
@@ -183,9 +183,9 @@ impl PrettyDump for ScExprKind {
 
                 Ok(())
             }
-            ScExprKind::Borrow { mutable, expr } => {
+            ScExprKind::Borrow(mutability, expr) => {
                 ctx.pretty_struct("Borrow")
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("expr", expr)
                     .finish()?;
 
@@ -275,9 +275,9 @@ impl PrettyDump for ScExprKind {
                 Ok(())
             }
             ScExprKind::Underscore => write!(ctx.out, "Underscore"),
-            ScExprKind::PointerType { mutable, typexpr } => {
+            ScExprKind::PointerType(mutability, typexpr) => {
                 ctx.pretty_struct("PointerType")
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .finish()?;
 
@@ -358,14 +358,14 @@ impl PrettyDump for ScStmt {
             ScStmt::VariableDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
                 sym,
             } => {
                 ctx.pretty_struct("VariableDef")
                     .field("name", (name, name_loc))
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
                     .field("sym", sym)

@@ -11,7 +11,7 @@ use diags::{
 };
 
 use lunc_ast::{
-    BinOp, Spanned, UnOp,
+    BinOp, Mutability, Spanned, UnOp,
     symbol::{EffectivePath, LazySymbol, SymKind, Symbol, Type, Typeness},
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
@@ -75,7 +75,7 @@ pub enum DsItem {
     GlobalDef {
         name: String,
         name_loc: OSpan,
-        mutable: bool,
+        mutability: Mutability,
         typexpr: Option<DsExpression>,
         value: Box<DsExpression>,
         loc: OSpan,
@@ -168,7 +168,7 @@ impl FromHigher for DsItem {
                 sym: LazySymbol::Name(name.clone()),
                 name,
                 name_loc: Some(name_loc),
-                mutable: false,
+                mutability: Mutability::Not,
                 typexpr: lower(typexpr),
                 value: Box::new(lower(value)),
                 loc: Some(loc),
@@ -183,7 +183,7 @@ impl FromHigher for DsItem {
                 sym: LazySymbol::Name(name.clone()),
                 name,
                 name_loc: Some(name_loc),
-                mutable: true,
+                mutability: Mutability::Mut,
                 typexpr: lower(typexpr),
                 value: Box::new(lower(value)),
                 loc: Some(loc),
@@ -250,10 +250,7 @@ impl FromHigher for DsExpression {
                 op,
                 expr: lower(expr),
             },
-            ExprKind::Borrow { mutable, expr } => DsExprKind::Borrow {
-                mutable,
-                expr: lower(expr),
-            },
+            ExprKind::Borrow(mutability, expr) => DsExprKind::Borrow(mutability, lower(expr)),
             ExprKind::Call {
                 callee: called,
                 args,
@@ -356,10 +353,9 @@ impl FromHigher for DsExpression {
                 args: lower(args),
                 rettypexpr: lower(rettypexpr),
             },
-            ExprKind::PointerType { mutable, typexpr } => DsExprKind::PointerType {
-                mutable,
-                typexpr: lower(typexpr),
-            },
+            ExprKind::PointerType(mutability, typexpr) => {
+                DsExprKind::PointerType(mutability, lower(typexpr))
+            }
             ExprKind::FunPtrType { args, ret } => DsExprKind::FunPtrType {
                 args: lower(args),
                 ret: lower(ret),
@@ -426,10 +422,7 @@ pub enum DsExprKind {
     /// See [`ExprKind::Borrow`]
     ///
     /// [`ExprKind::Borrow`]: lunc_parser::expr::ExprKind::Borrow
-    Borrow {
-        mutable: bool,
-        expr: Box<DsExpression>,
-    },
+    Borrow(Mutability, Box<DsExpression>),
     /// See [`ExprKind::Call`]
     ///
     /// [`ExprKind::Call`]: lunc_parser::expr::ExprKind::Call
@@ -520,10 +513,7 @@ pub enum DsExprKind {
     /// See [`ExprKind::PointerType`]
     ///
     /// [`ExprKind::PointerType`]: lunc_parser::expr::ExprKind::PointerType
-    PointerType {
-        mutable: bool,
-        typexpr: Box<DsExpression>,
-    },
+    PointerType(Mutability, Box<DsExpression>),
     /// See [`ExprKind::FunPtrType`]
     ///
     /// [`ExprKind::FunPtrType`]: lunc_parser::expr::ExprKind::FunPtrType
@@ -623,12 +613,9 @@ pub fn expr_unary(op: UnOp, expr: DsExpression) -> DsExpression {
 }
 
 /// Creates an address of expression without location.
-pub fn expr_borrow(mutable: bool, val: DsExpression) -> DsExpression {
+pub fn expr_borrow(mutability: Mutability, val: DsExpression) -> DsExpression {
     DsExpression {
-        expr: DsExprKind::Borrow {
-            mutable,
-            expr: Box::new(val),
-        },
+        expr: DsExprKind::Borrow(mutability, Box::new(val)),
         loc: None,
     }
 }
@@ -744,12 +731,9 @@ pub fn expr_fundef(
 }
 
 /// Creates a pointer type expression without location.
-pub fn expr_ptr_type(mutable: bool, typexpr: DsExpression) -> DsExpression {
+pub fn expr_ptr_type(mutability: Mutability, typexpr: DsExpression) -> DsExpression {
     DsExpression {
-        expr: DsExprKind::PointerType {
-            mutable,
-            typexpr: Box::new(typexpr),
-        },
+        expr: DsExprKind::PointerType(mutability, Box::new(typexpr)),
         loc: None,
     }
 }
@@ -826,14 +810,14 @@ impl FromHigher for DsStatement {
             Stmt::VariableDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
             } => DsStmt::VariableDef {
                 sym: LazySymbol::Name(name.clone()),
                 name,
                 name_loc: Some(name_loc),
-                mutable,
+                mutability,
                 typexpr: lower(typexpr),
                 value: lower(value),
             },
@@ -856,7 +840,7 @@ pub enum DsStmt {
     VariableDef {
         name: String,
         name_loc: OSpan,
-        mutable: bool,
+        mutability: Mutability,
         typexpr: Option<DsExpression>,
         value: Box<DsExpression>,
         sym: LazySymbol,
@@ -1183,7 +1167,7 @@ impl Desugarrer {
             DsStmt::VariableDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
                 sym,
@@ -1203,7 +1187,7 @@ impl Desugarrer {
                 }
 
                 let symref = Symbol::local(
-                    *mutable,
+                    *mutability,
                     name.clone(),
                     self.table.local_count(),
                     if typexpr.is_some() {
@@ -1242,7 +1226,7 @@ impl Desugarrer {
                 self.resolve_expr(lhs)?;
                 self.resolve_expr(rhs)
             }
-            DsExprKind::Unary { op: _, expr } | DsExprKind::Borrow { mutable: _, expr } => {
+            DsExprKind::Unary { op: _, expr } | DsExprKind::Borrow(_, expr) => {
                 self.resolve_expr(expr)
             }
             DsExprKind::Call { callee, args } => {
@@ -1284,10 +1268,7 @@ impl Desugarrer {
                 Ok(())
             }
             DsExprKind::Continue { label: _ } | DsExprKind::Null => Ok(()),
-            DsExprKind::PointerType {
-                mutable: _,
-                typexpr,
-            } => self.resolve_expr(typexpr),
+            DsExprKind::PointerType(_, typexpr) => self.resolve_expr(typexpr),
             DsExprKind::FunPtrType { args, ret } => {
                 for arg in args {
                     self.resolve_expr(arg)?;
@@ -1526,7 +1507,7 @@ impl Desugarrer {
             DsItem::GlobalDef {
                 name,
                 name_loc,
-                mutable: _,
+                mutability: _,
                 typexpr: _,
                 value,
                 loc: _,
@@ -1560,7 +1541,7 @@ impl Desugarrer {
             DsItem::GlobalDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value: _,
                 loc: _,
@@ -1570,7 +1551,7 @@ impl Desugarrer {
                 path.push(name.clone());
 
                 let symref = sym.symbol().unwrap_or(Symbol::global(
-                    *mutable,
+                    *mutability,
                     name.clone(),
                     path,
                     if typexpr.is_some() {
@@ -1610,7 +1591,7 @@ impl Desugarrer {
                 path.push(name.clone());
 
                 let symref = sym.symbol().unwrap_or(Symbol::global(
-                    true,
+                    Mutability::Mut,
                     name.clone(),
                     path,
                     Typeness::Explicit,

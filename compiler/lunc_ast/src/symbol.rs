@@ -62,7 +62,7 @@ pub enum Type {
     /// Function Pointer
     FunPtr { args: Vec<Type>, ret: Box<Type> },
     /// Pointer
-    Ptr { mutable: bool, typ: Box<Type> },
+    Ptr(Mutability, Box<Type>),
     /// Noreturn, this type indicates that the expression when evaluated stops
     /// the control flow, it is the type of a `break`, `continue` or `return`
     /// expression.
@@ -191,13 +191,7 @@ impl Type {
 
     /// Is this type a mutable pointer type? `*mut T`?
     pub fn is_mut_ptr(&self) -> bool {
-        matches!(
-            self,
-            Type::Ptr {
-                mutable: true,
-                typ: _
-            }
-        )
+        matches!(self, Type::Ptr(Mutability::Mut, _))
     }
 
     /// Is this type a function pointer ?
@@ -263,12 +257,12 @@ impl Type {
             Type::F16 | Type::F32 | Type::F64 | Type::F128 => other.is_float(),
             Type::Bool => other.is_int(),
             Type::Void | Type::FunPtr { .. } => false,
-            Type::Ptr { mutable, typ } => matches!(
+            Type::Ptr(mutable, typ) => matches!(
                 other,
-                Type::Ptr {
-                    mutable: other_mut,
-                    typ: other_ty
-                } if other_mut == mutable && typ.can_coerce(other_ty)
+                Type::Ptr (
+                    other_mut,
+                    other_ty
+                ) if other_mut == mutable && typ.can_coerce(other_ty)
             ),
             // NOTE: noreturn can coerce to everything.
             Type::Noreturn => true,
@@ -430,7 +424,7 @@ impl Type {
     ///
     /// If it's not a pointer
     pub fn pointee(&self) -> Type {
-        let Type::Ptr { mutable: _, typ } = self else {
+        let Type::Ptr(_, typ) = self else {
             panic!("expected a pointer type, but got a {self}.");
         };
 
@@ -486,14 +480,8 @@ impl Display for Type {
 
                 Ok(())
             }
-            Type::Ptr { mutable, typ } => {
-                write!(f, "*")?;
-
-                if *mutable {
-                    write!(f, "mut")?;
-                }
-
-                write!(f, " ")?;
+            Type::Ptr(mutability, typ) => {
+                write!(f, "*{}", mutability.prefix_str())?;
 
                 typ.fmt(f)
             }
@@ -698,14 +686,14 @@ impl Symbol {
 
     /// Create a new symbol with kind local and no type.
     pub fn local(
-        mutable: bool,
+        mutability: Mutability,
         name: String,
         which: usize,
         typeness: Typeness,
         loc: Option<Span>,
     ) -> Symbol {
         Symbol::with(
-            SymKind::Local { mutable },
+            SymKind::Local(mutability),
             name.clone(),
             which,
             EffectivePath::with_root_segment(name),
@@ -728,13 +716,13 @@ impl Symbol {
 
     /// Create a new symbol with kind global and no type.
     pub fn global(
-        mutable: bool,
+        mutability: Mutability,
         name: String,
         path: EffectivePath,
         typeness: Typeness,
         loc: Option<Span>,
     ) -> Symbol {
-        Symbol::with(SymKind::Global { mutable }, name, 0, path, typeness, loc)
+        Symbol::with(SymKind::Global(mutability), name, 0, path, typeness, loc)
     }
 
     /// Create a new type, global, only used in `first_scope` on SymbolMap in
@@ -746,7 +734,7 @@ impl Symbol {
     /// global types, now because later will be painful
     pub fn new_typ(name: &str, typ: Type) -> Symbol {
         Symbol::with_internal(InternalSymbol {
-            kind: SymKind::Global { mutable: false },
+            kind: SymKind::Global(Mutability::Not),
             name: name.to_string(),
             realname: None,
             which: 0,
@@ -773,7 +761,7 @@ impl Symbol {
         self.inspect(|sym| {
             matches!(
                 sym.kind,
-                SymKind::Local { mutable: true } | SymKind::Global { mutable: true }
+                SymKind::Local(Mutability::Mut) | SymKind::Global(Mutability::Mut)
             )
         })
     }
@@ -786,8 +774,8 @@ impl Symbol {
         self.inspect(|sym| {
             matches!(
                 sym.kind,
-                SymKind::Local { mutable: false }
-                    | SymKind::Global { mutable: false }
+                SymKind::Local(Mutability::Not)
+                    | SymKind::Global(Mutability::Not)
                     | SymKind::Function
             )
         })
@@ -855,11 +843,11 @@ impl PrettyDump for Typeness {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum SymKind {
     /// Local variable
-    Local { mutable: bool },
+    Local(Mutability),
     /// Argument
     Arg,
     /// Global
-    Global { mutable: bool },
+    Global(Mutability),
     /// Function
     Function,
     /// Module
@@ -1150,6 +1138,8 @@ pub enum ValueExpr {
 
 use std::ops::{Add, Div, Mul, Rem, Sub};
 
+use crate::Mutability;
+
 impl ValueExpr {
     /// Tries to convert this value to a type.
     pub fn as_type(self) -> Option<Type> {
@@ -1317,53 +1307,51 @@ pub mod tests {
     #[test]
     fn shadowability() {
         // local
-        for mutable in [true, false] {
-            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Local { mutable }));
-            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Local { mutable: !mutable }));
-            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Arg));
-            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Global { mutable }));
-            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Global { mutable: !mutable }));
-            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Function));
-            assert!(SymKind::Local { mutable }.can_shadow(&SymKind::Module));
+        for mutability in [Mutability::Mut, Mutability::Not] {
+            assert!(SymKind::Local(mutability).can_shadow(&SymKind::Local(mutability)));
+            assert!(SymKind::Local(mutability).can_shadow(&SymKind::Local(mutability.invert())));
+            assert!(SymKind::Local(mutability).can_shadow(&SymKind::Arg));
+            assert!(SymKind::Local(mutability).can_shadow(&SymKind::Global(mutability)));
+            assert!(SymKind::Local(mutability).can_shadow(&SymKind::Global(mutability.invert())));
+            assert!(SymKind::Local(mutability).can_shadow(&SymKind::Function));
+            assert!(SymKind::Local(mutability).can_shadow(&SymKind::Module));
         }
 
         // arg
-        assert!(SymKind::Arg.can_shadow(&SymKind::Local { mutable: true }));
-        assert!(SymKind::Arg.can_shadow(&SymKind::Local { mutable: false }));
+        assert!(SymKind::Arg.can_shadow(&SymKind::Local(Mutability::Mut)));
+        assert!(SymKind::Arg.can_shadow(&SymKind::Local(Mutability::Not)));
         assert!(!SymKind::Arg.can_shadow(&SymKind::Arg));
-        assert!(SymKind::Arg.can_shadow(&SymKind::Global { mutable: true }));
-        assert!(SymKind::Arg.can_shadow(&SymKind::Global { mutable: false }));
+        assert!(SymKind::Arg.can_shadow(&SymKind::Global(Mutability::Mut)));
+        assert!(SymKind::Arg.can_shadow(&SymKind::Global(Mutability::Not)));
         assert!(SymKind::Arg.can_shadow(&SymKind::Function));
         assert!(SymKind::Arg.can_shadow(&SymKind::Module));
 
         // global
-        for mutable in [true, false] {
-            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Local { mutable }));
-            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Local { mutable: !mutable }));
-            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Arg));
-            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Global { mutable }));
-            assert!(
-                !SymKind::Global { mutable }.can_shadow(&SymKind::Global { mutable: !mutable })
-            );
-            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Function));
-            assert!(!SymKind::Global { mutable }.can_shadow(&SymKind::Module));
+        for mutability in [Mutability::Mut, Mutability::Not] {
+            assert!(!SymKind::Global(mutability).can_shadow(&SymKind::Local(mutability)));
+            assert!(!SymKind::Global(mutability).can_shadow(&SymKind::Local(mutability.invert())));
+            assert!(!SymKind::Global(mutability).can_shadow(&SymKind::Arg));
+            assert!(!SymKind::Global(mutability).can_shadow(&SymKind::Global(mutability)));
+            assert!(!SymKind::Global(mutability).can_shadow(&SymKind::Global(mutability.invert())));
+            assert!(!SymKind::Global(mutability).can_shadow(&SymKind::Function));
+            assert!(!SymKind::Global(mutability).can_shadow(&SymKind::Module));
         }
 
         // function
-        assert!(!SymKind::Function.can_shadow(&SymKind::Local { mutable: true }));
-        assert!(!SymKind::Function.can_shadow(&SymKind::Local { mutable: false }));
+        assert!(!SymKind::Function.can_shadow(&SymKind::Local(Mutability::Mut)));
+        assert!(!SymKind::Function.can_shadow(&SymKind::Local(Mutability::Not)));
         assert!(!SymKind::Function.can_shadow(&SymKind::Arg));
-        assert!(!SymKind::Function.can_shadow(&SymKind::Global { mutable: true }));
-        assert!(!SymKind::Function.can_shadow(&SymKind::Global { mutable: false }));
+        assert!(!SymKind::Function.can_shadow(&SymKind::Global(Mutability::Mut)));
+        assert!(!SymKind::Function.can_shadow(&SymKind::Global(Mutability::Not)));
         assert!(!SymKind::Function.can_shadow(&SymKind::Function));
         assert!(!SymKind::Function.can_shadow(&SymKind::Module));
 
         // module
-        assert!(!SymKind::Module.can_shadow(&SymKind::Local { mutable: true }));
-        assert!(!SymKind::Module.can_shadow(&SymKind::Local { mutable: false }));
+        assert!(!SymKind::Module.can_shadow(&SymKind::Local(Mutability::Mut)));
+        assert!(!SymKind::Module.can_shadow(&SymKind::Local(Mutability::Not)));
         assert!(!SymKind::Module.can_shadow(&SymKind::Arg));
-        assert!(!SymKind::Module.can_shadow(&SymKind::Global { mutable: true }));
-        assert!(!SymKind::Module.can_shadow(&SymKind::Global { mutable: false }));
+        assert!(!SymKind::Module.can_shadow(&SymKind::Global(Mutability::Mut)));
+        assert!(!SymKind::Module.can_shadow(&SymKind::Global(Mutability::Not)));
         assert!(!SymKind::Module.can_shadow(&SymKind::Function));
         assert!(!SymKind::Module.can_shadow(&SymKind::Module));
     }
