@@ -369,10 +369,6 @@ impl Parser {
             }
         };
 
-        if self.sink.failed() {
-            return None;
-        }
-
         Some(module)
     }
 }

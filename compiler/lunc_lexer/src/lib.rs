@@ -65,10 +65,6 @@ impl Lexer {
 
         tt.finish();
 
-        if self.sink.failed() {
-            return None;
-        }
-
         Some(tt)
     }
 

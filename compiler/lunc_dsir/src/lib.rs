@@ -942,10 +942,6 @@ impl Desugarrer {
         // resolve the root module, then it will recurse
         self.resolve_module(&mut module, self.current_path.clone());
 
-        if self.sink.failed() {
-            return None;
-        }
-
         Some(module)
     }
 

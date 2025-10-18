@@ -828,10 +828,6 @@ impl SemaChecker {
             }
         }
 
-        if self.sink.failed() {
-            return None;
-        }
-
         Some(root)
     }
 
