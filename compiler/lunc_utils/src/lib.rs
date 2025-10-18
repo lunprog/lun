@@ -572,7 +572,7 @@ impl Display for OrbType {
 }
 
 /// Recovery mode of the parser.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Recovery {
     /// Default mode of the parser.
     #[default]

@@ -292,8 +292,14 @@ impl Parser {
                 self.prev_token.clone(),
             ));
 
+            // NOTE: here we are not recovering from this error because it's too
+            // messy if we do so.
             self.recover_item_in_container(ItemContainer::ExternBlock);
+
+            // bump (without it, it complains about the RCurly be unexpected for
+            // an item)
             self.bump();
+
             return Err(Recovered::Yes);
         };
 

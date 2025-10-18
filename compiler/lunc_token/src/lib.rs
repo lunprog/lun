@@ -1133,6 +1133,25 @@ impl Iterator for ExpTokenSetIter {
     }
 }
 
+/// Weak keywords list.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum WeakKw {
+    /// `import` used in import directives.
+    Import,
+    /// `mod` used in mod directives.
+    Mod,
+}
+
+impl WeakKw {
+    /// The textual representation of this weak keyword.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Import => "import",
+            Self::Mod => "mod",
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

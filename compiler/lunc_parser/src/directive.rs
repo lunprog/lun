@@ -57,7 +57,7 @@ impl Parser {
         let mut hi = lo.clone();
         while self.eat_no_expect(ExpToken::Dot) {
             // TEST: no. 2
-            hi = self.expect(ExpToken::Ident)?;
+            hi = self.expect(ExpToken::Ident).emit_wval(self.x(), default);
             path.push(self.as_ident());
         }
 
@@ -73,12 +73,12 @@ impl Parser {
         let lo = self.expect(ExpToken::Pound)?;
 
         // TEST: n/a
-        self.expect(ExpToken::Ident)?;
-        debug_assert_eq!(self.as_ident().as_str(), "import");
+        self.expect_weak_kw(WeakKw::Import)?;
 
         let path = self.parse_spanned_path().emit_wval(self.x(), default);
 
-        let alias = if self.eat(ExpToken::KwAs) {
+        let alias = if self.eat_no_expect(ExpToken::KwAs) {
+            // NOTE: more resilience here would be too complicated and useless
             // TEST: no. 1
             self.expect(ExpToken::Ident)?;
 
@@ -88,7 +88,9 @@ impl Parser {
         };
 
         // TEST: no. 2
-        let hi = self.expect(ExpToken::Semi)?;
+        self.expect_nae(ExpToken::Semi).emit(self.x());
+
+        let hi = self.token_loc();
 
         Ok(Directive::Import {
             path,
@@ -103,15 +105,16 @@ impl Parser {
         let lo = self.expect(ExpToken::Pound)?;
 
         // TEST: n/a
-        self.expect(ExpToken::Ident)?;
-        debug_assert_eq!(self.as_ident().as_str(), "mod");
+        self.expect_weak_kw(WeakKw::Mod)?;
 
         // TEST: no. 1
-        self.expect(ExpToken::Ident)?;
+        self.expect_nae(ExpToken::Ident)?;
         let name = self.as_ident();
 
         // TEST: no. 2
-        let hi = self.expect(ExpToken::Semi)?;
+        self.expect_nae(ExpToken::Semi)?;
+
+        let hi = self.token_loc();
 
         Ok(Directive::Mod {
             name,

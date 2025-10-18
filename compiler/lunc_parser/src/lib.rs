@@ -14,6 +14,7 @@ use lunc_diag::{DiagnosticSink, FileId, IResult, Recovered, ToDiagnostic};
 use lunc_token::{
     ExpToken, ExpTokenSet, Lit, Token, TokenStream,
     TokenType::{self, *},
+    WeakKw,
 };
 use lunc_utils::{Recovery, Span, opt_unreachable};
 
@@ -178,7 +179,7 @@ impl Parser {
     }
 
     /// Expects and consumes the token `exp`, or something else if it's not
-    /// `exp`. Signals an error is the next token isn't `exp`. Returns the span
+    /// `exp`. Signals an error if the next token isn't `exp`. Returns the span
     /// of the consumed token if it was the correct one.
     #[inline(never)]
     pub fn expect(&mut self, exp: ExpToken) -> IResult<Span> {
@@ -210,6 +211,26 @@ impl Parser {
         }
 
         Ok(())
+    }
+
+    /// Expects and consumes a weak keyword. Signals an error if the token isn't
+    /// `weak_kw`. Returns the span of the weak kw, or a dummy span if it wasn't
+    /// the weak kw.
+    pub fn expect_weak_kw(&mut self, weak_kw: WeakKw) -> IResult<Span> {
+        let diag = |token: Token| {
+            ExpectedToken::new([format!("weak keyword `{}`", weak_kw.as_str())], token).into_diag()
+        };
+
+        if !self.eat_no_expect(ExpToken::Ident) {
+            return Err(Recovered::Unable(diag(self.token.clone())));
+        }
+
+        let id = self.as_ident();
+        if id != weak_kw.as_str() {
+            return Err(Recovered::Unable(diag(self.token.clone())));
+        }
+
+        Ok(self.token_loc())
     }
 
     /// Create a new expected diag with the current token and the
@@ -321,7 +342,7 @@ impl Parser {
                 // NOTE: in recovery we sometime try to have an ident that we
                 // didn't had so here we are sending a dummy value.
 
-                String::new()
+                String::from("\u{FFFD}")
             }
             _ => {
                 // NOTE: in theory it should be still optimized in release mode
