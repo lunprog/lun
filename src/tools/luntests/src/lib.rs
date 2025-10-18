@@ -64,6 +64,12 @@ impl TestContext {
         for tests_entry in tests_entries.flatten() {
             let stage_path = tests_entry.path();
 
+            if stage_path.starts_with("./tests/README.md") {
+                // NOTE: it's just README.md and not a test so we just
+                // skip it.
+                continue;
+            }
+
             let stage_entries = fs::read_dir(stage_path)?;
             for stage_entry in stage_entries.flatten() {
                 let test_path = stage_entry.path();
