@@ -1,2 +1,4 @@
 // EO06: error testing - ExpectedToken
 #import a as 12;
+
+b :: imfine;

@@ -10,9 +10,9 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{DataDescription, DataId, FuncId, Linkage, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule, ObjectProduct};
 
-use lunc_ast::symbol;
+use lunc_ast::{Abi, symbol};
 use lunc_llib_meta::ModuleTree;
-use lunc_scir::{Abi, ScItem, ScModule};
+use lunc_scir::{ScItem, ScModule};
 use lunc_utils::{BuildOptions, OrbType, opt_unreachable};
 
 use crate::textual::TextualClif;

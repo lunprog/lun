@@ -14,7 +14,8 @@ use lunc_ast::{
     BinOp, UnOp,
     symbol::{self, Signedness, SymKind},
 };
-use lunc_scir::{ScBlock, ScExpr, ScExpression, ScStatement, ScStmt};
+use lunc_scir::{ScBlock, ScExprKind, ScExpression, ScStatement, ScStmtKind};
+use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::{Span, opt_unreachable};
 
 use crate::{ClifGen, ClifId};
@@ -68,65 +69,74 @@ impl<'a> FunDefTranslator<'a> {
     /// a ZST like void or noreturn.
     pub fn try_translate_expr(&mut self, expr: &ScExpression) -> Option<Value> {
         match &expr.expr {
-            ScExpr::IntLit(i) => {
-                let imm = *i as i64;
+            ScExprKind::Lit(Lit {
+                kind,
+                value,
+                tag: _,
+            }) => match (kind, value) {
+                (LitKind::Integer, LitVal::Int(i)) => {
+                    let imm = *i as i64;
 
-                Some(self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm))
-            }
-            ScExpr::BoolLit(b) => {
+                    Some(self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm))
+                }
+                (LitKind::Str, LitVal::Str(_)) => {
+                    todo!("STRING LIT")
+                }
+                (LitKind::CStr, LitVal::Str(s)) => {
+                    // build bytes for cstring, with a ZERO byte at the end.
+                    let mut bytes = Vec::with_capacity(s.len() + 1);
+                    bytes.extend_from_slice(s.as_bytes());
+                    bytes.push(0);
+
+                    // create a name for the symbol (should be unique)
+                    let Span { lo, hi, fid } = expr.loc.clone().unwrap();
+                    let name = format!(
+                        "__cstr_{}_{}_{}_{}",
+                        self.cgen.opts.orb_name(),
+                        lo,
+                        hi,
+                        fid.as_usize()
+                    );
+
+                    // create the data
+                    let data_id = self.cgen.create_data(&name, Linkage::Local, false, bytes);
+                    let gv = self.cgen.module.declare_data_in_func(data_id, self.fb.func);
+
+                    let ptr_t = self.cgen.isa.pointer_type();
+                    Some(self.fb.ins().global_value(ptr_t, gv))
+                }
+                (LitKind::Char, LitVal::Char(c)) => {
+                    let imm = *c as i64;
+
+                    Some(self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm))
+                }
+                (LitKind::Float, LitVal::Float(f)) => {
+                    match expr.typ {
+                        symbol::Type::F32 => {
+                            let imm = *f as f32;
+                            Some(self.fb.ins().f32const(imm))
+                        }
+                        symbol::Type::F64 => {
+                            let imm = *f;
+                            Some(self.fb.ins().f64const(imm))
+                        }
+                        symbol::Type::F16 | symbol::Type::F128 => {
+                            todo!("float types are unstable")
+                        }
+                        // SAFETY: typechecking ensures it can only be a float type
+                        _ => opt_unreachable!(),
+                    }
+                }
+                pair => {
+                    panic!("unsupported pair of kind and value literal: {pair:?}")
+                }
+            },
+            ScExprKind::BoolLit(b) => {
                 let imm = symbol::bool_to_i8(*b) as i64;
 
                 Some(self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm))
             }
-            ScExpr::StringLit(_) => {
-                todo!("STRING LIT")
-            }
-            ScExpr::CStrLit(s) => {
-                // build bytes for cstring, with a ZERO byte at the end.
-                let mut bytes = Vec::with_capacity(s.len() + 1);
-                bytes.extend_from_slice(s.as_bytes());
-                bytes.push(0);
-
-                // create a name for the symbol (should be unique)
-                let Span { lo, hi, fid } = expr.loc.clone().unwrap();
-                let name = format!(
-                    "__cstr_{}_{}_{}_{}",
-                    self.cgen.opts.orb_name(),
-                    lo,
-                    hi,
-                    fid.as_usize()
-                );
-
-                // create the data
-                let data_id = self.cgen.create_data(&name, Linkage::Local, false, bytes);
-                let gv = self.cgen.module.declare_data_in_func(data_id, self.fb.func);
-
-                let ptr_t = self.cgen.isa.pointer_type();
-                Some(self.fb.ins().global_value(ptr_t, gv))
-            }
-            ScExpr::CharLit(c) => {
-                let imm = *c as i64;
-
-                Some(self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm))
-            }
-            ScExpr::FloatLit(f) => {
-                match expr.typ {
-                    symbol::Type::F32 => {
-                        let imm = *f as f32;
-                        Some(self.fb.ins().f32const(imm))
-                    }
-                    symbol::Type::F64 => {
-                        let imm = *f;
-                        Some(self.fb.ins().f64const(imm))
-                    }
-                    symbol::Type::F16 | symbol::Type::F128 => {
-                        todo!("float types are unstable")
-                    }
-                    // SAFETY: typechecking ensures it can only be a float type
-                    _ => opt_unreachable!(),
-                }
-            }
-            ScExpr::Ident(sym) => match sym.kind() {
+            ScExprKind::Ident(sym) => match sym.kind() {
                 SymKind::Local { .. } => {
                     let (ss, typ) = *self.slots.get(sym).expect("undefined var");
 
@@ -158,7 +168,7 @@ impl<'a> FunDefTranslator<'a> {
                     todo!("add support for symbol kind: {kind}")
                 }
             },
-            ScExpr::Binary {
+            ScExprKind::Binary {
                 lhs,
                 op: BinOp::Assignment,
                 rhs,
@@ -170,7 +180,7 @@ impl<'a> FunDefTranslator<'a> {
 
                 None
             }
-            ScExpr::Binary { lhs, op, rhs } => match lhs.typ {
+            ScExprKind::Binary { lhs, op, rhs } => match lhs.typ {
                 symbol::Type::I8
                 | symbol::Type::I16
                 | symbol::Type::I32
@@ -194,8 +204,8 @@ impl<'a> FunDefTranslator<'a> {
                 // SAFETY: type checking ensure it can only be int / float types
                 _ => opt_unreachable!(),
             },
-            ScExpr::FunCall { callee, args } => match &callee.expr {
-                ScExpr::Ident(sym) if sym.kind() == SymKind::Function => {
+            ScExprKind::Call { callee, args } => match &callee.expr {
+                ScExprKind::Ident(sym) if sym.kind() == SymKind::Function => {
                     let Some(ClifId::Func {
                         id,
                         sig: _,
@@ -267,7 +277,7 @@ impl<'a> FunDefTranslator<'a> {
         let ptr_t = self.cgen.isa.pointer_type();
 
         match &expr.expr {
-            ScExpr::Ident(sym) => match sym.kind() {
+            ScExprKind::Ident(sym) => match sym.kind() {
                 SymKind::Local { .. } => {
                     let (ss, _) = *self.slots.get(sym).expect("undefined var");
 
@@ -279,7 +289,7 @@ impl<'a> FunDefTranslator<'a> {
                 // SAFETY: ensured to be a place by the caller
                 _ => opt_unreachable!(),
             },
-            ScExpr::Unary {
+            ScExprKind::Unary {
                 op: UnOp::Dereference,
                 expr,
             } => {
@@ -294,7 +304,7 @@ impl<'a> FunDefTranslator<'a> {
         }
     }
 
-    /// Translates a [`ScExpr::Binary`] for `bool` type.
+    /// Translates a [`ScExprKind::Binary`] for `bool` type.
     pub fn translate_bool_binop(
         &mut self,
         lhs: &ScExpression,
@@ -383,7 +393,7 @@ impl<'a> FunDefTranslator<'a> {
         }
     }
 
-    /// Translates a [`ScExpr::Binary`] for an integer type with the given
+    /// Translates a [`ScExprKind::Binary`] for an integer type with the given
     /// [`Signedness`].
     pub fn translate_integer_binop(
         &mut self,
@@ -461,7 +471,7 @@ impl<'a> FunDefTranslator<'a> {
         }
     }
 
-    /// Translates a [`ScExpr::Binary`] for floats types.
+    /// Translates a [`ScExprKind::Binary`] for floats types.
     pub fn translate_float_binop(
         &mut self,
         lhs: &ScExpression,
@@ -522,7 +532,7 @@ impl<'a> FunDefTranslator<'a> {
     /// Translate a statement to CLIF instructions
     pub fn translate_stmt(&mut self, stmt: &ScStatement) {
         match &stmt.stmt {
-            ScStmt::VariableDef { value, sym, .. } => {
+            ScStmtKind::VariableDef { value, sym, .. } => {
                 // 1. evaluate the value
                 let value = self.translate_expr(value);
 
@@ -543,10 +553,10 @@ impl<'a> FunDefTranslator<'a> {
                 // 4. store the value into the ss
                 self.fb.ins().stack_store(value, ss, 0);
             }
-            ScStmt::Defer { .. } => {
+            ScStmtKind::Defer { .. } => {
                 todo!("DEFER")
             }
-            ScStmt::Expression(expr) => {
+            ScStmtKind::Expression(expr) => {
                 // it can be a ZST
                 _ = self.try_translate_expr(expr);
             }

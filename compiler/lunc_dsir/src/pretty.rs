@@ -2,13 +2,11 @@
 
 use std::io::{self, Write};
 
-use lunc_utils::{
-    Span,
-    pretty::{PrettyCtxt, PrettyDump},
-};
+use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 use crate::{
-    DsArg, DsBlock, DsDirective, DsExpr, DsExpression, DsItem, DsModule, DsStatement, DsStmt,
+    DsArg, DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsStatement,
+    DsStmtKind,
 };
 
 impl PrettyDump for DsModule {
@@ -23,7 +21,7 @@ impl PrettyDump for DsItem {
             DsItem::GlobalDef {
                 name,
                 name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
                 loc,
@@ -31,7 +29,7 @@ impl PrettyDump for DsItem {
             } => {
                 ctx.pretty_struct("GlobalDef")
                     .field("name", (name, name_loc))
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
                     .field("sym", sym)
@@ -121,19 +119,15 @@ impl PrettyDump for DsExpression {
     }
 }
 
-impl PrettyDump for DsExpr {
+impl PrettyDump for DsExprKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         let out = &mut ctx.out;
 
         match self {
-            DsExpr::IntLit(i) => write!(out, "integer {i}"),
-            DsExpr::BoolLit(b) => write!(out, "boolean {b}"),
-            DsExpr::StringLit(s) => write!(out, "string {s:?}"),
-            DsExpr::CStrLit(s) => write!(out, "c_str {s:?}"),
-            DsExpr::CharLit(c) => write!(out, "character {c:?}"),
-            DsExpr::FloatLit(f) => write!(out, "float {f:.}"),
-            DsExpr::Ident(lazysym) => lazysym.try_dump(ctx),
-            DsExpr::Binary { lhs, op, rhs } => {
+            DsExprKind::Lit(lit) => write!(out, "{lit}"),
+            DsExprKind::BoolLit(b) => write!(out, "boolean {b}"),
+            DsExprKind::Ident(lazysym) => lazysym.try_dump(ctx),
+            DsExprKind::Binary { lhs, op, rhs } => {
                 ctx.pretty_struct("Binary")
                     .field("lhs", lhs)
                     .field("op", op)
@@ -142,7 +136,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Unary { op, expr } => {
+            DsExprKind::Unary { op, expr } => {
                 ctx.pretty_struct("Unary")
                     .field("op", op)
                     .field("expr", expr)
@@ -150,23 +144,23 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Borrow { mutable, expr } => {
+            DsExprKind::Borrow(mutability, expr) => {
                 ctx.pretty_struct("Borrow")
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("expr", expr)
                     .finish()?;
 
                 Ok(())
             }
-            DsExpr::FunCall { callee, args } => {
-                ctx.pretty_struct("FunCall")
+            DsExprKind::Call { callee, args } => {
+                ctx.pretty_struct("Call")
                     .field("callee", callee)
                     .field("args", args.as_slice())
                     .finish()?;
 
                 Ok(())
             }
-            DsExpr::If {
+            DsExprKind::If {
                 cond,
                 then_br,
                 else_br,
@@ -179,56 +173,44 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Block { label, block } => {
+            DsExprKind::Block { label, block } => {
                 ctx.pretty_struct("Block")
-                    .field(
-                        "label",
-                        (
-                            label.clone().map(|l| l.0),
-                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
-                        ),
-                    )
+                    .field("label", label)
                     .field("block", block)
                     .finish()?;
 
                 Ok(())
             }
-            DsExpr::Loop { label, body } => {
+            DsExprKind::Loop { label, body } => {
                 ctx.pretty_struct("Loop")
-                    .field(
-                        "label",
-                        (
-                            label.clone().map(|l| l.0),
-                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
-                        ),
-                    )
+                    .field("label", label)
                     .field("body", body)
                     .finish()?;
 
                 Ok(())
             }
-            DsExpr::Return { expr } => {
+            DsExprKind::Return { expr } => {
                 ctx.pretty_struct("Return").field("expr", expr).finish()?;
                 Ok(())
             }
-            DsExpr::Break { label, expr } => {
+            DsExprKind::Break { label, expr } => {
                 ctx.pretty_struct("Break")
                     .field("label", label)
                     .field("expr", expr)
                     .finish()?;
                 Ok(())
             }
-            DsExpr::Continue { label } => {
+            DsExprKind::Continue { label } => {
                 if label.is_some() {
                     ctx.pretty_struct("Continue").field("label", label).finish()
                 } else {
                     write!(ctx.out, "Continue")
                 }
             }
-            DsExpr::Null => {
+            DsExprKind::Null => {
                 write!(ctx.out, "Null")
             }
-            DsExpr::Field { expr, member } => {
+            DsExprKind::Field { expr, member } => {
                 ctx.pretty_struct("Field")
                     .field("expr", expr)
                     .field("member", member)
@@ -236,7 +218,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::QualifiedPath { path, sym } => {
+            DsExprKind::QualifiedPath { path, sym } => {
                 ctx.pretty_struct("QualifiedPath")
                     .field("path", path)
                     .field("sym", sym)
@@ -244,8 +226,8 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Underscore => write!(ctx.out, "Underscore"),
-            DsExpr::FunDefinition {
+            DsExprKind::Underscore => write!(ctx.out, "Underscore"),
+            DsExprKind::FunDefinition {
                 args,
                 rettypexpr,
                 body,
@@ -258,7 +240,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::FunDeclaration { args, rettypexpr } => {
+            DsExprKind::FunDeclaration { args, rettypexpr } => {
                 ctx.pretty_struct("FunDeclaration")
                     .field("args", args.as_slice())
                     .field("rettypexpr", rettypexpr)
@@ -266,15 +248,15 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::PointerType { mutable, typexpr } => {
+            DsExprKind::PointerType(mutability, typexpr) => {
                 ctx.pretty_struct("PointerType")
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .finish()?;
 
                 Ok(())
             }
-            DsExpr::FunPtrType { args, ret } => {
+            DsExprKind::FunPtrType { args, ret } => {
                 ctx.pretty_struct("FunPtrType")
                     .field("args", args.as_slice())
                     .field("ret", ret)
@@ -282,7 +264,7 @@ impl PrettyDump for DsExpr {
 
                 Ok(())
             }
-            DsExpr::Poisoned { diag } => {
+            DsExprKind::Poisoned { diag } => {
                 write!(ctx.out, "POISONED: {diag:#?}")
             }
         }
@@ -344,31 +326,30 @@ impl PrettyDump for DsStatement {
     }
 }
 
-impl PrettyDump for DsStmt {
+impl PrettyDump for DsStmtKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            DsStmt::VariableDef {
+            DsStmtKind::VariableDef {
                 name,
-                name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
                 sym,
             } => {
                 ctx.pretty_struct("VariableDef")
-                    .field("name", (name, name_loc))
-                    .field("mutable", mutable)
+                    .field("name", name)
+                    .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
                     .field("sym", sym)
                     .finish()?;
                 Ok(())
             }
-            DsStmt::Defer { expr } => {
+            DsStmtKind::Defer { expr } => {
                 ctx.pretty_struct("Defer").field("expr", expr).finish()?;
                 Ok(())
             }
-            DsStmt::Expression(expr) => {
+            DsStmtKind::Expression(expr) => {
                 expr.try_dump(ctx)?;
                 Ok(())
             }

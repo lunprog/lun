@@ -6,13 +6,15 @@
 use std::{
     fmt::Display,
     io::{self, Write},
+    str::FromStr,
 };
 
-use lunc_token::{
-    Punctuation,
-    TokenType::{self, *},
+use lunc_token::TokenType;
+use lunc_utils::{
+    Span,
+    pretty::{PrettyCtxt, PrettyDump},
 };
-use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
+use serde::{Deserialize, Serialize};
 
 pub mod symbol;
 
@@ -343,37 +345,27 @@ impl Display for BinOp {
 }
 
 impl BinOp {
-    pub fn from_punct(punct: Punctuation) -> Option<BinOp> {
-        use BinOp as BOp;
-        use Punctuation as Punct;
-
-        Some(match punct {
-            Punct::Equal => BOp::Assignment,
-            Punct::Star => BOp::Mul,
-            Punct::Slash => BOp::Div,
-            Punct::Percent => BOp::Rem,
-            Punct::Plus => BOp::Add,
-            Punct::Minus => BOp::Sub,
-            Punct::Lt => BOp::CompLT,
-            Punct::Gt => BOp::CompGT,
-            Punct::LtEqual => BOp::CompLE,
-            Punct::GtEqual => BOp::CompGE,
-            Punct::Equal2 => BOp::CompEq,
-            Punct::BangEqual => BOp::CompNe,
-            Punct::Ampsand => BOp::BitwiseAnd,
-            Punct::Ampsand2 => BOp::LogicalAnd,
-            Punct::Caret => BOp::BitwiseXor,
-            Punct::Pipe => BOp::BitwiseOr,
-            Punct::Pipe2 => BOp::LogicalOr,
-            Punct::Lt2 => BOp::Shl,
-            Punct::Gt2 => BOp::Shr,
-            _ => return None,
-        })
-    }
-
-    pub fn from_tt(tt: TokenType) -> Option<BinOp> {
+    pub fn from_tt(tt: &TokenType) -> Option<BinOp> {
         match tt {
-            Punct(p) => Self::from_punct(p),
+            TokenType::Eq => Some(BinOp::Assignment),
+            TokenType::Star => Some(BinOp::Mul),
+            TokenType::Slash => Some(BinOp::Div),
+            TokenType::Percent => Some(BinOp::Rem),
+            TokenType::Plus => Some(BinOp::Add),
+            TokenType::Minus => Some(BinOp::Sub),
+            TokenType::Lt => Some(BinOp::CompLT),
+            TokenType::Gt => Some(BinOp::CompGT),
+            TokenType::LtEq => Some(BinOp::CompLE),
+            TokenType::GtEq => Some(BinOp::CompGE),
+            TokenType::EqEq => Some(BinOp::CompEq),
+            TokenType::BangEq => Some(BinOp::CompNe),
+            TokenType::And => Some(BinOp::BitwiseAnd),
+            TokenType::AndAnd => Some(BinOp::LogicalAnd),
+            TokenType::Caret => Some(BinOp::BitwiseXor),
+            TokenType::Or => Some(BinOp::BitwiseOr),
+            TokenType::OrOr => Some(BinOp::LogicalOr),
+            TokenType::LtLt => Some(BinOp::Shl),
+            TokenType::GtGt => Some(BinOp::Shr),
             _ => None,
         }
     }
@@ -433,10 +425,10 @@ impl UnOp {
     ///
     /// eg:
     /// `-a` `!a` `&a`
-    pub fn left_from_token(tt: TokenType) -> Option<UnOp> {
+    pub fn left_from_token(tt: &TokenType) -> Option<UnOp> {
         match tt {
-            Punct(Punctuation::Minus) => Some(UnOp::Negation),
-            Punct(Punctuation::Bang) => Some(UnOp::Not),
+            TokenType::Minus => Some(UnOp::Negation),
+            TokenType::Bang => Some(UnOp::Not),
             _ => None,
         }
     }
@@ -445,9 +437,9 @@ impl UnOp {
     ///
     /// eg:
     /// `a.*`
-    pub fn right_from_token(tt: TokenType) -> Option<UnOp> {
+    pub fn right_from_token(tt: &TokenType) -> Option<UnOp> {
         match tt {
-            Punct(Punctuation::DotStar) => Some(UnOp::Dereference),
+            TokenType::DotStar => Some(UnOp::Dereference),
             _ => None,
         }
     }
@@ -457,4 +449,98 @@ impl PrettyDump for UnOp {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         write!(ctx.out, "{self:?}")
     }
+}
+
+/// An ast node with a span.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Spanned<T> {
+    pub node: T,
+    pub loc: Span,
+}
+
+impl<T: PrettyDump> PrettyDump for Spanned<T> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        self.node.try_dump(ctx)?;
+        ctx.print_loc(&self.loc)?;
+
+        Ok(())
+    }
+}
+
+/// Mutability of something.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Mutability {
+    Not,
+    Mut,
+}
+
+impl Mutability {
+    /// Returns `""` if `No` or `"mut "` if `Mut`.
+    pub fn prefix_str(self) -> &'static str {
+        match self {
+            Self::Not => "",
+            Self::Mut => "mut ",
+        }
+    }
+
+    /// Inverts the mutability
+    pub fn invert(self) -> Mutability {
+        match self {
+            Self::Not => Self::Mut,
+            Self::Mut => Self::Not,
+        }
+    }
+
+    /// Returns true if `Mut`
+    pub fn is_mut(self) -> bool {
+        matches!(self, Self::Mut)
+    }
+
+    /// Returns true if `Not`
+    pub fn is_not(self) -> bool {
+        matches!(self, Self::Not)
+    }
+}
+
+impl PrettyDump for Mutability {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        match self {
+            Self::Not => write!(ctx.out, "not"),
+            Self::Mut => write!(ctx.out, "mut"),
+        }
+    }
+}
+
+/// ABI names usable in an extern block
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum Abi {
+    /// `C`
+    #[default]
+    C,
+}
+
+impl FromStr for Abi {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "C" => Ok(Abi::C),
+            _ => Err(()),
+        }
+    }
+}
+
+impl PrettyDump for Abi {
+    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        match self {
+            Abi::C => write!(ctx.out, "C"),
+        }
+    }
+}
+
+/// The thing that contains the items
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ItemContainer {
+    Module,
+    ExternBlock,
 }

@@ -882,6 +882,7 @@ dependencies = [
  "lunc_ast",
  "lunc_llib_meta",
  "lunc_scir",
+ "lunc_token",
  "lunc_utils",
 ]
 
@@ -903,6 +904,7 @@ dependencies = [
  "lunc_lexer",
  "lunc_llib_meta",
  "lunc_parser",
+ "lunc_token",
  "lunc_utils",
 ]
 
@@ -959,6 +961,7 @@ dependencies = [
  "lunc_diag",
  "lunc_dsir",
  "lunc_llib_meta",
+ "lunc_token",
  "lunc_utils",
 ]
 

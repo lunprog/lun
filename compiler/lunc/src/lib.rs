@@ -767,12 +767,15 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
         eprint!("tokenstream = ");
         tokenstream.fmt(&mut stderr(), &source_code).unwrap();
     }
+    if sink.failed() {
+        return Err(builderr());
+    }
     if argv.debug.halt(CompStage::Lexer) {
         if sink.is_empty() {
             return Ok(());
         }
 
-        Err(builderr())?;
+        return Err(builderr());
     }
 
     timings.lexer = lexer_instant.elapsed();
@@ -788,12 +791,15 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
         ast.dump();
         eprintln!();
     }
+    if sink.failed() {
+        return Err(builderr());
+    }
     if argv.debug.halt(CompStage::Parser) {
         if sink.is_empty() {
             return Ok(());
         }
 
-        Err(builderr())?;
+        return Err(builderr());
     }
 
     timings.parser = parser_instant.elapsed();
@@ -810,12 +816,15 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
         dsir.dump();
         eprintln!();
     }
+    if sink.failed() {
+        return Err(builderr());
+    }
     if argv.debug.halt(CompStage::Dsir) {
         if sink.is_empty() {
             return Ok(());
         }
 
-        Err(builderr())?;
+        return Err(builderr());
     }
 
     timings.dsir = dsir_instant.elapsed();
@@ -832,12 +841,15 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
         scir.dump();
         eprintln!();
     }
+    if sink.failed() {
+        return Err(builderr());
+    }
     if argv.debug.halt(CompStage::Scir) {
         if sink.is_empty() {
             return Ok(());
         }
 
-        Err(builderr())?;
+        return Err(builderr());
     }
 
     timings.scir = scir_instant.elapsed();

@@ -120,6 +120,12 @@ impl<I: Into<usize>, J: Into<usize>> From<(I, J, FileId)> for Span {
     }
 }
 
+impl Default for Span {
+    fn default() -> Self {
+        Span::ZERO
+    }
+}
+
 /// A file id, used to represent, which file we are talking about
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct FileId(u32);
@@ -563,6 +569,24 @@ impl Display for OrbType {
             Self::Llib => write!(f, "lib"),
         }
     }
+}
+
+/// Recovery mode of the parser.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Recovery {
+    /// Default mode of the parser.
+    #[default]
+    No,
+    /// In recovery mode the parser will try to parse while emitting
+    /// diagnostics, in this mode the parser is parsing a superset of the actual
+    /// grammar, it keeps going while there are errors.
+    Yes,
+}
+
+/// Default value of `T`.
+#[inline(always)]
+pub fn default<T: Default>() -> T {
+    Default::default()
 }
 
 #[cfg(test)]
