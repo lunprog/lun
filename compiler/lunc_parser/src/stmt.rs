@@ -179,7 +179,9 @@ impl Parser {
     pub fn recover_stmt_in_block(&mut self) {
         let mut remaining_rcurly = 0;
 
-        while !self.token.is_stmt_end() || self.check_no_expect(ExpToken::RCurly) {
+        while (!self.token.is_stmt_end() || self.check_no_expect(ExpToken::RCurly))
+            && !self.check_no_expect(ExpToken::EOF)
+        {
             if self.check_no_expect(ExpToken::LCurly) {
                 remaining_rcurly += 1;
             } else if self.check_no_expect(ExpToken::RCurly) {

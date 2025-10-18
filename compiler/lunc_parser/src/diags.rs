@@ -12,6 +12,8 @@ pub struct ExpectedToken {
     expected: Vec<String>,
     /// what was found instead of the expected token
     found: TokenType,
+    /// semicolon info.
+    semi_loc: Option<Span>,
     /// location of the found token
     loc: Span,
 }
@@ -25,6 +27,7 @@ impl ExpectedToken {
         ExpectedToken {
             expected: expected.into_iter().map(|s| s.to_string()).collect(),
             found: found.tt,
+            semi_loc: None,
             loc: found.loc,
         }
     }
@@ -33,6 +36,10 @@ impl ExpectedToken {
         self.expected
             .extend(expects.iter().map(|tr| tr.to_string()));
         self
+    }
+
+    pub fn add_semi(&mut self, semi_loc: Span) {
+        self.semi_loc = Some(semi_loc);
     }
 
     fn fmt_msg(&self) -> String {
@@ -50,7 +57,18 @@ impl ToDiagnostic for ExpectedToken {
         Diagnostic::error()
             .with_code(ErrorCode::ExpectedToken)
             .with_message(self.fmt_msg())
-            .with_label(Label::primary(self.loc.fid, self.loc))
+            .with_label({
+                let mut label = Label::primary(self.loc.fid, self.loc);
+
+                if self.semi_loc.is_some() {
+                    label.message = format!("unexpected {}", self.found);
+                }
+
+                label
+            })
+            .with_labels_iter(self.semi_loc.map(|loc| {
+                Label::secondary(loc.fid, loc).with_message("help: add `;` after this token")
+            }))
     }
 }
 

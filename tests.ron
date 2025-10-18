@@ -4227,8 +4227,10 @@ error: compilation of `E006_block_1` failed due to 1 error and 0 warnings
         compiler_out: "error[E006]: expected `;`, found `}`
   ┌─ ./tests/parser/E006_block_2.lun:4:1
   │
+3 │     a :: 12
+  │          -- help: add `;` after this token
 4 │ };
-  │ ^
+  │ ^ unexpected `}`
 
 error: compilation of `E006_block_2` failed due to 1 error and 0 warnings
 
@@ -4241,8 +4243,10 @@ error: compilation of `E006_block_2` failed due to 1 error and 0 warnings
         compiler_out: "error[E006]: expected `;`, found identifier
   ┌─ ./tests/parser/E006_block_3.lun:4:5
   │
+3 │     a
+  │     - help: add `;` after this token
 4 │     b
-  │     ^
+  │     ^ unexpected identifier
 
 error: compilation of `E006_block_3` failed due to 1 error and 0 warnings
 
@@ -4255,8 +4259,10 @@ error: compilation of `E006_block_3` failed due to 1 error and 0 warnings
         compiler_out: "error[E006]: expected `;`, found identifier
   ┌─ ./tests/parser/E006_block_4.lun:4:5
   │
+3 │     defer a
+  │           - help: add `;` after this token
 4 │     b
-  │     ^
+  │     ^ unexpected identifier
 
 error: compilation of `E006_block_4` failed due to 1 error and 0 warnings
 
@@ -4505,8 +4511,10 @@ error: compilation of `E006_global_def_1` failed due to 2 errors and 0 warnings
         compiler_out: "error[E006]: expected `:`, `=` or `;`, found end of file
   ┌─ ./tests/parser/E006_global_def_2.lun:3:1
   │
+2 │ a : u8
+  │     -- help: add `;` after this token
 3 │ 
-  │ ^
+  │ ^ unexpected end of file
 
 error: compilation of `E006_global_def_2` failed due to 1 error and 0 warnings
 
@@ -4519,8 +4527,10 @@ error: compilation of `E006_global_def_2` failed due to 1 error and 0 warnings
         compiler_out: "error[E006]: expected `;`, found end of file
   ┌─ ./tests/parser/E006_global_def_3.lun:3:1
   │
+2 │ a := 12
+  │      -- help: add `;` after this token
 3 │ 
-  │ ^
+  │ ^ unexpected end of file
 
 error: compilation of `E006_global_def_3` failed due to 1 error and 0 warnings
 
@@ -4615,8 +4625,10 @@ error: compilation of `E006_import_directive_1` failed due to 1 error and 0 warn
         compiler_out: "error[E006]: expected `;`, found end of file
   ┌─ ./tests/parser/E006_import_directive_2.lun:3:1
   │
+2 │ #import a as b
+  │              - help: add `;` after this token
 3 │ 
-  │ ^
+  │ ^ unexpected end of file
 
 error: compilation of `E006_import_directive_2` failed due to 1 error and 0 warnings
 
@@ -4761,8 +4773,10 @@ error: compilation of `E006_mod_directive_1` failed due to 1 error and 0 warning
         compiler_out: "error[E006]: expected `;`, found end of file
   ┌─ ./tests/parser/E006_mod_directive_2.lun:3:1
   │
+2 │ #mod a
+  │      - help: add `;` after this token
 3 │ 
-  │ ^
+  │ ^ unexpected end of file
 
 error: compilation of `E006_mod_directive_2` failed due to 1 error and 0 warnings
 

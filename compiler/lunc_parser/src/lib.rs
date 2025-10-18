@@ -219,8 +219,12 @@ impl Parser {
     ///
     /// This function also resets the [`Parser::expected_token_exps`].
     pub fn expected_diag(&mut self) -> ExpectedToken {
-        let res = ExpectedToken::new(ExpectedToken::EMPTY, self.token.clone())
+        let mut res = ExpectedToken::new(ExpectedToken::EMPTY, self.token.clone())
             .add_expects(self.expected_token_exps);
+
+        if self.expected_token_exps.contains(ExpToken::Semi) {
+            res.add_semi(self.prev_token.loc.clone());
+        }
 
         self.expected_token_exps.clear();
 
