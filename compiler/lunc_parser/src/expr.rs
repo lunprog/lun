@@ -24,6 +24,12 @@ pub struct Expression {
 }
 
 impl Expression {
+    /// Dummy expression, used as a fallback value when trying to parse.
+    pub const DUMMY: Expression = Expression {
+        kind: ExprKind::Null,
+        loc: Span::ZERO,
+    };
+
     /// Is the expression `ExpressionWithBlock`?
     pub fn is_expr_with_block(&self) -> bool {
         matches!(
@@ -410,8 +416,10 @@ impl Parser {
             Star => self.parse_pointer_typexpr()?,
             tt if UnOp::left_from_token(tt).is_some() => self.parse_unary_left_expr()?,
             _ => {
+                self.bump();
+
                 // TEST: no. 1
-                return Err(ExpectedToken::new(["expression"], self.token.clone()).into());
+                return Err(ExpectedToken::new(["expression"], self.prev_token.clone()).into());
             }
         };
 

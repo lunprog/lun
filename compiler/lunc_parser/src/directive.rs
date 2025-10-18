@@ -2,6 +2,7 @@
 
 use lunc_ast::symbol::EffectivePath;
 use lunc_diag::ResultExt;
+use lunc_utils::default;
 
 use super::*;
 
@@ -75,7 +76,7 @@ impl Parser {
         self.expect(ExpToken::Ident)?;
         debug_assert_eq!(self.as_ident().as_str(), "import");
 
-        let path = self.parse_spanned_path().emit_wdef(self.x());
+        let path = self.parse_spanned_path().emit_wval(self.x(), default);
 
         let alias = if self.eat(ExpToken::KwAs) {
             // TEST: no. 1

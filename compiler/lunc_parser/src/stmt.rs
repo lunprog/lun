@@ -1,6 +1,9 @@
 //! Parsing of lun's statements and chunk.
 #![warn(deprecated)]
 
+use lunc_diag::ResultExt;
+use lunc_utils::default;
+
 use super::*;
 
 /// Block of Lun statements
@@ -65,7 +68,27 @@ impl Parser {
                 break;
             }
 
-            let stmt = self.parse_stmt()?;
+            let stmt = match self.parse_stmt() {
+                Ok(stmt) => stmt,
+                Err(recovered) => {
+                    if let Recovered::Unable(d) = recovered {
+                        self.sink.emit(d);
+                    }
+
+                    // after recovering from a faulty stmt, the parser is bumped
+                    // until prev_token is one of `is_stmt_end`. It's smart so
+                    // he knows about opening and closing curly.
+                    //
+                    // After there is two options:
+                    // - we keep parsing stmt / the last_expr
+                    // - we are in front of the RCurly, either because the
+                    //   faulty stmt was the last one or the recovery failed to
+                    //   do something better.
+
+                    self.recover_stmt_in_block();
+                    continue;
+                }
+            };
 
             let next_brace = self.token.tt == RCurly;
             let is_expr = stmt.is_expr();
@@ -96,7 +119,7 @@ impl Parser {
                     stmts.push(stmt.clone());
 
                     // TEST: no. 2
-                    self.expect(ExpToken::Semi)?;
+                    self.expect_nae(ExpToken::Semi).emit(self.x());
                 }
                 (false, true) => {
                     // here we have a statement expression, we require a
@@ -126,7 +149,7 @@ impl Parser {
                     if !matches!(stmt.stmt, StmtKind::Defer { ref expr } if expr.is_expr_with_block())
                     {
                         // TEST: no. 4
-                        self.expect(ExpToken::Semi)?;
+                        self.expect_nae(ExpToken::Semi).emit(self.x());
                     }
 
                     stmts.push(stmt.clone());
@@ -144,6 +167,38 @@ impl Parser {
         })
     }
 
+    /// Tries to recover the parsing of statements in a block.
+    ///
+    /// The parser is bumped until prev_token is one of `is_stmt_end`. It's
+    /// smart so he knows about opening and closing curly.
+    ///
+    /// After there is two options:
+    /// - we keep parsing stmt / the last_expr
+    /// - we are in front of the RCurly, either because the faulty stmt was the
+    ///   last one or the recovery failed to do something better.
+    pub fn recover_stmt_in_block(&mut self) {
+        let mut remaining_rcurly = 0;
+
+        while !self.token.is_stmt_end() || self.check_no_expect(ExpToken::RCurly) {
+            if self.check_no_expect(ExpToken::LCurly) {
+                remaining_rcurly += 1;
+            } else if self.check_no_expect(ExpToken::RCurly) {
+                if remaining_rcurly == 0 {
+                    // eat the }
+                    self.bump();
+
+                    break;
+                } else {
+                    remaining_rcurly -= 1;
+                }
+            }
+
+            self.bump();
+        }
+
+        self.bump();
+    }
+
     /// Parses a statement
     pub fn parse_stmt(&mut self) -> IResult<Statement> {
         match self.token.tt {
@@ -151,7 +206,7 @@ impl Parser {
             Ident(_) if self.is_short_binding_def() => self.parse_short_binding_stmt(),
             KwDefer => self.parse_defer_statement(),
             _ => {
-                let expr = self.parse_expr()?;
+                let expr = self.parse_expr().emit_wval(self.x(), || Expression::DUMMY);
 
                 Ok(Statement {
                     loc: expr.loc.clone(),
@@ -178,7 +233,7 @@ impl Parser {
         let mutability = self.parse_mutability();
 
         // TEST: no. 1
-        let name_loc = self.expect(ExpToken::Ident)?;
+        let name_loc = self.expect(ExpToken::Ident).emit_wval(self.x(), default);
         let name = self.as_ident();
 
         let typexpr = if self.eat_no_expect(ExpToken::Colon) {
@@ -188,7 +243,7 @@ impl Parser {
         };
 
         // TEST: no. 2
-        self.expect(ExpToken::Eq)?;
+        self.expect(ExpToken::Eq).emit(self.x());
         let value = Box::new(self.parse_expr()?);
 
         let hi = value.loc.clone();
@@ -230,7 +285,10 @@ impl Parser {
         } else if self.eat(ExpToken::Eq) {
             Mutability::Mut
         } else {
-            return self.etd_and_bump();
+            let diag = self.expected_diag();
+            self.sink.emit(diag);
+
+            Mutability::Not
         };
 
         let value = Box::new(self.parse_expr()?);

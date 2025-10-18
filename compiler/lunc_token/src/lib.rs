@@ -352,10 +352,7 @@ impl Token {
 
     /// Returns true if the token can be the end of a statement.
     pub const fn is_stmt_end(&self) -> bool {
-        matches!(
-            self.tt,
-            TokenType::KwElse | TokenType::Semi | TokenType::RCurly
-        )
+        matches!(self.tt, TokenType::Semi | TokenType::RCurly)
     }
 }
 

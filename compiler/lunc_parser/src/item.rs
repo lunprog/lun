@@ -5,7 +5,7 @@ use std::str::FromStr;
 use lunc_ast::{Abi, ItemContainer};
 use lunc_diag::{FileId, Recovered, ResultExt};
 use lunc_token::{Lit, LitKind, LitVal};
-use lunc_utils::opt_unreachable;
+use lunc_utils::{default, opt_unreachable};
 
 use crate::directive::Directive;
 
@@ -124,7 +124,7 @@ impl Parser {
     ///
     /// Please note that this is the last thing that can help in case of a
     /// diagnostic.
-    pub(crate) fn recover_item_in_container(&mut self, container: ItemContainer) -> Option<Item> {
+    pub fn recover_item_in_container(&mut self, container: ItemContainer) -> Option<Item> {
         let mut res = None;
 
         // number of } remaining until the } of the matching {
@@ -186,7 +186,7 @@ impl Parser {
         let name = self.as_ident();
 
         // TEST: no. 1
-        self.expect(ExpToken::Colon).emit_wdef(self.x());
+        self.expect(ExpToken::Colon).emit(self.x());
 
         let typexpr = match self.token.tt {
             Colon | Eq => None,
@@ -228,7 +228,7 @@ impl Parser {
             value.loc.clone()
         } else {
             // TEST: no. 3
-            self.expect(ExpToken::Semi).emit_wdef(self.x())
+            self.expect(ExpToken::Semi).emit_wval(self.x(), default)
         };
 
         let loc = Span::from_ends(lo.clone(), hi);
@@ -319,7 +319,7 @@ impl Parser {
         };
 
         // TEST: no. 2
-        self.expect_nae(ExpToken::LCurly).emit_wdef(self.x());
+        self.expect_nae(ExpToken::LCurly).emit(self.x());
 
         let mut items = Vec::new();
 

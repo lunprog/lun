@@ -688,21 +688,19 @@ pub type X<'a> = (&'a mut DiagnosticSink, &'a mut Recovery);
 
 /// Extension to [`Result`].
 pub trait ResultExt<T>: private::Sealed {
-    /// `Emit with default`, emits the diagnostic if any, and returns the
-    /// default value of `T`. Or simply return the `Ok(..)` value.
-    fn emit_wdef(self, sink: X<'_>) -> T
-    where
-        T: Default;
+    /// `Emit with value`, emits the diagnostic if any, and returns the `value`.
+    /// Or simply return the `Ok(..)` value.
+    fn emit_wval(self, x: X<'_>, value: impl FnOnce() -> T) -> T;
 
     /// Like [`Result::ok`] but if `self` is `Err(..)` it will emit the diagnostic.
-    fn emit_opt(self, sink: X<'_>) -> Option<T>;
+    fn emit_opt(self, x: X<'_>) -> Option<T>;
+
+    /// Just emits the `Err(..)` if any.
+    fn emit(self, x: X<'_>);
 }
 
 impl<T> ResultExt<T> for IResult<T> {
-    fn emit_wdef(self, (sink, recovery): X<'_>) -> T
-    where
-        T: Default,
-    {
+    fn emit_wval(self, (sink, recovery): X<'_>, value: impl FnOnce() -> T) -> T {
         match self {
             Ok(p) => p,
             Err(recovered) => {
@@ -715,7 +713,7 @@ impl<T> ResultExt<T> for IResult<T> {
 
                 *recovery = Recovery::Yes;
 
-                T::default()
+                value()
             }
         }
     }
@@ -733,6 +731,19 @@ impl<T> ResultExt<T> for IResult<T> {
                 *recovery = Recovery::Yes;
 
                 None
+            }
+        }
+    }
+
+    fn emit(self, (sink, recovery): X<'_>) {
+        if self.is_err() {
+            *recovery = Recovery::Yes;
+        }
+
+        match self {
+            Ok(..) | Err(Recovered::Yes) => {}
+            Err(Recovered::Unable(d)) => {
+                sink.emit(d);
             }
         }
     }

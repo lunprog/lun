@@ -149,7 +149,6 @@ impl PrettyDump for ExprKind {
                 Ok(())
             }
             ExprKind::Block(block) => {
-                write!(ctx.out, "Block ")?;
                 block.try_dump(ctx)?;
 
                 Ok(())

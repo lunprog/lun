@@ -583,6 +583,12 @@ pub enum Recovery {
     Yes,
 }
 
+/// Default value of `T`.
+#[inline(always)]
+pub fn default<T: Default>() -> T {
+    Default::default()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

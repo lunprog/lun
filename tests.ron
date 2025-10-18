@@ -4320,13 +4320,7 @@ error: compilation of `E006_continue` failed due to 1 error and 0 warnings
 2 │ a :: defer;
   │      ^^^^^
 
-error[E006]: expected item, found `;`
-  ┌─ ./tests/parser/E006_expr_1.lun:2:11
-  │
-2 │ a :: defer;
-  │           ^
-
-error: compilation of `E006_expr_1` failed due to 2 errors and 0 warnings
+error: compilation of `E006_expr_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4738,25 +4732,7 @@ error: compilation of `E006_iterator_loop_2` failed due to 1 error and 0 warning
 3 │     let 12 = 2;
   │         ^^
 
-error[E006]: expected item, found integer literal
-  ┌─ ./tests/parser/E006_let_stmt_1.lun:3:14
-  │
-3 │     let 12 = 2;
-  │              ^
-
-error[E006]: expected item, found `;`
-  ┌─ ./tests/parser/E006_let_stmt_1.lun:3:15
-  │
-3 │     let 12 = 2;
-  │               ^
-
-error[E006]: expected item, found `}`
-  ┌─ ./tests/parser/E006_let_stmt_1.lun:4:1
-  │
-4 │ }
-  │ ^
-
-error: compilation of `E006_let_stmt_1` failed due to 4 errors and 0 warnings
+error: compilation of `E006_let_stmt_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4770,19 +4746,7 @@ error: compilation of `E006_let_stmt_1` failed due to 4 errors and 0 warnings
 3 │     let a - b;
   │           ^
 
-error[E006]: expected item, found `;`
-  ┌─ ./tests/parser/E006_let_stmt_2.lun:3:14
-  │
-3 │     let a - b;
-  │              ^
-
-error[E006]: expected item, found `}`
-  ┌─ ./tests/parser/E006_let_stmt_2.lun:4:1
-  │
-4 │ }
-  │ ^
-
-error: compilation of `E006_let_stmt_2` failed due to 3 errors and 0 warnings
+error: compilation of `E006_let_stmt_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 255,
@@ -4866,13 +4830,7 @@ error: compilation of `E006_qualified_path_2` failed due to 1 error and 0 warnin
 3 │     a : b c;
   │           ^
 
-error[E006]: expected item, found `}`
-  ┌─ ./tests/parser/E006_short_var_def_1.lun:4:1
-  │
-4 │ }
-  │ ^
-
-error: compilation of `E006_short_var_def_1` failed due to 2 errors and 0 warnings
+error: compilation of `E006_short_var_def_1` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 255,
@@ -5136,7 +5094,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           } @ 601..632 (fid = 0);
         } @ 597..632 (fid = 0) @ 597..632 (fid = 0),
 
-        Block Block [
+        Block [
           Binary {
             lhs: ident _ @ 662..663 (fid = 0);
             op: Assignment;
@@ -5472,7 +5430,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         } @ 120..127 (fid = 0),
 
         Defer {
-          expr: Block Block [
+          expr: Block [
             @last_expr: none,
           ] @ 163..165 (fid = 0) @ 163..165 (fid = 0);
         } @ 157..165 (fid = 0),

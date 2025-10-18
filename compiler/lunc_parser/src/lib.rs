@@ -25,6 +25,15 @@ pub mod pretty;
 pub mod stmt;
 
 /// Parser of Lun, turns Tokens into an Ast.
+///
+/// # Recovery
+///
+/// The parser if it encounters an error will go in recovery mode, a mode in
+/// which it allows lots of parsing error but keeps going, and tries to do
+/// it's best to show the most useful errors to the user. Note that while every
+/// `parse_*` methods are very similar, `recover_*` never behave the same, some
+/// try to parse a new node while others bump the parser until a point where
+/// it's fine to keep going.
 #[derive(Debug, Clone)]
 pub struct Parser {
     /// Token stream
@@ -72,7 +81,7 @@ impl Parser {
 
     /// Is the parser currently in recovery mode?
     #[inline(always)]
-    pub fn in_recovery(&mut self) -> bool {
+    pub fn in_recovery(&self) -> bool {
         self.recovery == Recovery::Yes
     }
 
@@ -302,12 +311,22 @@ impl Parser {
     /// Calling this function if [`Parser::prev_token`] isn't a
     /// [`TokenType::Ident`], it's a UB.
     pub fn as_ident(&self) -> String {
-        let Ident(id) = &self.prev_token.tt else {
-            // SAFETY: upheld by caller
-            opt_unreachable!();
-        };
+        match &self.prev_token.tt {
+            Ident(id) => id.clone(),
+            _ if self.in_recovery() => {
+                // NOTE: in recovery we sometime try to have an ident that we
+                // didn't had so here we are sending a dummy value.
 
-        id.clone()
+                String::new()
+            }
+            _ => {
+                // NOTE: in theory it should be still optimized in release mode
+                // even tho there is the `in_recovery` branch.
+                //
+                // SAFETY: upheld by caller
+                opt_unreachable!();
+            }
+        }
     }
 
     /// Clones the location of the previous token, [`Parser::prev_token`].
