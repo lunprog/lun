@@ -351,8 +351,28 @@ impl Token {
     }
 
     /// Returns true if the token can be the end of a statement.
+    ///
+    /// We always expect a `Semi`, or if we don't then it expects a `}` because
+    /// Expression with a block finish with a `}` so we don't need to have a `;`
+    ///
+    /// For now it returns true on:
+    /// - `Semi`
+    /// - `RCurly`
     pub const fn is_stmt_end(&self) -> bool {
         matches!(self.tt, TokenType::Semi | TokenType::RCurly)
+    }
+
+    /// Returns true if the token can be the start of an item.
+    ///
+    /// For now it returns true on:
+    /// - `Ident`
+    /// - `KwExtern`
+    /// - `Pound`
+    pub const fn can_begin_item(&self) -> bool {
+        matches!(
+            self.tt,
+            TokenType::Ident(..) | TokenType::KwExtern | TokenType::Pound
+        )
     }
 }
 

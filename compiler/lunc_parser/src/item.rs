@@ -90,9 +90,8 @@ impl Parser {
                         self.sink.emit(d);
                     }
 
-                    if let Some(item) = self.recover_item_in_container(ItemContainer::Module) {
-                        items.push(item);
-                    }
+                    self.recover_item_in_container(ItemContainer::Module);
+                    continue;
                 }
             }
         }
@@ -103,13 +102,11 @@ impl Parser {
         })
     }
 
-    /// Tries to recover the parsing of an item in a module.
+    /// Tries to recover the parsing of an Item in `container`.
     ///
-    /// Bumps the parser until it is able to correctly parse an [`Item`] if so
-    /// returns `Some(..)`, otherwise it returns `None`.
-    ///
-    /// If `container` == [`ItemContainer::ExternBlock`], this function will
-    /// early return if it sees the matching `}` to the first `{`:
+    /// The parser is bump until `self.token` is `token.can_begin_item() ==
+    /// true`. If `container == ItemContainer::ExternBlock` it also returns when
+    /// `self.token` is a `RCurly` that matches the first `LCurly`:
     ///
     /// ```lun
     /// extern "C" {
@@ -121,29 +118,16 @@ impl Parser {
     /// } // the parser will recover until here even tho there was a } before
     ///   // but it was preceded by a {
     /// ```
-    ///
-    /// Please note that this is the last thing that can help in case of a
-    /// diagnostic.
-    pub fn recover_item_in_container(&mut self, container: ItemContainer) -> Option<Item> {
-        let mut res = None;
-
-        // number of } remaining until the } of the matching {
+    pub fn recover_item_in_container(&mut self, container: ItemContainer) {
+        // amount of } remaining until the one that will break the loop
         let mut remaining_rcurly = 0;
 
-        while res.is_none() {
-            self.bump();
-            if self.check(ExpToken::EOF) {
-                break;
-            }
-
+        while !self.token.can_begin_item() && !self.check_no_expect(ExpToken::EOF) {
             if container == ItemContainer::ExternBlock {
                 if self.check_no_expect(ExpToken::LCurly) {
                     remaining_rcurly += 1;
                 } else if self.check_no_expect(ExpToken::RCurly) {
                     if remaining_rcurly == 0 {
-                        // eat the }
-                        self.bump();
-
                         break;
                     } else {
                         remaining_rcurly -= 1;
@@ -151,19 +135,8 @@ impl Parser {
                 }
             }
 
-            match self.parse_item() {
-                Ok(item) => {
-                    res = Some(item);
-                }
-                Err(recovered) => {
-                    if let Recovered::Unable(d) = recovered {
-                        self.sink.emit(d);
-                    }
-                }
-            }
+            self.bump();
         }
-
-        res
     }
 
     /// Parses a Lun Item.
@@ -319,7 +292,7 @@ impl Parser {
         };
 
         // TEST: no. 2
-        self.expect_nae(ExpToken::LCurly).emit(self.x());
+        self.expect(ExpToken::LCurly).emit(self.x());
 
         let mut items = Vec::new();
 
@@ -343,9 +316,8 @@ impl Parser {
                         self.sink.emit(d);
                     }
 
-                    if let Some(item) = self.recover_item_in_container(ItemContainer::ExternBlock) {
-                        items.push(item);
-                    }
+                    self.recover_item_in_container(ItemContainer::ExternBlock);
+                    continue;
                 }
             }
 
