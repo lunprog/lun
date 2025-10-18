@@ -1,0 +1,7 @@
+// E006: error resilience testing - ExpectedToken
+
+extern 1
+    a :: fun();
+}
+
+b :: imfine;

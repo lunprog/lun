@@ -5,7 +5,7 @@ use std::str::FromStr;
 use lunc_ast::{Abi, ItemContainer};
 use lunc_diag::{FileId, Recovered, ResultExt};
 use lunc_token::{Lit, LitKind, LitVal};
-use lunc_utils::{default, opt_unreachable};
+use lunc_utils::opt_unreachable;
 
 use crate::directive::Directive;
 
@@ -201,7 +201,11 @@ impl Parser {
             value.loc.clone()
         } else {
             // TEST: no. 3
-            self.expect(ExpToken::Semi).emit_wval(self.x(), default)
+            self.expect_nae(ExpToken::Semi).emit(self.x());
+
+            // if semi was there it's his correct location,
+            // if semi was not here it's a dummy location.
+            self.prev_token.loc.clone()
         };
 
         let loc = Span::from_ends(lo.clone(), hi);
@@ -288,7 +292,9 @@ impl Parser {
                 self.prev_token.clone(),
             ));
 
-            Abi::default()
+            self.recover_item_in_container(ItemContainer::ExternBlock);
+            self.bump();
+            return Err(Recovered::Yes);
         };
 
         // TEST: no. 2

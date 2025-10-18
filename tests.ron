@@ -4875,12 +4875,7 @@ error: compilation of `E006_expr_1` failed due to 1 error and 0 warnings
         test_code: 0,
     ),
     "parser/E006_extern_block_1": (
-        compiler_out: "ast = [
-  ExternBlock {
-    abi: C;
-    items: [];
-  } @ 39..51 (fid = 0),
-]
+        compiler_out: "ast = []
 error[E006]: expected string literal, found integer literal
   ┌─ ./tests/parser/E006_extern_block_1.lun:2:8
   │
@@ -4934,6 +4929,94 @@ error[E006]: expected `}`, found end of file
   │ ^
 
 error: compilation of `E006_extern_block_3` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/E006_extern_block_resilience_1": (
+        compiler_out: "ast = [
+  ExternBlock {
+    abi: C;
+    items: [
+      GlobalConst {
+        name: a @ 68..69 (fid = 0);
+        typexpr: none;
+        value: integer 12 @ 73..75 (fid = 0);
+      } @ 68..75 (fid = 0),
+
+      GlobalConst {
+        name: b @ 81..82 (fid = 0);
+        typexpr: none;
+        value: ident imfine @ 86..92 (fid = 0);
+      } @ 81..93 (fid = 0),
+    ];
+  } @ 51..95 (fid = 0),
+]
+error[E006]: expected `;`, found identifier
+  ┌─ ./tests/parser/E006_extern_block_resilience_1.lun:6:5
+  │
+4 │     a :: 12
+  │          -- help: add `;` after this token
+5 │ 
+6 │     b :: imfine;
+  │     ^ unexpected identifier
+
+error: compilation of `E006_extern_block_resilience_1` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/E006_extern_block_resilience_2": (
+        compiler_out: r#"ast = [
+  ExternBlock {
+    abi: C;
+    items: [
+      GlobalConst {
+        name: b @ 65..66 (fid = 0);
+        typexpr: none;
+        value: ident imfine @ 70..76 (fid = 0);
+      } @ 65..77 (fid = 0),
+    ];
+  } @ 51..79 (fid = 0),
+]
+error[E006]: expected `{`, found identifier
+  ┌─ ./tests/parser/E006_extern_block_resilience_2.lun:3:12
+  │
+3 │ extern "C" a
+  │            ^
+
+error[E006]: expected `}`, found end of file
+  ┌─ ./tests/parser/E006_extern_block_resilience_2.lun:6:1
+  │
+6 │ 
+  │ ^
+
+error: compilation of `E006_extern_block_resilience_2` failed due to 2 errors and 0 warnings
+
+"#,
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/E006_extern_block_resilience_3": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: b @ 79..80 (fid = 0);
+    typexpr: none;
+    value: ident imfine @ 84..90 (fid = 0);
+  } @ 79..91 (fid = 0),
+]
+error[E006]: expected string literal, found integer literal
+  ┌─ ./tests/parser/E006_extern_block_resilience_3.lun:3:8
+  │
+3 │ extern 1
+  │        ^
+
+error: compilation of `E006_extern_block_resilience_3` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 255,
@@ -5103,7 +5186,7 @@ error: compilation of `E006_global_def_2` failed due to 1 error and 0 warnings
     name: a @ 39..40 (fid = 0);
     typexpr: none;
     value: integer 12 @ 44..46 (fid = 0);
-  } @ 39..0 (fid = 0),
+  } @ 39..46 (fid = 0),
 ]
 error[E006]: expected `;`, found end of file
   ┌─ ./tests/parser/E006_global_def_3.lun:3:1
