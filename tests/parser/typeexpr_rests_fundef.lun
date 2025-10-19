@@ -1,0 +1,8 @@
+a :: {
+    // bypass with fundef
+    o :: fun(o:
+        fun() {
+            a: loop {}
+        }
+    ) {};
+};

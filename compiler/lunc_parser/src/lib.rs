@@ -5,6 +5,7 @@
 
 use std::{borrow::Cow, fmt::Debug, mem};
 
+use bitflags::bitflags;
 use diags::*;
 use expr::Expression;
 use item::Module;
@@ -53,6 +54,8 @@ pub struct Parser {
     pub expected_token_exps: ExpTokenSet,
     /// is the parser in recovery mode?
     pub recovery: Recovery,
+    /// parsing restrictions
+    pub restrictions: Restrictions,
 }
 
 impl Parser {
@@ -69,6 +72,7 @@ impl Parser {
             prev_token: Token::dummy(),
             expected_token_exps: ExpTokenSet::new(),
             recovery: Recovery::No,
+            restrictions: Restrictions::empty(),
         }
     }
 
@@ -378,6 +382,19 @@ impl Parser {
         }
     }
 
+    /// Evaluate the closure with the restrictions, after evaluating the closure the restrictions are reset.
+    pub fn with_rest<R>(&mut self, rests: Restrictions, f: impl FnOnce(&mut Self) -> R) -> R {
+        let old = self.restrictions;
+
+        self.restrictions = rests;
+
+        let res = f(self);
+
+        self.restrictions = old;
+
+        res
+    }
+
     /// Parses and produce a module.
     pub fn produce(&mut self) -> Option<Module> {
         let module = match self.parse_module() {
@@ -402,4 +419,17 @@ pub fn look_tok(tok: &Token) -> &Token {
 /// Look token type used in [`Parser::look_ahead`]
 pub fn look_tt(tok: &Token) -> &TokenType {
     &tok.tt
+}
+
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct Restrictions: u8 {
+        /// Used to parse type as expressions.
+        ///
+        /// This limits the precedence of the first expression to `LogicalOr`,
+        /// tho it's reset by parenthesis. It also disallows the parsing of
+        /// labeled expressions because `a : u32 : loop {};` gets parsed as `a :
+        /// (u32: loop {});` instead of `a :   (u32) : loop {};`
+        const TYPEEXPR = 1 << 1;
+    }
 }

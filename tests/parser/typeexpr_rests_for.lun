@@ -1,0 +1,5 @@
+a :: {
+    // bypass with iterator loop
+    l :: fun(l: for _ in a: loop {} {}) {};
+    m :: fun(m: for _ in _ {a: loop {} }) {};
+};

@@ -1,5 +1,4 @@
 //! Parsing of lun's statements and chunk.
-#![warn(deprecated)]
 
 use lunc_diag::ResultExt;
 use lunc_utils::default;

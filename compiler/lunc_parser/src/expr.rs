@@ -347,56 +347,53 @@ pub const HIGHEST_PRECEDENCE: Precedence = Precedence::Assignment;
 impl Parser {
     /// Parses a Lun Expression
     pub fn parse_expr(&mut self) -> IResult<Expression> {
-        self.parse_expr_precedence(HIGHEST_PRECEDENCE, false)
+        self.parse_expr_precedence(self.default_precedence())
     }
 
-    /// Parses a type expression.
-    ///
-    ///
-    /// # Restrictions
-    ///
-    /// Has a precedence of logical or and cannot be a
-    /// labelled expression.
-    ///
-    /// ## Why?
-    ///
-    /// - We parse only to the precedence equal to logical or, because in binding
-    ///   definition like `a : u32 = 12;` gets parsed as `a : (u32 = 12);` (instead
-    ///   of `a : (u32) = 12;`) if we dont lower the precedence.
-    ///
-    /// - We don't allow labelled expression because a binding definition like `a
-    ///   : u32 : loop {};` gets parsed as `a : (u32: loop {});` (instead of `a :
-    ///   (u32) : loop {};`) so it is disallowed.
-    ///
-    /// **BUT** those expression can still be written if wrapped in parenthesis:
-    /// - `a : (a = u32) = 12;` and
-    /// - `a : (a: loop {}) : 12;`
+    /// Parses an expressions without restrictions, used when restrictions are
+    /// reset like in parenthesis, block, calls etc. The restrictions are reset
+    /// to the old restrictions after parsing the expression
+    pub fn parse_expr_reset(&mut self) -> IResult<Expression> {
+        self.with_rest(Restrictions::empty(), Parser::parse_expr)
+    }
+
+    /// Gets the default precedence for parsing expressions.
+    pub fn default_precedence(&self) -> Precedence {
+        if self.restrictions.contains(Restrictions::TYPEEXPR) {
+            Precedence::LogicalOr
+        } else {
+            HIGHEST_PRECEDENCE
+        }
+    }
+
+    /// Parses a type expression with the correct restrictions.
     pub fn parse_typexpr(&mut self) -> IResult<Expression> {
-        self.parse_expr_precedence(Precedence::LogicalOr, true)
+        self.with_rest(Restrictions::TYPEEXPR, Parser::parse_expr)
     }
 
     /// Parses an expression given the following precedence.
     ///
-    /// `typexpr` when set to true, it will parse with some constraints described in
-    /// [`Parser::parse_typexpr`].
-    pub fn parse_expr_precedence(
-        &mut self,
-        precedence: Precedence,
-        typexpr: bool,
-    ) -> IResult<Expression> {
+    /// Please use [`Parser::parse_typexpr`] or [`Parser::parse_expr`] for correct
+    /// parsing with the correct restrictions.
+    pub fn parse_expr_precedence(&mut self, precedence: Precedence) -> IResult<Expression> {
         let mut lhs = match &self.token.tt {
             Lit(..) => self.parse_lit_expr()?,
             KwTrue | KwFalse => self.parse_boollit_expr()?,
             LParen => self.parse_grouping_expr()?,
-            Ident(_) if !typexpr && self.is_labeled_expr() => match self.look_ahead(2, look_tt) {
-                KwLoop => self.parse_infinite_loop_expr()?,
-                KwWhile => self.parse_predicate_loop_expr()?,
-                KwFor => self.parse_iterator_loop_expr()?,
-                LCurly => self.parse_block_expr()?,
-                // SAFETY: we checked in the if of the match arm that it can only
-                // be a keyword and one of loop, while or for
-                _ => opt_unreachable!(),
-            },
+            Ident(_)
+                if !self.restrictions.contains(Restrictions::TYPEEXPR)
+                    && self.is_labeled_expr() =>
+            {
+                match self.look_ahead(2, look_tt) {
+                    KwLoop => self.parse_infinite_loop_expr()?,
+                    KwWhile => self.parse_predicate_loop_expr()?,
+                    KwFor => self.parse_iterator_loop_expr()?,
+                    LCurly => self.parse_block_expr()?,
+                    // SAFETY: we checked in the if of the match arm that it can only
+                    // be a keyword and one of loop, while or for
+                    _ => opt_unreachable!(),
+                }
+            }
             Ident(_) => self.parse_ident_expr()?,
             KwFun => self.parse_funkw_expr()?,
             KwIf => self.parse_if_else_expr(false)?,
@@ -495,7 +492,7 @@ impl Parser {
         let lo = self.expect(ExpToken::LParen)?;
 
         // TEST: yes
-        let expr = self.parse_expr()?;
+        let expr = self.parse_expr_reset()?;
 
         // TEST: n/a
         let hi = self.expect(ExpToken::RParen)?;
@@ -543,7 +540,7 @@ impl Parser {
             pr = pr.next();
         }
 
-        let rhs = self.parse_expr_precedence(pr, false)?;
+        let rhs = self.parse_expr_precedence(pr)?;
         let loc = Span::from_ends(lhs.loc.clone(), rhs.loc.clone());
 
         Ok(Expression {
@@ -566,7 +563,7 @@ impl Parser {
             return Err(ExpectedToken::new(["unary operator"], self.token.clone()).into());
         };
 
-        let expr = self.parse_expr_precedence(Precedence::Unary, false)?;
+        let expr = self.parse_expr_precedence(Precedence::Unary)?;
 
         Ok(Expression {
             loc: Span::from_ends(lo, expr.loc.clone()),
@@ -590,7 +587,7 @@ impl Parser {
                 break;
             }
 
-            args.push(self.parse_expr()?);
+            args.push(self.parse_expr_reset()?);
 
             // TEST: yes
             if self.eat(ExpToken::Comma) {
@@ -670,7 +667,7 @@ impl Parser {
                     None
                 };
 
-                let body = self.parse_block()?;
+                let body = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
                 let hi = body.loc.clone();
 
                 Ok(Expression {
@@ -716,7 +713,7 @@ impl Parser {
                 } else {
                     // function definition
 
-                    let body = self.parse_block()?;
+                    let body = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
                     let hi = body.loc.clone();
 
                     Ok(Expression {
@@ -780,46 +777,39 @@ impl Parser {
         // TEST: n/a
         let lo = self.expect(ExpToken::KwIf)?;
 
-        let cond = Box::new(self.parse_expr()?);
+        let cond = Box::new(self.parse_expr_reset()?);
 
         if self.check(ExpToken::LCurly) {
             // if expr
             // "if" expression block [ "else" (if-expr | block-expr) ]
-            let body = Box::new(self.parse_block()?);
+            let body = Box::new(self.with_rest(Restrictions::empty(), Parser::parse_block)?);
 
             let mut hi = body.loc.clone();
 
             let else_br = if self.eat_no_expect(ExpToken::KwElse) {
-                let else_branch = match &self.token.tt {
-                    KwIf => {
-                        let Expression {
-                            kind: ExprKind::If(if_expr),
-                            loc: _,
-                        } = self.parse_if_else_expr(true)?
-                        else {
-                            // SAFETY: parse_if_else_expr only produces like that one.
-                            opt_unreachable!();
-                        };
-                        hi = if_expr.loc.clone();
+                let else_branch = if self.check(ExpToken::KwIf) {
+                    // nested if with blocks
+                    let Expression {
+                        kind: ExprKind::If(if_expr),
+                        loc: _,
+                    } = self.parse_if_else_expr(true)?
+                    else {
+                        // SAFETY: parse_if_else_expr only produces like that one.
+                        opt_unreachable!();
+                    };
+                    hi = if_expr.loc.clone();
 
-                        Else::IfExpr(if_expr)
-                    }
-                    LCurly => {
-                        // block
-                        let block = self.parse_block()?;
+                    Else::IfExpr(if_expr)
+                } else if self.check(ExpToken::LCurly) {
+                    // block
+                    let block = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
 
-                        hi = block.loc.clone();
+                    hi = block.loc.clone();
 
-                        Else::Block(block)
-                    }
-                    _ => {
-                        // TEST: no. 2
-                        return Err(ExpectedToken::new(
-                            [ExpToken::LCurly, ExpToken::KwIf],
-                            self.token.clone(),
-                        )
-                        .into());
-                    }
+                    Else::Block(block)
+                } else {
+                    // TEST: no. 2
+                    return self.etd_and_bump();
                 };
 
                 Some(Box::new(else_branch))
@@ -844,10 +834,10 @@ impl Parser {
 
             // TEST: n/a
             self.expect(ExpToken::KwThen)?;
-            let true_val = Box::new(self.parse_expr()?);
+            let true_val = Box::new(self.parse_expr_reset()?);
             // TEST: no. 1
             self.expect(ExpToken::KwElse)?;
-            let false_val = Box::new(self.parse_expr()?);
+            let false_val = Box::new(self.parse_expr_reset()?);
 
             let hi = false_val.loc.clone();
 
@@ -883,7 +873,7 @@ impl Parser {
     /// Parses block expression
     pub fn parse_block_expr(&mut self) -> IResult<Expression> {
         let label = self.parse_label_in_expr()?;
-        let block = self.parse_block()?;
+        let block = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
 
         if let Some(label) = label {
             let lo = label.loc.clone();
@@ -910,7 +900,7 @@ impl Parser {
         let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_while);
 
         let cond = Box::new(self.parse_expr()?);
-        let body = self.parse_block()?;
+        let body = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
 
         let hi = body.loc.clone();
 
@@ -935,9 +925,9 @@ impl Parser {
         // TEST: no. 2
         self.expect(ExpToken::KwIn)?;
 
-        let iterator = Box::new(self.parse_expr()?);
+        let iterator = Box::new(self.parse_expr_reset()?);
 
-        let body = self.parse_block()?;
+        let body = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
 
         let hi = body.loc.clone();
 
@@ -963,7 +953,7 @@ impl Parser {
         let lo_loop = self.expect(ExpToken::KwLoop)?;
         let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_loop);
 
-        let block = self.parse_block()?;
+        let block = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
 
         let hi = block.loc.clone();
 

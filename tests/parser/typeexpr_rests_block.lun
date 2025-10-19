@@ -1,0 +1,3 @@
+// bypass with block
+e :: fun(e: {a = 32}) {}
+f :: fun(f: { a: loop {} }) {}

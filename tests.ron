@@ -5288,19 +5288,7 @@ error[E006]: expected `{` or keyword `if`, found identifier
 2 │ a :: if b {} else a;
   │                   ^
 
-error[E006]: expected `:`, found `;`
-  ┌─ ./tests/parser/E006_if_else_2.lun:2:20
-  │
-2 │ a :: if b {} else a;
-  │                    ^
-
-error[E006]: expected expression, found end of file
-  ┌─ ./tests/parser/E006_if_else_2.lun:3:1
-  │
-3 │ 
-  │ ^
-
-error: compilation of `E006_if_else_2` failed due to 3 errors and 0 warnings
+error: compilation of `E006_if_else_2` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 255,
@@ -6336,6 +6324,472 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
       ] @ 14..215 (fid = 0);
     } @ 8..215 (fid = 0);
   } @ 0..215 (fid = 0),
+]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/typeexpr_rests_block": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: e @ 21..22 (fid = 0);
+    typexpr: none;
+    value: FunDefinition {
+      args: [
+        Arg {
+          name: e @ 30..31 (fid = 0);
+          typexpr: Block [
+            @last_expr: Binary {
+              lhs: ident a @ 34..35 (fid = 0);
+              op: Assignment;
+              rhs: integer 32 @ 38..40 (fid = 0);
+            } @ 34..40 (fid = 0),
+          ] @ 33..41 (fid = 0) @ 33..41 (fid = 0);
+        } @ 30..41 (fid = 0),
+      ];
+      rettypexpr: none;
+      body: Block [
+        @last_expr: none,
+      ] @ 43..45 (fid = 0);
+    } @ 26..45 (fid = 0);
+  } @ 21..45 (fid = 0),
+
+  GlobalConst {
+    name: f @ 46..47 (fid = 0);
+    typexpr: none;
+    value: FunDefinition {
+      args: [
+        Arg {
+          name: f @ 55..56 (fid = 0);
+          typexpr: Block [
+            @last_expr: InfiniteLoop {
+              label: a @ 60..61 (fid = 0);
+              body: Block [
+                @last_expr: none,
+              ] @ 68..70 (fid = 0);
+            } @ 60..70 (fid = 0),
+          ] @ 58..72 (fid = 0) @ 58..72 (fid = 0);
+        } @ 55..72 (fid = 0),
+      ];
+      rettypexpr: none;
+      body: Block [
+        @last_expr: none,
+      ] @ 74..76 (fid = 0);
+    } @ 51..76 (fid = 0);
+  } @ 46..76 (fid = 0),
+]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/typeexpr_rests_call": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 0..1 (fid = 0);
+    typexpr: none;
+    value: Block [
+      VariableDef {
+        name: j @ 35..36 (fid = 0);
+        mutability: not;
+        typexpr: Call {
+          callee: ident j @ 39..40 (fid = 0);
+          args: [
+            Binary {
+              lhs: ident a @ 41..42 (fid = 0);
+              op: Assignment;
+              rhs: ident u32 @ 45..48 (fid = 0);
+            } @ 41..48 (fid = 0),
+          ];
+        } @ 39..49 (fid = 0);
+        value: integer 1 @ 52..53 (fid = 0);
+      } @ 35..53 (fid = 0),
+
+      @last_expr: none,
+    ] @ 5..56 (fid = 0) @ 5..56 (fid = 0);
+  } @ 0..56 (fid = 0),
+]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/typeexpr_rests_for": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 0..1 (fid = 0);
+    typexpr: none;
+    value: Block [
+      VariableDef {
+        name: l @ 44..45 (fid = 0);
+        mutability: not;
+        typexpr: none;
+        value: FunDefinition {
+          args: [
+            Arg {
+              name: l @ 53..54 (fid = 0);
+              typexpr: IteratorLoop {
+                label: none;
+                variable: _;
+                iterator: InfiniteLoop {
+                  label: a @ 65..66 (fid = 0);
+                  body: Block [
+                    @last_expr: none,
+                  ] @ 73..75 (fid = 0);
+                } @ 65..75 (fid = 0);
+                body: Block [
+                  @last_expr: none,
+                ] @ 76..78 (fid = 0);
+              } @ 56..78 (fid = 0);
+            } @ 53..78 (fid = 0),
+          ];
+          rettypexpr: none;
+          body: Block [
+            @last_expr: none,
+          ] @ 80..82 (fid = 0);
+        } @ 49..82 (fid = 0);
+      } @ 44..82 (fid = 0),
+
+      VariableDef {
+        name: m @ 88..89 (fid = 0);
+        mutability: not;
+        typexpr: none;
+        value: FunDefinition {
+          args: [
+            Arg {
+              name: m @ 97..98 (fid = 0);
+              typexpr: IteratorLoop {
+                label: none;
+                variable: _;
+                iterator: ident _ @ 109..110 (fid = 0);
+                body: Block [
+                  @last_expr: InfiniteLoop {
+                    label: a @ 112..113 (fid = 0);
+                    body: Block [
+                      @last_expr: none,
+                    ] @ 120..122 (fid = 0);
+                  } @ 112..122 (fid = 0),
+                ] @ 111..124 (fid = 0);
+              } @ 100..124 (fid = 0);
+            } @ 97..124 (fid = 0),
+          ];
+          rettypexpr: none;
+          body: Block [
+            @last_expr: none,
+          ] @ 126..128 (fid = 0);
+        } @ 93..128 (fid = 0);
+      } @ 88..128 (fid = 0),
+
+      @last_expr: none,
+    ] @ 5..131 (fid = 0) @ 5..131 (fid = 0);
+  } @ 0..131 (fid = 0),
+]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/typeexpr_rests_fundef": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 0..1 (fid = 0);
+    typexpr: none;
+    value: Block [
+      VariableDef {
+        name: o @ 37..38 (fid = 0);
+        mutability: not;
+        typexpr: none;
+        value: FunDefinition {
+          args: [
+            Arg {
+              name: o @ 46..47 (fid = 0);
+              typexpr: FunDefinition {
+                args: [];
+                rettypexpr: none;
+                body: Block [
+                  @last_expr: InfiniteLoop {
+                    label: a @ 77..78 (fid = 0);
+                    body: Block [
+                      @last_expr: none,
+                    ] @ 85..87 (fid = 0);
+                  } @ 77..87 (fid = 0),
+                ] @ 63..97 (fid = 0);
+              } @ 57..97 (fid = 0);
+            } @ 46..97 (fid = 0),
+          ];
+          rettypexpr: none;
+          body: Block [
+            @last_expr: none,
+          ] @ 104..106 (fid = 0);
+        } @ 42..106 (fid = 0);
+      } @ 37..106 (fid = 0),
+
+      @last_expr: none,
+    ] @ 5..109 (fid = 0) @ 5..109 (fid = 0);
+  } @ 0..109 (fid = 0),
+]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/typeexpr_rests_if": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 0..1 (fid = 0);
+    typexpr: none;
+    value: Block [
+      VariableDef {
+        name: h @ 33..34 (fid = 0);
+        mutability: not;
+        typexpr: If {
+          cond: InfiniteLoop {
+            label: a @ 40..41 (fid = 0);
+            body: Block [
+              @last_expr: none,
+            ] @ 48..50 (fid = 0);
+          } @ 40..50 (fid = 0);
+          body: Block [
+            @last_expr: none,
+          ] @ 51..53 (fid = 0);
+          else_br: Block [
+            @last_expr: none,
+          ] @ 59..61 (fid = 0);
+        } @ 37..61 (fid = 0) @ 37..61 (fid = 0);
+        value: integer 1 @ 64..65 (fid = 0);
+      } @ 33..65 (fid = 0),
+
+      VariableDef {
+        name: i @ 72..73 (fid = 0);
+        mutability: not;
+        typexpr: none;
+        value: FunDefinition {
+          args: [
+            Arg {
+              name: i @ 81..82 (fid = 0);
+              typexpr: If {
+                cond: boolean false @ 87..92 (fid = 0);
+                body: Block [
+                  @last_expr: BlockWithLabel {
+                    label: a @ 103..104 (fid = 0);
+                    block: Block [
+                      @last_expr: none,
+                    ] @ 106..108 (fid = 0);
+                  } @ 103..108 (fid = 0),
+                ] @ 93..114 (fid = 0);
+                else_br: Block [
+                  @last_expr: none,
+                ] @ 120..122 (fid = 0);
+              } @ 84..122 (fid = 0) @ 84..122 (fid = 0);
+            } @ 81..122 (fid = 0),
+          ];
+          rettypexpr: none;
+          body: Block [
+            @last_expr: none,
+          ] @ 124..126 (fid = 0);
+        } @ 77..126 (fid = 0);
+      } @ 72..126 (fid = 0),
+
+      @last_expr: none,
+    ] @ 5..129 (fid = 0) @ 5..129 (fid = 0);
+  } @ 0..129 (fid = 0),
+]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/typeexpr_rests_let": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: g @ 24..25 (fid = 0);
+    typexpr: none;
+    value: FunDefinition {
+      args: [
+        Arg {
+          name: g @ 33..34 (fid = 0);
+          typexpr: Block [
+            VariableDef {
+              name: a @ 46..47 (fid = 0);
+              mutability: not;
+              typexpr: none;
+              value: InfiniteLoop {
+                label: a @ 50..51 (fid = 0);
+                body: Block [
+                  @last_expr: none,
+                ] @ 58..60 (fid = 0);
+              } @ 50..60 (fid = 0);
+            } @ 42..60 (fid = 0),
+
+            @last_expr: none,
+          ] @ 36..63 (fid = 0) @ 36..63 (fid = 0);
+        } @ 33..63 (fid = 0),
+      ];
+      rettypexpr: none;
+      body: Block [
+        @last_expr: none,
+      ] @ 65..67 (fid = 0);
+    } @ 29..67 (fid = 0);
+  } @ 24..67 (fid = 0),
+]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/typeexpr_rests_loop": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 0..1 (fid = 0);
+    typexpr: none;
+    value: Block [
+      VariableDef {
+        name: n @ 44..45 (fid = 0);
+        mutability: not;
+        typexpr: none;
+        value: FunDefinition {
+          args: [
+            Arg {
+              name: n @ 53..54 (fid = 0);
+              typexpr: InfiniteLoop {
+                label: none;
+                body: Block [
+                  @last_expr: InfiniteLoop {
+                    label: a @ 63..64 (fid = 0);
+                    body: Block [
+                      @last_expr: none,
+                    ] @ 71..73 (fid = 0);
+                  } @ 63..73 (fid = 0),
+                ] @ 61..75 (fid = 0);
+              } @ 56..75 (fid = 0);
+            } @ 53..75 (fid = 0),
+          ];
+          rettypexpr: none;
+          body: Block [
+            @last_expr: none,
+          ] @ 77..79 (fid = 0);
+        } @ 49..79 (fid = 0);
+      } @ 44..79 (fid = 0),
+
+      @last_expr: none,
+    ] @ 5..82 (fid = 0) @ 5..82 (fid = 0);
+  } @ 0..82 (fid = 0),
+]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/typeexpr_rests_paren": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 0..1 (fid = 0);
+    typexpr: none;
+    value: Block [
+      VariableDef {
+        name: b @ 42..43 (fid = 0);
+        mutability: mut;
+        typexpr: Grouping {
+          expr: Binary {
+            lhs: ident a @ 47..48 (fid = 0);
+            op: Assignment;
+            rhs: ident u32 @ 51..54 (fid = 0);
+          } @ 47..54 (fid = 0);
+        } @ 46..55 (fid = 0);
+        value: integer 12 @ 58..60 (fid = 0);
+      } @ 42..60 (fid = 0),
+
+      VariableDef {
+        name: c @ 66..67 (fid = 0);
+        mutability: not;
+        typexpr: Grouping {
+          expr: InfiniteLoop {
+            label: a @ 71..72 (fid = 0);
+            body: Block [
+              @last_expr: none,
+            ] @ 79..81 (fid = 0);
+          } @ 71..81 (fid = 0);
+        } @ 70..82 (fid = 0);
+        value: integer 12 @ 85..87 (fid = 0);
+      } @ 66..87 (fid = 0),
+
+      @last_expr: none,
+    ] @ 5..90 (fid = 0) @ 5..90 (fid = 0);
+  } @ 0..90 (fid = 0),
+]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/typeexpr_rests_while": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: k @ 26..27 (fid = 0);
+    typexpr: none;
+    value: FunDefinition {
+      args: [
+        Arg {
+          name: k @ 35..36 (fid = 0);
+          typexpr: PredicateLoop {
+            label: none;
+            cond: boolean true @ 44..48 (fid = 0);
+            body: Block [
+              @last_expr: InfiniteLoop {
+                label: a @ 55..56 (fid = 0);
+                body: Block [
+                  @last_expr: none,
+                ] @ 63..65 (fid = 0);
+              } @ 55..65 (fid = 0),
+            ] @ 49..67 (fid = 0);
+          } @ 38..67 (fid = 0);
+        } @ 35..67 (fid = 0),
+      ];
+      rettypexpr: none;
+      body: Block [
+        @last_expr: none,
+      ] @ 69..71 (fid = 0);
+    } @ 31..71 (fid = 0);
+  } @ 26..71 (fid = 0),
+]
+",
+        compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/typexpr_restrictions": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 0..1 (fid = 0);
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        VariableDef {
+          name: a @ 17..18 (fid = 0);
+          mutability: not;
+          typexpr: ident u32 @ 21..24 (fid = 0);
+          value: InfiniteLoop {
+            label: none;
+            body: Block [
+              @last_expr: none,
+            ] @ 32..34 (fid = 0);
+          } @ 27..34 (fid = 0);
+        } @ 17..34 (fid = 0),
+
+        VariableDef {
+          name: b @ 40..41 (fid = 0);
+          mutability: mut;
+          typexpr: ident u32 @ 44..47 (fid = 0);
+          value: integer 12 @ 50..52 (fid = 0);
+        } @ 40..52 (fid = 0),
+
+        @last_expr: none,
+      ] @ 11..55 (fid = 0);
+    } @ 5..55 (fid = 0);
+  } @ 0..55 (fid = 0),
 ]
 ",
         compiler_code: 0,
