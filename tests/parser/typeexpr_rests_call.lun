@@ -1,0 +1,4 @@
+a :: {
+    // bypass with call
+    j : j(a = u32) : 1;
+};

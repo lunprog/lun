@@ -1,0 +1,5 @@
+// E006: error resilience testing - ExpectedToken
+
+a :: {
+    let b = *fun(u8) -> fun;
+}

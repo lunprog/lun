@@ -1,0 +1,4 @@
+// bypass with let stmt
+g :: fun(g: {
+    let a = a: loop {};
+}) {}

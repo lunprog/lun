@@ -1,0 +1,4 @@
+// bypass with while loop
+k :: fun(k: while true {
+    a: loop {}
+}) {}

@@ -1,0 +1,5 @@
+// E006: error resilience testing - ExpectedToken
+
+a :: fun() {
+    let b = a(1 b 2);
+}

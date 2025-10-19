@@ -13,3 +13,4 @@ lunc_token = { workspace = true }
 
 # other dependencies
 thiserror = { workspace = true }
+bitflags = "2.9.4"

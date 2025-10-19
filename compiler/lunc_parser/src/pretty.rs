@@ -2,16 +2,13 @@
 
 use std::io::{self, Write};
 
-use lunc_utils::{
-    Span,
-    pretty::{PrettyCtxt, PrettyDump},
-};
+use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 use crate::{
-    directive::{Directive, SpannedPath},
-    expr::{Arg, Else, Expr, Expression, IfExpression},
-    item::{Abi, Item, Module},
-    stmt::{Block, Statement, Stmt},
+    directive::Directive,
+    expr::{Arg, Else, ExprKind, Expression, IfExpression},
+    item::{Item, Module},
+    stmt::{Block, Statement, StmtKind},
 };
 
 impl PrettyDump for Module {
@@ -83,40 +80,28 @@ impl PrettyDump for Item {
     }
 }
 
-impl PrettyDump for Abi {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        match self {
-            Abi::C => write!(ctx.out, "C"),
-        }
-    }
-}
-
 impl PrettyDump for Expression {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        self.expr.try_dump(ctx)?;
+        self.kind.try_dump(ctx)?;
         ctx.print_loc(&self.loc)?;
         Ok(())
     }
 }
 
-impl PrettyDump for Expr {
+impl PrettyDump for ExprKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         let out = &mut ctx.out;
         match self {
-            Expr::IntLit(i) => write!(out, "integer {i}"),
-            Expr::BoolLit(b) => write!(out, "boolean {b}"),
-            Expr::StringLit(s) => write!(out, "string {s:?}"),
-            Expr::CStrLit(cstr) => write!(out, "c_str {cstr:?}"),
-            Expr::CharLit(c) => write!(out, "character {c:?}"),
-            Expr::FloatLit(f) => write!(out, "float {f:.}"),
-            Expr::Grouping(e) => {
+            ExprKind::Lit(lit) => write!(out, "{lit}"),
+            ExprKind::BoolLit(b) => write!(out, "boolean {b}"),
+            ExprKind::Grouping(e) => {
                 ctx.pretty_struct("Grouping").field("expr", e).finish()?;
 
                 Ok(())
             }
-            Expr::Ident(id) => write!(out, "ident {id}"),
+            ExprKind::Ident(id) => write!(out, "ident {id}"),
             // Expr::Path(path) => write!(out, "path {path}"),
-            Expr::Binary { lhs, op, rhs } => {
+            ExprKind::Binary { lhs, op, rhs } => {
                 ctx.pretty_struct("Binary")
                     .field("lhs", lhs)
                     .field("op", op)
@@ -125,7 +110,7 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::Unary { op, expr } => {
+            ExprKind::Unary { op, expr } => {
                 ctx.pretty_struct("Unary")
                     .field("op", op)
                     .field("expr", expr)
@@ -133,24 +118,24 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::Borrow { mutable, expr } => {
+            ExprKind::Borrow(mutability, expr) => {
                 ctx.pretty_struct("Borrow")
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("expr", expr)
                     .finish()?;
 
                 Ok(())
             }
-            Expr::FunCall { callee, args } => {
-                ctx.pretty_struct("FunCall")
+            ExprKind::Call { callee, args } => {
+                ctx.pretty_struct("Call")
                     .field("callee", callee)
                     .field("args", args.as_slice())
                     .finish()?;
 
                 Ok(())
             }
-            Expr::If(ifexpr) => ifexpr.try_dump(ctx),
-            Expr::IfThenElse {
+            ExprKind::If(ifexpr) => ifexpr.try_dump(ctx),
+            ExprKind::IfThenElse {
                 cond,
                 true_val,
                 false_val,
@@ -163,36 +148,29 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::Block(block) => {
-                write!(ctx.out, "Block ")?;
+            ExprKind::Block(block) => {
                 block.try_dump(ctx)?;
 
                 Ok(())
             }
-            Expr::BlockWithLabel { label, block } => {
+            ExprKind::BlockWithLabel { label, block } => {
                 ctx.pretty_struct("BlockWithLabel")
-                    .field("label", (&label.0, &label.1))
+                    .field("label", label)
                     .field("block", block)
                     .finish()?;
 
                 Ok(())
             }
-            Expr::PredicateLoop { label, cond, body } => {
+            ExprKind::PredicateLoop { label, cond, body } => {
                 ctx.pretty_struct("PredicateLoop")
-                    .field(
-                        "label",
-                        (
-                            label.clone().map(|l| l.0),
-                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
-                        ),
-                    )
+                    .field("label", label)
                     .field("cond", cond)
                     .field("body", body)
                     .finish()?;
 
                 Ok(())
             }
-            Expr::IteratorLoop {
+            ExprKind::IteratorLoop {
                 label,
                 variable,
                 iterator,
@@ -200,13 +178,7 @@ impl PrettyDump for Expr {
                 loc: _,
             } => {
                 ctx.pretty_struct("IteratorLoop")
-                    .field(
-                        "label",
-                        (
-                            label.clone().map(|l| l.0),
-                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
-                        ),
-                    )
+                    .field("label", label)
                     .field("variable", variable)
                     .field("iterator", iterator)
                     .field("body", body)
@@ -214,25 +186,19 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::InfiniteLoop { label, body } => {
+            ExprKind::InfiniteLoop { label, body } => {
                 ctx.pretty_struct("InfiniteLoop")
-                    .field(
-                        "label",
-                        (
-                            label.clone().map(|l| l.0),
-                            &label.clone().map(|l| l.1).unwrap_or(Span::ZERO),
-                        ),
-                    )
+                    .field("label", label)
                     .field("body", body)
                     .finish()?;
 
                 Ok(())
             }
-            Expr::Return { expr } => {
+            ExprKind::Return { expr } => {
                 ctx.pretty_struct("Return").field("expr", expr).finish()?;
                 Ok(())
             }
-            Expr::Break { label, expr } => {
+            ExprKind::Break { label, expr } => {
                 ctx.pretty_struct("Break")
                     .field("label", label)
                     .field("expr", expr)
@@ -240,17 +206,17 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::Continue { label } => {
+            ExprKind::Continue { label } => {
                 if label.is_some() {
                     ctx.pretty_struct("Continue").field("label", label).finish()
                 } else {
                     write!(ctx.out, "Continue")
                 }
             }
-            Expr::Null => {
+            ExprKind::Null => {
                 write!(ctx.out, "Null")
             }
-            Expr::Field { expr, member } => {
+            ExprKind::Field { expr, member } => {
                 ctx.pretty_struct("Field")
                     .field("expr", expr)
                     .field("member", member)
@@ -258,10 +224,10 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::Orb => {
+            ExprKind::Orb => {
                 write!(ctx.out, "Orb")
             }
-            Expr::FunDefinition {
+            ExprKind::FunDefinition {
                 args,
                 rettypexpr,
                 body,
@@ -274,7 +240,7 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::FunDeclaration { args, rettypexpr } => {
+            ExprKind::FunDeclaration { args, rettypexpr } => {
                 ctx.pretty_struct("FunDeclaration")
                     .field("args", args.as_slice())
                     .field("rettypexpr ", rettypexpr)
@@ -282,15 +248,15 @@ impl PrettyDump for Expr {
 
                 Ok(())
             }
-            Expr::PointerType { mutable, typexpr } => {
+            ExprKind::PointerType(mutability, typexpr) => {
                 ctx.pretty_struct("PointerType")
-                    .field("mutable", mutable)
+                    .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .finish()?;
 
                 Ok(())
             }
-            Expr::FunPtrType { args, ret } => {
+            ExprKind::FunPtrType { args, ret } => {
                 ctx.pretty_struct("FunPtrType")
                     .field("args", args.as_slice())
                     .field("ret", ret)
@@ -375,29 +341,28 @@ impl PrettyDump for Statement {
     }
 }
 
-impl PrettyDump for Stmt {
+impl PrettyDump for StmtKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            Stmt::VariableDef {
+            StmtKind::VariableDef {
                 name,
-                name_loc,
-                mutable,
+                mutability,
                 typexpr,
                 value,
             } => {
                 ctx.pretty_struct("VariableDef")
-                    .field("name", (name, name_loc))
-                    .field("mutable", mutable)
+                    .field("name", name)
+                    .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
                     .finish()?;
                 Ok(())
             }
-            Stmt::Defer { expr } => {
+            StmtKind::Defer { expr } => {
                 ctx.pretty_struct("Defer").field("expr", expr).finish()?;
                 Ok(())
             }
-            Stmt::Expression(expr) => {
+            StmtKind::Expression(expr) => {
                 expr.try_dump(ctx)?;
                 Ok(())
             }
@@ -434,14 +399,5 @@ impl PrettyDump for Directive {
                 Ok(())
             }
         }
-    }
-}
-
-impl PrettyDump for SpannedPath {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        let SpannedPath { path, loc } = self;
-
-        path.try_dump(ctx)?;
-        ctx.print_loc(loc)
     }
 }

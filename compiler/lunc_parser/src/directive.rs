@@ -1,8 +1,8 @@
 //! Parsing of lun's directives.
 
 use lunc_ast::symbol::EffectivePath;
-
-use crate::item::Item;
+use lunc_diag::ResultExt;
+use lunc_utils::default;
 
 use super::*;
 
@@ -34,85 +34,102 @@ impl Directive {
     ];
 }
 
-pub fn parse_mod_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) =
-        expect_token!(parser => [Punct(Punctuation::Hashtag), ()], Punct(Punctuation::Hashtag));
-
-    // TEST: n/a
-    expect_token!(parser => [Ident(id), id.clone(), if id.as_str() == Directive::MOD_NAME], Ident(String::new()));
-
-    // TEST: no. 1
-    let (name, _) = expect_token!(parser => [Ident(s), s.clone()], Ident(String::new()));
-
-    // TEST: no. 2
-    let (_, hi) =
-        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
-
-    Ok(Item::Directive(Directive::Mod {
-        name,
-        loc: Span::from_ends(lo, hi),
-    }))
-}
-
-pub fn parse_import_directive(parser: &mut Parser) -> Result<Item, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) =
-        expect_token!(parser => [Punct(Punctuation::Hashtag), ()], Punct(Punctuation::Hashtag));
-
-    // TEST: n/a
-    expect_token!(parser => [Ident(id), id.clone(), if id.as_str() == Directive::IMPORT_NAME], Ident(String::new()));
-
-    let path = parse!(parser => SpannedPath);
-
-    let alias = if let Some(Kw(Keyword::As)) = parser.peek_tt() {
-        parser.pop();
-        // TEST: no. 1
-        let alias = expect_token!(noloc: parser => [Ident(id), id.clone()], Ident(String::new()));
-
-        Some(alias)
-    } else {
-        None
-    };
-
-    // TEST: no. 2
-    let (_, hi) =
-        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
-
-    Ok(Item::Directive(Directive::Import {
-        path,
-        alias,
-        loc: Span::from_ends(lo, hi),
-    }))
-}
-
 /// Spanned [EffectivePath].
-#[derive(Debug, Clone)]
-pub struct SpannedPath {
-    pub path: EffectivePath,
-    pub loc: Span,
-}
+pub type SpannedPath = Spanned<EffectivePath>;
 
-impl AstNode for SpannedPath {
-    fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
+/// Directive parsing
+impl Parser {
+    /// Parse a [`SpannedPath`].
+    pub fn parse_spanned_path(&mut self) -> IResult<SpannedPath> {
         let mut path = Vec::new();
+
         // TEST: no. 1
-        let (id, lo) = expect_token!(parser => [Ident(id), id.clone(); Kw(Keyword::Orb), String::from("orb")], Ident(String::new()));
-        path.push(id);
+        if self.eat(ExpToken::Ident) {
+            path.push(self.as_ident());
+        } else if self.eat(ExpToken::KwOrb) {
+            path.push("orb".to_string())
+        } else {
+            return self.etd_and_bump();
+        }
+
+        let lo = self.token_loc();
 
         let mut hi = lo.clone();
-        while let Some(Punct(Punctuation::Dot)) = parser.peek_tt() {
-            parser.pop();
-
+        while self.eat_no_expect(ExpToken::Dot) {
             // TEST: no. 2
-            let (id, h) = expect_token!(parser => [Ident(id), id.clone()], Ident(String::new()));
-            hi = h;
-            path.push(id);
+            hi = self.expect(ExpToken::Ident).emit_wval(self.x(), default);
+            path.push(self.as_ident());
         }
 
         Ok(SpannedPath {
-            path: EffectivePath::from_vec(path),
+            node: EffectivePath::from_vec(path),
             loc: Span::from_ends(lo, hi),
         })
+    }
+
+    /// Parse an import directive.
+    pub fn parse_import_directive(&mut self) -> IResult<Directive> {
+        // TEST: n/a
+        let lo = self.expect(ExpToken::Pound)?;
+
+        // TEST: n/a
+        self.expect_weak_kw(WeakKw::Import)?;
+
+        let path = self.parse_spanned_path().emit_wval(self.x(), default);
+
+        let alias = if self.eat_no_expect(ExpToken::KwAs) {
+            // NOTE: more resilience here would be too complicated and useless
+            // TEST: no. 1
+            self.expect(ExpToken::Ident)?;
+
+            Some(self.as_ident())
+        } else {
+            None
+        };
+
+        // TEST: no. 2
+        self.expect_nae(ExpToken::Semi).emit(self.x());
+
+        let hi = self.token_loc();
+
+        Ok(Directive::Import {
+            path,
+            alias,
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+
+    /// Parses a mod directive
+    pub fn parse_mod_directive(&mut self) -> IResult<Directive> {
+        // TEST: n/a
+        let lo = self.expect(ExpToken::Pound)?;
+
+        // TEST: n/a
+        self.expect_weak_kw(WeakKw::Mod)?;
+
+        // TEST: no. 1
+        self.expect_nae(ExpToken::Ident)?;
+        let name = self.as_ident();
+
+        // TEST: no. 2
+        self.expect_nae(ExpToken::Semi)?;
+
+        let hi = self.token_loc();
+
+        Ok(Directive::Mod {
+            name,
+            loc: Span::from_ends(lo, hi),
+        })
+    }
+
+    /// Recovers the parsing, tries to parse `#` and then bumps the parser.
+    pub fn recover_directive(&mut self) -> IResult<()> {
+        // expect `#`
+        self.expect(ExpToken::Pound)?;
+
+        // bump the parser
+        self.expect(ExpToken::Ident)?;
+
+        Ok(())
     }
 }

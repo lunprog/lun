@@ -1,8 +1,7 @@
 //! Parsing of lun's statements and chunk.
 
-use lunc_utils::opt_unreachable;
-
-use crate::expr::parse_typexpr;
+use lunc_diag::ResultExt;
+use lunc_utils::default;
 
 use super::*;
 
@@ -14,28 +13,94 @@ pub struct Block {
     pub loc: Span,
 }
 
-impl AstNode for Block {
-    fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
+impl Block {
+    /// Dummy block, used as a fallback to handle errors
+    pub fn dummy() -> Block {
+        Block {
+            stmts: Vec::new(),
+            last_expr: None,
+            loc: Span::ZERO,
+        }
+    }
+}
+
+/// A lun statement
+#[derive(Debug, Clone)]
+pub struct Statement {
+    pub stmt: StmtKind,
+    pub loc: Span,
+}
+
+impl Statement {
+    /// Returns true if self is [`StmtKind::Expression`]
+    pub fn is_expr(&self) -> bool {
+        matches!(self.stmt, StmtKind::Expression(_))
+    }
+}
+
+/// Kind of statement
+#[derive(Debug, Clone)]
+pub enum StmtKind {
+    /// variable definition
+    ///
+    /// `"let" "mut"? ident [ ":" expr ] "=" expr`
+    /// `ident ":" [ expr ] ":" expr ";"`
+    /// `ident ":" [ expr ] "=" expr ";"`
+    VariableDef {
+        name: Spanned<String>,
+        mutability: Mutability,
+        typexpr: Option<Expression>,
+        value: Box<Expression>,
+    },
+    /// defer statement
+    ///
+    /// `"defer" expr`
+    Defer { expr: Expression },
+    /// statement expression
+    ///
+    /// `expression`
+    Expression(Expression),
+}
+
+/// Parsing of statements and block.
+impl Parser {
+    /// Parses a block.
+    pub fn parse_block(&mut self) -> IResult<Block> {
         let mut stmts = Vec::new();
 
         // TEST: no. 1
-        let (_, lo) =
-            expect_token!(parser => [Punct(Punctuation::LCurly), ()], Punctuation::LCurly);
+        let lo = self.expect(ExpToken::LCurly)?;
 
         let mut last_expr = None;
 
         loop {
-            match parser.peek_tt() {
-                Some(EOF) | Some(Punct(Punctuation::RCurly)) | None => {
-                    break;
-                }
-                _ => {}
+            if self.eat_one_of([], [ExpToken::EOF, ExpToken::RCurly]) {
+                break;
             }
-            // TODO: add the semicolon to the loc of the statement / expr
 
-            let stmt = parse!(parser => Statement);
+            let stmt = match self.parse_stmt() {
+                Ok(stmt) => stmt,
+                Err(recovered) => {
+                    if let Recovered::Unable(d) = recovered {
+                        self.sink.emit(d);
+                    }
 
-            let next_brace = matches!(parser.peek_tt(), Some(Punct(Punctuation::RCurly)));
+                    // after recovering from a faulty stmt, the parser is bumped
+                    // until prev_token is one of `is_stmt_end`. It's smart so
+                    // he knows about opening and closing curly.
+                    //
+                    // After there is two options:
+                    // - we keep parsing stmt / the last_expr
+                    // - we are in front of the RCurly, either because the
+                    //   faulty stmt was the last one or the recovery failed to
+                    //   do something better.
+
+                    self.recover_stmt_in_block();
+                    continue;
+                }
+            };
+
+            let next_brace = self.token.tt == RCurly;
             let is_expr = stmt.is_expr();
 
             match (next_brace, is_expr) {
@@ -44,7 +109,7 @@ impl AstNode for Block {
                     // following token is } and the last "statement" was
                     // an expression.
                     let Statement {
-                        stmt: Stmt::Expression(expr),
+                        stmt: StmtKind::Expression(expr),
                         loc: _,
                     } = stmt
                     else {
@@ -64,13 +129,13 @@ impl AstNode for Block {
                     stmts.push(stmt.clone());
 
                     // TEST: no. 2
-                    expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
+                    self.expect_nae(ExpToken::Semi).emit(self.x());
                 }
                 (false, true) => {
                     // here we have a statement expression, we require a
                     // semicolon if the expression isn't a ExpressionWithBlock
                     let Statement {
-                        stmt: Stmt::Expression(ref expr),
+                        stmt: StmtKind::Expression(ref expr),
                         loc: _,
                     } = stmt
                     else {
@@ -82,18 +147,19 @@ impl AstNode for Block {
                     stmts.push(stmt.clone());
                     if expr.is_expr_with_block() {
                         // TEST: n/a
-                        expect_token!(parser => [Punct(Punctuation::Semicolon), ()] else { continue; });
+                        self.eat_no_expect(ExpToken::Semi);
                     } else {
                         // TEST: no. 3
-                        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
+                        self.expect(ExpToken::Semi)?;
                     }
                 }
                 (false, false) => {
                     // if the statement is a defer with a block expression
                     // inside we don't expect a semicolon
-                    if !matches!(stmt.stmt, Stmt::Defer { ref expr } if expr.is_expr_with_block()) {
+                    if !matches!(stmt.stmt, StmtKind::Defer { ref expr } if expr.is_expr_with_block())
+                    {
                         // TEST: no. 4
-                        expect_token!(parser => [Punct(Punctuation::Semicolon), ()], Punct(Punctuation::Semicolon));
+                        self.expect_nae(ExpToken::Semi).emit(self.x());
                     }
 
                     stmts.push(stmt.clone());
@@ -102,8 +168,7 @@ impl AstNode for Block {
         }
 
         // TEST: no. 5
-        let (_, hi) =
-            expect_token!(parser => [Punct(Punctuation::RCurly), ()], Punctuation::RCurly);
+        let hi = self.expect(ExpToken::RCurly)?;
 
         Ok(Block {
             stmts,
@@ -111,167 +176,163 @@ impl AstNode for Block {
             loc: Span::from_ends(lo, hi),
         })
     }
-}
 
-/// A lun statement
-#[derive(Debug, Clone)]
-pub struct Statement {
-    pub stmt: Stmt,
-    pub loc: Span,
-}
+    /// Tries to recover the parsing of statements in a block.
+    ///
+    /// The parser is bumped until prev_token is one of `is_stmt_end`. It's
+    /// smart so he knows about opening and closing curly.
+    ///
+    /// After there is two options:
+    /// - we keep parsing stmt / the last_expr
+    /// - we are in front of the RCurly, either because the faulty stmt was the
+    ///   last one or the recovery failed to do something better.
+    pub fn recover_stmt_in_block(&mut self) {
+        let mut remaining_rcurly = 0;
 
-impl Statement {
-    pub fn is_expr(&self) -> bool {
-        matches!(self.stmt, Stmt::Expression(_))
+        while (!self.token.is_stmt_end() || self.check_no_expect(ExpToken::RCurly))
+            && !self.check_no_expect(ExpToken::EOF)
+        {
+            if self.check_no_expect(ExpToken::LCurly) {
+                remaining_rcurly += 1;
+            } else if self.check_no_expect(ExpToken::RCurly) {
+                if remaining_rcurly == 0 {
+                    // eat the }
+                    self.bump();
+
+                    break;
+                } else {
+                    remaining_rcurly -= 1;
+                }
+            }
+
+            self.bump();
+        }
+
+        self.bump();
     }
-}
 
-#[derive(Debug, Clone)]
-pub enum Stmt {
-    /// variable definition
-    ///
-    /// `"let" "mut"? ident [ ":" expr ] "=" expr`
-    /// `ident ":" [ expr ] ":" expr ";"`
-    /// `ident ":" [ expr ] "=" expr ";"`
-    VariableDef {
-        name: String,
-        name_loc: Span,
-        mutable: bool,
-        typexpr: Option<Expression>,
-        value: Box<Expression>,
-    },
-    /// defer statement
-    ///
-    /// `"defer" expr`
-    Defer { expr: Expression },
-    /// statement expression
-    ///
-    /// `expression`
-    Expression(Expression),
-}
-
-impl AstNode for Statement {
-    fn parse(parser: &mut Parser) -> Result<Self, Diagnostic> {
-        match parser.peek_tt() {
-            Some(Kw(Keyword::Let)) => parse_variable_def_stmt(parser),
-            Some(Kw(Keyword::Defer)) => parse_defer_statement(parser),
-            Some(Ident(_)) if parser.is_short_variable_def() => parse_short_variable_stmt(parser),
-            Some(_) => {
-                let expr = parse!(parser => Expression);
+    /// Parses a statement
+    pub fn parse_stmt(&mut self) -> IResult<Statement> {
+        match self.token.tt {
+            KwLet => self.parse_let_binding_stmt(),
+            Ident(_) if self.is_short_binding_def() => self.parse_short_binding_stmt(),
+            KwDefer => self.parse_defer_statement(),
+            _ => {
+                let expr = self.parse_expr().emit_wval(self.x(), Expression::dummy);
 
                 Ok(Statement {
                     loc: expr.loc.clone(),
-                    stmt: Stmt::Expression(expr),
+                    stmt: StmtKind::Expression(expr),
                 })
             }
-            None => Err(parser.eof_diag()),
         }
     }
-}
 
-impl Parser {
-    pub fn is_short_variable_def(&self) -> bool {
-        matches!(self.nth_tt(1), Some(Punct(Punctuation::Colon)))
-            && !matches!(
-                self.nth_tt(2),
-                Some(
-                    Kw(Keyword::While | Keyword::For | Keyword::Loop) | Punct(Punctuation::LCurly)
-                )
-            )
+    /// Can the `token + 1` and `token + 2` tokens be the start of a short variable definition?
+    pub fn is_short_binding_def(&self) -> bool {
+        self.look_many_tt(1, |tts| {
+            matches!(tts, [Colon, _]) && !matches!(tts, [_, KwWhile | KwFor | KwLoop | LCurly])
+        })
     }
-}
 
-/// `"let" "mut"? ident [ ":" expr ] "=" expr`
-pub fn parse_variable_def_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
-    // TEST: n/a
-    let (_, lo) = expect_token!(parser => [Kw(Keyword::Let), ()], Kw(Keyword::Let));
+    /// Parses let-binding statement,
+    ///
+    /// `"let" "mut"? ident [ ":" expr ] "=" expr`
+    pub fn parse_let_binding_stmt(&mut self) -> IResult<Statement> {
+        // TEST: n/a
+        let lo = self.expect(ExpToken::KwLet)?;
 
-    let mutable = if let Some(Kw(Keyword::Mut)) = parser.peek_tt() {
-        parser.pop();
-        true
-    } else {
-        false
-    };
+        let mutability = self.parse_mutability();
 
-    // TEST: no. 1
-    let (name, name_loc) =
-        expect_token!(parser => [Ident(name), name.clone()], Ident(String::new()));
+        // TEST: no. 1
+        let name_loc = self.expect(ExpToken::Ident).emit_wval(self.x(), default);
+        let name = self.as_ident();
 
-    let typexpr = if let Some(Punct(Punctuation::Colon)) = parser.peek_tt() {
-        parser.pop();
-        Some(parse!(@fn parser => parse_typexpr))
-    } else {
-        None
-    };
+        let typexpr = if self.eat_no_expect(ExpToken::Colon) {
+            Some(self.parse_typexpr()?)
+        } else {
+            None
+        };
 
-    // TEST: no. 2
-    expect_token!(parser => [Punct(Punctuation::Equal), ()], Punctuation::Equal);
-    let value = parse!(box: parser => Expression);
+        // TEST: no. 2
+        self.expect(ExpToken::Eq).emit(self.x());
+        let value = Box::new(self.parse_expr()?);
 
-    let hi = value.loc.clone();
+        let hi = value.loc.clone();
 
-    Ok(Statement {
-        stmt: Stmt::VariableDef {
-            name,
-            name_loc,
-            mutable,
-            typexpr,
-            value,
-        },
-        loc: Span::from_ends(lo, hi),
-    })
-}
+        Ok(Statement {
+            stmt: StmtKind::VariableDef {
+                name: Spanned {
+                    node: name,
+                    loc: name_loc,
+                },
+                mutability,
+                typexpr,
+                value,
+            },
+            loc: Span::from_ends(lo, hi),
+        })
+    }
 
-/// `ident ":" [ expr ] ":" expr ";"`
-/// `ident ":" [ expr ] "=" expr ";"`
-pub fn parse_short_variable_stmt(parser: &mut Parser) -> Result<Statement, Diagnostic> {
-    // TEST: n/a
-    let (name, lo) = expect_token!(parser => [Ident(id), id.clone()], [Ident(String::new())]);
+    /// Parses a short binding statement
+    ///
+    /// `ident ":" [ expr ] ":" expr ";"`
+    /// `ident ":" [ expr ] "=" expr ";"`
+    pub fn parse_short_binding_stmt(&mut self) -> IResult<Statement> {
+        // TEST: n/a
+        let lo = self.expect(ExpToken::Ident)?;
+        let name = self.as_ident();
 
-    // TEST: n/a
-    expect_token!(parser => [Punct(Punctuation::Colon), ()], Punctuation::Colon);
+        // TEST: n/a
+        self.expect(ExpToken::Colon)?;
 
-    let typexpr = match parser.peek_tt() {
-        Some(Punct(Punctuation::Colon | Punctuation::Equal)) => None,
-        _ => Some(parse!(@fn parser => parse_typexpr)),
-    };
+        let typexpr = match self.token.tt {
+            Colon | Eq => None,
+            _ => Some(self.parse_typexpr()?),
+        };
 
-    // TEST: no. 1
-    let (mutable, _) = expect_token!(
-        parser => [
-            Punct(Punctuation::Colon), false;
-            Punct(Punctuation::Equal), true;
-        ],
-        [Punctuation::Colon, Punctuation::Equal]
-    );
+        // TEST: no. 1
+        let mutability = if self.eat(ExpToken::Colon) {
+            Mutability::Not
+        } else if self.eat(ExpToken::Eq) {
+            Mutability::Mut
+        } else {
+            let diag = self.expected_diag();
+            self.sink.emit(diag);
 
-    let value = parse!(box: parser => Expression);
+            Mutability::Not
+        };
 
-    let hi = value.loc.clone();
+        let value = Box::new(self.parse_expr()?);
 
-    Ok(Statement {
-        stmt: Stmt::VariableDef {
-            name,
-            name_loc: lo.clone(),
-            mutable,
-            typexpr,
-            value,
-        },
-        loc: Span::from_ends(lo, hi),
-    })
-}
+        let hi = value.loc.clone();
 
-/// parses a defer statement
-pub fn parse_defer_statement(parser: &mut Parser) -> Result<Statement, Diagnostic> {
-    // TEST: n/a
-    let ((), lo) = expect_token!(parser => [Kw(Keyword::Defer), ()], Kw(Keyword::Defer));
+        Ok(Statement {
+            stmt: StmtKind::VariableDef {
+                name: Spanned {
+                    node: name,
+                    loc: lo.clone(),
+                },
+                mutability,
+                typexpr,
+                value,
+            },
+            loc: Span::from_ends(lo, hi),
+        })
+    }
 
-    let expr = parse!(parser => Expression);
+    /// Parses a defer statement
+    pub fn parse_defer_statement(&mut self) -> IResult<Statement> {
+        // TEST: n/a
+        let lo = self.expect(ExpToken::KwDefer)?;
 
-    let loc = Span::from_ends(lo, expr.loc.clone());
+        let expr = self.parse_expr()?;
 
-    Ok(Statement {
-        stmt: Stmt::Defer { expr },
-        loc,
-    })
+        let loc = Span::from_ends(lo, expr.loc.clone());
+
+        Ok(Statement {
+            stmt: StmtKind::Defer { expr },
+            loc,
+        })
+    }
 }

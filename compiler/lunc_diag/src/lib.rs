@@ -17,7 +17,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use lunc_utils::{Span, pluralize};
+use lunc_utils::{Recovery, Span, pluralize};
 
 pub type Diagnostic = codespan_reporting::diagnostic::Diagnostic<FileId>;
 pub use codespan_reporting::diagnostic::Label;
@@ -116,10 +116,16 @@ impl DiagnosticSink {
     }
 
     /// Emit a diagnostic
+    ///
+    /// # Note
+    ///
+    /// Diagnostics are ensured to be emit in the order of execution.
     #[track_caller]
-    pub fn emit(&mut self, diag: impl ToDiagnostic) {
+    pub fn emit(&mut self, diag: impl ToDiagnostic) -> DiagGuaranteed {
         let mut inner = self.0.write().unwrap();
         inner.emit(diag);
+
+        DiagGuaranteed(())
     }
 
     /// Emit a summary diagnostic
@@ -144,6 +150,13 @@ impl DiagnosticSink {
         let inner = self.0.read().unwrap();
 
         inner.files.name(fid).ok()
+    }
+
+    /// Get the count of how many diagnostics were emitted.
+    pub fn diag_count(&self) -> usize {
+        let inner = self.0.read().unwrap();
+
+        inner.diags.len()
     }
 }
 
@@ -418,11 +431,10 @@ pub enum ErrorCode {
     UnknownCharacterEscape = 5,
     /// Expected some token found something else.
     ///
-    /// You're code isn't proper Lun syntax, you may have made a mistake or
-    /// something else
-    // TODO: this error code is kinda dumb fr
+    /// You're code isn't proper Lun grammar, you may have made a mistake or
+    /// something else.
     ExpectedToken = 6,
-    /// Reached End of file too early
+    /// Reached end of file too early.
     ReachedEOF = 7,
     /// Mismatched types.
     ///
@@ -648,9 +660,100 @@ impl ToDiagnostic for ReachedEOF {
 }
 
 /// Diagnostic was guaranteed to be reported to the user.
+#[derive(Debug, Clone)]
 pub struct DiagGuaranteed(pub(crate) ());
 
-pub type Result<T, E = DiagGuaranteed> = core::result::Result<T, E>;
+/// Internal result, used by functions that output something that can produce a
+/// diagnostic and cannot recover from it.
+pub type IResult<T> = core::result::Result<T, Recovered>;
+
+/// Recoverable error.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Recovered {
+    /// The compiler did recover (partially at least) from the error but failed
+    /// to produce a meaningful value.
+    Yes,
+    /// The compiler was not able to recover from the error.
+    Unable(Diagnostic),
+}
+
+impl<D: ToDiagnostic> From<D> for Recovered {
+    fn from(value: D) -> Self {
+        Recovered::Unable(value.into_diag())
+    }
+}
+
+/// Get a value of this type by using `self.x()` on the Parser.
+pub type X<'a> = (&'a mut DiagnosticSink, &'a mut Recovery);
+
+/// Extension to [`Result`].
+pub trait ResultExt<T>: private::Sealed {
+    /// `Emit with value`, emits the diagnostic if any, and returns the `value`.
+    /// Or simply return the `Ok(..)` value.
+    fn emit_wval(self, x: X<'_>, value: impl FnOnce() -> T) -> T;
+
+    /// Like [`Result::ok`] but if `self` is `Err(..)` it will emit the diagnostic.
+    fn emit_opt(self, x: X<'_>) -> Option<T>;
+
+    /// Just emits the `Err(..)` if any.
+    fn emit(self, x: X<'_>);
+}
+
+impl<T> ResultExt<T> for IResult<T> {
+    fn emit_wval(self, (sink, recovery): X<'_>, value: impl FnOnce() -> T) -> T {
+        match self {
+            Ok(p) => p,
+            Err(recovered) => {
+                match recovered {
+                    Recovered::Yes => {}
+                    Recovered::Unable(d) => {
+                        sink.emit(d);
+                    }
+                }
+
+                *recovery = Recovery::Yes;
+
+                value()
+            }
+        }
+    }
+
+    fn emit_opt(self, (sink, recovery): X<'_>) -> Option<T> {
+        match self {
+            Ok(p) => Some(p),
+            Err(recovered) => {
+                match recovered {
+                    Recovered::Yes => {}
+                    Recovered::Unable(d) => {
+                        sink.emit(d);
+                    }
+                }
+                *recovery = Recovery::Yes;
+
+                None
+            }
+        }
+    }
+
+    fn emit(self, (sink, recovery): X<'_>) {
+        if self.is_err() {
+            *recovery = Recovery::Yes;
+        }
+
+        match self {
+            Ok(..) | Err(Recovered::Yes) => {}
+            Err(Recovered::Unable(d)) => {
+                sink.emit(d);
+            }
+        }
+    }
+}
+
+mod private {
+    pub trait Sealed {}
+
+    impl<T, E> Sealed for Result<T, E> {}
+}
 
 #[cfg(test)]
 mod tests {

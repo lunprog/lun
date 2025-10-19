@@ -1,0 +1,8 @@
+a :: {
+    // bypass with if
+    h : if a: loop {} {} else {} : 1;
+
+    i :: fun(i: if false {
+        a: {}
+    } else {}) {};
+}

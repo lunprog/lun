@@ -9,10 +9,10 @@ use diags::{
     TooManyCodepointsInCharLiteral, UnknownCharacterEscape, UnknownToken,
     UnterminatedStringLiteral,
 };
-use lunc_diag::{DiagnosticSink, FileId, ReachedEOF, Result};
+use lunc_diag::{DiagnosticSink, FileId, IResult, ReachedEOF};
 
-use lunc_token::{Keyword, TokenStream, TokenType};
-use lunc_utils::{Span, span};
+use lunc_token::{Lit, LitKind, TokenStream, TokenType};
+use lunc_utils::{Span, opt_unreachable, span};
 
 pub mod diags;
 mod head;
@@ -64,10 +64,6 @@ impl Lexer {
         }
 
         tt.finish();
-
-        if self.sink.failed() {
-            return None;
-        }
 
         Some(tt)
     }
@@ -128,41 +124,41 @@ impl Lexer {
         }
     }
 
-    pub fn lex_token(&mut self) -> Result<TokenType> {
-        use lunc_token::{Punctuation::*, TokenType::*};
+    pub fn lex_token(&mut self) -> IResult<TokenType> {
+        use lunc_token::TokenType::*;
 
         let t = match self.peek() {
-            Some('(') => Punct(LParen),
-            Some(')') => Punct(RParen),
-            Some('[') => Punct(LBracket),
-            Some(']') => Punct(RBracket),
-            Some('{') => Punct(LCurly),
-            Some('}') => Punct(RCurly),
-            Some('+') => Punct(Plus),
+            Some('(') => LParen,
+            Some(')') => RParen,
+            Some('[') => LBracket,
+            Some(']') => RBracket,
+            Some('{') => LCurly,
+            Some('}') => RCurly,
+            Some('+') => Plus,
             Some('-') => {
                 self.pop();
                 match self.peek() {
                     Some('>') => {
                         self.pop();
-                        return Ok(Punct(MinusGt));
+                        return Ok(MinusGt);
                     }
-                    _ => return Ok(Punct(Minus)),
+                    _ => return Ok(Minus),
                 }
             }
-            Some('*') => Punct(Star),
-            Some(':') => Punct(Colon),
-            Some(',') => Punct(Comma),
-            Some(';') => Punct(Semicolon),
-            Some('^') => Punct(Caret),
+            Some('*') => Star,
+            Some(':') => Colon,
+            Some(',') => Comma,
+            Some(';') => Semi,
+            Some('^') => Caret,
             Some('&') => {
                 self.pop();
 
                 match self.peek() {
                     Some('&') => {
                         self.pop();
-                        return Ok(Punct(Ampsand2));
+                        return Ok(AndAnd);
                     }
-                    _ => return Ok(Punct(Ampsand)),
+                    _ => return Ok(And),
                 }
             }
             Some('|') => {
@@ -171,22 +167,22 @@ impl Lexer {
                 match self.peek() {
                     Some('|') => {
                         self.pop();
-                        return Ok(Punct(Pipe2));
+                        return Ok(OrOr);
                     }
-                    _ => return Ok(Punct(Pipe)),
+                    _ => return Ok(Or),
                 }
             }
-            Some('%') => Punct(Percent),
-            Some('#') => Punct(Hashtag),
+            Some('%') => Percent,
+            Some('#') => Pound,
             Some('=') => {
                 self.pop();
 
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Ok(Punct(Equal2));
+                        return Ok(EqEq);
                     }
-                    _ => return Ok(Punct(Equal)),
+                    _ => return Ok(Eq),
                 }
             }
             Some('!') => {
@@ -195,9 +191,9 @@ impl Lexer {
                 return match self.peek() {
                     Some('=') => {
                         self.pop();
-                        Ok(Punct(BangEqual))
+                        Ok(BangEq)
                     }
-                    _ => Ok(Punct(Bang)),
+                    _ => Ok(Bang),
                 };
             }
             Some('<') => {
@@ -205,13 +201,13 @@ impl Lexer {
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Ok(Punct(LtEqual));
+                        return Ok(LtEq);
                     }
                     Some('<') => {
                         self.pop();
-                        return Ok(Punct(Lt2));
+                        return Ok(LtLt);
                     }
-                    _ => return Ok(Punct(Lt)),
+                    _ => return Ok(Lt),
                 }
             }
             Some('>') => {
@@ -219,13 +215,13 @@ impl Lexer {
                 match self.peek() {
                     Some('=') => {
                         self.pop();
-                        return Ok(Punct(GtEqual));
+                        return Ok(GtEq);
                     }
                     Some('>') => {
                         self.pop();
-                        return Ok(Punct(Gt2));
+                        return Ok(GtGt);
                     }
-                    _ => return Ok(Punct(Gt)),
+                    _ => return Ok(Gt),
                 }
             }
             Some('/') => {
@@ -256,7 +252,7 @@ impl Lexer {
 
                         return Ok(TokenType::Dummy);
                     }
-                    _ => return Ok(Punct(Slash)),
+                    _ => return Ok(Slash),
                 }
             }
             Some('.') => {
@@ -264,9 +260,9 @@ impl Lexer {
                 match self.peek() {
                     Some('*') => {
                         self.pop();
-                        return Ok(Punct(DotStar));
+                        return Ok(DotStar);
                     }
-                    _ => return Ok(Punct(Dot)),
+                    _ => return Ok(Dot),
                 }
             }
             Some('\'') => return self.lex_char(),
@@ -292,64 +288,66 @@ impl Lexer {
 
     pub fn lex_identifier(&mut self) -> TokenType {
         // NOTE: if the lexing of identifiers is changed update the
-        // `is_identifier` function in lunc_utils.
+        // `is_identifier` function in lunc_token.
 
         let word = self.lex_word();
 
         match self.peek() {
             Some('\"') => {
-                let str = match self.lex_string_with_options(false) {
-                    Ok(TokenType::StringLit(s)) => s,
+                let mut lit = match self.lex_string_with_options(false) {
+                    Ok(TokenType::Lit(lit)) => lit,
                     Ok(_) => unreachable!(),
-                    Err(_) => String::default(),
+                    Err(_) => Lit::string(String::default()),
                 };
 
-                TokenType::SpecializedStringLit {
-                    specialization: word,
-                    str,
+                if word == "c" {
+                    lit.kind = LitKind::CStr
+                } else {
+                    lit.tag = Some(word);
                 }
+
+                TokenType::Lit(lit)
             }
             Some('\'') => {
-                let char = match self.lex_char() {
-                    Ok(TokenType::CharLit(c)) => c,
+                let mut lit = match self.lex_char() {
+                    Ok(TokenType::Lit(lit)) => lit,
                     Ok(_) => unreachable!(),
-                    Err(_) => char::default(),
+                    Err(_) => Lit::char(char::default()),
                 };
 
-                TokenType::SpecializedCharLit {
-                    specialization: word,
-                    char,
-                }
+                lit.tag = Some(word);
+
+                TokenType::Lit(lit)
             }
             _ => {
-                use TokenType::Kw;
+                use TokenType as Tt;
 
                 match word.as_str() {
-                    Keyword::AS => Kw(Keyword::As),
-                    Keyword::BREAK => Kw(Keyword::Break),
-                    Keyword::COMPTIME => Kw(Keyword::Comptime),
-                    Keyword::CONTINUE => Kw(Keyword::Continue),
-                    Keyword::DEFER => Kw(Keyword::Defer),
-                    Keyword::ELSE => Kw(Keyword::Else),
-                    Keyword::EXTERN => Kw(Keyword::Extern),
-                    Keyword::FALSE => Kw(Keyword::False),
-                    Keyword::FOR => Kw(Keyword::For),
-                    Keyword::FUN => Kw(Keyword::Fun),
-                    Keyword::IF => Kw(Keyword::If),
-                    Keyword::IMPL => Kw(Keyword::Impl),
-                    Keyword::IN => Kw(Keyword::In),
-                    Keyword::LET => Kw(Keyword::Let),
-                    Keyword::LOOP => Kw(Keyword::Loop),
-                    Keyword::MUT => Kw(Keyword::Mut),
-                    Keyword::NULL => Kw(Keyword::Null),
-                    Keyword::ORB => Kw(Keyword::Orb),
-                    Keyword::PUB => Kw(Keyword::Pub),
-                    Keyword::RETURN => Kw(Keyword::Return),
-                    Keyword::SELF => Kw(Keyword::SelfVal),
-                    Keyword::THEN => Kw(Keyword::Then),
-                    Keyword::TRAIT => Kw(Keyword::Trait),
-                    Keyword::TRUE => Kw(Keyword::True),
-                    Keyword::WHILE => Kw(Keyword::While),
+                    Tt::KW_AS => Tt::KwAs,
+                    Tt::KW_BREAK => Tt::KwBreak,
+                    Tt::KW_COMPTIME => Tt::KwComptime,
+                    Tt::KW_CONTINUE => Tt::KwContinue,
+                    Tt::KW_DEFER => Tt::KwDefer,
+                    Tt::KW_ELSE => Tt::KwElse,
+                    Tt::KW_EXTERN => Tt::KwExtern,
+                    Tt::KW_FALSE => Tt::KwFalse,
+                    Tt::KW_FOR => Tt::KwFor,
+                    Tt::KW_FUN => Tt::KwFun,
+                    Tt::KW_IF => Tt::KwIf,
+                    Tt::KW_IMPL => Tt::KwImpl,
+                    Tt::KW_IN => Tt::KwIn,
+                    Tt::KW_LET => Tt::KwLet,
+                    Tt::KW_LOOP => Tt::KwLoop,
+                    Tt::KW_MUT => Tt::KwMut,
+                    Tt::KW_NULL => Tt::KwNull,
+                    Tt::KW_ORB => Tt::KwOrb,
+                    Tt::KW_PUB => Tt::KwPub,
+                    Tt::KW_RETURN => Tt::KwReturn,
+                    Tt::KW_SELF => Tt::KwSelfVal,
+                    Tt::KW_THEN => Tt::KwThen,
+                    Tt::KW_TRAIT => Tt::KwTrait,
+                    Tt::KW_TRUE => Tt::KwTrue,
+                    Tt::KW_WHILE => Tt::KwWhile,
                     _ => TokenType::Ident(word),
                 }
             }
@@ -401,24 +399,22 @@ impl Lexer {
         hex
     }
 
-    pub fn lex_number(&mut self) -> Result<TokenType> {
+    pub fn lex_number(&mut self) -> IResult<TokenType> {
         let number = self.lex_number_internal()?;
 
         match self.peek() {
             Some('\'') => {
                 self.pop();
-                let specialization = self.lex_word();
+                let tag = self.lex_word();
 
                 match number {
-                    TokenType::IntLit(int) => Ok(TokenType::SpecializedIntLit {
-                        specialization,
-                        int,
-                    }),
-                    TokenType::FloatLit(float) => Ok(TokenType::SpecializedFloatLit {
-                        specialization,
-                        float,
-                    }),
-                    _ => unreachable!(),
+                    TokenType::Lit(mut lit) => {
+                        lit.tag = Some(tag);
+
+                        Ok(TokenType::Lit(lit))
+                    }
+                    // SAFETY: lex number only returns literals.
+                    _ => opt_unreachable!(),
                 }
             }
             _ => Ok(number),
@@ -427,7 +423,7 @@ impl Lexer {
 
     /// function to lex a number BUT does not support specialization, call
     /// [`lex_number`] instead
-    fn lex_number_internal(&mut self) -> Result<TokenType> {
+    fn lex_number_internal(&mut self) -> IResult<TokenType> {
         // Integer literal grammar:
         //
         // int_lit = decimal_lit | binary_lit | octal_lit | hexadecimal_lit ;
@@ -540,7 +536,7 @@ impl Lexer {
 
                         let float = base * 2.0f64.powi(exp_value);
 
-                        return Ok(TokenType::FloatLit(float));
+                        return Ok(TokenType::Lit(Lit::float(float)));
                     }
                     Some('p' | 'P') => {
                         self.pop();
@@ -580,13 +576,13 @@ impl Lexer {
                         let int_f64 = int_part as f64;
                         let float = int_f64 * 2.0f64.powi(exp_value);
 
-                        return Ok(TokenType::FloatLit(float));
+                        return Ok(TokenType::Lit(Lit::float(float)));
                     }
                     _ => {
                         if int_str.is_empty() {
                             self.sink.emit(NoDigitsInANonDecimal { loc: self.loc() });
                         }
-                        return Ok(TokenType::IntLit(int_part));
+                        return Ok(TokenType::Lit(Lit::int(int_part)));
                     }
                 }
             }
@@ -669,17 +665,17 @@ impl Lexer {
 
                 let float = base * 10.0f64.powi(exp_value);
 
-                Ok(TokenType::FloatLit(float))
+                Ok(TokenType::Lit(Lit::float(float)))
             }
-            _ => Ok(TokenType::IntLit(int_part)),
+            _ => Ok(TokenType::Lit(Lit::int(int_part))),
         }
     }
 
-    pub fn lex_string(&mut self) -> Result<TokenType> {
+    pub fn lex_string(&mut self) -> IResult<TokenType> {
         self.lex_string_with_options(true)
     }
 
-    pub fn lex_string_with_options(&mut self, support_escape: bool) -> Result<TokenType> {
+    pub fn lex_string_with_options(&mut self, support_escape: bool) -> IResult<TokenType> {
         let mut str = String::new();
 
         // pop the first "
@@ -720,10 +716,10 @@ impl Lexer {
             }
         }
 
-        Ok(TokenType::StringLit(str))
+        Ok(TokenType::Lit(Lit::string(str)))
     }
 
-    pub fn lex_char(&mut self) -> Result<TokenType> {
+    pub fn lex_char(&mut self) -> IResult<TokenType> {
         self.expect('\'');
 
         let mut empty_char = false;
@@ -778,12 +774,12 @@ impl Lexer {
             }
         }
 
-        Ok(TokenType::CharLit(c))
+        Ok(TokenType::Lit(Lit::char(c)))
     }
 
     /// makes an escape sequence return a tuple of the character that corresponds
     /// to the escape and the increments to make to the head
-    pub fn lex_escape_sequence(&mut self, es: char, string: bool) -> Result<char> {
+    pub fn lex_escape_sequence(&mut self, es: char, string: bool) -> IResult<char> {
         #[inline(always)]
         fn char(i: u8) -> char {
             i as char
@@ -806,10 +802,12 @@ impl Lexer {
                     Some('{') => {
                         self.pop();
                     }
-                    _ => self.sink.emit(InvalidUnicodeEscape {
-                        note: InvalidUnicodeNote::ExpectedOpeningBrace,
-                        loc: self.loc_current_char(),
-                    }),
+                    _ => {
+                        self.sink.emit(InvalidUnicodeEscape {
+                            note: InvalidUnicodeNote::ExpectedOpeningBrace,
+                            loc: self.loc_current_char(),
+                        });
+                    }
                 }
                 let hex_str = self.lex_hexadecimal();
 
@@ -847,10 +845,12 @@ impl Lexer {
                     Some('}') => {
                         self.pop();
                     }
-                    _ => self.sink.emit(InvalidUnicodeEscape {
-                        note: InvalidUnicodeNote::ExpectedClosingBrace,
-                        loc: self.loc_current_char(),
-                    }),
+                    _ => {
+                        self.sink.emit(InvalidUnicodeEscape {
+                            note: InvalidUnicodeNote::ExpectedClosingBrace,
+                            loc: self.loc_current_char(),
+                        });
+                    }
                 }
 
                 if let Some(c) = char::from_u32(hex) {
@@ -878,7 +878,7 @@ impl Lexer {
 
     /// set string to true if the escape sequence is part of a string, false if
     /// it is part of a char literal
-    pub fn lex_hex_escape(&mut self, string: bool) -> Result<char> {
+    pub fn lex_hex_escape(&mut self, string: bool) -> IResult<char> {
         let mut str = String::with_capacity(2);
         for _ in 0..2 {
             str.push(match self.peek() {
@@ -943,7 +943,7 @@ impl Lexer {
     /// Returns a [`Diagnostic`] if the input is invalid or too large.
     ///
     /// [`Diagnostic`]: lunc_diag::Diagnostic
-    pub fn parse_u128(&mut self, input: &str, radix: u8) -> Result<u128> {
+    pub fn parse_u128(&mut self, input: &str, radix: u8) -> IResult<u128> {
         self.parse_u128_with_digit_count(input, radix)
             .map(|(int, _)| int)
     }
@@ -971,7 +971,7 @@ impl Lexer {
         input: &str,
         radix: u8,
         options: ParseOptions,
-    ) -> Result<u128> {
+    ) -> IResult<u128> {
         self.parse_u128_advanced(input, radix, options)
             .map(|(int, _)| int)
     }
@@ -998,7 +998,7 @@ impl Lexer {
     /// Returns a [`Diagnostic`] if the input is invalid or overflows.
     ///
     /// [`Diagnostic`]: lunc_diag::Diagnostic
-    pub fn parse_u128_with_digit_count(&mut self, input: &str, radix: u8) -> Result<(u128, u32)> {
+    pub fn parse_u128_with_digit_count(&mut self, input: &str, radix: u8) -> IResult<(u128, u32)> {
         self.parse_u128_advanced(
             input,
             radix,
@@ -1044,7 +1044,7 @@ impl Lexer {
         input: &str,
         radix: u8,
         options: ParseOptions,
-    ) -> Result<(u128, u32)> {
+    ) -> IResult<(u128, u32)> {
         if !(2..=36).contains(&radix) {
             panic!("invalid radix provided, {radix}, it must be between 2 and 36 included.")
         }
@@ -1107,7 +1107,7 @@ impl Lexer {
         }
 
         if overflowed && !had_invalid_digit && options.emit_diags {
-            self.sink.emit(TooLargeIntegerLiteral { loc: self.loc() })
+            self.sink.emit(TooLargeIntegerLiteral { loc: self.loc() });
         }
 
         Ok((result, digit_count))
