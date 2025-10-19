@@ -1,6 +1,7 @@
 //! Parsing of lun's expressions.
 
 use lunc_ast::{BinOp, Mutability, UnOp};
+use lunc_diag::ResultExt;
 use lunc_token::Lit;
 use lunc_utils::opt_unreachable;
 
@@ -29,6 +30,11 @@ impl Expression {
         kind: ExprKind::Null,
         loc: Span::ZERO,
     };
+
+    /// Used by `emit_wval` as a fallback value.
+    pub const fn dummy() -> Expression {
+        Expression::DUMMY
+    }
 
     /// Is the expression `ExpressionWithBlock`?
     pub fn is_expr_with_block(&self) -> bool {
@@ -491,11 +497,15 @@ impl Parser {
         // TEST: n/a
         let lo = self.expect(ExpToken::LParen)?;
 
-        // TEST: yes
-        let expr = self.parse_expr_reset()?;
-
         // TEST: n/a
-        let hi = self.expect(ExpToken::RParen)?;
+        let expr = self
+            .parse_expr_reset()
+            .emit_wval(self.x(), Expression::dummy);
+
+        // TEST: yes
+        self.expect_nae(ExpToken::RParen).emit(self.x());
+
+        let hi = self.token_loc();
 
         Ok(Expression {
             kind: ExprKind::Grouping(Box::new(expr)),
@@ -540,7 +550,9 @@ impl Parser {
             pr = pr.next();
         }
 
-        let rhs = self.parse_expr_precedence(pr)?;
+        let rhs = self
+            .parse_expr_precedence(pr)
+            .emit_wval(self.x(), Expression::dummy);
         let loc = Span::from_ends(lhs.loc.clone(), rhs.loc.clone());
 
         Ok(Expression {
@@ -563,7 +575,9 @@ impl Parser {
             return Err(ExpectedToken::new(["unary operator"], self.token.clone()).into());
         };
 
-        let expr = self.parse_expr_precedence(Precedence::Unary)?;
+        let expr = self
+            .parse_expr_precedence(Precedence::Unary)
+            .emit_wval(self.x(), Expression::dummy);
 
         Ok(Expression {
             loc: Span::from_ends(lo, expr.loc.clone()),
@@ -587,7 +601,18 @@ impl Parser {
                 break;
             }
 
-            args.push(self.parse_expr_reset()?);
+            match self.parse_expr_reset() {
+                Ok(arg) => {
+                    args.push(arg);
+                }
+                Err(recovered) => {
+                    if let Recovered::Unable(d) = recovered {
+                        self.sink.emit(d);
+                    }
+
+                    self.recover_expr_in_paren_seq();
+                }
+            }
 
             // TEST: yes
             if self.eat(ExpToken::Comma) {
@@ -596,7 +621,12 @@ impl Parser {
                 // finished to parse the call expr
                 break;
             } else {
-                return self.etd_and_bump();
+                let diag = self.expected_diag();
+                self.sink.emit(diag);
+
+                // recover the parsing, not important if we skip a lot of tokens
+                // and maybe until ).
+                self.recover_expr_in_paren_seq();
             }
         }
 
@@ -611,13 +641,45 @@ impl Parser {
         })
     }
 
+    /// Tries to recover the parsing of expression inside of a paren seq: two
+    /// parenthesis with something inside it and commas between, like the parens
+    /// of the call expression or the parens of the fundef/fundecl expression.
+    ///
+    /// After the recovery, [`Parser::token`] will be one of:
+    /// - `Comma`
+    /// - `RParen`
+    /// - `EOF`
+    pub fn recover_expr_in_paren_seq(&mut self) {
+        let mut remaining_rparen = 0;
+
+        while !(self.check_no_expect(ExpToken::Comma)
+            || self.check_no_expect(ExpToken::RParen)
+            || self.check_no_expect(ExpToken::EOF))
+        {
+            if self.check_no_expect(ExpToken::LParen) {
+                remaining_rparen += 1;
+            } else if self.check_no_expect(ExpToken::RParen) {
+                if remaining_rparen == 0 {
+                    // eat the )
+                    self.bump();
+
+                    break;
+                } else {
+                    remaining_rparen -= 1;
+                }
+            }
+
+            self.bump();
+        }
+    }
+
     /// Parses the function definition / declaration expression
     pub fn parse_funkw_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
         let lo = self.expect(ExpToken::KwFun)?;
 
         // TEST: no. 1
-        self.expect(ExpToken::LParen)?;
+        self.expect_nae(ExpToken::LParen)?;
 
         match (&self.token.tt, self.look_ahead(1, look_tt)) {
             (Ident(_), Colon) => {
@@ -635,20 +697,30 @@ impl Parser {
                     }
 
                     // TEST: n/a
-                    let lo_arg = self.expect(ExpToken::Ident)?;
+                    self.expect_nae(ExpToken::Ident).emit(self.x());
+                    let lo_arg = self.token_loc();
                     let name = self.as_ident();
 
                     // TEST: n/a
-                    self.expect(ExpToken::Colon)?;
+                    self.expect_nae(ExpToken::Colon).emit(self.x());
 
-                    let typexpr = self.parse_typexpr()?;
+                    match self.parse_typexpr() {
+                        Ok(t) => {
+                            args.push(Arg {
+                                name,
+                                name_loc: lo_arg.clone(),
+                                typexpr: t.clone(),
+                                loc: Span::from_ends(lo_arg, t.loc),
+                            });
+                        }
+                        Err(recovered) => {
+                            if let Recovered::Unable(d) = recovered {
+                                self.sink.emit(d);
+                            }
 
-                    args.push(Arg {
-                        name,
-                        name_loc: lo_arg.clone(),
-                        typexpr: typexpr.clone(),
-                        loc: Span::from_ends(lo_arg, typexpr.loc),
-                    });
+                            self.recover_expr_in_paren_seq();
+                        }
+                    }
 
                     // TEST: no. 2 and no. 3
                     if self.eat(ExpToken::Comma) {
@@ -662,12 +734,23 @@ impl Parser {
                 }
 
                 let rettypexpr = if self.eat_no_expect(ExpToken::MinusGt) {
-                    Some(Box::new(self.parse_typexpr()?))
+                    match self.parse_typexpr() {
+                        Ok(t) => Some(Box::new(t)),
+                        Err(recovered) => {
+                            if let Recovered::Unable(d) = recovered {
+                                self.sink.emit(d);
+                            }
+
+                            None
+                        }
+                    }
                 } else {
                     None
                 };
 
-                let body = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
+                let body = self
+                    .with_rest(Restrictions::empty(), Parser::parse_block)
+                    .emit_wval(self.x(), Block::dummy);
                 let hi = body.loc.clone();
 
                 Ok(Expression {
@@ -690,7 +773,16 @@ impl Parser {
                 let hi_paren = self.expect(ExpToken::RParen)?;
 
                 let rettypexpr = if self.eat_no_expect(ExpToken::MinusGt) {
-                    Some(Box::new(self.parse_typexpr()?))
+                    match self.parse_typexpr() {
+                        Ok(t) => Some(Box::new(t)),
+                        Err(recovered) => {
+                            if let Recovered::Unable(d) = recovered {
+                                self.sink.emit(d);
+                            }
+
+                            None
+                        }
+                    }
                 } else {
                     None
                 };
@@ -713,7 +805,9 @@ impl Parser {
                 } else {
                     // function definition
 
-                    let body = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
+                    let body = self
+                        .with_rest(Restrictions::empty(), Parser::parse_block)
+                        .emit_wval(self.x(), Block::dummy);
                     let hi = body.loc.clone();
 
                     Ok(Expression {
@@ -736,9 +830,18 @@ impl Parser {
                         break;
                     }
 
-                    let typexpr = self.parse_typexpr()?;
+                    match self.parse_typexpr() {
+                        Ok(t) => {
+                            args.push(t);
+                        }
+                        Err(recovered) => {
+                            if let Recovered::Unable(d) = recovered {
+                                self.sink.emit(d);
+                            }
 
-                    args.push(typexpr);
+                            self.recover_expr_in_paren_seq();
+                        }
+                    }
 
                     // TEST: no. 4
                     if self.eat(ExpToken::Comma) {
@@ -754,7 +857,16 @@ impl Parser {
                 let hi_paren = self.token.loc.clone();
 
                 let rettypexpr = if self.eat_no_expect(ExpToken::MinusGt) {
-                    Some(Box::new(self.parse_typexpr()?))
+                    match self.parse_typexpr() {
+                        Ok(t) => Some(Box::new(t)),
+                        Err(recovered) => {
+                            if let Recovered::Unable(d) = recovered {
+                                self.sink.emit(d);
+                            }
+
+                            None
+                        }
+                    }
                 } else {
                     None
                 };
@@ -777,7 +889,10 @@ impl Parser {
         // TEST: n/a
         let lo = self.expect(ExpToken::KwIf)?;
 
-        let cond = Box::new(self.parse_expr_reset()?);
+        let cond = Box::new(
+            self.parse_expr_reset()
+                .emit_wval(self.x(), Expression::dummy),
+        );
 
         if self.check(ExpToken::LCurly) {
             // if expr
@@ -899,8 +1014,10 @@ impl Parser {
         let lo_while = self.expect(ExpToken::KwWhile)?;
         let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_while);
 
-        let cond = Box::new(self.parse_expr()?);
-        let body = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
+        let cond = Box::new(self.parse_expr().emit_wval(self.x(), Expression::dummy));
+        let body = self
+            .with_rest(Restrictions::empty(), Parser::parse_block)
+            .emit_wval(self.x(), Block::dummy);
 
         let hi = body.loc.clone();
 
@@ -919,15 +1036,20 @@ impl Parser {
         let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_for);
 
         // TEST: no. 1
-        self.expect(ExpToken::Ident)?;
+        self.expect(ExpToken::Ident).emit(self.x());
         let variable = self.as_ident();
 
         // TEST: no. 2
-        self.expect(ExpToken::KwIn)?;
+        self.expect(ExpToken::KwIn).emit(self.x());
 
-        let iterator = Box::new(self.parse_expr_reset()?);
+        let iterator = Box::new(
+            self.parse_expr_reset()
+                .emit_wval(self.x(), Expression::dummy),
+        );
 
-        let body = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
+        let body = self
+            .with_rest(Restrictions::empty(), Parser::parse_block)
+            .emit_wval(self.x(), Block::dummy);
 
         let hi = body.loc.clone();
 
@@ -953,7 +1075,9 @@ impl Parser {
         let lo_loop = self.expect(ExpToken::KwLoop)?;
         let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_loop);
 
-        let block = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
+        let block = self
+            .with_rest(Restrictions::empty(), Parser::parse_block)
+            .emit_wval(self.x(), Block::dummy);
 
         let hi = block.loc.clone();
 
@@ -972,7 +1096,7 @@ impl Parser {
         let val = if self.token.is_stmt_end() {
             None
         } else {
-            let expr = Box::new(self.parse_expr()?);
+            let expr = Box::new(self.parse_expr().emit_wval(self.x(), Expression::dummy));
             hi = expr.loc.clone();
 
             Some(expr)
@@ -993,7 +1117,9 @@ impl Parser {
 
         let label = if self.eat_no_expect(ExpToken::Colon) {
             // TEST: no. 1
-            hi = self.expect(ExpToken::Ident)?;
+            hi = self
+                .expect(ExpToken::Ident)
+                .emit_wval(self.x(), || Span::ZERO);
             let label = self.as_ident();
 
             Some(label)
@@ -1004,7 +1130,7 @@ impl Parser {
         let expr = if self.token.is_stmt_end() {
             None
         } else {
-            let expr = Box::new(self.parse_expr()?);
+            let expr = Box::new(self.parse_expr().emit_wval(self.x(), Expression::dummy));
             hi = expr.loc.clone();
 
             Some(expr)
@@ -1024,7 +1150,9 @@ impl Parser {
 
         let label = if self.eat_no_expect(ExpToken::Colon) {
             // TEST: no. 1
-            hi = self.expect(ExpToken::Ident)?;
+            hi = self
+                .expect(ExpToken::Ident)
+                .emit_wval(self.x(), || Span::ZERO);
             let label = self.as_ident();
 
             Some(label)
@@ -1069,7 +1197,7 @@ impl Parser {
         self.expect(ExpToken::KwFun)?;
 
         // TEST: no. 1
-        self.expect(ExpToken::LParen)?;
+        self.expect_nae(ExpToken::LParen).emit(self.x());
 
         let mut args = Vec::new();
 
@@ -1078,7 +1206,19 @@ impl Parser {
                 break;
             }
 
-            args.push(self.parse_typexpr()?);
+            match self.parse_typexpr() {
+                Ok(t) => {
+                    args.push(t);
+                }
+                Err(recovered) => {
+                    if let Recovered::Unable(d) = recovered {
+                        self.sink.emit(d);
+                    }
+
+                    // recover parsing to a Comma, RParen or EOF.
+                    self.recover_expr_in_paren_seq();
+                }
+            }
 
             // TEST: no. 2
             if self.eat(ExpToken::Comma) {
@@ -1095,9 +1235,20 @@ impl Parser {
         let hi_paren = self.token_loc();
 
         let (hi, ret) = if self.eat_no_expect(ExpToken::MinusGt) {
-            let t = Box::new(self.parse_typexpr()?);
+            match self.parse_typexpr() {
+                Ok(t) => {
+                    let typeexpr = Box::new(t);
 
-            (t.loc.clone(), Some(t))
+                    (typeexpr.loc.clone(), Some(typeexpr))
+                }
+                Err(recovered) => {
+                    if let Recovered::Unable(d) = recovered {
+                        self.sink.emit(d);
+                    }
+
+                    (hi_paren, None)
+                }
+            }
         } else {
             (hi_paren, None)
         };
@@ -1115,7 +1266,7 @@ impl Parser {
 
         let mutability = self.parse_mutability();
 
-        let typexpr = Box::new(self.parse_typexpr()?);
+        let typexpr = Box::new(self.parse_typexpr().emit_wval(self.x(), Expression::dummy));
         let hi = typexpr.loc.clone();
 
         Ok(Expression {
@@ -1152,7 +1303,7 @@ impl Parser {
 
         let mutability = self.parse_mutability();
 
-        let val = Box::new(self.parse_expr()?);
+        let val = Box::new(self.parse_expr().emit_wval(self.x(), Expression::dummy));
 
         let hi = val.loc.clone();
 
@@ -1168,7 +1319,8 @@ impl Parser {
         self.expect(ExpToken::Dot)?;
 
         // TEST: no. 1
-        let hi = self.expect(ExpToken::Ident)?;
+        self.expect(ExpToken::Ident).emit(self.x());
+        let hi = self.token_loc();
         let member = self.as_ident();
 
         let loc = Span::from_ends(expr.loc.clone(), hi);

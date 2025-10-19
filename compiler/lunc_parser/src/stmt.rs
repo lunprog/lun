@@ -13,6 +13,17 @@ pub struct Block {
     pub loc: Span,
 }
 
+impl Block {
+    /// Dummy block, used as a fallback to handle errors
+    pub fn dummy() -> Block {
+        Block {
+            stmts: Vec::new(),
+            last_expr: None,
+            loc: Span::ZERO,
+        }
+    }
+}
+
 /// A lun statement
 #[derive(Debug, Clone)]
 pub struct Statement {
@@ -207,7 +218,7 @@ impl Parser {
             Ident(_) if self.is_short_binding_def() => self.parse_short_binding_stmt(),
             KwDefer => self.parse_defer_statement(),
             _ => {
-                let expr = self.parse_expr().emit_wval(self.x(), || Expression::DUMMY);
+                let expr = self.parse_expr().emit_wval(self.x(), Expression::dummy);
 
                 Ok(Statement {
                     loc: expr.loc.clone(),
