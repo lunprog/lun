@@ -31,21 +31,21 @@ pub struct Module {
 pub enum Item {
     /// Global definition.
     ///
-    /// `ident ":" typexpr? (":" / "=") exprWithBlock`
-    /// `ident ":" typexpr? (":" / "=") exprWithoutBlock ";"`
+    /// `ident ":" typeexpr? (":" / "=") exprWithBlock`
+    /// `ident ":" typeexpr? (":" / "=") exprWithoutBlock ";"`
     GlobalDef {
         name: Spanned<String>,
         mutability: Mutability,
-        typexpr: Option<Expression>,
+        typeexpr: Option<Expression>,
         value: Expression,
         loc: Span,
     },
     /// Global uninitialized
     ///
-    /// `ident ":" typexpr ";"`
+    /// `ident ":" typeexpr ";"`
     GlobalUninit {
         name: Spanned<String>,
-        typexpr: Expression,
+        typeexpr: Expression,
         loc: Span,
     },
     /// Extern block.
@@ -149,9 +149,9 @@ impl Parser {
         // TEST: no. 1
         self.expect(ExpToken::Colon).emit(self.x());
 
-        let typexpr = match self.token.tt {
+        let typeexpr = match self.token.tt {
             Colon | Eq => None,
-            _ => self.parse_typexpr().emit_opt(self.x()),
+            _ => self.parse_typeexpr().emit_opt(self.x()),
         };
 
         let mutability = if self.eat(ExpToken::Colon) {
@@ -165,8 +165,8 @@ impl Parser {
             let hi = self.expect(ExpToken::Semi)?;
 
             // uninit global def
-            let Some(typexpr) = typexpr else {
-                // SAFETY: we always parse a typexpr if the token after :
+            let Some(typeexpr) = typeexpr else {
+                // SAFETY: we always parse a typeexpr if the token after :
                 // isn't : or =
                 opt_unreachable!()
             };
@@ -176,7 +176,7 @@ impl Parser {
                     node: name,
                     loc: lo.clone(),
                 },
-                typexpr,
+                typeexpr,
                 loc: Span::from_ends(lo, hi),
             });
         } else {
@@ -206,7 +206,7 @@ impl Parser {
                 loc: lo,
             },
             mutability,
-            typexpr,
+            typeexpr,
             value,
             loc,
         })

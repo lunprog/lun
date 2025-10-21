@@ -23,24 +23,28 @@ impl PrettyDump for Item {
             Item::GlobalDef {
                 name,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
                 loc,
             } => {
                 ctx.pretty_struct("GlobalDef")
                     .field("name", name)
                     .field("mutability", mutability)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .field("value", value)
                     .finish()?;
                 ctx.print_loc(loc)?;
 
                 Ok(())
             }
-            Item::GlobalUninit { name, typexpr, loc } => {
+            Item::GlobalUninit {
+                name,
+                typeexpr,
+                loc,
+            } => {
                 ctx.pretty_struct("GlobalUninit")
                     .field("name", name)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .finish()?;
                 ctx.print_loc(loc)?;
 
@@ -209,29 +213,29 @@ impl PrettyDump for ExprKind {
             }
             ExprKind::FunDefinition {
                 args,
-                rettypexpr,
+                rettypeexpr,
                 body,
             } => {
                 ctx.pretty_struct("FunDefinition")
                     .field("args", args.as_slice())
-                    .field("rettypexpr", rettypexpr)
+                    .field("rettypeexpr", rettypeexpr)
                     .field("body", body)
                     .finish()?;
 
                 Ok(())
             }
-            ExprKind::FunDeclaration { args, rettypexpr } => {
+            ExprKind::FunDeclaration { args, rettypeexpr } => {
                 ctx.pretty_struct("FunDeclaration")
                     .field("args", args.as_slice())
-                    .field("rettypexpr ", rettypexpr)
+                    .field("rettypeexpr", rettypeexpr)
                     .finish()?;
 
                 Ok(())
             }
-            ExprKind::PointerType(mutability, typexpr) => {
+            ExprKind::PointerType(mutability, typeexpr) => {
                 ctx.pretty_struct("PointerType")
                     .field("mutability", mutability)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .finish()?;
 
                 Ok(())
@@ -253,13 +257,13 @@ impl PrettyDump for Arg {
         let Arg {
             name,
             name_loc,
-            typexpr,
+            typeexpr,
             loc,
         } = self;
 
         ctx.pretty_struct("Arg")
             .field("name", (name, name_loc))
-            .field("typexpr", typexpr)
+            .field("typeexpr", typeexpr)
             .finish()?;
         ctx.print_loc(loc)?;
 
@@ -327,13 +331,13 @@ impl PrettyDump for StmtKind {
             StmtKind::BindingDef {
                 name,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
             } => {
                 ctx.pretty_struct("BindingDef")
                     .field("name", name)
                     .field("mutability", mutability)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .field("value", value)
                     .finish()?;
                 Ok(())

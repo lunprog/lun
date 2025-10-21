@@ -48,7 +48,7 @@ pub enum StmtKind {
     BindingDef {
         name: Spanned<String>,
         mutability: Mutability,
-        typexpr: Option<Expression>,
+        typeexpr: Option<Expression>,
         value: Box<Expression>,
     },
     /// defer statement
@@ -248,8 +248,8 @@ impl Parser {
         let name_loc = self.expect(ExpToken::Ident).emit_wval(self.x(), default);
         let name = self.as_ident();
 
-        let typexpr = if self.eat_no_expect(ExpToken::Colon) {
-            Some(self.parse_typexpr()?)
+        let typeexpr = if self.eat_no_expect(ExpToken::Colon) {
+            Some(self.parse_typeexpr()?)
         } else {
             None
         };
@@ -267,7 +267,7 @@ impl Parser {
                     loc: name_loc,
                 },
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
             },
             loc: Span::from_ends(lo, hi),
@@ -290,9 +290,9 @@ impl Parser {
         // TEST: no. 2
         self.expect(ExpToken::Colon)?;
 
-        let typexpr = match self.token.tt {
+        let typeexpr = match self.token.tt {
             Eq => None,
-            _ => Some(self.parse_typexpr()?),
+            _ => Some(self.parse_typeexpr()?),
         };
 
         // TEST: no. 3
@@ -309,7 +309,7 @@ impl Parser {
                     loc: lo.clone(),
                 },
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
             },
             loc: Span::from_ends(lo, hi),

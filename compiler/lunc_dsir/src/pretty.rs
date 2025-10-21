@@ -21,7 +21,7 @@ impl PrettyDump for DsItem {
             DsItem::GlobalDef {
                 name,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
                 loc,
                 sym,
@@ -29,7 +29,7 @@ impl PrettyDump for DsItem {
                 ctx.pretty_struct("GlobalDef")
                     .field("name", name)
                     .field("mutability", mutability)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .field("value", value)
                     .field("sym", sym)
                     .finish()?;
@@ -40,13 +40,13 @@ impl PrettyDump for DsItem {
             }
             DsItem::GlobalUninit {
                 name,
-                typexpr,
+                typeexpr,
                 loc,
                 sym,
             } => {
                 ctx.pretty_struct("GlobalUninit")
                     .field("name", name)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .field("sym", sym)
                     .finish()?;
 
@@ -227,29 +227,29 @@ impl PrettyDump for DsExprKind {
             DsExprKind::Underscore => write!(ctx.out, "Underscore"),
             DsExprKind::FunDefinition {
                 args,
-                rettypexpr,
+                rettypeexpr,
                 body,
             } => {
                 ctx.pretty_struct("FunDefinition")
                     .field("args", args.as_slice())
-                    .field("rettypexpr", rettypexpr)
+                    .field("rettypeexpr", rettypeexpr)
                     .field("body", body)
                     .finish()?;
 
                 Ok(())
             }
-            DsExprKind::FunDeclaration { args, rettypexpr } => {
+            DsExprKind::FunDeclaration { args, rettypeexpr } => {
                 ctx.pretty_struct("FunDeclaration")
                     .field("args", args.as_slice())
-                    .field("rettypexpr", rettypexpr)
+                    .field("rettypeexpr", rettypeexpr)
                     .finish()?;
 
                 Ok(())
             }
-            DsExprKind::PointerType(mutability, typexpr) => {
+            DsExprKind::PointerType(mutability, typeexpr) => {
                 ctx.pretty_struct("PointerType")
                     .field("mutability", mutability)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .finish()?;
 
                 Ok(())
@@ -274,14 +274,14 @@ impl PrettyDump for DsArg {
         let DsArg {
             name,
             name_loc,
-            typexpr,
+            typeexpr,
             loc,
             sym,
         } = self;
 
         ctx.pretty_struct("Arg")
             .field("name", (name, name_loc))
-            .field("typexpr", typexpr)
+            .field("typeexpr", typeexpr)
             .field("sym", sym)
             .finish()?;
         ctx.print_loc(loc)?;
@@ -330,14 +330,14 @@ impl PrettyDump for DsStmtKind {
             DsStmtKind::BindingDef {
                 name,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
                 sym,
             } => {
                 ctx.pretty_struct("BindingDef")
                     .field("name", name)
                     .field("mutability", mutability)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .field("value", value)
                     .field("sym", sym)
                     .finish()?;

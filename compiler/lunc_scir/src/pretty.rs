@@ -20,7 +20,7 @@ impl PrettyDump for ScItem {
             ScItem::GlobalDef {
                 name,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
                 loc,
                 sym,
@@ -28,7 +28,7 @@ impl PrettyDump for ScItem {
                 ctx.pretty_struct("GlobalDef")
                     .field("name", name)
                     .field("mutability", mutability)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .field("value", value)
                     .field("sym", sym)
                     .finish()?;
@@ -39,13 +39,13 @@ impl PrettyDump for ScItem {
             }
             ScItem::GlobalUninit {
                 name,
-                typexpr,
+                typeexpr,
                 loc,
                 sym,
             } => {
                 ctx.pretty_struct("GlobalUninit")
                     .field("name", name)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .field("sym", sym)
                     .finish()?;
 
@@ -55,9 +55,9 @@ impl PrettyDump for ScItem {
             }
             ScItem::FunDefinition {
                 name,
-                typexpr,
+                typeexpr,
                 args,
-                rettypexpr,
+                rettypeexpr,
                 body,
                 info,
                 loc,
@@ -65,9 +65,9 @@ impl PrettyDump for ScItem {
             } => {
                 ctx.pretty_struct("FunDefinition")
                     .field("name", name)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .field("args", args.as_slice())
-                    .field("rettypexpr", rettypexpr)
+                    .field("rettypeexpr", rettypeexpr)
                     .field("body", body)
                     .field("info", info)
                     .field("sym", sym)
@@ -79,18 +79,18 @@ impl PrettyDump for ScItem {
             }
             ScItem::FunDeclaration {
                 name,
-                typexpr,
+                typeexpr,
                 args,
-                rettypexpr,
+                rettypeexpr,
                 defined_mut,
                 loc,
                 sym,
             } => {
                 ctx.pretty_struct("FunDeclaration")
                     .field("name", name)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .field("args", args.as_slice())
-                    .field("rettypexpr", rettypexpr)
+                    .field("rettypeexpr", rettypeexpr)
                     .field("defined_mut", defined_mut)
                     .field("sym", sym)
                     .finish()?;
@@ -271,10 +271,10 @@ impl PrettyDump for ScExprKind {
                 Ok(())
             }
             ScExprKind::Underscore => write!(ctx.out, "Underscore"),
-            ScExprKind::PointerType(mutability, typexpr) => {
+            ScExprKind::PointerType(mutability, typeexpr) => {
                 ctx.pretty_struct("PointerType")
                     .field("mutability", mutability)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .finish()?;
 
                 Ok(())
@@ -299,14 +299,14 @@ impl PrettyDump for ScArg {
         let ScArg {
             name,
             name_loc,
-            typexpr,
+            typeexpr,
             loc,
             sym,
         } = self;
 
         ctx.pretty_struct("Arg")
             .field("name", (name, name_loc))
-            .field("typexpr", typexpr)
+            .field("typeexpr", typeexpr)
             .field("sym", sym)
             .finish()?;
 
@@ -354,14 +354,14 @@ impl PrettyDump for ScStmtKind {
             ScStmtKind::BindingDef {
                 name,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
                 sym,
             } => {
                 ctx.pretty_struct("BindingDef")
                     .field("name", name)
                     .field("mutability", mutability)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .field("value", value)
                     .field("sym", sym)
                     .finish()?;
