@@ -147,7 +147,7 @@ impl Parser {
         let name = self.as_ident();
 
         // TEST: no. 1
-        self.expect(ExpToken::Colon).emit(self.x());
+        self.expect_and_break(ExpToken::Colon).emit(self.x());
 
         let typeexpr = match self.token.tt {
             Colon | Eq => None,
@@ -161,10 +161,11 @@ impl Parser {
             // var global def
             Mutability::Mut
         } else if !self.in_recovery() {
+            // uninit global def
+
             // TEST: no. 2
             let hi = self.expect(ExpToken::Semi)?;
 
-            // uninit global def
             let Some(typeexpr) = typeexpr else {
                 // SAFETY: we always parse a typeexpr if the token after :
                 // isn't : or =

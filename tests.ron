@@ -3825,118 +3825,123 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     lexeme: `:`;
   },
   {
+    tt: punct ColonColon;
+    loc: 22..24 (fid = 0);
+    lexeme: `::`;
+  },
+  {
     tt: punct Comma;
-    loc: 22..23 (fid = 0);
+    loc: 25..26 (fid = 0);
     lexeme: `,`;
   },
   {
     tt: punct Eq;
-    loc: 24..25 (fid = 0);
+    loc: 27..28 (fid = 0);
     lexeme: `=`;
   },
   {
     tt: punct EqEq;
-    loc: 26..28 (fid = 0);
+    loc: 29..31 (fid = 0);
     lexeme: `==`;
   },
   {
     tt: punct BangEq;
-    loc: 29..31 (fid = 0);
+    loc: 32..34 (fid = 0);
     lexeme: `!=`;
   },
   {
     tt: punct Bang;
-    loc: 32..33 (fid = 0);
+    loc: 35..36 (fid = 0);
     lexeme: `!`;
   },
   {
     tt: punct LtEq;
-    loc: 34..36 (fid = 0);
+    loc: 37..39 (fid = 0);
     lexeme: `<=`;
   },
   {
     tt: punct Lt;
-    loc: 37..38 (fid = 0);
+    loc: 40..41 (fid = 0);
     lexeme: `<`;
   },
   {
     tt: punct LtLt;
-    loc: 39..41 (fid = 0);
+    loc: 42..44 (fid = 0);
     lexeme: `<<`;
   },
   {
     tt: punct Gt;
-    loc: 42..43 (fid = 0);
+    loc: 45..46 (fid = 0);
     lexeme: `>`;
   },
   {
     tt: punct GtGt;
-    loc: 44..46 (fid = 0);
+    loc: 47..49 (fid = 0);
     lexeme: `>>`;
   },
   {
     tt: punct GtEq;
-    loc: 47..49 (fid = 0);
+    loc: 50..52 (fid = 0);
     lexeme: `>=`;
   },
   {
     tt: punct Semi;
-    loc: 50..51 (fid = 0);
+    loc: 53..54 (fid = 0);
     lexeme: `;`;
   },
   {
     tt: punct MinusGt;
-    loc: 52..54 (fid = 0);
+    loc: 55..57 (fid = 0);
     lexeme: `->`;
   },
   {
     tt: punct Caret;
-    loc: 55..56 (fid = 0);
+    loc: 58..59 (fid = 0);
     lexeme: `^`;
   },
   {
     tt: punct And;
-    loc: 57..58 (fid = 0);
+    loc: 60..61 (fid = 0);
     lexeme: `&`;
   },
   {
     tt: punct AndAnd;
-    loc: 59..61 (fid = 0);
+    loc: 62..64 (fid = 0);
     lexeme: `&&`;
   },
   {
     tt: punct Or;
-    loc: 62..63 (fid = 0);
+    loc: 65..66 (fid = 0);
     lexeme: `|`;
   },
   {
     tt: punct OrOr;
-    loc: 64..66 (fid = 0);
+    loc: 67..69 (fid = 0);
     lexeme: `||`;
   },
   {
     tt: punct Percent;
-    loc: 67..68 (fid = 0);
+    loc: 70..71 (fid = 0);
     lexeme: `%`;
   },
   {
     tt: punct Dot;
-    loc: 69..70 (fid = 0);
+    loc: 72..73 (fid = 0);
     lexeme: `.`;
   },
   {
     tt: punct DotStar;
-    loc: 71..73 (fid = 0);
+    loc: 74..76 (fid = 0);
     lexeme: `.*`;
   },
   {
     tt: punct Pound;
-    loc: 74..75 (fid = 0);
+    loc: 77..78 (fid = 0);
     lexeme: `#`;
   },
   {
     tt: end of file;
-    loc: 76..77 (fid = 0);
+    loc: 79..80 (fid = 0);
     lexeme: N/A;
   },
 }

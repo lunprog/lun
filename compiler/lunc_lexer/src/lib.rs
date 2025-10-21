@@ -146,7 +146,17 @@ impl Lexer {
                 }
             }
             Some('*') => Star,
-            Some(':') => Colon,
+            Some(':') => {
+                self.pop();
+
+                match self.peek() {
+                    Some(':') => {
+                        self.pop();
+                        return Ok(ColonColon);
+                    }
+                    _ => return Ok(Colon),
+                }
+            }
             Some(',') => Comma,
             Some(';') => Semi,
             Some('^') => Caret,

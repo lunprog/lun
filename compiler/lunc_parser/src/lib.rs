@@ -191,6 +191,37 @@ impl Parser {
         Ok(self.token_loc())
     }
 
+    /// Expect and consumes the token `exp`, it may also break in two the
+    /// [`Parser::token`] but only if the first half of the breoken token is
+    /// `exp`. Signals an error if the next token isn't `exp` and it's broken
+    /// first half isn't `exp`. Returns the span of the consumed token if it was
+    /// the correct one.
+    pub fn expect_and_break(&mut self, exp: ExpToken) -> IResult<Span> {
+        if self.eat_no_expect(exp) {
+            Ok(self.token_loc())
+        } else if let Some(broken_t) = self.token.break_up()
+            && broken_t[0].tt == exp
+        {
+            // replace the broken parts in token stream and as current token
+            self.tokstream.replace_with_two(self.ti, broken_t.clone());
+            self.token = broken_t[0].clone();
+
+            // eat the first half of the token
+            self.bump();
+
+            Ok(self.token_loc())
+        } else {
+            // token was not not present
+            self.expected_token_exps.insert(exp);
+
+            let diag = self.expected_diag().into_diag();
+
+            self.bump();
+
+            Err(Recovered::Unable(diag))
+        }
+    }
+
     /// Expects and consumes the token `exp` if it exists. Signals an error if
     /// the next token isn't `exp`.
     ///
