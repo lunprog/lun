@@ -63,10 +63,10 @@ pub enum Type {
     FunPtr { args: Vec<Type>, ret: Box<Type> },
     /// Pointer
     Ptr(Mutability, Box<Type>),
-    /// Noreturn, this type indicates that the expression when evaluated stops
+    /// Never, this type indicates that the expression when evaluated stops
     /// the control flow, it is the type of a `break`, `continue` or `return`
-    /// expression.
-    Noreturn,
+    /// expression, or the type of a `loop {}` that will never `break`.
+    Never,
     /// String slice, not yet implemented.
     Str,
     /// Unicode code point, AKA character
@@ -264,8 +264,8 @@ impl Type {
                     other_ty
                 ) if other_mut == mutable && typ.can_coerce(other_ty)
             ),
-            // NOTE: noreturn can coerce to everything.
-            Type::Noreturn => true,
+            // NOTE: never can coerce to everything.
+            Type::Never => true,
             Type::Str | Type::Char | Type::Type => false,
         }
     }
@@ -410,7 +410,7 @@ impl Type {
             Type::F64 => 8,
             Type::F128 => 16,
             Type::Bool => 1,
-            Type::Void | Type::Noreturn => 0,
+            Type::Void | Type::Never => 0,
             Type::Isz | Type::Usz | Type::FunPtr { .. } | Type::Ptr { .. } => width.bytes(),
             Type::Str => todo!("string slice"),
             Type::Char => 4,
@@ -485,7 +485,7 @@ impl Display for Type {
 
                 typ.fmt(f)
             }
-            Type::Noreturn => write!(f, "noreturn"),
+            Type::Never => write!(f, "never"),
             Type::Str => write!(f, "str"),
             Type::Char => write!(f, "char"),
             Type::Type => write!(f, "type"),

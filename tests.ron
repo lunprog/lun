@@ -2711,7 +2711,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           name: a @ 18..19 (fid = 0);
           typexpr: Symbol {
             kind: global;
-            name: usz @ none;
+            name: void @ none;
             realname: none;
             which: 0;
             path: ∅;
@@ -8113,11 +8113,11 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           expr: Return {
             expr: none;
           };
-          typ: noreturn;
+          typ: never;
         } @ 185..191 (fid = 0) @ 185..191 (fid = 0),
       ];
       last_expr: none;
-      typ: noreturn;
+      typ: never;
     } @ 179..194 (fid = 0);
     info: {
       defined_mut: false;
@@ -8170,15 +8170,15 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
                                   } @ 262..264 (fid = 0);
                                   index: 0;
                                 };
-                                typ: noreturn;
+                                typ: never;
                               } @ 256..264 (fid = 0) @ 256..264 (fid = 0),
                             ];
                             last_expr: none;
-                            typ: noreturn;
+                            typ: never;
                           } @ 242..275 (fid = 0);
                           index: none;
                         };
-                        typ: noreturn;
+                        typ: never;
                       } @ 233..275 (fid = 0);
                       else_br: none;
                     };
@@ -8191,11 +8191,11 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
                       expr: none;
                       index: 0;
                     };
-                    typ: noreturn;
+                    typ: never;
                   } @ 285..290 (fid = 0) @ 285..290 (fid = 0),
                 ];
                 last_expr: none;
-                typ: noreturn;
+                typ: never;
               } @ 223..297 (fid = 0);
               index: 0;
             };
@@ -8240,7 +8240,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         typexpr: Expression {
           expr: Symbol {
             kind: global;
-            name: usz @ none;
+            name: void @ none;
             realname: none;
             which: 0;
             path: ∅;
@@ -9002,15 +9002,15 @@ error: compilation of `E011` failed due to 1 error and 0 warnings
                         label: none;
                         index: none;
                       };
-                      typ: noreturn;
+                      typ: never;
                     } @ 87..95 (fid = 0) @ 87..95 (fid = 0),
                   ];
                   last_expr: none;
-                  typ: noreturn;
+                  typ: never;
                 } @ 77..102 (fid = 0);
                 index: none;
               };
-              typ: noreturn;
+              typ: never;
             } @ 68..102 (fid = 0);
             else_br: none;
           };
@@ -9840,9 +9840,9 @@ error: compilation of `E029` failed due to 14 errors and 0 warnings
           } @ 68..93 (fid = 0);
           index: 0;
         };
-        typ: noreturn;
+        typ: never;
       } @ 63..93 (fid = 0);
-      typ: noreturn;
+      typ: never;
     } @ 57..95 (fid = 0);
     info: {
       defined_mut: false;
@@ -9876,17 +9876,17 @@ error: compilation of `E029` failed due to 14 errors and 0 warnings
                   label: d;
                   index: none;
                 };
-                typ: noreturn;
+                typ: never;
               } @ 130..141 (fid = 0) @ 130..141 (fid = 0),
             ];
             last_expr: none;
-            typ: noreturn;
+            typ: never;
           } @ 120..148 (fid = 0);
           index: 0;
         };
-        typ: noreturn;
+        typ: never;
       } @ 115..148 (fid = 0);
-      typ: noreturn;
+      typ: never;
     } @ 109..150 (fid = 0);
     info: {
       defined_mut: false;
@@ -9953,15 +9953,15 @@ error: compilation of `E030` failed due to 2 errors and 0 warnings
                                 expr: none;
                                 index: 0;
                               };
-                              typ: noreturn;
+                              typ: never;
                             } @ 150..160 (fid = 0) @ 150..160 (fid = 0),
                           ];
                           last_expr: none;
-                          typ: noreturn;
+                          typ: never;
                         } @ 97..171 (fid = 0);
                         index: none;
                       };
-                      typ: noreturn;
+                      typ: never;
                     } @ 88..171 (fid = 0);
                     else_br: none;
                   };
@@ -10047,15 +10047,15 @@ error: compilation of `E031` failed due to 1 error and 0 warnings
                               expr: none;
                               index: 0;
                             };
-                            typ: noreturn;
+                            typ: never;
                           } @ 138..148 (fid = 0) @ 138..148 (fid = 0),
                         ];
                         last_expr: none;
-                        typ: noreturn;
+                        typ: never;
                       } @ 85..159 (fid = 0);
                       index: none;
                     };
-                    typ: noreturn;
+                    typ: never;
                   } @ 76..159 (fid = 0);
                   else_br: none;
                 };
@@ -10067,11 +10067,11 @@ error: compilation of `E031` failed due to 1 error and 0 warnings
                   label: blk;
                   index: none;
                 };
-                typ: noreturn;
+                typ: never;
               } @ 169..182 (fid = 0) @ 169..182 (fid = 0),
             ];
             last_expr: none;
-            typ: noreturn;
+            typ: never;
           } @ 66..189 (fid = 0);
           index: 0;
         };
@@ -10141,7 +10141,7 @@ error: compilation of `E032` failed due to 1 error and 0 warnings
                       expr: none;
                       index: 0;
                     };
-                    typ: noreturn;
+                    typ: never;
                   } @ none;
                   else_br: none;
                 };
@@ -10162,19 +10162,19 @@ error: compilation of `E032` failed due to 1 error and 0 warnings
                           } @ 95..97 (fid = 0);
                           index: 0;
                         };
-                        typ: noreturn;
+                        typ: never;
                       } @ 89..97 (fid = 0) @ 89..97 (fid = 0),
                     ];
                     last_expr: none;
-                    typ: noreturn;
+                    typ: never;
                   } @ 79..104 (fid = 0);
                   index: none;
                 };
-                typ: noreturn;
+                typ: never;
               } @ none @ none,
             ];
             last_expr: none;
-            typ: noreturn;
+            typ: never;
           } @ 79..104 (fid = 0);
           index: 0;
         };
@@ -11419,26 +11419,6 @@ error[E040]: cannot define a function declaration inside of a mutable global def
 error: compilation of `E040` failed due to 4 errors and 0 warnings
 
 "#,
-        compiler_code: 255,
-        test_out: "",
-        test_code: 0,
-    ),
-    "scir/E041": (
-        compiler_out: "error[E041]: binary operation + isn't supported for type void
-  ┌─ ./tests/scir/E041.lun:2:5
-  │
-2 │     a + b
-  │     ^^^^^
-
-error[E041]: binary operation + isn't supported for type noreturn
-  ┌─ ./tests/scir/E041.lun:6:5
-  │
-6 │     a + b
-  │     ^^^^^
-
-error: compilation of `E041` failed due to 2 errors and 0 warnings
-
-",
         compiler_code: 255,
         test_out: "",
         test_code: 0,
@@ -14728,15 +14708,15 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
                           typ: i32;
                         } @ 59..61 (fid = 0);
                       };
-                      typ: noreturn;
+                      typ: never;
                     } @ 52..61 (fid = 0) @ 52..61 (fid = 0),
                   ];
                   last_expr: none;
-                  typ: noreturn;
+                  typ: never;
                 } @ 42..68 (fid = 0);
                 index: none;
               };
-              typ: noreturn;
+              typ: never;
             } @ 33..68 (fid = 0);
             else_br: none;
           };
@@ -14803,15 +14783,15 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
                           typ: f32;
                         } @ 140..143 (fid = 0);
                       };
-                      typ: noreturn;
+                      typ: never;
                     } @ 133..143 (fid = 0) @ 133..143 (fid = 0),
                   ];
                   last_expr: none;
-                  typ: noreturn;
+                  typ: never;
                 } @ 123..150 (fid = 0);
                 index: none;
               };
-              typ: noreturn;
+              typ: never;
             } @ 114..150 (fid = 0);
             else_br: none;
           };
@@ -14878,13 +14858,13 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
                         typ: char;
                       } @ 225..228 (fid = 0);
                     };
-                    typ: noreturn;
+                    typ: never;
                   } @ 218..228 (fid = 0);
-                  typ: noreturn;
+                  typ: never;
                 } @ 208..234 (fid = 0);
                 index: none;
               };
-              typ: noreturn;
+              typ: never;
             } @ 199..234 (fid = 0);
             else_br: none;
           };
@@ -14957,13 +14937,13 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
                         typ: *str;
                       } @ 310..324 (fid = 0);
                     };
-                    typ: noreturn;
+                    typ: never;
                   } @ 303..324 (fid = 0);
-                  typ: noreturn;
+                  typ: never;
                 } @ 293..330 (fid = 0);
                 index: none;
               };
-              typ: noreturn;
+              typ: never;
             } @ 284..330 (fid = 0);
             else_br: none;
           };
@@ -15013,13 +14993,13 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
                     expr: Return {
                       expr: none;
                     };
-                    typ: noreturn;
+                    typ: never;
                   } @ 399..405 (fid = 0);
-                  typ: noreturn;
+                  typ: never;
                 } @ 389..411 (fid = 0);
                 index: none;
               };
-              typ: noreturn;
+              typ: never;
             } @ 380..411 (fid = 0);
             else_br: none;
           };
@@ -15030,11 +15010,11 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
           expr: Return {
             expr: none;
           };
-          typ: noreturn;
+          typ: never;
         } @ 417..423 (fid = 0) @ 417..423 (fid = 0),
       ];
       last_expr: none;
-      typ: noreturn;
+      typ: never;
     } @ 374..426 (fid = 0);
     info: {
       defined_mut: false;
@@ -15081,11 +15061,11 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
                         expr: none;
                         index: 1;
                       };
-                      typ: noreturn;
+                      typ: never;
                     } @ 67..72 (fid = 0) @ 67..72 (fid = 0),
                   ];
                   last_expr: none;
-                  typ: noreturn;
+                  typ: never;
                 } @ 53..156 (fid = 0);
                 index: 1;
               };
@@ -15153,11 +15133,11 @@ error: compilation of `E041` failed due to 2 errors and 0 warnings
                       } @ 229..231 (fid = 0);
                       index: 0;
                     };
-                    typ: noreturn;
+                    typ: never;
                   } @ 218..231 (fid = 0) @ 218..231 (fid = 0),
                 ];
                 last_expr: none;
-                typ: noreturn;
+                typ: never;
               } @ 208..249 (fid = 0);
               index: 0;
             };
@@ -15270,18 +15250,18 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
     rettypexpr: Expression {
       expr: Symbol {
         kind: global;
-        name: usz @ none;
+        name: never @ none;
         realname: none;
         which: 0;
         path: ∅;
         typ: type;
         typeness: explicit;
         value: Type {
-          type: noreturn;
+          type: never;
         };
       };
       typ: type;
-    } @ 25..33 (fid = 0);
+    } @ 25..30 (fid = 0);
     body: Block {
       stmts: [];
       last_expr: Expression {
@@ -15291,13 +15271,13 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
             stmts: [];
             last_expr: none;
             typ: void;
-          } @ 45..47 (fid = 0);
+          } @ 42..44 (fid = 0);
           index: 0;
         };
-        typ: noreturn;
-      } @ 40..47 (fid = 0);
-      typ: noreturn;
-    } @ 34..49 (fid = 0);
+        typ: never;
+      } @ 37..44 (fid = 0);
+      typ: never;
+    } @ 31..46 (fid = 0);
     info: {
       defined_mut: false;
     };
@@ -15307,31 +15287,31 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       realname: none;
       which: 0;
       path: loop_semantics.loop_forever;
-      typ: *fun () -> noreturn;
+      typ: *fun () -> never;
       typeness: explicit;
       value: none;
     };
-  } @ 0..49 (fid = 0),
+  } @ 0..46 (fid = 0),
 
   FunDefinition {
-    name: still_loop_forever @ 51..69 (fid = 0);
+    name: still_loop_forever @ 48..66 (fid = 0);
     typexpr: none;
     args: [];
     rettypexpr: Expression {
       expr: Symbol {
         kind: global;
-        name: usz @ none;
+        name: never @ none;
         realname: none;
         which: 0;
         path: ∅;
         typ: type;
         typeness: explicit;
         value: Type {
-          type: noreturn;
+          type: never;
         };
       };
       typ: type;
-    } @ 82..90 (fid = 0);
+    } @ 79..84 (fid = 0);
     body: Block {
       stmts: [];
       last_expr: Expression {
@@ -15341,7 +15321,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
             stmts: [];
             last_expr: Expression {
               expr: Loop {
-                label: inner @ 112..117 (fid = 0);
+                label: inner @ 106..111 (fid = 0);
                 body: Block {
                   stmts: [
                     Expression {
@@ -15350,57 +15330,57 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
                         expr: none;
                         index: 1;
                       };
-                      typ: noreturn;
-                    } @ 138..150 (fid = 0) @ 138..150 (fid = 0),
+                      typ: never;
+                    } @ 132..144 (fid = 0) @ 132..144 (fid = 0),
                   ];
                   last_expr: none;
-                  typ: noreturn;
-                } @ 124..161 (fid = 0);
+                  typ: never;
+                } @ 118..155 (fid = 0);
                 index: 1;
               };
               typ: void;
-            } @ 112..161 (fid = 0);
+            } @ 106..155 (fid = 0);
             typ: void;
-          } @ 102..167 (fid = 0);
+          } @ 96..161 (fid = 0);
           index: 0;
         };
-        typ: noreturn;
-      } @ 97..167 (fid = 0);
-      typ: noreturn;
-    } @ 91..169 (fid = 0);
+        typ: never;
+      } @ 91..161 (fid = 0);
+      typ: never;
+    } @ 85..163 (fid = 0);
     info: {
       defined_mut: false;
     };
     sym: Symbol {
       kind: function;
-      name: still_loop_forever @ 51..69 (fid = 0);
+      name: still_loop_forever @ 48..66 (fid = 0);
       realname: none;
       which: 0;
       path: loop_semantics.still_loop_forever;
-      typ: *fun () -> noreturn;
+      typ: *fun () -> never;
       typeness: explicit;
       value: none;
     };
-  } @ 51..169 (fid = 0),
+  } @ 48..163 (fid = 0),
 
   FunDefinition {
-    name: loop_forever_in_practice @ 171..195 (fid = 0);
+    name: loop_forever_in_practice @ 165..189 (fid = 0);
     typexpr: none;
     args: [];
     rettypexpr: none;
     body: Block {
       stmts: [
         VariableDef {
-          name: reachable @ 405..414 (fid = 0);
+          name: reachable @ 399..408 (fid = 0);
           mutability: not;
           typexpr: none;
           value: Expression {
             expr: integer 12;
             typ: i32;
-          } @ 418..420 (fid = 0);
+          } @ 412..414 (fid = 0);
           sym: Symbol {
             kind: local;
-            name: reachable @ 405..414 (fid = 0);
+            name: reachable @ 399..408 (fid = 0);
             realname: none;
             which: 0;
             path: reachable;
@@ -15408,7 +15388,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
             typeness: implicit;
             value: none;
           };
-        } @ 405..420 (fid = 0),
+        } @ 399..414 (fid = 0),
 
         Expression {
           expr: Loop {
@@ -15420,7 +15400,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
                   cond: Expression {
                     expr: boolean false;
                     typ: bool;
-                  } @ 445..450 (fid = 0);
+                  } @ 439..444 (fid = 0);
                   then_br: Expression {
                     expr: Block {
                       label: none;
@@ -15432,29 +15412,29 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
                             expr: none;
                             index: 0;
                           };
-                          typ: noreturn;
-                        } @ 465..470 (fid = 0);
-                        typ: noreturn;
-                      } @ 451..480 (fid = 0);
+                          typ: never;
+                        } @ 459..464 (fid = 0);
+                        typ: never;
+                      } @ 445..474 (fid = 0);
                       index: none;
                     };
-                    typ: noreturn;
-                  } @ 442..480 (fid = 0);
+                    typ: never;
+                  } @ 436..474 (fid = 0);
                   else_br: none;
                 };
                 typ: void;
-              } @ 442..480 (fid = 0);
+              } @ 436..474 (fid = 0);
               typ: void;
-            } @ 432..486 (fid = 0);
+            } @ 426..480 (fid = 0);
             index: 0;
           };
           typ: void;
-        } @ 427..486 (fid = 0) @ 427..486 (fid = 0),
+        } @ 421..480 (fid = 0) @ 421..480 (fid = 0),
 
         Expression {
           expr: Symbol {
             kind: local;
-            name: reachable @ 405..414 (fid = 0);
+            name: reachable @ 399..408 (fid = 0);
             realname: none;
             which: 0;
             path: reachable;
@@ -15463,17 +15443,17 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
             value: none;
           };
           typ: i32;
-        } @ 492..501 (fid = 0) @ 492..501 (fid = 0),
+        } @ 486..495 (fid = 0) @ 486..495 (fid = 0),
       ];
       last_expr: none;
       typ: void;
-    } @ 205..504 (fid = 0);
+    } @ 199..498 (fid = 0);
     info: {
       defined_mut: false;
     };
     sym: Symbol {
       kind: function;
-      name: loop_forever_in_practice @ 171..195 (fid = 0);
+      name: loop_forever_in_practice @ 165..189 (fid = 0);
       realname: none;
       which: 0;
       path: loop_semantics.loop_forever_in_practice;
@@ -15481,14 +15461,14 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       typeness: explicit;
       value: none;
     };
-  } @ 171..504 (fid = 0),
+  } @ 165..498 (fid = 0),
 ]
 ",
         compiler_code: 0,
         test_out: "",
         test_code: 0,
     ),
-    "scir/noreturn_block": (
+    "scir/never_block": (
         compiler_out: "scir = [
   GlobalDef {
     name: cant_reach @ 0..10 (fid = 0);
@@ -15503,7 +15483,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       name: cant_reach @ 0..10 (fid = 0);
       realname: none;
       which: 0;
-      path: noreturn_block.cant_reach;
+      path: never_block.cant_reach;
       typ: i32;
       typeness: implicit;
       value: I32 {
@@ -15562,7 +15542,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
                       name: cant_reach @ 0..10 (fid = 0);
                       realname: none;
                       which: 0;
-                      path: noreturn_block.cant_reach;
+                      path: never_block.cant_reach;
                       typ: i32;
                       typeness: implicit;
                       value: I32 {
@@ -15581,11 +15561,11 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
                       } @ 160..162 (fid = 0);
                       index: 0;
                     };
-                    typ: noreturn;
+                    typ: never;
                   } @ 149..162 (fid = 0) @ 149..162 (fid = 0),
                 ];
                 last_expr: none;
-                typ: noreturn;
+                typ: never;
               } @ 60..189 (fid = 0);
               index: 0;
             };
@@ -15610,11 +15590,11 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
               typ: usz;
             } @ 244..246 (fid = 0);
           };
-          typ: noreturn;
+          typ: never;
         } @ 237..246 (fid = 0) @ 237..246 (fid = 0),
       ];
       last_expr: none;
-      typ: noreturn;
+      typ: never;
     } @ 39..265 (fid = 0);
     info: {
       defined_mut: false;
@@ -15624,7 +15604,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
       name: main @ 18..22 (fid = 0);
       realname: none;
       which: 0;
-      path: noreturn_block.main;
+      path: never_block.main;
       typ: *fun () -> usz;
       typeness: explicit;
       value: none;
@@ -15632,7 +15612,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
   } @ 18..265 (fid = 0),
 ]
 warning[W002]: unreachable code
-   ┌─ ./tests/scir/noreturn_block.lun:10:9
+   ┌─ ./tests/scir/never_block.lun:10:9
    │
  8 │         break :blk 12;
    │         ------------- any code following this statement is unreachable
@@ -15641,14 +15621,14 @@ warning[W002]: unreachable code
    │         ^^^^^^^^^^ the unreachable code
 
 warning[W002]: unreachable code
-   ┌─ ./tests/scir/noreturn_block.lun:15:5
+   ┌─ ./tests/scir/never_block.lun:15:5
    │
 14 │     return 12;
    │     --------- any code following this statement is unreachable
 15 │     cant_reach;
    │     ^^^^^^^^^^ the unreachable code
 
-warning: compilation of `noreturn_block` succeeded but 2 warnings emitted.
+warning: compilation of `never_block` succeeded but 2 warnings emitted.
 
 ",
         compiler_code: 0,

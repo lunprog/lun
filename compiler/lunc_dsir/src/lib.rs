@@ -1735,11 +1735,8 @@ impl SymbolMap {
                 ("bool".to_string(), Symbol::new_typ("bool", Type::Bool)),
                 ("str".to_string(), Symbol::new_typ("str", Type::Str)),
                 ("char".to_string(), Symbol::new_typ("char", Type::Char)),
-                (
-                    "noreturn".to_string(),
-                    Symbol::new_typ("usz", Type::Noreturn),
-                ),
-                ("void".to_string(), Symbol::new_typ("usz", Type::Void)),
+                ("never".to_string(), Symbol::new_typ("never", Type::Never)),
+                ("void".to_string(), Symbol::new_typ("void", Type::Void)),
                 (
                     "orb".to_string(),
                     // NOTE: here we can set the loc to be 0..0 into the root

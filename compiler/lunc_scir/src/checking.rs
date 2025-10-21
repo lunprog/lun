@@ -1178,7 +1178,7 @@ impl SemaChecker {
                 let break_out = info.break_out;
 
                 expr.typ = if !break_out {
-                    Type::Noreturn
+                    Type::Never
                 } else if info.typ != Type::Unknown {
                     info.typ.clone()
                 } else {
@@ -1206,7 +1206,7 @@ impl SemaChecker {
                     });
                 }
 
-                expr.typ = Type::Noreturn;
+                expr.typ = Type::Never;
             }
             ScExprKind::Break {
                 label,
@@ -1308,7 +1308,7 @@ impl SemaChecker {
                     });
                 }
 
-                expr.typ = Type::Noreturn;
+                expr.typ = Type::Never;
             }
             ScExprKind::Continue { label, index } => {
                 // define the label index
@@ -1361,7 +1361,7 @@ impl SemaChecker {
                     }
                 }
 
-                expr.typ = Type::Noreturn;
+                expr.typ = Type::Never;
             }
             ScExprKind::Null => {
                 self.sink.emit(feature_todo! {
@@ -1476,14 +1476,14 @@ impl SemaChecker {
         }
 
         // compute if one of the statements or the last expression has
-        // `noreturn` type.
-        let is_noreturn = block.stmts.iter().position(|stmt| match &stmt.stmt {
-            ScStmtKind::VariableDef { value, .. } if value.typ == Type::Noreturn => true,
-            ScStmtKind::Expression(expr) if expr.typ == Type::Noreturn => true,
+        // `never` type.
+        let is_never = block.stmts.iter().position(|stmt| match &stmt.stmt {
+            ScStmtKind::VariableDef { value, .. } if value.typ == Type::Never => true,
+            ScStmtKind::Expression(expr) if expr.typ == Type::Never => true,
             _ => false,
         });
 
-        block.typ = if let Some(pos) = is_noreturn {
+        block.typ = if let Some(pos) = is_never {
             // emit the unreachable code warning when
             if pos + 1 < block.stmts.len() {
                 // ... the code following is also a statement
@@ -1508,7 +1508,7 @@ impl SemaChecker {
             block.stmts.truncate(reachable_stmts);
             block.last_expr = None;
 
-            Type::Noreturn
+            Type::Never
         } else if let Some(expr) = &mut block.last_expr {
             expr.typ.clone()
         } else {

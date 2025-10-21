@@ -405,7 +405,7 @@ impl ClifGen {
         use symbol::Type as SType;
 
         match typ {
-            SType::Unknown | SType::Type | SType::Void | SType::Noreturn => unreachable!(),
+            SType::Unknown | SType::Type | SType::Void | SType::Never => unreachable!(),
             SType::I8 => AbiParam::new(types::I8).sext(),
             SType::I16 => AbiParam::new(types::I16).sext(),
             SType::I32 => AbiParam::new(types::I32).sext(),
@@ -422,7 +422,6 @@ impl ClifGen {
             SType::F32 => AbiParam::new(types::F32),
             SType::F64 => AbiParam::new(types::F64),
             SType::F128 => AbiParam::new(types::F128),
-            // NOTE: i8 is a placeholder type for noreturn and void, it is never lowered in practice
             SType::Bool => AbiParam::new(types::I8),
             SType::FunPtr { .. } | SType::Ptr { .. } => AbiParam::new(self.isa.pointer_type()),
             SType::Str => todo!("fat-pointers"),
@@ -436,7 +435,7 @@ impl ClifGen {
 
         match typ {
             SType::Unknown | SType::Type => unreachable!(),
-            SType::Void | SType::Noreturn => FundefArg::Zst,
+            SType::Void | SType::Never => FundefArg::Zst,
             _ => FundefArg::Param(self.type_to_param(typ)),
         }
     }

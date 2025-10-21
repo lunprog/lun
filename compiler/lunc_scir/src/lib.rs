@@ -1051,7 +1051,7 @@ pub struct LabelInfo {
     /// of the loop and `false` if we never `break`'d of the loop. It is used
     /// to compute the type of a loop, because if the loop is truly infinite:
     /// we can't reach the statement after the loop, then the type of the loop
-    /// is `noreturn`.
+    /// is `never`.
     ///
     /// **For block**'s label, it can indicate the we never used the label to
     /// short circuit the block.

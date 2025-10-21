@@ -1,8 +1,8 @@
-loop_forever :: fun() -> noreturn {
+loop_forever :: fun() -> never {
     loop {}
 }
 
-still_loop_forever :: fun() -> noreturn {
+still_loop_forever :: fun() -> never {
     loop {
         inner: loop {
             break :inner;

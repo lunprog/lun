@@ -52,9 +52,9 @@ impl<'a> FunDefTranslator<'a> {
     ///
     /// # Panic
     ///
-    /// This function will panic if called on an expression that can have a
-    /// ZST type (like void or noreturn). So calling [try_translate_expr] is
-    /// preferred if the expr may return a ZST.
+    /// This function will panic if called on an expression that can have a ZST
+    /// type (like void or never). So calling [try_translate_expr] is preferred
+    /// if the expr may return a ZST.
     ///
     /// [try_translate_expr]: Self::try_translate_expr
     #[track_caller]
@@ -66,7 +66,7 @@ impl<'a> FunDefTranslator<'a> {
     /// Translate the expression and return the value containing it.
     ///
     /// Returns `Some(..)` with the value, or `None` if the expression's type is
-    /// a ZST like void or noreturn.
+    /// a ZST like void or never.
     pub fn try_translate_expr(&mut self, expr: &ScExpression) -> Option<Value> {
         match &expr.expr {
             ScExprKind::Lit(Lit {
