@@ -19,7 +19,6 @@ impl PrettyDump for ScItem {
         match self {
             ScItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value,
@@ -27,7 +26,7 @@ impl PrettyDump for ScItem {
                 sym,
             } => {
                 ctx.pretty_struct("GlobalDef")
-                    .field("name", (name, name_loc))
+                    .field("name", name)
                     .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
@@ -40,13 +39,12 @@ impl PrettyDump for ScItem {
             }
             ScItem::GlobalUninit {
                 name,
-                name_loc,
                 typexpr,
                 loc,
                 sym,
             } => {
                 ctx.pretty_struct("GlobalUninit")
-                    .field("name", (name, name_loc))
+                    .field("name", name)
                     .field("typexpr", typexpr)
                     .field("sym", sym)
                     .finish()?;
@@ -57,7 +55,6 @@ impl PrettyDump for ScItem {
             }
             ScItem::FunDefinition {
                 name,
-                name_loc,
                 typexpr,
                 args,
                 rettypexpr,
@@ -67,7 +64,7 @@ impl PrettyDump for ScItem {
                 sym,
             } => {
                 ctx.pretty_struct("FunDefinition")
-                    .field("name", (name, name_loc))
+                    .field("name", name)
                     .field("typexpr", typexpr)
                     .field("args", args.as_slice())
                     .field("rettypexpr", rettypexpr)
@@ -82,7 +79,6 @@ impl PrettyDump for ScItem {
             }
             ScItem::FunDeclaration {
                 name,
-                name_loc,
                 typexpr,
                 args,
                 rettypexpr,
@@ -91,7 +87,7 @@ impl PrettyDump for ScItem {
                 sym,
             } => {
                 ctx.pretty_struct("FunDeclaration")
-                    .field("name", (name, name_loc))
+                    .field("name", name)
                     .field("typexpr", typexpr)
                     .field("args", args.as_slice())
                     .field("rettypexpr", rettypexpr)

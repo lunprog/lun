@@ -72,8 +72,7 @@ pub enum ScItem {
     ///
     /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
     GlobalDef {
-        name: String,
-        name_loc: OSpan,
+        name: Spanned<String>,
         mutability: Mutability,
         typexpr: Box<Option<ScExpression>>,
         value: Box<ScExpression>,
@@ -85,8 +84,7 @@ pub enum ScItem {
     ///
     /// [`DsItem::GlobalUninit`]: lunc_dsir::DsItem::GlobalUninit
     GlobalUninit {
-        name: String,
-        name_loc: OSpan,
+        name: Spanned<String>,
         typexpr: ScExpression,
         loc: OSpan,
         /// corresponding symbol of this definition
@@ -97,8 +95,7 @@ pub enum ScItem {
     /// [`DsExprKind::FunDefinition`]: lunc_dsir::DsExprKind::FunDefinition
     /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
     FunDefinition {
-        name: String,
-        name_loc: OSpan,
+        name: Spanned<String>,
         typexpr: Box<Option<ScExpression>>,
         args: Vec<ScArg>,
         rettypexpr: Option<Box<ScExpression>>,
@@ -113,8 +110,7 @@ pub enum ScItem {
     /// [`DsExprKind::FunDeclaration`]: lunc_dsir::DsExprKind::FunDeclaration
     /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
     FunDeclaration {
-        name: String,
-        name_loc: OSpan,
+        name: Spanned<String>,
         typexpr: Box<Option<ScExpression>>,
         args: Vec<ScExpression>,
         rettypexpr: Option<Box<ScExpression>>,
@@ -180,7 +176,6 @@ impl FromHigher for ScItem {
         match node {
             DsItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value,
@@ -199,7 +194,6 @@ impl FromHigher for ScItem {
 
                 ScItem::FunDefinition {
                     name,
-                    name_loc,
                     typexpr: Box::new(lower(typexpr)),
                     args: lower(args),
                     rettypexpr: lower(rettypexpr),
@@ -213,7 +207,6 @@ impl FromHigher for ScItem {
             }
             DsItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value,
@@ -227,7 +220,6 @@ impl FromHigher for ScItem {
 
                 ScItem::FunDeclaration {
                     name,
-                    name_loc,
                     typexpr: Box::new(lower(typexpr)),
                     args: lower(args),
                     rettypexpr: lower(rettypexpr),
@@ -238,7 +230,6 @@ impl FromHigher for ScItem {
             }
             DsItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value,
@@ -246,7 +237,6 @@ impl FromHigher for ScItem {
                 sym: lazy,
             } => ScItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr: Box::new(lower(typexpr)),
                 value: lower(value),
@@ -255,13 +245,11 @@ impl FromHigher for ScItem {
             },
             DsItem::GlobalUninit {
                 name,
-                name_loc,
                 typexpr,
                 loc,
                 sym,
             } => ScItem::GlobalUninit {
                 name,
-                name_loc,
                 typexpr: lower(typexpr),
                 loc,
                 sym: sym.unwrap_sym(),

@@ -73,8 +73,7 @@ pub enum DsItem {
     /// [`GlobalVar`]: lunc_parser::item::Item::GlobalVar
     /// [`GlobalConst`]: lunc_parser::item::Item::GlobalConst
     GlobalDef {
-        name: String,
-        name_loc: OSpan,
+        name: Spanned<String>,
         mutability: Mutability,
         typexpr: Option<DsExpression>,
         value: Box<DsExpression>,
@@ -86,8 +85,7 @@ pub enum DsItem {
     ///
     /// [`Item::GlobalUninit`]: lunc_parser::item::Item::GlobalUninit
     GlobalUninit {
-        name: String,
-        name_loc: OSpan,
+        name: Spanned<String>,
         typexpr: DsExpression,
         loc: OSpan,
         /// corresponding symbol of this definition
@@ -158,45 +156,23 @@ impl FromHigher for DsItem {
 
     fn lower(node: Self::Higher) -> Self {
         match node {
-            Item::GlobalConst {
+            Item::GlobalDef {
                 name,
-                name_loc,
+                mutability,
                 typexpr,
                 value,
                 loc,
             } => DsItem::GlobalDef {
-                sym: LazySymbol::Name(name.clone()),
+                sym: LazySymbol::Name(name.node.clone()),
                 name,
-                name_loc: Some(name_loc),
-                mutability: Mutability::Not,
+                mutability,
                 typexpr: lower(typexpr),
                 value: Box::new(lower(value)),
                 loc: Some(loc),
             },
-            Item::GlobalVar {
+            Item::GlobalUninit { name, typexpr, loc } => DsItem::GlobalUninit {
+                sym: LazySymbol::Name(name.node.clone()),
                 name,
-                name_loc,
-                typexpr,
-                value,
-                loc,
-            } => DsItem::GlobalDef {
-                sym: LazySymbol::Name(name.clone()),
-                name,
-                name_loc: Some(name_loc),
-                mutability: Mutability::Mut,
-                typexpr: lower(typexpr),
-                value: Box::new(lower(value)),
-                loc: Some(loc),
-            },
-            Item::GlobalUninit {
-                name,
-                name_loc,
-                typexpr,
-                loc,
-            } => DsItem::GlobalUninit {
-                sym: LazySymbol::Name(name.clone()),
-                name,
-                name_loc: Some(name_loc),
                 typexpr: lower(typexpr),
                 loc: Some(loc),
             },
@@ -1498,7 +1474,6 @@ impl Desugarrer {
         match item {
             DsItem::GlobalDef {
                 name,
-                name_loc,
                 mutability: _,
                 typexpr: _,
                 value,
@@ -1506,21 +1481,23 @@ impl Desugarrer {
                 sym,
             } if value.expr.is_fundef() || value.expr.is_fundecl() => {
                 let mut path = self.current_path.clone();
-                path.push(name.clone());
+                path.push(name.node.clone());
 
-                let symref =
-                    sym.symbol()
-                        .unwrap_or(Symbol::function(name.clone(), path, name_loc.clone()));
+                let symref = sym.symbol().unwrap_or(Symbol::function(
+                    name.node.clone(),
+                    path,
+                    Some(name.loc.clone()),
+                ));
 
                 self.orb
                     .goto_mut(&self.current_path)
                     .unwrap()
-                    .define(name.clone(), symref.clone());
+                    .define(name.node.clone(), symref.clone());
 
                 *sym = LazySymbol::Sym(symref.clone());
 
                 if self.current_path == resolve_path {
-                    match self.table.bind(name.clone(), symref) {
+                    match self.table.bind(name.node.clone(), symref) {
                         Ok(()) => {}
                         Err(d) => {
                             self.sink.emit(d);
@@ -1532,7 +1509,6 @@ impl Desugarrer {
             }
             DsItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value: _,
@@ -1540,29 +1516,29 @@ impl Desugarrer {
                 sym,
             } => {
                 let mut path = self.current_path.clone();
-                path.push(name.clone());
+                path.push(name.node.clone());
 
                 let symref = sym.symbol().unwrap_or(Symbol::global(
                     *mutability,
-                    name.clone(),
+                    name.node.clone(),
                     path,
                     if typexpr.is_some() {
                         Typeness::Explicit
                     } else {
                         Typeness::Implicit
                     },
-                    name_loc.clone(),
+                    Some(name.loc.clone()),
                 ));
 
                 self.orb
                     .goto_mut(&self.current_path)
                     .unwrap()
-                    .define(name.clone(), symref.clone());
+                    .define(name.node.clone(), symref.clone());
 
                 *sym = LazySymbol::Sym(symref.clone());
 
                 if self.current_path == resolve_path {
-                    match self.table.bind(name.clone(), symref) {
+                    match self.table.bind(name.node.clone(), symref) {
                         Ok(()) => {}
                         Err(d) => {
                             self.sink.emit(d);
@@ -1574,31 +1550,30 @@ impl Desugarrer {
             }
             DsItem::GlobalUninit {
                 name,
-                name_loc,
                 typexpr: _,
                 loc: _,
                 sym,
             } => {
                 let mut path = self.current_path.clone();
-                path.push(name.clone());
+                path.push(name.node.clone());
 
                 let symref = sym.symbol().unwrap_or(Symbol::global(
                     Mutability::Mut,
-                    name.clone(),
+                    name.node.clone(),
                     path,
                     Typeness::Explicit,
-                    name_loc.clone(),
+                    Some(name.loc.clone()),
                 ));
 
                 self.orb
                     .goto_mut(&self.current_path)
                     .unwrap()
-                    .define(name.clone(), symref.clone());
+                    .define(name.node.clone(), symref.clone());
 
                 *sym = LazySymbol::Sym(symref.clone());
 
                 if self.current_path == resolve_path {
-                    match self.table.bind(name.clone(), symref) {
+                    match self.table.bind(name.node.clone(), symref) {
                         Ok(()) => {}
                         Err(d) => {
                             self.sink.emit(d);

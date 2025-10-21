@@ -20,15 +20,16 @@ impl PrettyDump for Module {
 impl PrettyDump for Item {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            Item::GlobalConst {
+            Item::GlobalDef {
                 name,
-                name_loc,
+                mutability,
                 typexpr,
                 value,
                 loc,
             } => {
-                ctx.pretty_struct("GlobalConst")
-                    .field("name", (name, name_loc))
+                ctx.pretty_struct("GlobalDef")
+                    .field("name", name)
+                    .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
                     .finish()?;
@@ -36,30 +37,9 @@ impl PrettyDump for Item {
 
                 Ok(())
             }
-            Item::GlobalVar {
-                name,
-                name_loc,
-                typexpr,
-                value,
-                loc,
-            } => {
-                ctx.pretty_struct("GlobalVar")
-                    .field("name", (name, name_loc))
-                    .field("typexpr", typexpr)
-                    .field("value", value)
-                    .finish()?;
-                ctx.print_loc(loc)?;
-
-                Ok(())
-            }
-            Item::GlobalUninit {
-                name,
-                name_loc,
-                typexpr,
-                loc,
-            } => {
+            Item::GlobalUninit { name, typexpr, loc } => {
                 ctx.pretty_struct("GlobalUninit")
-                    .field("name", (name, name_loc))
+                    .field("name", name)
                     .field("typexpr", typexpr)
                     .finish()?;
                 ctx.print_loc(loc)?;

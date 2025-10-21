@@ -51,7 +51,6 @@ impl SemaChecker {
             ScItem::GlobalDef { .. } => self.pre_ck_global_def(item),
             ScItem::GlobalUninit {
                 name: _,
-                name_loc: _,
                 typexpr,
                 loc: _,
                 sym,
@@ -88,7 +87,6 @@ impl SemaChecker {
             }
             ScItem::FunDefinition {
                 name: _,
-                name_loc: _,
                 typexpr,
                 args,
                 rettypexpr,
@@ -223,7 +221,6 @@ impl SemaChecker {
             }
             ScItem::FunDeclaration {
                 name: _,
-                name_loc: _,
                 typexpr,
                 args,
                 rettypexpr,
@@ -367,7 +364,6 @@ impl SemaChecker {
     fn pre_ck_global_def(&mut self, global_def: &mut ScItem) -> Result<(), Diagnostic> {
         let ScItem::GlobalDef {
             name: _,
-            name_loc: _,
             mutability: _,
             typexpr,
             value: _,
@@ -575,7 +571,6 @@ impl SemaChecker {
         match item {
             ScItem::GlobalDef {
                 name: _,
-                name_loc: _,
                 mutability: _,
                 typexpr,
                 value,
@@ -632,7 +627,6 @@ impl SemaChecker {
             }
             ScItem::GlobalUninit {
                 name: _,
-                name_loc: _,
                 typexpr: _,
                 loc,
                 sym: _,
@@ -648,7 +642,6 @@ impl SemaChecker {
             }
             ScItem::FunDefinition {
                 name: _,
-                name_loc: _,
                 typexpr: _,
                 args: _,
                 rettypexpr,

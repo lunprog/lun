@@ -38,7 +38,6 @@ impl SemaChecker {
         match item {
             ScItem::GlobalDef {
                 name: _,
-                name_loc: _,
                 mutability: _,
                 typexpr,
                 value,
@@ -55,7 +54,6 @@ impl SemaChecker {
             }
             ScItem::GlobalUninit {
                 name: _,
-                name_loc: _,
                 typexpr,
                 loc: _,
                 sym: _,
@@ -66,7 +64,6 @@ impl SemaChecker {
             }
             ScItem::FunDefinition {
                 name: _,
-                name_loc: _,
                 typexpr,
                 args,
                 rettypexpr,
@@ -98,7 +95,6 @@ impl SemaChecker {
             }
             ScItem::FunDeclaration {
                 name: _,
-                name_loc: _,
                 typexpr,
                 args,
                 rettypexpr,

@@ -4723,8 +4723,9 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
     ),
     "parser/E006_binop_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -4761,8 +4762,9 @@ error: compilation of `E006_binop_expr_resilience_1` failed due to 1 error and 0
     ),
     "parser/E006_block_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: PredicateLoop {
       label: none;
@@ -4788,8 +4790,9 @@ error: compilation of `E006_block_1` failed due to 1 error and 0 warnings
     ),
     "parser/E006_block_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -4837,8 +4840,9 @@ error: compilation of `E006_block_3` failed due to 1 error and 0 warnings
     ),
     "parser/E006_block_4": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       Defer {
@@ -4881,8 +4885,9 @@ error: compilation of `E006_block_5` failed due to 1 error and 0 warnings
     ),
     "parser/E006_block_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -4932,8 +4937,9 @@ error: compilation of `E006_block_resilience_1` failed due to 2 errors and 0 war
     ),
     "parser/E006_borrow_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -4965,8 +4971,9 @@ error: compilation of `E006_borrow_expr_resilience_1` failed due to 1 error and 
     ),
     "parser/E006_break": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Break {
       label: �;
@@ -4989,8 +4996,9 @@ error: compilation of `E006_break` failed due to 1 error and 0 warnings
     ),
     "parser/E006_break_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       Break {
@@ -5017,8 +5025,9 @@ error: compilation of `E006_break_expr_resilience_1` failed due to 1 error and 0
     ),
     "parser/E006_break_expr_resilience_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       Break {
@@ -5045,8 +5054,9 @@ error: compilation of `E006_break_expr_resilience_2` failed due to 1 error and 0
     ),
     "parser/E006_call_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -5088,8 +5098,9 @@ error: compilation of `E006_call_expr_resilience_1` failed due to 2 errors and 0
     ),
     "parser/E006_call_expr_resilience_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -5127,8 +5138,9 @@ error: compilation of `E006_call_expr_resilience_2` failed due to 1 error and 0 
     ),
     "parser/E006_continue": (
         compiler_out: r#"ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Continue {
       label: �;
@@ -5150,8 +5162,9 @@ error: compilation of `E006_continue` failed due to 1 error and 0 warnings
     ),
     "parser/E006_continue_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       Continue {
@@ -5256,14 +5269,16 @@ error: compilation of `E006_extern_block_3` failed due to 1 error and 0 warnings
   ExternBlock {
     abi: C;
     items: [
-      GlobalConst {
+      GlobalDef {
         name: a @ 68..69 (fid = 0);
+        mutability: not;
         typexpr: none;
         value: integer 12 @ 73..75 (fid = 0);
       } @ 68..75 (fid = 0),
 
-      GlobalConst {
+      GlobalDef {
         name: b @ 81..82 (fid = 0);
+        mutability: not;
         typexpr: none;
         value: ident imfine @ 86..92 (fid = 0);
       } @ 81..93 (fid = 0),
@@ -5291,8 +5306,9 @@ error: compilation of `E006_extern_block_resilience_1` failed due to 1 error and
   ExternBlock {
     abi: C;
     items: [
-      GlobalConst {
+      GlobalDef {
         name: b @ 65..66 (fid = 0);
+        mutability: not;
         typexpr: none;
         value: ident imfine @ 70..76 (fid = 0);
       } @ 65..77 (fid = 0),
@@ -5320,8 +5336,9 @@ error: compilation of `E006_extern_block_resilience_2` failed due to 2 errors an
     ),
     "parser/E006_extern_block_resilience_3": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: b @ 79..80 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: ident imfine @ 84..90 (fid = 0);
   } @ 79..91 (fid = 0),
@@ -5341,8 +5358,9 @@ error: compilation of `E006_extern_block_resilience_3` failed due to 1 error and
     ),
     "parser/E006_field_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -5374,8 +5392,9 @@ error: compilation of `E006_field_expr_resilience_1` failed due to 1 error and 0
     ),
     "parser/E006_for_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       @last_expr: IteratorLoop {
@@ -5404,8 +5423,9 @@ error: compilation of `E006_for_expr_resilience_1` failed due to 1 error and 0 w
     ),
     "parser/E006_for_expr_resilience_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       @last_expr: IteratorLoop {
@@ -5434,8 +5454,9 @@ error: compilation of `E006_for_expr_resilience_2` failed due to 1 error and 0 w
     ),
     "parser/E006_for_expr_resilience_3": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       @last_expr: IteratorLoop {
@@ -5464,8 +5485,9 @@ error: compilation of `E006_for_expr_resilience_3` failed due to 1 error and 0 w
     ),
     "parser/E006_for_expr_resilience_4": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       @last_expr: IteratorLoop {
@@ -5494,8 +5516,9 @@ error: compilation of `E006_for_expr_resilience_4` failed due to 1 error and 0 w
     ),
     "parser/E006_funcall_expr": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Call {
       callee: ident call @ 44..48 (fid = 0);
@@ -5520,8 +5543,9 @@ error: compilation of `E006_funcall_expr` failed due to 1 error and 0 warnings
     ),
     "parser/E006_fundecl_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDeclaration {
       args: [];
@@ -5544,8 +5568,9 @@ error: compilation of `E006_fundecl_expr_resilience_1` failed due to 1 error and
     ),
     "parser/E006_fundecl_expr_resilience_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDeclaration {
       args: [
@@ -5575,8 +5600,9 @@ error: compilation of `E006_fundecl_expr_resilience_2` failed due to 1 error and
     ),
     "parser/E006_fundecl_expr_resilience_3": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDeclaration {
       args: [
@@ -5601,8 +5627,9 @@ error: compilation of `E006_fundecl_expr_resilience_3` failed due to 1 error and
     ),
     "parser/E006_fundef_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [
@@ -5653,8 +5680,9 @@ error: compilation of `E006_fundef_expr_resilience_1` failed due to 2 errors and
     ),
     "parser/E006_fundef_expr_resilience_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [
@@ -5685,8 +5713,9 @@ error: compilation of `E006_fundef_expr_resilience_2` failed due to 1 error and 
     ),
     "parser/E006_fundef_expr_resilience_3": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [
@@ -5717,8 +5746,9 @@ error: compilation of `E006_fundef_expr_resilience_3` failed due to 1 error and 
     ),
     "parser/E006_fundef_expr_resilience_4": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -5860,8 +5890,9 @@ error: compilation of `E006_funptr_2` failed due to 1 error and 0 warnings
     ),
     "parser/E006_funptr_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -5895,8 +5926,9 @@ error: compilation of `E006_funptr_expr_resilience_1` failed due to 1 error and 
     ),
     "parser/E006_funptr_expr_resilience_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -5930,8 +5962,9 @@ error: compilation of `E006_funptr_expr_resilience_2` failed due to 1 error and 
     ),
     "parser/E006_funptr_expr_resilience_3": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -6003,8 +6036,9 @@ error: compilation of `E006_global_def_2` failed due to 1 error and 0 warnings
     ),
     "parser/E006_global_def_3": (
         compiler_out: "ast = [
-  GlobalVar {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: mut;
     typexpr: none;
     value: integer 12 @ 44..46 (fid = 0);
   } @ 39..46 (fid = 0),
@@ -6071,8 +6105,9 @@ error: compilation of `E006_if_else_3` failed due to 1 error and 0 warnings
     ),
     "parser/E006_if_else_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       If {
@@ -6102,8 +6137,9 @@ error: compilation of `E006_if_else_expr_resilience_1` failed due to 1 error and
     ),
     "parser/E006_import_directive_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: b @ 57..58 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: ident imfine @ 62..68 (fid = 0);
   } @ 57..69 (fid = 0),
@@ -6145,8 +6181,9 @@ error: compilation of `E006_import_directive_2` failed due to 1 error and 0 warn
     ),
     "parser/E006_import_directive_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: b @ 70..71 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: ident imfine @ 75..81 (fid = 0);
   } @ 70..82 (fid = 0),
@@ -6216,8 +6253,9 @@ error: compilation of `./tests/parser/E006_iterator_loop` failed due to 1 error 
     ),
     "parser/E006_iterator_loop_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: IteratorLoop {
       label: none;
@@ -6262,8 +6300,9 @@ error: compilation of `E006_iterator_loop_1` failed due to 4 errors and 0 warnin
     ),
     "parser/E006_iterator_loop_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: IteratorLoop {
       label: none;
@@ -6302,8 +6341,9 @@ error: compilation of `E006_iterator_loop_2` failed due to 3 errors and 0 warnin
     ),
     "parser/E006_let_stmt_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -6332,8 +6372,9 @@ error: compilation of `E006_let_stmt_1` failed due to 1 error and 0 warnings
     ),
     "parser/E006_let_stmt_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -6362,8 +6403,9 @@ error: compilation of `E006_let_stmt_2` failed due to 1 error and 0 warnings
     ),
     "parser/E006_loop_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       InfiniteLoop {
@@ -6392,8 +6434,9 @@ error: compilation of `E006_loop_expr_resilience_1` failed due to 1 error and 0 
     ),
     "parser/E006_member_access_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Field {
       expr: ident b @ 44..45 (fid = 0);
@@ -6448,8 +6491,9 @@ error: compilation of `E006_mod_directive_2` failed due to 1 error and 0 warning
     ),
     "parser/E006_mod_directive_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: b @ 58..59 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: ident imfine @ 63..69 (fid = 0);
   } @ 58..70 (fid = 0),
@@ -6469,8 +6513,9 @@ error: compilation of `E006_mod_directive_resilience_1` failed due to 1 error an
     ),
     "parser/E006_mod_directive_resilience_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: b @ 59..60 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: ident imfine @ 64..70 (fid = 0);
   } @ 59..71 (fid = 0),
@@ -6493,8 +6538,9 @@ error: compilation of `E006_mod_directive_resilience_2` failed due to 1 error an
     ),
     "parser/E006_paren_expr": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Paren {
       expr: integer 12 @ 45..47 (fid = 0);
@@ -6516,8 +6562,9 @@ error: compilation of `E006_paren_expr` failed due to 1 error and 0 warnings
     ),
     "parser/E006_paren_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -6552,8 +6599,9 @@ error: compilation of `E006_paren_expr_resilience_1` failed due to 1 error and 0
     ),
     "parser/E006_paren_expr_resilience_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -6593,8 +6641,9 @@ error: compilation of `E006_paren_expr_resilience_2` failed due to 1 error and 0
     alias: none;
   } @ 51..65 (fid = 0),
 
-  GlobalConst {
+  GlobalDef {
     name: b @ 67..68 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: ident imfine @ 72..78 (fid = 0);
   } @ 67..79 (fid = 0),
@@ -6660,8 +6709,9 @@ error: compilation of `E006_qualified_path_2` failed due to 1 error and 0 warnin
     ),
     "parser/E006_return_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       Return {
@@ -6687,8 +6737,9 @@ error: compilation of `E006_return_expr_resilience_1` failed due to 1 error and 
     ),
     "parser/E006_short_binding_def_stmt_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -6717,8 +6768,9 @@ error: compilation of `E006_short_binding_def_stmt_1` failed due to 1 error and 
     ),
     "parser/E006_short_binding_def_stmt_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       @last_expr: none,
@@ -6740,8 +6792,9 @@ error: compilation of `E006_short_binding_def_stmt_2` failed due to 1 error and 
     ),
     "parser/E006_short_binding_def_stmt_3": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 39..40 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       @last_expr: none,
@@ -6763,8 +6816,9 @@ error: compilation of `E006_short_binding_def_stmt_3` failed due to 1 error and 
     ),
     "parser/E006_while_expr_resilience_1": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       PredicateLoop {
@@ -6794,8 +6848,9 @@ error: compilation of `E006_while_expr_resilience_1` failed due to 1 error and 0
     ),
     "parser/E006_while_expr_resilience_2": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 51..52 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       PredicateLoop {
@@ -6920,8 +6975,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/expression": (
         compiler_out: r#"ast = [
-  GlobalConst {
+  GlobalDef {
     name: main @ 11..15 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -7327,8 +7383,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/item": (
         compiler_out: r#"ast = [
-  GlobalConst {
+  GlobalDef {
     name: main @ 19..23 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -7339,14 +7396,16 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     } @ 27..35 (fid = 0);
   } @ 19..35 (fid = 0),
 
-  GlobalConst {
+  GlobalDef {
     name: avogadro @ 36..44 (fid = 0);
+    mutability: not;
     typexpr: ident f64 @ 47..50 (fid = 0);
     value: float 6.0219999999999996e23 @ 53..61 (fid = 0);
   } @ 36..62 (fid = 0),
 
-  GlobalVar {
+  GlobalDef {
     name: hello @ 78..83 (fid = 0);
+    mutability: mut;
     typexpr: PointerType {
       mutability: not;
       typexpr: ident str @ 87..90 (fid = 0);
@@ -7354,8 +7413,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     value: string "Hello" @ 93..100 (fid = 0);
   } @ 78..101 (fid = 0),
 
-  GlobalVar {
+  GlobalDef {
     name: globFloat @ 102..111 (fid = 0);
+    mutability: mut;
     typexpr: none;
     value: float 12.0 @ 115..119 (fid = 0);
   } @ 102..120 (fid = 0),
@@ -7363,8 +7423,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
   ExternBlock {
     abi: C;
     items: [
-      GlobalConst {
+      GlobalDef {
         name: hello @ 155..160 (fid = 0);
+        mutability: not;
         typexpr: none;
         value: FunDeclaration {
           args: [];
@@ -7389,8 +7450,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/statement": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: main @ 0..4 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];
@@ -7447,8 +7509,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/typeexpr_rests_block": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: e @ 21..22 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [
@@ -7470,8 +7533,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     } @ 26..45 (fid = 0);
   } @ 21..45 (fid = 0),
 
-  GlobalConst {
+  GlobalDef {
     name: f @ 46..47 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [
@@ -7501,8 +7565,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/typeexpr_rests_call": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 0..1 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -7532,8 +7597,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/typeexpr_rests_for": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 0..1 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -7607,8 +7673,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/typeexpr_rests_fundef": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 0..1 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -7651,8 +7718,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/typeexpr_rests_if": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 0..1 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -7717,8 +7785,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/typeexpr_rests_let": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: g @ 24..25 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [
@@ -7755,8 +7824,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/typeexpr_rests_loop": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 0..1 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -7798,8 +7868,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/typeexpr_rests_paren": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 0..1 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: Block [
       BindingDef {
@@ -7840,8 +7911,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/typeexpr_rests_while": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: k @ 26..27 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [
@@ -7875,8 +7947,9 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/typexpr_restrictions": (
         compiler_out: "ast = [
-  GlobalConst {
+  GlobalDef {
     name: a @ 0..1 (fid = 0);
+    mutability: not;
     typexpr: none;
     value: FunDefinition {
       args: [];

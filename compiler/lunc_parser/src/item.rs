@@ -29,24 +29,13 @@ pub struct Module {
 /// Lun item.
 #[derive(Debug, Clone)]
 pub enum Item {
-    /// Global constant.
+    /// Global definition.
     ///
-    /// `ident ":" typexpr? ":" exprWithBlock`
-    /// `ident ":" typexpr? ":" exprWithoutBlock ";"`
-    GlobalConst {
-        name: String,
-        name_loc: Span,
-        typexpr: Option<Expression>,
-        value: Expression,
-        loc: Span,
-    },
-    /// Global variable.
-    ///
-    /// `ident ":" typexpr? "=" exprWithBlock`
-    /// `ident ":" typexpr? "=" exprWithoutBlock ";"`
-    GlobalVar {
-        name: String,
-        name_loc: Span,
+    /// `ident ":" typexpr? (":" / "=") exprWithBlock`
+    /// `ident ":" typexpr? (":" / "=") exprWithoutBlock ";"`
+    GlobalDef {
+        name: Spanned<String>,
+        mutability: Mutability,
         typexpr: Option<Expression>,
         value: Expression,
         loc: Span,
@@ -55,8 +44,7 @@ pub enum Item {
     ///
     /// `ident ":" typexpr ";"`
     GlobalUninit {
-        name: String,
-        name_loc: Span,
+        name: Spanned<String>,
         typexpr: Expression,
         loc: Span,
     },
@@ -166,12 +154,12 @@ impl Parser {
             _ => self.parse_typexpr().emit_opt(self.x()),
         };
 
-        let is_const = if self.eat(ExpToken::Colon) {
+        let mutability = if self.eat(ExpToken::Colon) {
             // const global def
-            true
+            Mutability::Not
         } else if self.eat(ExpToken::Eq) {
             // var global def
-            false
+            Mutability::Mut
         } else if !self.in_recovery() {
             // TEST: no. 2
             let hi = self.expect(ExpToken::Semi)?;
@@ -184,8 +172,10 @@ impl Parser {
             };
 
             return Ok(Item::GlobalUninit {
-                name,
-                name_loc: lo.clone(),
+                name: Spanned {
+                    node: name,
+                    loc: lo.clone(),
+                },
                 typexpr,
                 loc: Span::from_ends(lo, hi),
             });
@@ -210,23 +200,16 @@ impl Parser {
 
         let loc = Span::from_ends(lo.clone(), hi);
 
-        if is_const {
-            Ok(Item::GlobalConst {
-                name,
-                name_loc: lo,
-                typexpr,
-                value,
-                loc,
-            })
-        } else {
-            Ok(Item::GlobalVar {
-                name,
-                name_loc: lo,
-                typexpr,
-                value,
-                loc,
-            })
-        }
+        Ok(Item::GlobalDef {
+            name: Spanned {
+                node: name,
+                loc: lo,
+            },
+            mutability,
+            typexpr,
+            value,
+            loc,
+        })
     }
 
     /// Parses item directive.

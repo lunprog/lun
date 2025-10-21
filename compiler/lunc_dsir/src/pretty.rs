@@ -20,7 +20,6 @@ impl PrettyDump for DsItem {
         match self {
             DsItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
                 typexpr,
                 value,
@@ -28,7 +27,7 @@ impl PrettyDump for DsItem {
                 sym,
             } => {
                 ctx.pretty_struct("GlobalDef")
-                    .field("name", (name, name_loc))
+                    .field("name", name)
                     .field("mutability", mutability)
                     .field("typexpr", typexpr)
                     .field("value", value)
@@ -41,13 +40,12 @@ impl PrettyDump for DsItem {
             }
             DsItem::GlobalUninit {
                 name,
-                name_loc,
                 typexpr,
                 loc,
                 sym,
             } => {
                 ctx.pretty_struct("GlobalUninit")
-                    .field("name", (name, name_loc))
+                    .field("name", name)
                     .field("typexpr", typexpr)
                     .field("sym", sym)
                     .finish()?;
