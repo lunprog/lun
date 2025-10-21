@@ -44,7 +44,7 @@ impl ExpectedToken {
 
     fn fmt_msg(&self) -> String {
         let len = self.expected.len();
-        assert_ne!(len, 0);
+        assert_ne!(len, 0, "must have at least one expected token");
 
         let expected = list_fmt(&self.expected);
 

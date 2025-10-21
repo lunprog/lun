@@ -1228,7 +1228,7 @@ impl PartialEq<TokenType> for ExpToken {
 /// *This is inspired by [rustc's TokenTypeSet].*
 ///
 /// [rustc's TokenTypeSet]: https://doc.rust-lang.org/nightly/nightly-rustc/rustc_parse/parser/token_type/struct.TokenTypeSet.html
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct ExpTokenSet(u64);
 
 impl ExpTokenSet {
@@ -1261,6 +1261,14 @@ impl ExpTokenSet {
 impl Default for ExpTokenSet {
     fn default() -> Self {
         ExpTokenSet::new()
+    }
+}
+
+impl Debug for ExpTokenSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let exps: Vec<_> = self.iter().map(|exp| format!("{exp:?}")).collect();
+
+        write!(f, "ExpTokenSet({})", exps.join(" | "))
     }
 }
 

@@ -68,10 +68,9 @@ impl FromHigher for DsModule {
 /// [`Item`]: lunc_parser::item::Item
 #[derive(Debug, Clone)]
 pub enum DsItem {
-    /// Both [`GlobalConst`] and [`GlobalVar`]
+    /// See [`GlobalDef`].
     ///
-    /// [`GlobalVar`]: lunc_parser::item::Item::GlobalVar
-    /// [`GlobalConst`]: lunc_parser::item::Item::GlobalConst
+    /// [`GlobalDef`]: lunc_parser::item::Item::GlobalDef
     GlobalDef {
         name: Spanned<String>,
         mutability: Mutability,
@@ -220,7 +219,7 @@ impl FromHigher for DsExpression {
             ExprKind::BoolLit(b) => DsExprKind::BoolLit(b),
             // we remove the parenthesis we don't need them anymore
             ExprKind::Paren(e) => return lower(*e),
-            ExprKind::Ident(id) => DsExprKind::Ident(LazySymbol::Name(id)),
+            ExprKind::Path(_) => todo!(),
             ExprKind::Binary { lhs, op, rhs } => DsExprKind::Binary {
                 lhs: lower(lhs),
                 op,
@@ -319,7 +318,6 @@ impl FromHigher for DsExpression {
                 expr: lower(expr),
                 member,
             },
-            ExprKind::Orb => DsExprKind::Ident(LazySymbol::Name("orb".to_string())),
             ExprKind::FunDefinition {
                 args,
                 rettypeexpr,
