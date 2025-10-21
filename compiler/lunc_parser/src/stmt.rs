@@ -74,7 +74,7 @@ impl Parser {
         let mut last_expr = None;
 
         loop {
-            if self.eat_one_of([], [ExpToken::EOF, ExpToken::RCurly]) {
+            if self.eat_one_of([], [ExpToken::Eof, ExpToken::RCurly]) {
                 break;
             }
 
@@ -190,7 +190,7 @@ impl Parser {
         let mut remaining_rcurly = 0;
 
         while (!self.token.is_stmt_end() || self.check_no_expect(ExpToken::RCurly))
-            && !self.check_no_expect(ExpToken::EOF)
+            && !self.check_no_expect(ExpToken::Eof)
         {
             if self.check_no_expect(ExpToken::LCurly) {
                 remaining_rcurly += 1;

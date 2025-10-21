@@ -363,7 +363,7 @@ impl ToDiagnostic for Diagnostic {
 ///       2 characters.
 /// [^3]: in theory this diag is emitted in the parser when there is no more
 ///       token in the token stream, but the token stream guarantees that there
-///       is an EOF token at the end, so this diag is never truly emitted.
+///       is an Eof token at the end, so this diag is never truly emitted.
 /// [^4]: this diag is never truly emitted, because we try to use dummy types
 ///       as much as possible when we encounter an error so there is no testing
 ///       for it.
@@ -435,7 +435,7 @@ pub enum ErrorCode {
     /// something else.
     ExpectedToken = 6,
     /// Reached end of file too early.
-    ReachedEOF = 7,
+    ReachedEof = 7,
     /// Mismatched types.
     ///
     /// Erroneous code example:
@@ -646,14 +646,14 @@ macro_rules! feature_todo {
 }
 
 #[derive(Debug, Clone)]
-pub struct ReachedEOF {
+pub struct ReachedEof {
     pub loc: Span,
 }
 
-impl ToDiagnostic for ReachedEOF {
+impl ToDiagnostic for ReachedEof {
     fn into_diag(self) -> Diagnostic {
         Diagnostic::error()
-            .with_code(ErrorCode::ReachedEOF)
+            .with_code(ErrorCode::ReachedEof)
             .with_message("reached end of file too early")
             .with_label(Label::primary(self.loc.fid, self.loc))
     }

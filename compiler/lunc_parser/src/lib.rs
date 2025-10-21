@@ -268,7 +268,7 @@ impl Parser {
 
     /// Look many (`N`) tokens ahead of `dist` tokens from the current one. If
     /// the number of token to look exceeds the number of tokens in the token
-    /// stream it will return enough of the EOF token to make it `N` long.
+    /// stream it will return enough of the Eof token to make it `N` long.
     pub fn look_many_ahead<R, const N: usize>(
         &self,
         dist: usize,

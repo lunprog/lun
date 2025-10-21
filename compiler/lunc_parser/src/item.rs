@@ -79,7 +79,7 @@ impl Parser {
         let mut items = Vec::new();
 
         loop {
-            if self.token.tt == EOF {
+            if self.token.tt == Eof {
                 break;
             }
 
@@ -122,7 +122,7 @@ impl Parser {
         // amount of } remaining until the one that will break the loop
         let mut remaining_rcurly = 0;
 
-        while !self.token.can_begin_item() && !self.check_no_expect(ExpToken::EOF) {
+        while !self.token.can_begin_item() && !self.check_no_expect(ExpToken::Eof) {
             if container == ItemContainer::ExternBlock {
                 if self.check_no_expect(ExpToken::LCurly) {
                     remaining_rcurly += 1;
@@ -311,7 +311,7 @@ impl Parser {
         loop {
             if self.eat_no_expect(ExpToken::RCurly) {
                 break;
-            } else if self.check(ExpToken::EOF) {
+            } else if self.check(ExpToken::Eof) {
                 self.expected_token_exps.insert(ExpToken::RCurly);
 
                 let diag = self.expected_diag();

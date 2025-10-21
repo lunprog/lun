@@ -37,7 +37,7 @@ impl TokenStream {
         assert!(!self.finished, "token stream already finished");
         assert_eq!(
             self.toks.last().map(|t| &t.tt),
-            Some(&TokenType::EOF),
+            Some(&TokenType::Eof),
             "the last token of a token stream must be the end of file token."
         );
 
@@ -54,7 +54,7 @@ impl TokenStream {
         );
         assert_ne!(tt, TokenType::Dummy);
 
-        let is_eof = tt == TokenType::EOF;
+        let is_eof = tt == TokenType::Eof;
 
         self.toks.push(Token {
             tt,
@@ -64,7 +64,7 @@ impl TokenStream {
         is_eof
     }
 
-    /// Get the token a the index `idx`, always returns the EOF token if `idx`
+    /// Get the token a the index `idx`, always returns the Eof token if `idx`
     /// is out of bounds of the stream.
     ///
     /// # Panic
@@ -80,7 +80,7 @@ impl TokenStream {
     }
 
     /// Get a range of token, if the range exceeds the number of token it will
-    /// return `EOF` token.
+    /// return `Eof` token.
     ///
     /// # Panic
     ///
@@ -124,14 +124,14 @@ impl TokenStream {
         }
 
         if out.len() < len {
-            out.resize(len, self.get_eof().clone()); // append EOFs
+            out.resize(len, self.get_eof().clone()); // append Eofs
         }
 
         Cow::Owned(out)
     }
 
     /// Get the last token of a finished token stream, it will always be the
-    /// EOF token
+    /// Eof token
     ///
     /// # Panic
     ///
@@ -329,7 +329,7 @@ impl Token {
                 p_common(out)?;
                 writeln!(out, "  }},")?;
             }
-            TokenType::EOF => {
+            TokenType::Eof => {
                 writeln!(out, "  {{")?;
                 writeln!(out, "    tt: end of file;")?;
                 writeln!(out, "    loc: {};", self.loc)?;
@@ -510,7 +510,7 @@ pub enum TokenType {
     /// literal
     Lit(Lit),
     /// End Of File
-    EOF,
+    Eof,
     /// this is a dummy token, it is used when encountering a comment or a
     /// whitespace it can't be pushed into a token stream.
     Dummy,
@@ -687,7 +687,7 @@ impl Display for TokenType {
             Tt::KwWhile => write!(f, "keyword `while`"),
             Tt::Ident(_) => write!(f, "identifier"),
             Tt::Lit(Lit { kind, .. }) => write!(f, "{kind} literal"),
-            Tt::EOF => write!(f, "end of file"),
+            Tt::Eof => write!(f, "end of file"),
             Tt::Dummy => write!(f, "not a token"),
         }
     }
@@ -773,7 +773,7 @@ impl PartialEq<ExpToken> for TokenType {
             KwWhile,
             Ident,
             Lit,
-            EOF,
+            Eof,
             Dummy,
         )
     }
@@ -985,7 +985,7 @@ pub enum ExpToken {
     KwWhile,
     Ident,
     Lit,
-    EOF,
+    Eof,
     Dummy,
 }
 
@@ -1054,7 +1054,7 @@ impl Display for ExpToken {
             Et::KwWhile => write!(f, "keyword `while`"),
             Et::Ident => write!(f, "identifier"),
             Et::Lit => write!(f, "literal"),
-            Et::EOF => write!(f, "end of file"),
+            Et::Eof => write!(f, "end of file"),
             Et::Dummy => unreachable!(),
         }
     }
@@ -1171,7 +1171,7 @@ mod tests {
         ts.push(TokenType::RParen, (1, 2), FileId::ROOT_MODULE);
         ts.push(TokenType::KwAs, (2, 4), FileId::ROOT_MODULE);
         ts.push(TokenType::KwComptime, (4, 12), FileId::ROOT_MODULE);
-        ts.push(TokenType::EOF, (12, 12), FileId::ROOT_MODULE);
+        ts.push(TokenType::Eof, (12, 12), FileId::ROOT_MODULE);
         ts.finish();
 
         ts
@@ -1447,7 +1447,7 @@ mod tests {
         eq_test!(@val TokenType::Lit(Lit::char('L')), ExpToken::Lit);
         eq_test!(@val TokenType::Lit(Lit::float(6.9)), ExpToken::Lit);
         eq_test!(@val TokenType::Lit(Lit::string("Hello, world".to_string())), ExpToken::Lit);
-        eq_test!(EOF);
+        eq_test!(Eof);
         eq_test!(Dummy);
     }
 }

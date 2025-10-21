@@ -9,7 +9,7 @@ use diags::{
     TooManyCodepointsInCharLiteral, UnknownCharacterEscape, UnknownToken,
     UnterminatedStringLiteral,
 };
-use lunc_diag::{DiagnosticSink, FileId, IResult, ReachedEOF};
+use lunc_diag::{DiagnosticSink, FileId, IResult, ReachedEof};
 
 use lunc_token::{Lit, LitKind, TokenStream, TokenType};
 use lunc_utils::{Span, opt_unreachable, span};
@@ -278,7 +278,7 @@ impl Lexer {
                 self.sink.emit(UnknownToken { c, loc: self.loc() });
                 return Ok(TokenType::Dummy);
             }
-            None => EOF,
+            None => Eof,
         };
 
         self.pop();
@@ -499,7 +499,7 @@ impl Lexer {
                                         1
                                     }
                                     _ => {
-                                        self.sink.emit(ReachedEOF { loc: self.loc() });
+                                        self.sink.emit(ReachedEof { loc: self.loc() });
                                         1
                                     }
                                 };
@@ -523,7 +523,7 @@ impl Lexer {
                                 0
                             }
                             None => {
-                                self.sink.emit(ReachedEOF { loc: self.loc() });
+                                self.sink.emit(ReachedEof { loc: self.loc() });
 
                                 0
                             }
@@ -560,7 +560,7 @@ impl Lexer {
                                 1
                             }
                             _ => {
-                                self.sink.emit(ReachedEOF { loc: self.loc() });
+                                self.sink.emit(ReachedEof { loc: self.loc() });
                                 1
                             }
                         };
@@ -641,7 +641,7 @@ impl Lexer {
                                 1
                             }
                             _ => {
-                                self.sink.emit(ReachedEOF { loc: self.loc() });
+                                self.sink.emit(ReachedEof { loc: self.loc() });
                                 1
                             }
                         };
@@ -730,7 +730,7 @@ impl Lexer {
                 let es = match self.pop() {
                     Some(es) => es,
                     None => {
-                        self.sink.emit(ReachedEOF { loc: self.loc() });
+                        self.sink.emit(ReachedEof { loc: self.loc() });
                         char::default()
                     }
                 };
@@ -752,7 +752,7 @@ impl Lexer {
                 c
             }
             None => {
-                self.sink.emit(ReachedEOF { loc: self.loc() });
+                self.sink.emit(ReachedEof { loc: self.loc() });
                 char::default()
             }
         };
@@ -769,7 +769,7 @@ impl Lexer {
                         .emit(TooManyCodepointsInCharLiteral { loc: self.loc() });
                 }
                 None => {
-                    self.sink.emit(ReachedEOF { loc: self.loc() });
+                    self.sink.emit(ReachedEof { loc: self.loc() });
                 }
             }
         }

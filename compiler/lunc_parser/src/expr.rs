@@ -648,13 +648,13 @@ impl Parser {
     /// After the recovery, [`Parser::token`] will be one of:
     /// - `Comma`
     /// - `RParen`
-    /// - `EOF`
+    /// - `Eof`
     pub fn recover_expr_in_paren_seq(&mut self) {
         let mut remaining_rparen = 0;
 
         while !(self.check_no_expect(ExpToken::Comma)
             || self.check_no_expect(ExpToken::RParen)
-            || self.check_no_expect(ExpToken::EOF))
+            || self.check_no_expect(ExpToken::Eof))
         {
             if self.check_no_expect(ExpToken::LParen) {
                 remaining_rparen += 1;
@@ -1215,7 +1215,7 @@ impl Parser {
                         self.sink.emit(d);
                     }
 
-                    // recover parsing to a Comma, RParen or EOF.
+                    // recover parsing to a Comma, RParen or Eof.
                     self.recover_expr_in_paren_seq();
                 }
             }
