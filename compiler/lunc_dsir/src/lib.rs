@@ -73,10 +73,9 @@ pub enum DsItem {
     /// [`GlobalVar`]: lunc_parser::item::Item::GlobalVar
     /// [`GlobalConst`]: lunc_parser::item::Item::GlobalConst
     GlobalDef {
-        name: String,
-        name_loc: OSpan,
+        name: Spanned<String>,
         mutability: Mutability,
-        typexpr: Option<DsExpression>,
+        typeexpr: Option<DsExpression>,
         value: Box<DsExpression>,
         loc: OSpan,
         /// corresponding symbol of this definition
@@ -86,9 +85,8 @@ pub enum DsItem {
     ///
     /// [`Item::GlobalUninit`]: lunc_parser::item::Item::GlobalUninit
     GlobalUninit {
-        name: String,
-        name_loc: OSpan,
-        typexpr: DsExpression,
+        name: Spanned<String>,
+        typeexpr: DsExpression,
         loc: OSpan,
         /// corresponding symbol of this definition
         sym: LazySymbol,
@@ -158,46 +156,28 @@ impl FromHigher for DsItem {
 
     fn lower(node: Self::Higher) -> Self {
         match node {
-            Item::GlobalConst {
+            Item::GlobalDef {
                 name,
-                name_loc,
-                typexpr,
+                mutability,
+                typeexpr,
                 value,
                 loc,
             } => DsItem::GlobalDef {
-                sym: LazySymbol::Name(name.clone()),
+                sym: LazySymbol::Name(name.node.clone()),
                 name,
-                name_loc: Some(name_loc),
-                mutability: Mutability::Not,
-                typexpr: lower(typexpr),
-                value: Box::new(lower(value)),
-                loc: Some(loc),
-            },
-            Item::GlobalVar {
-                name,
-                name_loc,
-                typexpr,
-                value,
-                loc,
-            } => DsItem::GlobalDef {
-                sym: LazySymbol::Name(name.clone()),
-                name,
-                name_loc: Some(name_loc),
-                mutability: Mutability::Mut,
-                typexpr: lower(typexpr),
+                mutability,
+                typeexpr: lower(typeexpr),
                 value: Box::new(lower(value)),
                 loc: Some(loc),
             },
             Item::GlobalUninit {
                 name,
-                name_loc,
-                typexpr,
+                typeexpr,
                 loc,
             } => DsItem::GlobalUninit {
-                sym: LazySymbol::Name(name.clone()),
+                sym: LazySymbol::Name(name.node.clone()),
                 name,
-                name_loc: Some(name_loc),
-                typexpr: lower(typexpr),
+                typeexpr: lower(typeexpr),
                 loc: Some(loc),
             },
             Item::ExternBlock { abi, items, loc } => DsItem::ExternBlock {
@@ -342,19 +322,19 @@ impl FromHigher for DsExpression {
             ExprKind::Orb => DsExprKind::Ident(LazySymbol::Name("orb".to_string())),
             ExprKind::FunDefinition {
                 args,
-                rettypexpr,
+                rettypeexpr,
                 body,
             } => DsExprKind::FunDefinition {
                 args: lower(args),
-                rettypexpr: lower(rettypexpr),
+                rettypeexpr: lower(rettypeexpr),
                 body: lower(body),
             },
-            ExprKind::FunDeclaration { args, rettypexpr } => DsExprKind::FunDeclaration {
+            ExprKind::FunDeclaration { args, rettypeexpr } => DsExprKind::FunDeclaration {
                 args: lower(args),
-                rettypexpr: lower(rettypexpr),
+                rettypeexpr: lower(rettypeexpr),
             },
-            ExprKind::PointerType(mutability, typexpr) => {
-                DsExprKind::PointerType(mutability, lower(typexpr))
+            ExprKind::PointerType(mutability, typeexpr) => {
+                DsExprKind::PointerType(mutability, lower(typeexpr))
             }
             ExprKind::FunPtrType { args, ret } => DsExprKind::FunPtrType {
                 args: lower(args),
@@ -500,7 +480,7 @@ pub enum DsExprKind {
     /// [`ExprKind::FunDefinition`]: lunc_parser::expr::ExprKind::FunDefinition
     FunDefinition {
         args: Vec<DsArg>,
-        rettypexpr: Option<Box<DsExpression>>,
+        rettypeexpr: Option<Box<DsExpression>>,
         body: DsBlock,
     },
     /// See [`ExprKind::FunDeclaration`]
@@ -508,7 +488,7 @@ pub enum DsExprKind {
     /// [`ExprKind::FunDeclaration`]: lunc_parser::expr::ExprKind::FunDeclaration
     FunDeclaration {
         args: Vec<DsExpression>,
-        rettypexpr: Option<Box<DsExpression>>,
+        rettypeexpr: Option<Box<DsExpression>>,
     },
     /// See [`ExprKind::PointerType`]
     ///
@@ -717,13 +697,13 @@ pub fn expr_member_access(expr: DsExpression, member: impl ToString) -> DsExpres
 /// Creates a function definition expression without location.
 pub fn expr_fundef(
     args: Vec<DsArg>,
-    rettypexpr: impl Into<Option<DsExpression>>,
+    rettypeexpr: impl Into<Option<DsExpression>>,
     body: DsBlock,
 ) -> DsExpression {
     DsExpression {
         expr: DsExprKind::FunDefinition {
             args,
-            rettypexpr: rettypexpr.into().map(Box::new),
+            rettypeexpr: rettypeexpr.into().map(Box::new),
             body,
         },
         loc: None,
@@ -731,9 +711,9 @@ pub fn expr_fundef(
 }
 
 /// Creates a pointer type expression without location.
-pub fn expr_ptr_type(mutability: Mutability, typexpr: DsExpression) -> DsExpression {
+pub fn expr_ptr_type(mutability: Mutability, typeexpr: DsExpression) -> DsExpression {
     DsExpression {
-        expr: DsExprKind::PointerType(mutability, Box::new(typexpr)),
+        expr: DsExprKind::PointerType(mutability, Box::new(typeexpr)),
         loc: None,
     }
 }
@@ -807,16 +787,16 @@ impl FromHigher for DsStatement {
 
     fn lower(node: Self::Higher) -> Self {
         let stmt = match node.stmt {
-            StmtKind::VariableDef {
+            StmtKind::BindingDef {
                 name,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
-            } => DsStmtKind::VariableDef {
+            } => DsStmtKind::BindingDef {
                 sym: LazySymbol::Name(name.node.clone()),
                 name,
                 mutability,
-                typexpr: lower(typexpr),
+                typeexpr: lower(typeexpr),
                 value: lower(value),
             },
             StmtKind::Defer { expr } => DsStmtKind::Defer { expr: lower(expr) },
@@ -832,13 +812,13 @@ impl FromHigher for DsStatement {
 
 #[derive(Debug, Clone)]
 pub enum DsStmtKind {
-    /// See [`StmtKind::VariableDef`]
+    /// See [`StmtKind::BindingDef`]
     ///
-    /// [`StmtKind::VariableDef`]: lunc_parser::stmt::StmtKind::VariableDef
-    VariableDef {
+    /// [`StmtKind::BindingDef`]: lunc_parser::stmt::StmtKind::BindingDef
+    BindingDef {
         name: Spanned<String>,
         mutability: Mutability,
-        typexpr: Option<DsExpression>,
+        typeexpr: Option<DsExpression>,
         value: Box<DsExpression>,
         sym: LazySymbol,
     },
@@ -867,7 +847,7 @@ pub fn stmt_expr(expr: DsExpression) -> DsStatement {
 pub struct DsArg {
     pub name: String,
     pub name_loc: OSpan,
-    pub typexpr: DsExpression,
+    pub typeexpr: DsExpression,
     pub loc: OSpan,
     pub sym: LazySymbol,
 }
@@ -879,7 +859,7 @@ impl FromHigher for DsArg {
         let Arg {
             name,
             name_loc,
-            typexpr,
+            typeexpr,
             loc,
         } = node;
 
@@ -887,7 +867,7 @@ impl FromHigher for DsArg {
             sym: LazySymbol::Name(name.clone()),
             name,
             name_loc: Some(name_loc),
-            typexpr: lower(typexpr),
+            typeexpr: lower(typeexpr),
             loc: Some(loc),
         }
     }
@@ -1095,17 +1075,19 @@ impl Desugarrer {
     /// Resolve names of an item
     pub fn resolve_item(&mut self, item: &mut DsItem) -> Result<(), Diagnostic> {
         match item {
-            DsItem::GlobalDef { typexpr, value, .. } => {
-                if let Some(typexpr) = typexpr {
-                    self.resolve_expr(typexpr)?;
+            DsItem::GlobalDef {
+                typeexpr, value, ..
+            } => {
+                if let Some(typeexpr) = typeexpr {
+                    self.resolve_expr(typeexpr)?;
                 }
 
                 self.resolve_expr(value)?;
 
                 Ok(())
             }
-            DsItem::GlobalUninit { typexpr, .. } => {
-                self.resolve_expr(typexpr)?;
+            DsItem::GlobalUninit { typeexpr, .. } => {
+                self.resolve_expr(typeexpr)?;
 
                 Ok(())
             }
@@ -1157,16 +1139,16 @@ impl Desugarrer {
     /// Resolve statement
     pub fn resolve_stmt(&mut self, stmt: &mut DsStatement) -> Result<(), Diagnostic> {
         match &mut stmt.stmt {
-            DsStmtKind::VariableDef {
+            DsStmtKind::BindingDef {
                 name,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
                 sym,
             } => {
                 match (|| -> Result<(), Diagnostic> {
-                    if let Some(typexpr) = typexpr {
-                        self.resolve_expr(typexpr)?;
+                    if let Some(typeexpr) = typeexpr {
+                        self.resolve_expr(typeexpr)?;
                     }
                     self.resolve_expr(value)?;
 
@@ -1182,7 +1164,7 @@ impl Desugarrer {
                     *mutability,
                     name.node.clone(),
                     self.table.local_count(),
-                    if typexpr.is_some() {
+                    if typeexpr.is_some() {
                         Typeness::Explicit
                     } else {
                         Typeness::Implicit
@@ -1260,7 +1242,7 @@ impl Desugarrer {
                 Ok(())
             }
             DsExprKind::Continue { label: _ } | DsExprKind::Null => Ok(()),
-            DsExprKind::PointerType(_, typexpr) => self.resolve_expr(typexpr),
+            DsExprKind::PointerType(_, typeexpr) => self.resolve_expr(typeexpr),
             DsExprKind::FunPtrType { args, ret } => {
                 for arg in args {
                     self.resolve_expr(arg)?;
@@ -1385,7 +1367,7 @@ impl Desugarrer {
             }
             DsExprKind::FunDefinition {
                 args,
-                rettypexpr,
+                rettypeexpr,
                 body,
             } => {
                 self.table.scope_enter(); // fundef scope
@@ -1393,12 +1375,12 @@ impl Desugarrer {
                 for DsArg {
                     name,
                     name_loc,
-                    typexpr,
+                    typeexpr,
                     loc: _,
                     sym,
                 } in args
                 {
-                    match self.resolve_expr(typexpr) {
+                    match self.resolve_expr(typeexpr) {
                         Ok(()) => {}
                         Err(d) => {
                             self.sink.emit(d);
@@ -1413,7 +1395,7 @@ impl Desugarrer {
                     self.table.bind(name.clone(), symref)?;
                 }
 
-                if let Some(retty) = rettypexpr {
+                if let Some(retty) = rettypeexpr {
                     self.resolve_expr(retty)?;
                 }
 
@@ -1423,7 +1405,7 @@ impl Desugarrer {
 
                 Ok(())
             }
-            DsExprKind::FunDeclaration { args, rettypexpr } => {
+            DsExprKind::FunDeclaration { args, rettypeexpr } => {
                 for arg in args {
                     match self.resolve_expr(arg) {
                         Ok(()) => {}
@@ -1433,7 +1415,7 @@ impl Desugarrer {
                     }
                 }
 
-                if let Some(retty) = rettypexpr {
+                if let Some(retty) = rettypeexpr {
                     self.resolve_expr(retty)?;
                 }
 
@@ -1498,29 +1480,30 @@ impl Desugarrer {
         match item {
             DsItem::GlobalDef {
                 name,
-                name_loc,
                 mutability: _,
-                typexpr: _,
+                typeexpr: _,
                 value,
                 loc: _,
                 sym,
             } if value.expr.is_fundef() || value.expr.is_fundecl() => {
                 let mut path = self.current_path.clone();
-                path.push(name.clone());
+                path.push(name.node.clone());
 
-                let symref =
-                    sym.symbol()
-                        .unwrap_or(Symbol::function(name.clone(), path, name_loc.clone()));
+                let symref = sym.symbol().unwrap_or(Symbol::function(
+                    name.node.clone(),
+                    path,
+                    Some(name.loc.clone()),
+                ));
 
                 self.orb
                     .goto_mut(&self.current_path)
                     .unwrap()
-                    .define(name.clone(), symref.clone());
+                    .define(name.node.clone(), symref.clone());
 
                 *sym = LazySymbol::Sym(symref.clone());
 
                 if self.current_path == resolve_path {
-                    match self.table.bind(name.clone(), symref) {
+                    match self.table.bind(name.node.clone(), symref) {
                         Ok(()) => {}
                         Err(d) => {
                             self.sink.emit(d);
@@ -1532,37 +1515,36 @@ impl Desugarrer {
             }
             DsItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
-                typexpr,
+                typeexpr,
                 value: _,
                 loc: _,
                 sym,
             } => {
                 let mut path = self.current_path.clone();
-                path.push(name.clone());
+                path.push(name.node.clone());
 
                 let symref = sym.symbol().unwrap_or(Symbol::global(
                     *mutability,
-                    name.clone(),
+                    name.node.clone(),
                     path,
-                    if typexpr.is_some() {
+                    if typeexpr.is_some() {
                         Typeness::Explicit
                     } else {
                         Typeness::Implicit
                     },
-                    name_loc.clone(),
+                    Some(name.loc.clone()),
                 ));
 
                 self.orb
                     .goto_mut(&self.current_path)
                     .unwrap()
-                    .define(name.clone(), symref.clone());
+                    .define(name.node.clone(), symref.clone());
 
                 *sym = LazySymbol::Sym(symref.clone());
 
                 if self.current_path == resolve_path {
-                    match self.table.bind(name.clone(), symref) {
+                    match self.table.bind(name.node.clone(), symref) {
                         Ok(()) => {}
                         Err(d) => {
                             self.sink.emit(d);
@@ -1574,31 +1556,30 @@ impl Desugarrer {
             }
             DsItem::GlobalUninit {
                 name,
-                name_loc,
-                typexpr: _,
+                typeexpr: _,
                 loc: _,
                 sym,
             } => {
                 let mut path = self.current_path.clone();
-                path.push(name.clone());
+                path.push(name.node.clone());
 
                 let symref = sym.symbol().unwrap_or(Symbol::global(
                     Mutability::Mut,
-                    name.clone(),
+                    name.node.clone(),
                     path,
                     Typeness::Explicit,
-                    name_loc.clone(),
+                    Some(name.loc.clone()),
                 ));
 
                 self.orb
                     .goto_mut(&self.current_path)
                     .unwrap()
-                    .define(name.clone(), symref.clone());
+                    .define(name.node.clone(), symref.clone());
 
                 *sym = LazySymbol::Sym(symref.clone());
 
                 if self.current_path == resolve_path {
-                    match self.table.bind(name.clone(), symref) {
+                    match self.table.bind(name.node.clone(), symref) {
                         Ok(()) => {}
                         Err(d) => {
                             self.sink.emit(d);

@@ -29,35 +29,23 @@ pub struct Module {
 /// Lun item.
 #[derive(Debug, Clone)]
 pub enum Item {
-    /// Global constant.
+    /// Global definition.
     ///
-    /// `ident ":" typexpr? ":" exprWithBlock`
-    /// `ident ":" typexpr? ":" exprWithoutBlock ";"`
-    GlobalConst {
-        name: String,
-        name_loc: Span,
-        typexpr: Option<Expression>,
-        value: Expression,
-        loc: Span,
-    },
-    /// Global variable.
-    ///
-    /// `ident ":" typexpr? "=" exprWithBlock`
-    /// `ident ":" typexpr? "=" exprWithoutBlock ";"`
-    GlobalVar {
-        name: String,
-        name_loc: Span,
-        typexpr: Option<Expression>,
+    /// `ident ":" typeexpr? (":" / "=") exprWithBlock`
+    /// `ident ":" typeexpr? (":" / "=") exprWithoutBlock ";"`
+    GlobalDef {
+        name: Spanned<String>,
+        mutability: Mutability,
+        typeexpr: Option<Expression>,
         value: Expression,
         loc: Span,
     },
     /// Global uninitialized
     ///
-    /// `ident ":" typexpr ";"`
+    /// `ident ":" typeexpr ";"`
     GlobalUninit {
-        name: String,
-        name_loc: Span,
-        typexpr: Expression,
+        name: Spanned<String>,
+        typeexpr: Expression,
         loc: Span,
     },
     /// Extern block.
@@ -161,32 +149,34 @@ impl Parser {
         // TEST: no. 1
         self.expect(ExpToken::Colon).emit(self.x());
 
-        let typexpr = match self.token.tt {
+        let typeexpr = match self.token.tt {
             Colon | Eq => None,
-            _ => self.parse_typexpr().emit_opt(self.x()),
+            _ => self.parse_typeexpr().emit_opt(self.x()),
         };
 
-        let is_const = if self.eat(ExpToken::Colon) {
+        let mutability = if self.eat(ExpToken::Colon) {
             // const global def
-            true
+            Mutability::Not
         } else if self.eat(ExpToken::Eq) {
             // var global def
-            false
+            Mutability::Mut
         } else if !self.in_recovery() {
             // TEST: no. 2
             let hi = self.expect(ExpToken::Semi)?;
 
             // uninit global def
-            let Some(typexpr) = typexpr else {
-                // SAFETY: we always parse a typexpr if the token after :
+            let Some(typeexpr) = typeexpr else {
+                // SAFETY: we always parse a typeexpr if the token after :
                 // isn't : or =
                 opt_unreachable!()
             };
 
             return Ok(Item::GlobalUninit {
-                name,
-                name_loc: lo.clone(),
-                typexpr,
+                name: Spanned {
+                    node: name,
+                    loc: lo.clone(),
+                },
+                typeexpr,
                 loc: Span::from_ends(lo, hi),
             });
         } else {
@@ -210,23 +200,16 @@ impl Parser {
 
         let loc = Span::from_ends(lo.clone(), hi);
 
-        if is_const {
-            Ok(Item::GlobalConst {
-                name,
-                name_loc: lo,
-                typexpr,
-                value,
-                loc,
-            })
-        } else {
-            Ok(Item::GlobalVar {
-                name,
-                name_loc: lo,
-                typexpr,
-                value,
-                loc,
-            })
-        }
+        Ok(Item::GlobalDef {
+            name: Spanned {
+                node: name,
+                loc: lo,
+            },
+            mutability,
+            typeexpr,
+            value,
+            loc,
+        })
     }
 
     /// Parses item directive.

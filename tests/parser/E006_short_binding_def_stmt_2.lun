@@ -1,4 +1,4 @@
 // EO06: error testing - ExpectedToken
 a :: {
-    a := 12
-};
+    mut a d= 2;
+}

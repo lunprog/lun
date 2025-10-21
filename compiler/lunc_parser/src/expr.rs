@@ -181,7 +181,7 @@ pub enum ExprKind {
     /// `"fun" "(" ( ident ":" expr ),* ")" [ "->" expr ] block`
     FunDefinition {
         args: Vec<Arg>,
-        rettypexpr: Option<Box<Expression>>,
+        rettypeexpr: Option<Box<Expression>>,
         body: Block,
     },
     /// function declaration expression
@@ -189,7 +189,7 @@ pub enum ExprKind {
     /// `"fun" "(" ( expr ),* ")" [ "->" expr ]`
     FunDeclaration {
         args: Vec<Expression>,
-        rettypexpr: Option<Box<Expression>>,
+        rettypeexpr: Option<Box<Expression>>,
     },
     //
     // type expression
@@ -225,7 +225,7 @@ pub enum Else {
 pub struct Arg {
     pub name: String,
     pub name_loc: Span,
-    pub typexpr: Expression,
+    pub typeexpr: Expression,
     pub loc: Span,
 }
 
@@ -373,14 +373,14 @@ impl Parser {
     }
 
     /// Parses a type expression with the correct restrictions.
-    pub fn parse_typexpr(&mut self) -> IResult<Expression> {
+    pub fn parse_typeexpr(&mut self) -> IResult<Expression> {
         self.with_rest(Restrictions::TYPEEXPR, Parser::parse_expr)
     }
 
     /// Parses an expression given the following precedence.
     ///
-    /// Please use [`Parser::parse_typexpr`] or [`Parser::parse_expr`] for correct
-    /// parsing with the correct restrictions.
+    /// Please use [`Parser::parse_typeexpr`] or [`Parser::parse_expr`] for
+    /// correct parsing with the correct restrictions.
     pub fn parse_expr_precedence(&mut self, precedence: Precedence) -> IResult<Expression> {
         let mut lhs = match &self.token.tt {
             Lit(..) => self.parse_lit_expr()?,
@@ -414,9 +414,9 @@ impl Parser {
             LCurly => self.parse_block_expr()?,
             And => self.parse_borrow_expr()?,
             Star if self.look_ahead(1, |t| t.tt == TokenType::KwFun) => {
-                self.parse_funptr_typexpr()?
+                self.parse_funptr_typeexpr()?
             }
-            Star => self.parse_pointer_typexpr()?,
+            Star => self.parse_pointer_typeexpr()?,
             tt if UnOp::left_from_token(tt).is_some() => self.parse_unary_left_expr()?,
             _ => {
                 self.bump();
@@ -704,12 +704,12 @@ impl Parser {
                     // TEST: n/a
                     self.expect_nae(ExpToken::Colon).emit(self.x());
 
-                    match self.parse_typexpr() {
+                    match self.parse_typeexpr() {
                         Ok(t) => {
                             args.push(Arg {
                                 name,
                                 name_loc: lo_arg.clone(),
-                                typexpr: t.clone(),
+                                typeexpr: t.clone(),
                                 loc: Span::from_ends(lo_arg, t.loc),
                             });
                         }
@@ -733,8 +733,8 @@ impl Parser {
                     }
                 }
 
-                let rettypexpr = if self.eat_no_expect(ExpToken::MinusGt) {
-                    match self.parse_typexpr() {
+                let rettypeexpr = if self.eat_no_expect(ExpToken::MinusGt) {
+                    match self.parse_typeexpr() {
                         Ok(t) => Some(Box::new(t)),
                         Err(recovered) => {
                             if let Recovered::Unable(d) = recovered {
@@ -756,7 +756,7 @@ impl Parser {
                 Ok(Expression {
                     kind: ExprKind::FunDefinition {
                         args,
-                        rettypexpr,
+                        rettypeexpr,
                         body,
                     },
                     loc: Span::from_ends(lo, hi),
@@ -772,8 +772,8 @@ impl Parser {
                 // TEST: n/a
                 let hi_paren = self.expect(ExpToken::RParen)?;
 
-                let rettypexpr = if self.eat_no_expect(ExpToken::MinusGt) {
-                    match self.parse_typexpr() {
+                let rettypeexpr = if self.eat_no_expect(ExpToken::MinusGt) {
+                    match self.parse_typeexpr() {
                         Ok(t) => Some(Box::new(t)),
                         Err(recovered) => {
                             if let Recovered::Unable(d) = recovered {
@@ -790,15 +790,15 @@ impl Parser {
                 if self.token.is_stmt_end() {
                     // function declaration
 
-                    let hi = rettypexpr
+                    let hi = rettypeexpr
                         .as_ref()
-                        .map(|typexpr| typexpr.loc.clone())
+                        .map(|typeexpr| typeexpr.loc.clone())
                         .unwrap_or(hi_paren);
 
                     Ok(Expression {
                         kind: ExprKind::FunDeclaration {
                             args: Vec::new(),
-                            rettypexpr,
+                            rettypeexpr,
                         },
                         loc: Span::from_ends(lo, hi),
                     })
@@ -813,7 +813,7 @@ impl Parser {
                     Ok(Expression {
                         kind: ExprKind::FunDefinition {
                             args: Vec::new(),
-                            rettypexpr,
+                            rettypeexpr,
                             body,
                         },
                         loc: Span::from_ends(lo, hi),
@@ -830,7 +830,7 @@ impl Parser {
                         break;
                     }
 
-                    match self.parse_typexpr() {
+                    match self.parse_typeexpr() {
                         Ok(t) => {
                             args.push(t);
                         }
@@ -856,8 +856,8 @@ impl Parser {
                 // TEST: n/a
                 let hi_paren = self.token.loc.clone();
 
-                let rettypexpr = if self.eat_no_expect(ExpToken::MinusGt) {
-                    match self.parse_typexpr() {
+                let rettypeexpr = if self.eat_no_expect(ExpToken::MinusGt) {
+                    match self.parse_typeexpr() {
                         Ok(t) => Some(Box::new(t)),
                         Err(recovered) => {
                             if let Recovered::Unable(d) = recovered {
@@ -871,13 +871,13 @@ impl Parser {
                     None
                 };
 
-                let hi = rettypexpr
+                let hi = rettypeexpr
                     .as_ref()
-                    .map(|typexpr| typexpr.loc.clone())
+                    .map(|typeexpr| typeexpr.loc.clone())
                     .unwrap_or(hi_paren);
 
                 Ok(Expression {
-                    kind: ExprKind::FunDeclaration { args, rettypexpr },
+                    kind: ExprKind::FunDeclaration { args, rettypeexpr },
                     loc: Span::from_ends(lo, hi),
                 })
             }
@@ -1189,7 +1189,7 @@ impl Parser {
     }
 
     /// Parses function pointer type
-    pub fn parse_funptr_typexpr(&mut self) -> IResult<Expression> {
+    pub fn parse_funptr_typeexpr(&mut self) -> IResult<Expression> {
         // TEST: n/a
         let lo = self.expect(ExpToken::Star)?;
 
@@ -1206,7 +1206,7 @@ impl Parser {
                 break;
             }
 
-            match self.parse_typexpr() {
+            match self.parse_typeexpr() {
                 Ok(t) => {
                     args.push(t);
                 }
@@ -1235,7 +1235,7 @@ impl Parser {
         let hi_paren = self.token_loc();
 
         let (hi, ret) = if self.eat_no_expect(ExpToken::MinusGt) {
-            match self.parse_typexpr() {
+            match self.parse_typeexpr() {
                 Ok(t) => {
                     let typeexpr = Box::new(t);
 
@@ -1260,17 +1260,17 @@ impl Parser {
     }
 
     /// Parses pointer type expression
-    pub fn parse_pointer_typexpr(&mut self) -> IResult<Expression> {
+    pub fn parse_pointer_typeexpr(&mut self) -> IResult<Expression> {
         // TEST: n/a
         let lo = self.expect(ExpToken::Star)?;
 
         let mutability = self.parse_mutability();
 
-        let typexpr = Box::new(self.parse_typexpr().emit_wval(self.x(), Expression::dummy));
-        let hi = typexpr.loc.clone();
+        let typeexpr = Box::new(self.parse_typeexpr().emit_wval(self.x(), Expression::dummy));
+        let hi = typeexpr.loc.clone();
 
         Ok(Expression {
-            kind: ExprKind::PointerType(mutability, typexpr),
+            kind: ExprKind::PointerType(mutability, typeexpr),
             loc: Span::from_ends(lo, hi),
         })
     }

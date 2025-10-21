@@ -1,6 +1,6 @@
 a :: {
     // bypass with fundef
-    o :: fun(o:
+    o := fun(o:
         fun() {
             a: loop {}
         }

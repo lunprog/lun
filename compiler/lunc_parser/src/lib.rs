@@ -382,6 +382,16 @@ impl Parser {
         }
     }
 
+    /// Parses mutability like [`Parser::parse_mutability`] and returns the
+    /// location of the `mut` keyword if present.
+    pub fn parse_spanned_mutability(&mut self) -> (Mutability, Option<Span>) {
+        if self.eat_no_expect(ExpToken::KwMut) {
+            (Mutability::Mut, Some(self.token_loc()))
+        } else {
+            (Mutability::Not, None)
+        }
+    }
+
     /// Evaluate the closure with the restrictions, after evaluating the closure the restrictions are reset.
     pub fn with_rest<R>(&mut self, rests: Restrictions, f: impl FnOnce(&mut Self) -> R) -> R {
         let old = self.restrictions;

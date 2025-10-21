@@ -43,13 +43,12 @@ impl Statement {
 pub enum StmtKind {
     /// variable definition
     ///
-    /// `"let" "mut"? ident [ ":" expr ] "=" expr`
-    /// `ident ":" [ expr ] ":" expr ";"`
-    /// `ident ":" [ expr ] "=" expr ";"`
-    VariableDef {
+    /// `"let" "mut"? ident [ ":" typeexpr ] "=" expr`
+    /// `"mut"? ident ":" typeexpr? "=" expr ";"`
+    BindingDef {
         name: Spanned<String>,
         mutability: Mutability,
-        typexpr: Option<Expression>,
+        typeexpr: Option<Expression>,
         value: Box<Expression>,
     },
     /// defer statement
@@ -215,6 +214,7 @@ impl Parser {
     pub fn parse_stmt(&mut self) -> IResult<Statement> {
         match self.token.tt {
             KwLet => self.parse_let_binding_stmt(),
+            KwMut => self.parse_short_binding_stmt(),
             Ident(_) if self.is_short_binding_def() => self.parse_short_binding_stmt(),
             KwDefer => self.parse_defer_statement(),
             _ => {
@@ -248,8 +248,8 @@ impl Parser {
         let name_loc = self.expect(ExpToken::Ident).emit_wval(self.x(), default);
         let name = self.as_ident();
 
-        let typexpr = if self.eat_no_expect(ExpToken::Colon) {
-            Some(self.parse_typexpr()?)
+        let typeexpr = if self.eat_no_expect(ExpToken::Colon) {
+            Some(self.parse_typeexpr()?)
         } else {
             None
         };
@@ -261,60 +261,55 @@ impl Parser {
         let hi = value.loc.clone();
 
         Ok(Statement {
-            stmt: StmtKind::VariableDef {
+            stmt: StmtKind::BindingDef {
                 name: Spanned {
                     node: name,
                     loc: name_loc,
                 },
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
             },
             loc: Span::from_ends(lo, hi),
         })
     }
 
-    /// Parses a short binding statement
+    /// Parses a short binding def statement
     ///
-    /// `ident ":" [ expr ] ":" expr ";"`
-    /// `ident ":" [ expr ] "=" expr ";"`
+    /// `"mut"? ident ":" typeexpr? "=" expr ";"`
     pub fn parse_short_binding_stmt(&mut self) -> IResult<Statement> {
         // TEST: n/a
-        let lo = self.expect(ExpToken::Ident)?;
-        let name = self.as_ident();
-
-        // TEST: n/a
-        self.expect(ExpToken::Colon)?;
-
-        let typexpr = match self.token.tt {
-            Colon | Eq => None,
-            _ => Some(self.parse_typexpr()?),
-        };
+        let (mutability, mut_loc) = self.parse_spanned_mutability();
 
         // TEST: no. 1
-        let mutability = if self.eat(ExpToken::Colon) {
-            Mutability::Not
-        } else if self.eat(ExpToken::Eq) {
-            Mutability::Mut
-        } else {
-            let diag = self.expected_diag();
-            self.sink.emit(diag);
+        let lo_ident = self.expect(ExpToken::Ident).emit_wval(self.x(), default);
+        let name = self.as_ident();
 
-            Mutability::Not
+        let lo = mut_loc.unwrap_or(lo_ident);
+
+        // TEST: no. 2
+        self.expect(ExpToken::Colon)?;
+
+        let typeexpr = match self.token.tt {
+            Eq => None,
+            _ => Some(self.parse_typeexpr()?),
         };
 
-        let value = Box::new(self.parse_expr()?);
+        // TEST: no. 3
+        self.expect(ExpToken::Eq)?;
+
+        let value = Box::new(self.parse_expr().emit_wval(self.x(), Expression::dummy));
 
         let hi = value.loc.clone();
 
         Ok(Statement {
-            stmt: StmtKind::VariableDef {
+            stmt: StmtKind::BindingDef {
                 name: Spanned {
                     node: name,
                     loc: lo.clone(),
                 },
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
             },
             loc: Span::from_ends(lo, hi),

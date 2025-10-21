@@ -5,13 +5,13 @@
 println :: fun() {}
 
 main :: fun() {
-    i := 0;
+    mut i := 0;
 
     while i < 10 {
         println("i = {}", i);
     }
 
-    j := 3;
+    mut j := 3;
 
     label: while j < 10 && j > 2 {
         println("j = {}", j);

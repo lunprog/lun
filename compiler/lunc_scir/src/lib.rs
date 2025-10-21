@@ -72,10 +72,9 @@ pub enum ScItem {
     ///
     /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
     GlobalDef {
-        name: String,
-        name_loc: OSpan,
+        name: Spanned<String>,
         mutability: Mutability,
-        typexpr: Box<Option<ScExpression>>,
+        typeexpr: Box<Option<ScExpression>>,
         value: Box<ScExpression>,
         loc: OSpan,
         /// corresponding symbol of this definition
@@ -85,9 +84,8 @@ pub enum ScItem {
     ///
     /// [`DsItem::GlobalUninit`]: lunc_dsir::DsItem::GlobalUninit
     GlobalUninit {
-        name: String,
-        name_loc: OSpan,
-        typexpr: ScExpression,
+        name: Spanned<String>,
+        typeexpr: ScExpression,
         loc: OSpan,
         /// corresponding symbol of this definition
         sym: Symbol,
@@ -97,11 +95,10 @@ pub enum ScItem {
     /// [`DsExprKind::FunDefinition`]: lunc_dsir::DsExprKind::FunDefinition
     /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
     FunDefinition {
-        name: String,
-        name_loc: OSpan,
-        typexpr: Box<Option<ScExpression>>,
+        name: Spanned<String>,
+        typeexpr: Box<Option<ScExpression>>,
         args: Vec<ScArg>,
-        rettypexpr: Option<Box<ScExpression>>,
+        rettypeexpr: Option<Box<ScExpression>>,
         body: ScBlock,
         info: FunDefInfo,
         loc: OSpan,
@@ -113,11 +110,10 @@ pub enum ScItem {
     /// [`DsExprKind::FunDeclaration`]: lunc_dsir::DsExprKind::FunDeclaration
     /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
     FunDeclaration {
-        name: String,
-        name_loc: OSpan,
-        typexpr: Box<Option<ScExpression>>,
+        name: Spanned<String>,
+        typeexpr: Box<Option<ScExpression>>,
         args: Vec<ScExpression>,
-        rettypexpr: Option<Box<ScExpression>>,
+        rettypeexpr: Option<Box<ScExpression>>,
         /// set to `true` if it was defined in a mutable global def (this is to
         /// emit E040).
         defined_mut: bool,
@@ -180,16 +176,15 @@ impl FromHigher for ScItem {
         match node {
             DsItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
                 loc,
                 sym,
             } if value.is_fundef() => {
                 let DsExprKind::FunDefinition {
                     args,
-                    rettypexpr,
+                    rettypeexpr,
                     body,
                 } = value.expr
                 else {
@@ -199,10 +194,9 @@ impl FromHigher for ScItem {
 
                 ScItem::FunDefinition {
                     name,
-                    name_loc,
-                    typexpr: Box::new(lower(typexpr)),
+                    typeexpr: Box::new(lower(typeexpr)),
                     args: lower(args),
-                    rettypexpr: lower(rettypexpr),
+                    rettypeexpr: lower(rettypeexpr),
                     body: lower(body),
                     info: FunDefInfo {
                         defined_mut: mutability.is_mut(),
@@ -213,24 +207,22 @@ impl FromHigher for ScItem {
             }
             DsItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
                 loc,
                 sym,
             } if value.is_fundecl() => {
-                let DsExprKind::FunDeclaration { args, rettypexpr } = value.expr else {
+                let DsExprKind::FunDeclaration { args, rettypeexpr } = value.expr else {
                     // SAFETY: we already checked in the `if` clause of the match arm.
                     opt_unreachable!();
                 };
 
                 ScItem::FunDeclaration {
                     name,
-                    name_loc,
-                    typexpr: Box::new(lower(typexpr)),
+                    typeexpr: Box::new(lower(typeexpr)),
                     args: lower(args),
-                    rettypexpr: lower(rettypexpr),
+                    rettypeexpr: lower(rettypeexpr),
                     defined_mut: mutability.is_mut(),
                     loc,
                     sym: sym.unwrap_sym(),
@@ -238,31 +230,27 @@ impl FromHigher for ScItem {
             }
             DsItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
                 loc,
                 sym: lazy,
             } => ScItem::GlobalDef {
                 name,
-                name_loc,
                 mutability,
-                typexpr: Box::new(lower(typexpr)),
+                typeexpr: Box::new(lower(typeexpr)),
                 value: lower(value),
                 loc,
                 sym: lazy.unwrap_sym(),
             },
             DsItem::GlobalUninit {
                 name,
-                name_loc,
-                typexpr,
+                typeexpr,
                 loc,
                 sym,
             } => ScItem::GlobalUninit {
                 name,
-                name_loc,
-                typexpr: lower(typexpr),
+                typeexpr: lower(typeexpr),
                 loc,
                 sym: sym.unwrap_sym(),
             },
@@ -468,8 +456,8 @@ impl FromHigher for ScExpression {
                     .into_diag(),
                 ),
             },
-            DsExprKind::PointerType(mutability, typexpr) => {
-                ScExprKind::PointerType(mutability, lower(typexpr))
+            DsExprKind::PointerType(mutability, typeexpr) => {
+                ScExprKind::PointerType(mutability, lower(typeexpr))
             }
             DsExprKind::FunPtrType { args, ret } => ScExprKind::FunPtrType {
                 args: lower(args),
@@ -633,7 +621,7 @@ pub enum ScExprKind {
 pub struct ScArg {
     pub name: String,
     pub name_loc: OSpan,
-    pub typexpr: ScExpression,
+    pub typeexpr: ScExpression,
     pub loc: OSpan,
     pub sym: Symbol,
 }
@@ -645,7 +633,7 @@ impl FromHigher for ScArg {
         let DsArg {
             name,
             name_loc,
-            typexpr,
+            typeexpr,
             loc,
             sym: lazy,
         } = node;
@@ -653,7 +641,7 @@ impl FromHigher for ScArg {
         ScArg {
             name,
             name_loc,
-            typexpr: lower(typexpr),
+            typeexpr: lower(typeexpr),
             loc,
             sym: lazy.unwrap_sym(),
         }
@@ -711,16 +699,16 @@ impl FromHigher for ScStatement {
 
     fn lower(node: Self::Higher) -> Self {
         let stmt = match node.stmt {
-            DsStmtKind::VariableDef {
+            DsStmtKind::BindingDef {
                 name,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
                 sym: lazy,
-            } => ScStmtKind::VariableDef {
+            } => ScStmtKind::BindingDef {
                 name,
                 mutability,
-                typexpr: lower(typexpr),
+                typeexpr: lower(typeexpr),
                 value: lower(value),
                 sym: lazy.unwrap_sym(),
             },
@@ -737,13 +725,13 @@ impl FromHigher for ScStatement {
 
 #[derive(Debug, Clone)]
 pub enum ScStmtKind {
-    /// See [`DsStmtKind::VariableDef`]
+    /// See [`DsStmtKind::BindingDef`]
     ///
-    /// [`DsStmtKind::VariableDef`]: lunc_dsir::DsStmtKind::VariableDef
-    VariableDef {
+    /// [`DsStmtKind::BindingDef`]: lunc_dsir::DsStmtKind::BindingDef
+    BindingDef {
         name: Spanned<String>,
         mutability: Mutability,
-        typexpr: Option<ScExpression>,
+        typeexpr: Option<ScExpression>,
         value: Box<ScExpression>,
         sym: Symbol,
     },
@@ -925,8 +913,11 @@ impl SemaChecker {
                 // minimal support for blocks evaluation
                 Ok(ValueExpr::Void)
             }
-            ScExprKind::PointerType(mutability, typexpr) => {
-                let typ = self.evaluate_expr(typexpr)?.as_type().unwrap_or(Type::Void);
+            ScExprKind::PointerType(mutability, typeexpr) => {
+                let typ = self
+                    .evaluate_expr(typeexpr)?
+                    .as_type()
+                    .unwrap_or(Type::Void);
                 // NOTE: we do not emit a diagnostic because we already did in
                 // the type checking
 
@@ -964,13 +955,13 @@ impl SemaChecker {
                 }
 
                 // evaluate the return type expression
-                let ret_typ = if let Some(ret_typexpr) = ret {
-                    let value_typ_ret = match self.evaluate_expr(ret_typexpr) {
+                let ret_typ = if let Some(ret_typeexpr) = ret {
+                    let value_typ_ret = match self.evaluate_expr(ret_typeexpr) {
                         Ok(typ) => typ,
                         Err((loc, note)) => {
                             self.sink.emit(CantResolveComptimeValue {
                                 note,
-                                loc_expr: ret_typexpr.loc.clone().unwrap(),
+                                loc_expr: ret_typeexpr.loc.clone().unwrap(),
                                 loc: loc.clone(),
                             });
 
@@ -982,7 +973,7 @@ impl SemaChecker {
                         Some(typ) => typ,
                         None => {
                             self.sink.emit(ExpectedTypeFoundExpr {
-                                loc: ret_typexpr.loc.clone().unwrap(),
+                                loc: ret_typeexpr.loc.clone().unwrap(),
                             });
 
                             Type::Void

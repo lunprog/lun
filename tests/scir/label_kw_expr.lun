@@ -10,7 +10,7 @@ nested_loops :: fun() {
 }
 
 block_label :: fun() {
-    a : i32 : blk: {
+    a : i32 = blk: {
         break :blk 12;
 
         2

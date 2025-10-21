@@ -51,8 +51,7 @@ impl SemaChecker {
             ScItem::GlobalDef { .. } => self.pre_ck_global_def(item),
             ScItem::GlobalUninit {
                 name: _,
-                name_loc: _,
-                typexpr,
+                typeexpr,
                 loc: _,
                 sym,
             } => {
@@ -61,19 +60,19 @@ impl SemaChecker {
                 // NOTE: we don't check if the container is ExternBlock here
                 // because it will be checked later in `ck_item`.
 
-                self.ck_expr(typexpr, Some(Type::Type))?;
+                self.ck_expr(typeexpr, Some(Type::Type))?;
 
-                if typexpr.typ != Type::Type {
+                if typeexpr.typ != Type::Type {
                     self.sink.emit(ExpectedTypeFoundExpr {
-                        loc: typexpr.loc.clone().unwrap(),
+                        loc: typeexpr.loc.clone().unwrap(),
                     });
                 }
 
                 let typ = {
-                    let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
+                    let value = self.evaluate_expr(typeexpr).map_err(|(loc, note)| {
                         CantResolveComptimeValue {
                             note,
-                            loc_expr: typexpr.loc.clone().unwrap(),
+                            loc_expr: typeexpr.loc.clone().unwrap(),
                             loc,
                         }
                         .into_diag()
@@ -88,10 +87,9 @@ impl SemaChecker {
             }
             ScItem::FunDefinition {
                 name: _,
-                name_loc: _,
-                typexpr,
+                typeexpr,
                 args,
-                rettypexpr,
+                rettypeexpr,
                 body: _,
                 info: _,
                 loc: _,
@@ -100,22 +98,22 @@ impl SemaChecker {
                 // function def pre ck
 
                 // we typecheck the type expression
-                if let Some(typexpr) = &mut **typexpr {
-                    self.ck_expr(typexpr, Some(Type::Type))?;
+                if let Some(typeexpr) = &mut **typeexpr {
+                    self.ck_expr(typeexpr, Some(Type::Type))?;
 
-                    if typexpr.typ != Type::Type {
+                    if typeexpr.typ != Type::Type {
                         self.sink.emit(ExpectedTypeFoundExpr {
-                            loc: typexpr.loc.clone().unwrap(),
+                            loc: typeexpr.loc.clone().unwrap(),
                         });
                     }
                 }
 
                 // we evaluate the type expression
-                let typexpr_as_type = if let Some(typexpr) = &mut **typexpr {
-                    let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
+                let typeexpr_as_type = if let Some(typeexpr) = &mut **typeexpr {
+                    let value = self.evaluate_expr(typeexpr).map_err(|(loc, note)| {
                         CantResolveComptimeValue {
                             note,
-                            loc_expr: typexpr.loc.clone().unwrap(),
+                            loc_expr: typeexpr.loc.clone().unwrap(),
                             loc,
                         }
                         .into_diag()
@@ -130,24 +128,24 @@ impl SemaChecker {
                 let mut args_typ = Vec::new();
 
                 for ScArg {
-                    typexpr: typexpr_arg,
+                    typeexpr: typeexpr_arg,
                     sym: symref,
                     ..
                 } in args
                 {
-                    match self.ck_expr(typexpr_arg, Some(Type::Type)) {
+                    match self.ck_expr(typeexpr_arg, Some(Type::Type)) {
                         Ok(()) => {}
                         Err(d) => {
                             self.sink.emit(d);
                         }
                     }
 
-                    let value_typ_arg = match self.evaluate_expr(typexpr_arg) {
+                    let value_typ_arg = match self.evaluate_expr(typeexpr_arg) {
                         Ok(typ) => typ,
                         Err((loc, note)) => {
                             self.sink.emit(CantResolveComptimeValue {
                                 note,
-                                loc_expr: typexpr_arg.loc.clone().unwrap(),
+                                loc_expr: typeexpr_arg.loc.clone().unwrap(),
                                 loc: loc.clone(),
                             });
 
@@ -159,7 +157,7 @@ impl SemaChecker {
                         Some(typ) => typ,
                         None => {
                             self.sink.emit(ExpectedTypeFoundExpr {
-                                loc: typexpr_arg.loc.clone().unwrap(),
+                                loc: typeexpr_arg.loc.clone().unwrap(),
                             });
 
                             Type::Void
@@ -172,20 +170,20 @@ impl SemaChecker {
                 }
 
                 // evaluate the return type expression
-                let ret_typ = if let Some(ret_typexpr) = rettypexpr {
-                    match self.ck_expr(ret_typexpr, Some(Type::Type)) {
+                let ret_typ = if let Some(ret_typeexpr) = rettypeexpr {
+                    match self.ck_expr(ret_typeexpr, Some(Type::Type)) {
                         Ok(()) => {}
                         Err(d) => {
                             self.sink.emit(d);
                         }
                     }
 
-                    let value_typ_ret = match self.evaluate_expr(ret_typexpr) {
+                    let value_typ_ret = match self.evaluate_expr(ret_typeexpr) {
                         Ok(typ) => typ,
                         Err((loc, note)) => {
                             self.sink.emit(CantResolveComptimeValue {
                                 note,
-                                loc_expr: ret_typexpr.loc.clone().unwrap(),
+                                loc_expr: ret_typeexpr.loc.clone().unwrap(),
                                 loc: loc.clone(),
                             });
 
@@ -197,7 +195,7 @@ impl SemaChecker {
                         Some(typ) => typ,
                         None => {
                             self.sink.emit(ExpectedTypeFoundExpr {
-                                loc: ret_typexpr.loc.clone().unwrap(),
+                                loc: ret_typeexpr.loc.clone().unwrap(),
                             });
 
                             Type::Void
@@ -207,7 +205,7 @@ impl SemaChecker {
                     Type::Void
                 };
 
-                let typ = if let Some(ref typ) = typexpr_as_type {
+                let typ = if let Some(ref typ) = typeexpr_as_type {
                     typ.clone()
                 } else {
                     Type::FunPtr {
@@ -223,10 +221,9 @@ impl SemaChecker {
             }
             ScItem::FunDeclaration {
                 name: _,
-                name_loc: _,
-                typexpr,
+                typeexpr,
                 args,
-                rettypexpr,
+                rettypeexpr,
                 defined_mut: _,
                 loc: _,
                 sym,
@@ -237,22 +234,22 @@ impl SemaChecker {
                 // because it will be checked later in `ck_item`.
 
                 // we typecheck the type expression
-                if let Some(typexpr) = &mut **typexpr {
-                    self.ck_expr(typexpr, Some(Type::Type))?;
+                if let Some(typeexpr) = &mut **typeexpr {
+                    self.ck_expr(typeexpr, Some(Type::Type))?;
 
-                    if typexpr.typ != Type::Type {
+                    if typeexpr.typ != Type::Type {
                         self.sink.emit(ExpectedTypeFoundExpr {
-                            loc: typexpr.loc.clone().unwrap(),
+                            loc: typeexpr.loc.clone().unwrap(),
                         });
                     }
                 }
 
                 // we evaluate the type expression
-                let typexpr_as_type = if let Some(typexpr) = &mut **typexpr {
-                    let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
+                let typeexpr_as_type = if let Some(typeexpr) = &mut **typeexpr {
+                    let value = self.evaluate_expr(typeexpr).map_err(|(loc, note)| {
                         CantResolveComptimeValue {
                             note,
-                            loc_expr: typexpr.loc.clone().unwrap(),
+                            loc_expr: typeexpr.loc.clone().unwrap(),
                             loc,
                         }
                         .into_diag()
@@ -301,20 +298,20 @@ impl SemaChecker {
                 }
 
                 // evaluate the return type expression
-                let ret_typ = if let Some(ret_typexpr) = rettypexpr {
-                    match self.ck_expr(ret_typexpr, Some(Type::Type)) {
+                let ret_typ = if let Some(ret_typeexpr) = rettypeexpr {
+                    match self.ck_expr(ret_typeexpr, Some(Type::Type)) {
                         Ok(()) => {}
                         Err(d) => {
                             self.sink.emit(d);
                         }
                     }
 
-                    let value_typ_ret = match self.evaluate_expr(ret_typexpr) {
+                    let value_typ_ret = match self.evaluate_expr(ret_typeexpr) {
                         Ok(typ) => typ,
                         Err((loc, note)) => {
                             self.sink.emit(CantResolveComptimeValue {
                                 note,
-                                loc_expr: ret_typexpr.loc.clone().unwrap(),
+                                loc_expr: ret_typeexpr.loc.clone().unwrap(),
                                 loc: loc.clone(),
                             });
 
@@ -326,7 +323,7 @@ impl SemaChecker {
                         Some(typ) => typ,
                         None => {
                             self.sink.emit(ExpectedTypeFoundExpr {
-                                loc: ret_typexpr.loc.clone().unwrap(),
+                                loc: ret_typeexpr.loc.clone().unwrap(),
                             });
 
                             Type::Void
@@ -336,7 +333,7 @@ impl SemaChecker {
                     Type::Void
                 };
 
-                let typ = if let Some(ref typ) = typexpr_as_type {
+                let typ = if let Some(ref typ) = typeexpr_as_type {
                     typ.clone()
                 } else {
                     Type::FunPtr {
@@ -367,9 +364,8 @@ impl SemaChecker {
     fn pre_ck_global_def(&mut self, global_def: &mut ScItem) -> Result<(), Diagnostic> {
         let ScItem::GlobalDef {
             name: _,
-            name_loc: _,
             mutability: _,
-            typexpr,
+            typeexpr,
             value: _,
             loc: _,
             sym: symref,
@@ -383,22 +379,22 @@ impl SemaChecker {
         // global def pre ck
 
         // we typecheck the type expression
-        if let Some(typexpr) = &mut **typexpr {
-            self.ck_expr(typexpr, Some(Type::Type))?;
+        if let Some(typeexpr) = &mut **typeexpr {
+            self.ck_expr(typeexpr, Some(Type::Type))?;
 
-            if typexpr.typ != Type::Type {
+            if typeexpr.typ != Type::Type {
                 self.sink.emit(ExpectedTypeFoundExpr {
-                    loc: typexpr.loc.clone().unwrap(),
+                    loc: typeexpr.loc.clone().unwrap(),
                 });
             }
         }
 
         // we evaluate the type expression
-        let typexpr_as_type = if let Some(typexpr) = &mut **typexpr {
-            let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
+        let typeexpr_as_type = if let Some(typeexpr) = &mut **typeexpr {
+            let value = self.evaluate_expr(typeexpr).map_err(|(loc, note)| {
                 CantResolveComptimeValue {
                     note,
-                    loc_expr: typexpr.loc.clone().unwrap(),
+                    loc_expr: typeexpr.loc.clone().unwrap(),
                     loc,
                 }
                 .into_diag()
@@ -409,7 +405,7 @@ impl SemaChecker {
             None
         };
 
-        let typ = if let Some(ref typ) = typexpr_as_type {
+        let typ = if let Some(ref typ) = typeexpr_as_type {
             typ.clone()
         } else {
             Type::Unknown
@@ -575,9 +571,8 @@ impl SemaChecker {
         match item {
             ScItem::GlobalDef {
                 name: _,
-                name_loc: _,
                 mutability: _,
-                typexpr,
+                typeexpr,
                 value,
                 loc: _,
                 sym: symref,
@@ -598,7 +593,7 @@ impl SemaChecker {
                     self.expr_typeck(
                         typ,
                         value,
-                        (**typexpr)
+                        (**typeexpr)
                             .as_ref()
                             .map(|exp| exp.loc.as_ref().unwrap().clone()),
                         None,
@@ -632,8 +627,7 @@ impl SemaChecker {
             }
             ScItem::GlobalUninit {
                 name: _,
-                name_loc: _,
-                typexpr: _,
+                typeexpr: _,
                 loc,
                 sym: _,
             } => {
@@ -648,10 +642,9 @@ impl SemaChecker {
             }
             ScItem::FunDefinition {
                 name: _,
-                name_loc: _,
-                typexpr: _,
+                typeexpr: _,
                 args: _,
-                rettypexpr,
+                rettypeexpr,
                 body,
                 info,
                 loc,
@@ -670,7 +663,9 @@ impl SemaChecker {
                 self.fun_retty = sym.typ().as_fun_ptr().map(|t| t.1).unwrap_or(Type::Void);
                 // unwrap with a dummy if the type was defined to a non-fnptr.
 
-                self.fun_retty_loc = rettypexpr.as_ref().and_then(|typexpr| typexpr.loc.clone());
+                self.fun_retty_loc = rettypeexpr
+                    .as_ref()
+                    .and_then(|typeexpr| typeexpr.loc.clone());
 
                 // check the body of the function
                 self.ck_block(body, Some(self.fun_retty.clone()))?;
@@ -1392,17 +1387,17 @@ impl SemaChecker {
                 // expression is only valid in lhs of assignment and we
                 // have a special case for it.
             }
-            ScExprKind::PointerType(_, typexpr) => {
-                match self.ck_expr(typexpr, Some(Type::Type)) {
+            ScExprKind::PointerType(_, typeexpr) => {
+                match self.ck_expr(typeexpr, Some(Type::Type)) {
                     Ok(()) => {}
                     Err(d) => {
                         self.sink.emit(d);
                     }
                 }
 
-                if typexpr.typ != Type::Type {
+                if typeexpr.typ != Type::Type {
                     self.sink.emit(ExpectedTypeFoundExpr {
-                        loc: typexpr.loc.clone().unwrap(),
+                        loc: typeexpr.loc.clone().unwrap(),
                     });
                 }
 
@@ -1478,7 +1473,7 @@ impl SemaChecker {
         // compute if one of the statements or the last expression has
         // `never` type.
         let is_never = block.stmts.iter().position(|stmt| match &stmt.stmt {
-            ScStmtKind::VariableDef { value, .. } if value.typ == Type::Never => true,
+            ScStmtKind::BindingDef { value, .. } if value.typ == Type::Never => true,
             ScStmtKind::Expression(expr) if expr.typ == Type::Never => true,
             _ => false,
         });
@@ -1520,30 +1515,30 @@ impl SemaChecker {
 
     pub fn ck_stmt(&mut self, stmt: &mut ScStatement) -> Result<(), Diagnostic> {
         match &mut stmt.stmt {
-            ScStmtKind::VariableDef {
+            ScStmtKind::BindingDef {
                 name: _,
                 mutability: _,
-                typexpr,
+                typeexpr,
                 value,
                 sym: symref,
             } => {
                 // we typecheck the type expression
-                if let Some(typexpr) = typexpr {
-                    self.ck_expr(typexpr, Some(Type::Type))?;
+                if let Some(typeexpr) = typeexpr {
+                    self.ck_expr(typeexpr, Some(Type::Type))?;
 
-                    if typexpr.typ != Type::Type {
+                    if typeexpr.typ != Type::Type {
                         self.sink.emit(ExpectedTypeFoundExpr {
-                            loc: typexpr.loc.clone().unwrap(),
+                            loc: typeexpr.loc.clone().unwrap(),
                         });
                     }
                 }
 
                 // we evaluate the type expression
-                let typexpr_as_type = if let Some(typexpr) = typexpr {
-                    let value = self.evaluate_expr(typexpr).map_err(|(loc, note)| {
+                let typeexpr_as_type = if let Some(typeexpr) = typeexpr {
+                    let value = self.evaluate_expr(typeexpr).map_err(|(loc, note)| {
                         CantResolveComptimeValue {
                             note,
-                            loc_expr: typexpr.loc.clone().unwrap(),
+                            loc_expr: typeexpr.loc.clone().unwrap(),
                             loc,
                         }
                         .into_diag()
@@ -1555,18 +1550,18 @@ impl SemaChecker {
                 };
 
                 // we check the value of the definition
-                self.ck_expr(value, typexpr_as_type.clone())?;
+                self.ck_expr(value, typeexpr_as_type.clone())?;
 
                 // we check the type of the value
                 if value.typ == Type::Unknown {
                     self.sink.emit(TypeAnnotationsNeeded {
                         loc: value.loc.clone().unwrap(),
                     });
-                } else if let Some(typ) = &typexpr_as_type {
-                    self.expr_typeck(typ, value, typexpr.as_ref().unwrap().loc.clone(), None);
+                } else if let Some(typ) = &typeexpr_as_type {
+                    self.expr_typeck(typ, value, typeexpr.as_ref().unwrap().loc.clone(), None);
                 }
 
-                let typ = if let Some(ref typ) = typexpr_as_type {
+                let typ = if let Some(ref typ) = typeexpr_as_type {
                     typ.clone()
                 } else {
                     value.typ.clone()

@@ -20,32 +20,17 @@ impl PrettyDump for Module {
 impl PrettyDump for Item {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            Item::GlobalConst {
+            Item::GlobalDef {
                 name,
-                name_loc,
-                typexpr,
+                mutability,
+                typeexpr,
                 value,
                 loc,
             } => {
-                ctx.pretty_struct("GlobalConst")
-                    .field("name", (name, name_loc))
-                    .field("typexpr", typexpr)
-                    .field("value", value)
-                    .finish()?;
-                ctx.print_loc(loc)?;
-
-                Ok(())
-            }
-            Item::GlobalVar {
-                name,
-                name_loc,
-                typexpr,
-                value,
-                loc,
-            } => {
-                ctx.pretty_struct("GlobalVar")
-                    .field("name", (name, name_loc))
-                    .field("typexpr", typexpr)
+                ctx.pretty_struct("GlobalDef")
+                    .field("name", name)
+                    .field("mutability", mutability)
+                    .field("typeexpr", typeexpr)
                     .field("value", value)
                     .finish()?;
                 ctx.print_loc(loc)?;
@@ -54,13 +39,12 @@ impl PrettyDump for Item {
             }
             Item::GlobalUninit {
                 name,
-                name_loc,
-                typexpr,
+                typeexpr,
                 loc,
             } => {
                 ctx.pretty_struct("GlobalUninit")
-                    .field("name", (name, name_loc))
-                    .field("typexpr", typexpr)
+                    .field("name", name)
+                    .field("typeexpr", typeexpr)
                     .finish()?;
                 ctx.print_loc(loc)?;
 
@@ -229,29 +213,29 @@ impl PrettyDump for ExprKind {
             }
             ExprKind::FunDefinition {
                 args,
-                rettypexpr,
+                rettypeexpr,
                 body,
             } => {
                 ctx.pretty_struct("FunDefinition")
                     .field("args", args.as_slice())
-                    .field("rettypexpr", rettypexpr)
+                    .field("rettypeexpr", rettypeexpr)
                     .field("body", body)
                     .finish()?;
 
                 Ok(())
             }
-            ExprKind::FunDeclaration { args, rettypexpr } => {
+            ExprKind::FunDeclaration { args, rettypeexpr } => {
                 ctx.pretty_struct("FunDeclaration")
                     .field("args", args.as_slice())
-                    .field("rettypexpr ", rettypexpr)
+                    .field("rettypeexpr", rettypeexpr)
                     .finish()?;
 
                 Ok(())
             }
-            ExprKind::PointerType(mutability, typexpr) => {
+            ExprKind::PointerType(mutability, typeexpr) => {
                 ctx.pretty_struct("PointerType")
                     .field("mutability", mutability)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .finish()?;
 
                 Ok(())
@@ -273,13 +257,13 @@ impl PrettyDump for Arg {
         let Arg {
             name,
             name_loc,
-            typexpr,
+            typeexpr,
             loc,
         } = self;
 
         ctx.pretty_struct("Arg")
             .field("name", (name, name_loc))
-            .field("typexpr", typexpr)
+            .field("typeexpr", typeexpr)
             .finish()?;
         ctx.print_loc(loc)?;
 
@@ -344,16 +328,16 @@ impl PrettyDump for Statement {
 impl PrettyDump for StmtKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            StmtKind::VariableDef {
+            StmtKind::BindingDef {
                 name,
                 mutability,
-                typexpr,
+                typeexpr,
                 value,
             } => {
-                ctx.pretty_struct("VariableDef")
+                ctx.pretty_struct("BindingDef")
                     .field("name", name)
                     .field("mutability", mutability)
-                    .field("typexpr", typexpr)
+                    .field("typeexpr", typeexpr)
                     .field("value", value)
                     .finish()?;
                 Ok(())

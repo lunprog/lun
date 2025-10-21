@@ -38,15 +38,14 @@ impl SemaChecker {
         match item {
             ScItem::GlobalDef {
                 name: _,
-                name_loc: _,
                 mutability: _,
-                typexpr,
+                typeexpr,
                 value,
                 loc: _,
                 sym: _,
             } => {
-                if let Some(typexpr) = &**typexpr {
-                    self.safety_ck_expr(typexpr)?;
+                if let Some(typeexpr) = &**typeexpr {
+                    self.safety_ck_expr(typeexpr)?;
                 }
 
                 self.safety_ck_expr(value)?;
@@ -55,28 +54,26 @@ impl SemaChecker {
             }
             ScItem::GlobalUninit {
                 name: _,
-                name_loc: _,
-                typexpr,
+                typeexpr,
                 loc: _,
                 sym: _,
             } => {
-                self.safety_ck_expr(typexpr)?;
+                self.safety_ck_expr(typeexpr)?;
 
                 Ok(())
             }
             ScItem::FunDefinition {
                 name: _,
-                name_loc: _,
-                typexpr,
+                typeexpr,
                 args,
-                rettypexpr,
+                rettypeexpr,
                 body,
                 info: FunDefInfo { defined_mut: _ },
                 loc: _,
                 sym: _,
             } => {
-                if let Some(typexpr) = &**typexpr {
-                    self.safety_ck_expr(typexpr)?;
+                if let Some(typeexpr) = &**typeexpr {
+                    self.safety_ck_expr(typeexpr)?;
                 }
 
                 for arg in args {
@@ -88,7 +85,7 @@ impl SemaChecker {
                     }
                 }
 
-                if let Some(rettyexpr) = rettypexpr {
+                if let Some(rettyexpr) = rettypeexpr {
                     self.safety_ck_expr(rettyexpr)?;
                 }
 
@@ -98,16 +95,15 @@ impl SemaChecker {
             }
             ScItem::FunDeclaration {
                 name: _,
-                name_loc: _,
-                typexpr,
+                typeexpr,
                 args,
-                rettypexpr,
+                rettypeexpr,
                 defined_mut: _,
                 loc: _,
                 sym: _,
             } => {
-                if let Some(typexpr) = &**typexpr {
-                    self.safety_ck_expr(typexpr)?;
+                if let Some(typeexpr) = &**typeexpr {
+                    self.safety_ck_expr(typeexpr)?;
                 }
 
                 for arg in args {
@@ -119,7 +115,7 @@ impl SemaChecker {
                     }
                 }
 
-                if let Some(retty) = rettypexpr {
+                if let Some(retty) = rettypeexpr {
                     self.safety_ck_expr(retty)?;
                 }
 
@@ -284,8 +280,8 @@ impl SemaChecker {
                 Ok(())
             }
             ScExprKind::QualifiedPath { path: _, sym: _ } | ScExprKind::Underscore => Ok(()),
-            ScExprKind::PointerType(_, typexpr) => {
-                self.safety_ck_expr(typexpr)?;
+            ScExprKind::PointerType(_, typeexpr) => {
+                self.safety_ck_expr(typeexpr)?;
 
                 Ok(())
             }
@@ -328,15 +324,15 @@ impl SemaChecker {
 
     pub fn safety_ck_stmt(&mut self, stmt: &ScStatement) -> Result<(), Diagnostic> {
         match &stmt.stmt {
-            ScStmtKind::VariableDef {
+            ScStmtKind::BindingDef {
                 name: _,
                 mutability: _,
-                typexpr,
+                typeexpr,
                 value,
                 sym: _,
             } => {
-                if let Some(typexpr) = typexpr {
-                    self.safety_ck_expr(typexpr)?;
+                if let Some(typeexpr) = typeexpr {
+                    self.safety_ck_expr(typeexpr)?;
                 }
 
                 self.safety_ck_expr(value)?;
@@ -355,12 +351,12 @@ impl SemaChecker {
         let ScArg {
             name: _,
             name_loc: _,
-            typexpr,
+            typeexpr,
             loc: _,
             sym: _,
         } = arg;
 
-        self.safety_ck_expr(typexpr)?;
+        self.safety_ck_expr(typeexpr)?;
 
         Ok(())
     }
