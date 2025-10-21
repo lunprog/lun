@@ -532,7 +532,7 @@ impl<'a> FunDefTranslator<'a> {
     /// Translate a statement to CLIF instructions
     pub fn translate_stmt(&mut self, stmt: &ScStatement) {
         match &stmt.stmt {
-            ScStmtKind::VariableDef { value, sym, .. } => {
+            ScStmtKind::BindingDef { value, sym, .. } => {
                 // 1. evaluate the value
                 let value = self.translate_expr(value);
 

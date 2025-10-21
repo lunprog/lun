@@ -807,12 +807,12 @@ impl FromHigher for DsStatement {
 
     fn lower(node: Self::Higher) -> Self {
         let stmt = match node.stmt {
-            StmtKind::VariableDef {
+            StmtKind::BindingDef {
                 name,
                 mutability,
                 typexpr,
                 value,
-            } => DsStmtKind::VariableDef {
+            } => DsStmtKind::BindingDef {
                 sym: LazySymbol::Name(name.node.clone()),
                 name,
                 mutability,
@@ -832,10 +832,10 @@ impl FromHigher for DsStatement {
 
 #[derive(Debug, Clone)]
 pub enum DsStmtKind {
-    /// See [`StmtKind::VariableDef`]
+    /// See [`StmtKind::BindingDef`]
     ///
-    /// [`StmtKind::VariableDef`]: lunc_parser::stmt::StmtKind::VariableDef
-    VariableDef {
+    /// [`StmtKind::BindingDef`]: lunc_parser::stmt::StmtKind::BindingDef
+    BindingDef {
         name: Spanned<String>,
         mutability: Mutability,
         typexpr: Option<DsExpression>,
@@ -1157,7 +1157,7 @@ impl Desugarrer {
     /// Resolve statement
     pub fn resolve_stmt(&mut self, stmt: &mut DsStatement) -> Result<(), Diagnostic> {
         match &mut stmt.stmt {
-            DsStmtKind::VariableDef {
+            DsStmtKind::BindingDef {
                 name,
                 mutability,
                 typexpr,

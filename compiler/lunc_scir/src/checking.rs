@@ -1478,7 +1478,7 @@ impl SemaChecker {
         // compute if one of the statements or the last expression has
         // `never` type.
         let is_never = block.stmts.iter().position(|stmt| match &stmt.stmt {
-            ScStmtKind::VariableDef { value, .. } if value.typ == Type::Never => true,
+            ScStmtKind::BindingDef { value, .. } if value.typ == Type::Never => true,
             ScStmtKind::Expression(expr) if expr.typ == Type::Never => true,
             _ => false,
         });
@@ -1520,7 +1520,7 @@ impl SemaChecker {
 
     pub fn ck_stmt(&mut self, stmt: &mut ScStatement) -> Result<(), Diagnostic> {
         match &mut stmt.stmt {
-            ScStmtKind::VariableDef {
+            ScStmtKind::BindingDef {
                 name: _,
                 mutability: _,
                 typexpr,

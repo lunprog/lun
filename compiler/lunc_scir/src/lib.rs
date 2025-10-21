@@ -711,13 +711,13 @@ impl FromHigher for ScStatement {
 
     fn lower(node: Self::Higher) -> Self {
         let stmt = match node.stmt {
-            DsStmtKind::VariableDef {
+            DsStmtKind::BindingDef {
                 name,
                 mutability,
                 typexpr,
                 value,
                 sym: lazy,
-            } => ScStmtKind::VariableDef {
+            } => ScStmtKind::BindingDef {
                 name,
                 mutability,
                 typexpr: lower(typexpr),
@@ -737,10 +737,10 @@ impl FromHigher for ScStatement {
 
 #[derive(Debug, Clone)]
 pub enum ScStmtKind {
-    /// See [`DsStmtKind::VariableDef`]
+    /// See [`DsStmtKind::BindingDef`]
     ///
-    /// [`DsStmtKind::VariableDef`]: lunc_dsir::DsStmtKind::VariableDef
-    VariableDef {
+    /// [`DsStmtKind::BindingDef`]: lunc_dsir::DsStmtKind::BindingDef
+    BindingDef {
         name: Spanned<String>,
         mutability: Mutability,
         typexpr: Option<ScExpression>,

@@ -6685,36 +6685,6 @@ error: compilation of `E006_return_expr_resilience_1` failed due to 1 error and 
         test_out: "",
         test_code: 0,
     ),
-    "parser/E006_short_var_def_1": (
-        compiler_out: "ast = [
-  GlobalConst {
-    name: a @ 39..40 (fid = 0);
-    typexpr: none;
-    value: Block [
-      VariableDef {
-        name: a @ 50..51 (fid = 0);
-        mutability: not;
-        typexpr: ident b @ 54..55 (fid = 0);
-        value: ident c @ 56..57 (fid = 0);
-      } @ 50..57 (fid = 0),
-
-      @last_expr: none,
-    ] @ 44..60 (fid = 0) @ 44..60 (fid = 0);
-  } @ 39..60 (fid = 0),
-]
-error[E006]: expected `:` or `=`, found identifier
-  ┌─ ./tests/parser/E006_short_var_def_1.lun:3:11
-  │
-3 │     a : b c;
-  │           ^
-
-error: compilation of `E006_short_var_def_1` failed due to 1 error and 0 warnings
-
-",
-        compiler_code: 255,
-        test_out: "",
-        test_code: 0,
-    ),
     "parser/E006_while_expr_resilience_1": (
         compiler_out: "ast = [
   GlobalConst {

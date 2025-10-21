@@ -329,14 +329,14 @@ impl PrettyDump for DsStatement {
 impl PrettyDump for DsStmtKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            DsStmtKind::VariableDef {
+            DsStmtKind::BindingDef {
                 name,
                 mutability,
                 typexpr,
                 value,
                 sym,
             } => {
-                ctx.pretty_struct("VariableDef")
+                ctx.pretty_struct("BindingDef")
                     .field("name", name)
                     .field("mutability", mutability)
                     .field("typexpr", typexpr)

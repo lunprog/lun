@@ -355,14 +355,14 @@ impl PrettyDump for ScStatement {
 impl PrettyDump for ScStmtKind {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            ScStmtKind::VariableDef {
+            ScStmtKind::BindingDef {
                 name,
                 mutability,
                 typexpr,
                 value,
                 sym,
             } => {
-                ctx.pretty_struct("VariableDef")
+                ctx.pretty_struct("BindingDef")
                     .field("name", name)
                     .field("mutability", mutability)
                     .field("typexpr", typexpr)

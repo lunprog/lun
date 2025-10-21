@@ -328,7 +328,7 @@ impl SemaChecker {
 
     pub fn safety_ck_stmt(&mut self, stmt: &ScStatement) -> Result<(), Diagnostic> {
         match &stmt.stmt {
-            ScStmtKind::VariableDef {
+            ScStmtKind::BindingDef {
                 name: _,
                 mutability: _,
                 typexpr,
