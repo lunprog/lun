@@ -9,5 +9,5 @@ puts :: fun(msg: *str) {
 }
 
 some_other_thing :: fun() {
-    half :: divide(1., 2.);
+    half := divide(1., 2.);
 }

@@ -4,11 +4,11 @@ a :: fun() -> u8 {}
 b : u128 : true;
 
 c :: fun() {
-    d : u8 : 12;
-    e :: -d;
-    f :: -true;
+    d : u8 = 12;
+    e := -d;
+    f := -true;
 
-    g :: true.*;
+    g := true.*;
 }
 
 i :: fun() -> bool {
@@ -16,7 +16,7 @@ i :: fun() -> bool {
 }
 
 j :: fun() {
-    k :: loop {
+    k := loop {
         if false {
             break 12;
         }
@@ -27,10 +27,10 @@ j :: fun() {
 
 ops :: fun(v: void) {
     // testing absurd mismatched types in binary ops checking
-    a :: 1.0 << 1.0;
-    b :: v * v;
-    c :: v && v;
-    d :: 0.0 || 0.2;
-    e :: 1 || 2;
-    f :: 1.0 % 2.0;
+    a := 1.0 << 1.0;
+    b := v * v;
+    c := v && v;
+    d := 0.0 || 0.2;
+    e := 1 || 2;
+    f := 1.0 % 2.0;
 }

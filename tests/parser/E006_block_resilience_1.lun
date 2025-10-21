@@ -1,7 +1,7 @@
 // E006: error resilience testing - ExpectedToken
 
 a :: {
-    a :: 12
-    a :: 12;
+    a := 12
+    a := 12;
     f ++;
 }

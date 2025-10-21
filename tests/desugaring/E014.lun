@@ -1,4 +1,4 @@
 // EO14: error testing - UnderscoreInExpression
 a :: {
-    b : usz : _;
+    b : usz = _;
 }

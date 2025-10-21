@@ -1,5 +1,5 @@
 a :: {
     // bypass with parenthesis
-    b : (a = u32) = 12;
-    c : (a: loop {}) : 12;
+    mut b : (a = u32) = 12;
+    c : (a: loop {}) = 12;
 }

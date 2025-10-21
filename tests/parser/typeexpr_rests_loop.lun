@@ -1,4 +1,4 @@
 a :: {
     // bypass with infinite loop
-    n :: fun(n: loop { a: loop {} }) {};
+    n := fun(n: loop { a: loop {} }) {};
 };

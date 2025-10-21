@@ -1244,7 +1244,7 @@ error: compilation of `E013` failed due to 3 errors and 0 warnings
     value: Block {
       label: none;
       block: Block [
-        VariableDef {
+        BindingDef {
           name: b @ 59..60 (fid = 0);
           mutability: not;
           typexpr: Symbol {
@@ -1290,7 +1290,7 @@ error: compilation of `E013` failed due to 3 errors and 0 warnings
 error[E014]: `_` can only be used in left hand side of assignment not in expressions
   ┌─ ./tests/desugaring/E014.lun:3:15
   │
-3 │     b : usz : _;
+3 │     b : usz = _;
   │               ^
 
 error: compilation of `E014` failed due to 1 error and 0 warnings
@@ -1389,7 +1389,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       args: [];
       rettypexpr: none;
       body: Block [
-        VariableDef {
+        BindingDef {
           name: res @ 99..102 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -2481,14 +2481,14 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       args: [];
       rettypexpr: none;
       body: Block [
-        VariableDef {
-          name: i @ 179..180 (fid = 0);
+        BindingDef {
+          name: i @ 179..182 (fid = 0);
           mutability: mut;
           typexpr: none;
-          value: integer 0 @ 184..185 (fid = 0);
+          value: integer 0 @ 188..189 (fid = 0);
           sym: Symbol {
             kind: local;
-            name: i @ 179..180 (fid = 0);
+            name: i @ 179..182 (fid = 0);
             realname: none;
             which: 0;
             path: i;
@@ -2496,7 +2496,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             typeness: implicit;
             value: none;
           };
-        } @ 179..185 (fid = 0),
+        } @ 179..189 (fid = 0),
 
         Loop {
           label: none;
@@ -2507,17 +2507,17 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                 expr: Binary {
                   lhs: Symbol {
                     kind: local;
-                    name: i @ 179..180 (fid = 0);
+                    name: i @ 179..182 (fid = 0);
                     realname: none;
                     which: 0;
                     path: i;
                     typ: unknown;
                     typeness: implicit;
                     value: none;
-                  } @ 198..199 (fid = 0);
+                  } @ 202..203 (fid = 0);
                   op: CompLT;
-                  rhs: integer 10 @ 202..204 (fid = 0);
-                } @ 198..204 (fid = 0);
+                  rhs: integer 10 @ 206..208 (fid = 0);
+                } @ 202..208 (fid = 0);
               } @ none;
               then_br: Break {
                 label: none;
@@ -2539,39 +2539,39 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                     typ: unknown;
                     typeness: explicit;
                     value: none;
-                  } @ 215..222 (fid = 0);
+                  } @ 219..226 (fid = 0);
                   args: [
-                    string "i = {}" @ 223..231 (fid = 0),
+                    string "i = {}" @ 227..235 (fid = 0),
 
                     Symbol {
                       kind: local;
-                      name: i @ 179..180 (fid = 0);
+                      name: i @ 179..182 (fid = 0);
                       realname: none;
                       which: 0;
                       path: i;
                       typ: unknown;
                       typeness: implicit;
                       value: none;
-                    } @ 233..234 (fid = 0),
+                    } @ 237..238 (fid = 0),
                   ];
-                } @ 215..235 (fid = 0) @ 215..235 (fid = 0),
+                } @ 219..239 (fid = 0) @ 219..239 (fid = 0),
 
                 @last_expr: none,
-              ] @ 205..242 (fid = 0);
+              ] @ 209..246 (fid = 0);
             } @ none @ none,
 
             @last_expr: none,
-          ] @ 205..242 (fid = 0);
-        } @ 192..242 (fid = 0) @ 192..242 (fid = 0),
+          ] @ 209..246 (fid = 0);
+        } @ 196..246 (fid = 0) @ 196..246 (fid = 0),
 
-        VariableDef {
-          name: j @ 248..249 (fid = 0);
+        BindingDef {
+          name: j @ 252..255 (fid = 0);
           mutability: mut;
           typexpr: none;
-          value: integer 3 @ 253..254 (fid = 0);
+          value: integer 3 @ 261..262 (fid = 0);
           sym: Symbol {
             kind: local;
-            name: j @ 248..249 (fid = 0);
+            name: j @ 252..255 (fid = 0);
             realname: none;
             which: 1;
             path: j;
@@ -2579,10 +2579,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             typeness: implicit;
             value: none;
           };
-        } @ 248..254 (fid = 0),
+        } @ 252..262 (fid = 0),
 
         @last_expr: Loop {
-          label: label @ 261..266 (fid = 0);
+          label: label @ 269..274 (fid = 0);
           body: Block [
             If {
               cond: Unary {
@@ -2591,33 +2591,33 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                   lhs: Binary {
                     lhs: Symbol {
                       kind: local;
-                      name: j @ 248..249 (fid = 0);
+                      name: j @ 252..255 (fid = 0);
                       realname: none;
                       which: 1;
                       path: j;
                       typ: unknown;
                       typeness: implicit;
                       value: none;
-                    } @ 274..275 (fid = 0);
+                    } @ 282..283 (fid = 0);
                     op: CompLT;
-                    rhs: integer 10 @ 278..280 (fid = 0);
-                  } @ 274..280 (fid = 0);
+                    rhs: integer 10 @ 286..288 (fid = 0);
+                  } @ 282..288 (fid = 0);
                   op: LogicalAnd;
                   rhs: Binary {
                     lhs: Symbol {
                       kind: local;
-                      name: j @ 248..249 (fid = 0);
+                      name: j @ 252..255 (fid = 0);
                       realname: none;
                       which: 1;
                       path: j;
                       typ: unknown;
                       typeness: implicit;
                       value: none;
-                    } @ 284..285 (fid = 0);
+                    } @ 292..293 (fid = 0);
                     op: CompGT;
-                    rhs: integer 2 @ 288..289 (fid = 0);
-                  } @ 284..289 (fid = 0);
-                } @ 274..289 (fid = 0);
+                    rhs: integer 2 @ 296..297 (fid = 0);
+                  } @ 292..297 (fid = 0);
+                } @ 282..297 (fid = 0);
               } @ none;
               then_br: Break {
                 label: label;
@@ -2639,32 +2639,32 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                     typ: unknown;
                     typeness: explicit;
                     value: none;
-                  } @ 300..307 (fid = 0);
+                  } @ 308..315 (fid = 0);
                   args: [
-                    string "j = {}" @ 308..316 (fid = 0),
+                    string "j = {}" @ 316..324 (fid = 0),
 
                     Symbol {
                       kind: local;
-                      name: j @ 248..249 (fid = 0);
+                      name: j @ 252..255 (fid = 0);
                       realname: none;
                       which: 1;
                       path: j;
                       typ: unknown;
                       typeness: implicit;
                       value: none;
-                    } @ 318..319 (fid = 0),
+                    } @ 326..327 (fid = 0),
                   ];
-                } @ 300..320 (fid = 0) @ 300..320 (fid = 0),
+                } @ 308..328 (fid = 0) @ 308..328 (fid = 0),
 
                 @last_expr: none,
-              ] @ 290..327 (fid = 0);
+              ] @ 298..335 (fid = 0);
             } @ none @ none,
 
             @last_expr: none,
-          ] @ 290..327 (fid = 0);
-        } @ 261..327 (fid = 0),
-      ] @ 173..329 (fid = 0);
-    } @ 167..329 (fid = 0);
+          ] @ 298..335 (fid = 0);
+        } @ 269..335 (fid = 0),
+      ] @ 173..337 (fid = 0);
+    } @ 167..337 (fid = 0);
     sym: Symbol {
       kind: function;
       name: main @ 159..163 (fid = 0);
@@ -2675,7 +2675,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       typeness: explicit;
       value: none;
     };
-  } @ 159..329 (fid = 0),
+  } @ 159..337 (fid = 0),
 ]
 "#,
         compiler_code: 0,
@@ -2735,7 +2735,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       ];
       rettypexpr: none;
       body: Block [
-        VariableDef {
+        BindingDef {
           name: a @ 33..34 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -2780,7 +2780,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       args: [];
       rettypexpr: none;
       body: Block [
-        VariableDef {
+        BindingDef {
           name: d @ 62..63 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -2797,7 +2797,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           };
         } @ 62..68 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: d @ 74..75 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -4382,7 +4382,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
         rettypexpr: none;
         body: Block {
           stmts: [
-            VariableDef {
+            BindingDef {
               name: half @ 159..163 (fid = 1);
               mutability: not;
               typexpr: none;
@@ -4730,7 +4730,7 @@ error: compilation of `E025` failed due to 14 errors and 0 warnings
       args: [];
       rettypexpr: none;
       body: Block [
-        VariableDef {
+        BindingDef {
           name: b @ 72..73 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -4792,7 +4792,7 @@ error: compilation of `E006_block_1` failed due to 1 error and 0 warnings
     name: a @ 39..40 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: a @ 50..51 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -4806,7 +4806,7 @@ error: compilation of `E006_block_1` failed due to 1 error and 0 warnings
 error[E006]: expected `;`, found `}`
   ┌─ ./tests/parser/E006_block_2.lun:4:1
   │
-3 │     a :: 12
+3 │     a := 12
   │          -- help: add `;` after this token
 4 │ };
   │ ^ unexpected `}`
@@ -4885,14 +4885,14 @@ error: compilation of `E006_block_5` failed due to 1 error and 0 warnings
     name: a @ 51..52 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: a @ 62..63 (fid = 0);
         mutability: not;
         typexpr: none;
         value: integer 12 @ 67..69 (fid = 0);
       } @ 62..69 (fid = 0),
 
-      VariableDef {
+      BindingDef {
         name: a @ 74..75 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -4912,9 +4912,9 @@ error: compilation of `E006_block_5` failed due to 1 error and 0 warnings
 error[E006]: expected `;`, found identifier
   ┌─ ./tests/parser/E006_block_resilience_1.lun:5:5
   │
-4 │     a :: 12
+4 │     a := 12
   │          -- help: add `;` after this token
-5 │     a :: 12;
+5 │     a := 12;
   │     ^ unexpected identifier
 
 error[E006]: expected expression, found `+`
@@ -4936,7 +4936,7 @@ error: compilation of `E006_block_resilience_1` failed due to 2 errors and 0 war
     name: a @ 51..52 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: b @ 66..67 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -5052,7 +5052,7 @@ error: compilation of `E006_break_expr_resilience_2` failed due to 1 error and 0
       args: [];
       rettypexpr: none;
       body: Block [
-        VariableDef {
+        BindingDef {
           name: b @ 72..73 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -5095,7 +5095,7 @@ error: compilation of `E006_call_expr_resilience_1` failed due to 2 errors and 0
       args: [];
       rettypexpr: none;
       body: Block [
-        VariableDef {
+        BindingDef {
           name: b @ 72..73 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -5345,7 +5345,7 @@ error: compilation of `E006_extern_block_resilience_3` failed due to 1 error and
     name: a @ 51..52 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: b @ 66..67 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -5864,7 +5864,7 @@ error: compilation of `E006_funptr_2` failed due to 1 error and 0 warnings
     name: a @ 51..52 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: b @ 66..67 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -5899,7 +5899,7 @@ error: compilation of `E006_funptr_expr_resilience_1` failed due to 1 error and 
     name: a @ 51..52 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: b @ 66..67 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -5934,7 +5934,7 @@ error: compilation of `E006_funptr_expr_resilience_2` failed due to 1 error and 
     name: a @ 51..52 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: b @ 66..67 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -6306,7 +6306,7 @@ error: compilation of `E006_iterator_loop_2` failed due to 3 errors and 0 warnin
     name: a @ 39..40 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: � @ 0..0 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -6336,7 +6336,7 @@ error: compilation of `E006_let_stmt_1` failed due to 1 error and 0 warnings
     name: a @ 39..40 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: a @ 54..55 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -6523,7 +6523,7 @@ error: compilation of `E006_paren_expr` failed due to 1 error and 0 warnings
       args: [];
       rettypexpr: none;
       body: Block [
-        VariableDef {
+        BindingDef {
           name: b @ 72..73 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -6559,7 +6559,7 @@ error: compilation of `E006_paren_expr_resilience_1` failed due to 1 error and 0
       args: [];
       rettypexpr: none;
       body: Block [
-        VariableDef {
+        BindingDef {
           name: b @ 72..73 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -6679,6 +6679,82 @@ error[E006]: expected `(`, found `;`
   │               ^
 
 error: compilation of `E006_return_expr_resilience_1` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/E006_short_binding_def_stmt_1": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 39..40 (fid = 0);
+    typexpr: none;
+    value: Block [
+      BindingDef {
+        name: � @ 50..53 (fid = 0);
+        mutability: mut;
+        typexpr: none;
+        value: integer 2 @ 59..60 (fid = 0);
+      } @ 50..60 (fid = 0),
+
+      @last_expr: none,
+    ] @ 44..63 (fid = 0) @ 44..63 (fid = 0);
+  } @ 39..63 (fid = 0),
+]
+error[E006]: expected identifier, found integer literal
+  ┌─ ./tests/parser/E006_short_binding_def_stmt_1.lun:3:9
+  │
+3 │     mut 1 := 2;
+  │         ^
+
+error: compilation of `E006_short_binding_def_stmt_1` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/E006_short_binding_def_stmt_2": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 39..40 (fid = 0);
+    typexpr: none;
+    value: Block [
+      @last_expr: none,
+    ] @ 44..63 (fid = 0) @ 44..63 (fid = 0);
+  } @ 39..63 (fid = 0),
+]
+error[E006]: expected `:`, found identifier
+  ┌─ ./tests/parser/E006_short_binding_def_stmt_2.lun:3:11
+  │
+3 │     mut a d= 2;
+  │           ^
+
+error: compilation of `E006_short_binding_def_stmt_2` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/E006_short_binding_def_stmt_3": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 39..40 (fid = 0);
+    typexpr: none;
+    value: Block [
+      @last_expr: none,
+    ] @ 44..62 (fid = 0) @ 44..62 (fid = 0);
+  } @ 39..62 (fid = 0),
+]
+error[E006]: expected `=`, found `:`
+  ┌─ ./tests/parser/E006_short_binding_def_stmt_3.lun:3:11
+  │
+3 │     b : a : 2;
+  │           ^
+
+error: compilation of `E006_short_binding_def_stmt_3` failed due to 1 error and 0 warnings
 
 ",
         compiler_code: 255,
@@ -7320,49 +7396,49 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
       args: [];
       rettypexpr: none;
       body: Block [
-        VariableDef {
-          name: a @ 48..49 (fid = 0);
+        BindingDef {
+          name: a @ 47..48 (fid = 0);
           mutability: not;
           typexpr: none;
-          value: integer 12 @ 52..54 (fid = 0);
-        } @ 44..54 (fid = 0),
+          value: integer 12 @ 51..53 (fid = 0);
+        } @ 43..53 (fid = 0),
 
-        VariableDef {
-          name: b @ 68..69 (fid = 0);
+        BindingDef {
+          name: b @ 67..68 (fid = 0);
           mutability: mut;
           typexpr: none;
-          value: integer 34 @ 72..74 (fid = 0);
-        } @ 60..74 (fid = 0),
+          value: integer 34 @ 71..73 (fid = 0);
+        } @ 59..73 (fid = 0),
 
-        VariableDef {
-          name: c @ 107..108 (fid = 0);
+        BindingDef {
+          name: c @ 105..106 (fid = 0);
           mutability: not;
           typexpr: none;
-          value: integer 56 @ 112..114 (fid = 0);
-        } @ 107..114 (fid = 0),
+          value: integer 56 @ 110..112 (fid = 0);
+        } @ 105..112 (fid = 0),
 
-        VariableDef {
-          name: d @ 120..121 (fid = 0);
+        BindingDef {
+          name: d @ 118..121 (fid = 0);
           mutability: mut;
           typexpr: none;
-          value: integer 78 @ 125..127 (fid = 0);
-        } @ 120..127 (fid = 0),
+          value: integer 78 @ 127..129 (fid = 0);
+        } @ 118..129 (fid = 0),
 
         Defer {
           expr: Block [
             @last_expr: none,
-          ] @ 163..165 (fid = 0) @ 163..165 (fid = 0);
-        } @ 157..165 (fid = 0),
+          ] @ 165..167 (fid = 0) @ 165..167 (fid = 0);
+        } @ 159..167 (fid = 0),
 
         Call {
-          callee: ident hello_world @ 199..210 (fid = 0);
+          callee: ident hello_world @ 201..212 (fid = 0);
           args: [];
-        } @ 199..212 (fid = 0) @ 199..212 (fid = 0),
+        } @ 201..214 (fid = 0) @ 201..214 (fid = 0),
 
         @last_expr: none,
-      ] @ 14..215 (fid = 0);
-    } @ 8..215 (fid = 0);
-  } @ 0..215 (fid = 0),
+      ] @ 14..217 (fid = 0);
+    } @ 8..217 (fid = 0);
+  } @ 0..217 (fid = 0),
 ]
 ",
         compiler_code: 0,
@@ -7429,7 +7505,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     name: a @ 0..1 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: j @ 35..36 (fid = 0);
         mutability: not;
         typexpr: Call {
@@ -7460,7 +7536,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     name: a @ 0..1 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: l @ 44..45 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -7490,7 +7566,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         } @ 49..82 (fid = 0);
       } @ 44..82 (fid = 0),
 
-      VariableDef {
+      BindingDef {
         name: m @ 88..89 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -7535,7 +7611,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     name: a @ 0..1 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: o @ 37..38 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -7579,7 +7655,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     name: a @ 0..1 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: h @ 33..34 (fid = 0);
         mutability: not;
         typexpr: If {
@@ -7599,7 +7675,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         value: integer 1 @ 64..65 (fid = 0);
       } @ 33..65 (fid = 0),
 
-      VariableDef {
+      BindingDef {
         name: i @ 72..73 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -7649,7 +7725,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         Arg {
           name: g @ 33..34 (fid = 0);
           typexpr: Block [
-            VariableDef {
+            BindingDef {
               name: a @ 46..47 (fid = 0);
               mutability: not;
               typexpr: none;
@@ -7683,7 +7759,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     name: a @ 0..1 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
+      BindingDef {
         name: n @ 44..45 (fid = 0);
         mutability: not;
         typexpr: none;
@@ -7726,36 +7802,36 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     name: a @ 0..1 (fid = 0);
     typexpr: none;
     value: Block [
-      VariableDef {
-        name: b @ 42..43 (fid = 0);
+      BindingDef {
+        name: b @ 42..45 (fid = 0);
         mutability: mut;
         typexpr: Paren {
           expr: Binary {
-            lhs: ident a @ 47..48 (fid = 0);
+            lhs: ident a @ 51..52 (fid = 0);
             op: Assignment;
-            rhs: ident u32 @ 51..54 (fid = 0);
-          } @ 47..54 (fid = 0);
-        } @ 46..55 (fid = 0);
-        value: integer 12 @ 58..60 (fid = 0);
-      } @ 42..60 (fid = 0),
+            rhs: ident u32 @ 55..58 (fid = 0);
+          } @ 51..58 (fid = 0);
+        } @ 50..59 (fid = 0);
+        value: integer 12 @ 62..64 (fid = 0);
+      } @ 42..64 (fid = 0),
 
-      VariableDef {
-        name: c @ 66..67 (fid = 0);
+      BindingDef {
+        name: c @ 70..71 (fid = 0);
         mutability: not;
         typexpr: Paren {
           expr: InfiniteLoop {
-            label: a @ 71..72 (fid = 0);
+            label: a @ 75..76 (fid = 0);
             body: Block [
               @last_expr: none,
-            ] @ 79..81 (fid = 0);
-          } @ 71..81 (fid = 0);
-        } @ 70..82 (fid = 0);
-        value: integer 12 @ 85..87 (fid = 0);
-      } @ 66..87 (fid = 0),
+            ] @ 83..85 (fid = 0);
+          } @ 75..85 (fid = 0);
+        } @ 74..86 (fid = 0);
+        value: integer 12 @ 89..91 (fid = 0);
+      } @ 70..91 (fid = 0),
 
       @last_expr: none,
-    ] @ 5..90 (fid = 0) @ 5..90 (fid = 0);
-  } @ 0..90 (fid = 0),
+    ] @ 5..94 (fid = 0) @ 5..94 (fid = 0);
+  } @ 0..94 (fid = 0),
 ]
 ",
         compiler_code: 0,
@@ -7806,7 +7882,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
       args: [];
       rettypexpr: none;
       body: Block [
-        VariableDef {
+        BindingDef {
           name: a @ 17..18 (fid = 0);
           mutability: not;
           typexpr: ident u32 @ 21..24 (fid = 0);
@@ -7818,17 +7894,17 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           } @ 27..34 (fid = 0);
         } @ 17..34 (fid = 0),
 
-        VariableDef {
-          name: b @ 40..41 (fid = 0);
+        BindingDef {
+          name: b @ 40..43 (fid = 0);
           mutability: mut;
-          typexpr: ident u32 @ 44..47 (fid = 0);
-          value: integer 12 @ 50..52 (fid = 0);
-        } @ 40..52 (fid = 0),
+          typexpr: ident u32 @ 48..51 (fid = 0);
+          value: integer 12 @ 54..56 (fid = 0);
+        } @ 40..56 (fid = 0),
 
         @last_expr: none,
-      ] @ 11..55 (fid = 0);
-    } @ 5..55 (fid = 0);
-  } @ 0..55 (fid = 0),
+      ] @ 11..59 (fid = 0);
+    } @ 5..59 (fid = 0);
+  } @ 0..59 (fid = 0),
 ]
 ",
         compiler_code: 0,
@@ -7919,7 +7995,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     rettypexpr: none;
     body: Block {
       stmts: [
-        VariableDef {
+        BindingDef {
           name: d @ 97..98 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -7953,7 +8029,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           };
         } @ 97..108 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: e @ 114..115 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -7988,7 +8064,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           };
         } @ 114..121 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: f @ 127..128 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -8014,7 +8090,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           };
         } @ 127..137 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: g @ 144..145 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -8111,7 +8187,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     rettypexpr: none;
     body: Block {
       stmts: [
-        VariableDef {
+        BindingDef {
           name: k @ 213..214 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -8237,7 +8313,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     rettypexpr: none;
     body: Block {
       stmts: [
-        VariableDef {
+        BindingDef {
           name: a @ 390..391 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -8267,7 +8343,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           };
         } @ 390..405 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: b @ 411..412 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -8315,7 +8391,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           };
         } @ 411..421 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: c @ 427..428 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -8363,7 +8439,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           };
         } @ 427..438 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: d @ 444..445 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -8393,7 +8469,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           };
         } @ 444..459 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: e @ 465..466 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -8423,7 +8499,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           };
         } @ 465..476 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: f @ 482..483 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -8490,7 +8566,7 @@ error[E008]: mismatched types
 error[E008]: mismatched types
   ┌─ ./tests/scir/E008.lun:8:11
   │
-8 │     e :: -d;
+8 │     e := -d;
   │           ^ expected `float or signed integer`, found `u8`
   │
   = can't perform a negation on an unsigned type like 'u8'
@@ -8498,13 +8574,13 @@ error[E008]: mismatched types
 error[E008]: mismatched types
   ┌─ ./tests/scir/E008.lun:9:11
   │
-9 │     f :: -true;
+9 │     f := -true;
   │           ^^^^ expected `float or signed integer`, found `bool`
 
 error[E008]: mismatched types
    ┌─ ./tests/scir/E008.lun:11:10
    │
-11 │     g :: true.*;
+11 │     g := true.*;
    │          ^^^^ expected `pointer`, found `bool`
    │
    = type 'bool' cannot be dereferenced.
@@ -8526,7 +8602,7 @@ error[E008]: mismatched types
 error[E008]: mismatched types
    ┌─ ./tests/scir/E008.lun:30:10
    │
-30 │     a :: 1.0 << 1.0;
+30 │     a := 1.0 << 1.0;
    │          ^^^^^^^^^^ expected `integer`, found `f32`
    │
    = can't perform '<<' on type 'f32'
@@ -8534,7 +8610,7 @@ error[E008]: mismatched types
 error[E008]: mismatched types
    ┌─ ./tests/scir/E008.lun:31:10
    │
-31 │     b :: v * v;
+31 │     b := v * v;
    │          ^^^^^ expected `float or integer`, found `void`
    │
    = can't perform '*' on type 'void'
@@ -8542,7 +8618,7 @@ error[E008]: mismatched types
 error[E008]: mismatched types
    ┌─ ./tests/scir/E008.lun:32:10
    │
-32 │     c :: v && v;
+32 │     c := v && v;
    │          ^^^^^^ expected `bool`, found `bool`
    │
    = can't perform 'and' on type 'void'
@@ -8550,7 +8626,7 @@ error[E008]: mismatched types
 error[E008]: mismatched types
    ┌─ ./tests/scir/E008.lun:33:10
    │
-33 │     d :: 0.0 || 0.2;
+33 │     d := 0.0 || 0.2;
    │          ^^^^^^^^^^ expected `bool`, found `bool`
    │
    = can't perform 'or' on type 'f32'
@@ -8558,7 +8634,7 @@ error[E008]: mismatched types
 error[E008]: mismatched types
    ┌─ ./tests/scir/E008.lun:34:10
    │
-34 │     e :: 1 || 2;
+34 │     e := 1 || 2;
    │          ^^^^^^ expected `bool`, found `bool`
    │
    = can't perform 'or' on type 'i32'
@@ -8566,7 +8642,7 @@ error[E008]: mismatched types
 error[E008]: mismatched types
    ┌─ ./tests/scir/E008.lun:35:10
    │
-35 │     f :: 1.0 % 2.0;
+35 │     f := 1.0 % 2.0;
    │          ^^^^^^^^^ expected `integer`, found `f32`
    │
    = can't perform '%' on type 'f32'
@@ -8762,7 +8838,7 @@ error: compilation of `E008` failed due to 13 errors and 0 warnings
     rettypexpr: none;
     body: Block {
       stmts: [
-        VariableDef {
+        BindingDef {
           name: a @ 184..185 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -8886,7 +8962,7 @@ error[E009]: expected type found an expression
 error[E009]: expected type found an expression
    ┌─ ./tests/scir/E009.lun:15:9
    │
-15 │     a : 12 : {};
+15 │     a : 12 = {};
    │         ^^
 
 error: compilation of `E009` failed due to 13 errors and 0 warnings
@@ -9613,7 +9689,7 @@ error: compilation of `E028` failed due to 2 errors and 0 warnings
     rettypexpr: none;
     body: Block {
       stmts: [
-        VariableDef {
+        BindingDef {
           name: l @ 226..227 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -9770,7 +9846,7 @@ error[E011]: function call requires function type
 error[E029]: unable to resolve expression at comptime
    ┌─ ./tests/scir/E029.lun:19:9
    │
-19 │     l : a : {};
+19 │     l : a = {};
    │         ^
    │         │
    │         due to this expression
@@ -10189,7 +10265,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
     rettypexpr: none;
     body: Block {
       stmts: [
-        VariableDef {
+        BindingDef {
           name: bn @ 90..92 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10229,7 +10305,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 90..104 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: bx @ 110..112 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10263,7 +10339,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 110..123 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: cn @ 130..132 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10303,7 +10379,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 130..148 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: cx @ 154..156 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10337,7 +10413,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 154..171 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: dn @ 178..180 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10377,7 +10453,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 178..203 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: dx @ 209..211 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10411,7 +10487,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 209..233 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: en @ 240..242 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10451,7 +10527,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 240..277 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: ex @ 283..285 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10485,7 +10561,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 283..319 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: fn @ 326..328 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10525,7 +10601,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 326..390 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: fx @ 396..398 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10559,7 +10635,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 396..459 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: gx @ 497..499 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10593,7 +10669,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 497..510 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: hx @ 517..519 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10627,7 +10703,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 517..534 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: ix @ 541..543 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10661,7 +10737,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 541..565 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: jx @ 572..574 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10695,7 +10771,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 572..609 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: ln @ 764..766 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10735,7 +10811,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 764..792 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: lx @ 798..800 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10769,7 +10845,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 798..825 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: mn @ 832..834 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10809,7 +10885,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
           };
         } @ 832..872 (fid = 0),
 
-        VariableDef {
+        BindingDef {
           name: mx @ 878..880 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -10864,7 +10940,7 @@ error: compilation of `E033` failed due to 1 error and 0 warnings
 error[E034]: literal out of range
   ┌─ ./tests/scir/E034.lun:5:16
   │
-5 │     bn : i8 : -128;
+5 │     bn : i8 = -128;
   │                ^^^
   │
   = the literal (of value 128) does not fit in the type 'i8'
@@ -10873,7 +10949,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
   ┌─ ./tests/scir/E034.lun:6:15
   │
-6 │     bx : i8 : 128;
+6 │     bx : i8 = 128;
   │               ^^^
   │
   = the literal (of value 128) does not fit in the type 'i8'
@@ -10882,7 +10958,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
   ┌─ ./tests/scir/E034.lun:8:17
   │
-8 │     cn : i16 : -32_768;
+8 │     cn : i16 = -32_768;
   │                 ^^^^^^
   │
   = the literal (of value 32768) does not fit in the type 'i16'
@@ -10891,7 +10967,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
   ┌─ ./tests/scir/E034.lun:9:16
   │
-9 │     cx : i16 : 32_768;
+9 │     cx : i16 = 32_768;
   │                ^^^^^^
   │
   = the literal (of value 32768) does not fit in the type 'i16'
@@ -10900,7 +10976,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:11:17
    │
-11 │     dn : i32 : -2_147_483_648;
+11 │     dn : i32 = -2_147_483_648;
    │                 ^^^^^^^^^^^^^
    │
    = the literal (of value 2147483648) does not fit in the type 'i32'
@@ -10909,7 +10985,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:12:16
    │
-12 │     dx : i32 : 2_147_483_648;
+12 │     dx : i32 = 2_147_483_648;
    │                ^^^^^^^^^^^^^
    │
    = the literal (of value 2147483648) does not fit in the type 'i32'
@@ -10918,7 +10994,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:14:17
    │
-14 │     en : i64 : -9_223_372_036_854_775_808;
+14 │     en : i64 = -9_223_372_036_854_775_808;
    │                 ^^^^^^^^^^^^^^^^^^^^^^^^^
    │
    = the literal (of value 9223372036854775808) does not fit in the type 'i64'
@@ -10927,7 +11003,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:15:16
    │
-15 │     ex : i64 : 9_223_372_036_854_775_808;
+15 │     ex : i64 = 9_223_372_036_854_775_808;
    │                ^^^^^^^^^^^^^^^^^^^^^^^^^
    │
    = the literal (of value 9223372036854775808) does not fit in the type 'i64'
@@ -10936,7 +11012,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:17:18
    │
-17 │     fn : i128 : -170_141_183_460_469_231_731_687_303_715_884_105_728;
+17 │     fn : i128 = -170_141_183_460_469_231_731_687_303_715_884_105_728;
    │                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    │
    = the literal (of value 170141183460469231731687303715884105728) does not fit in the type 'i128'
@@ -10945,7 +11021,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:18:17
    │
-18 │     fx : i128 : 170_141_183_460_469_231_731_687_303_715_884_105_728;
+18 │     fx : i128 = 170_141_183_460_469_231_731_687_303_715_884_105_728;
    │                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    │
    = the literal (of value 170141183460469231731687303715884105728) does not fit in the type 'i128'
@@ -10954,7 +11030,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:22:15
    │
-22 │     gx : u8 : 256;
+22 │     gx : u8 = 256;
    │               ^^^
    │
    = the literal (of value 256) does not fit in the type 'u8'
@@ -10963,7 +11039,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:24:16
    │
-24 │     hx : u16 : 65_536;
+24 │     hx : u16 = 65_536;
    │                ^^^^^^
    │
    = the literal (of value 65536) does not fit in the type 'u16'
@@ -10972,7 +11048,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:26:16
    │
-26 │     ix : u32 : 4_294_967_296;
+26 │     ix : u32 = 4_294_967_296;
    │                ^^^^^^^^^^^^^
    │
    = the literal (of value 4294967296) does not fit in the type 'u32'
@@ -10981,7 +11057,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:28:16
    │
-28 │     jx : u64 : 18_446_744_073_709_551_616;
+28 │     jx : u64 = 18_446_744_073_709_551_616;
    │                ^^^^^^^^^^^^^^^^^^^^^^^^^^
    │
    = the literal (of value 18446744073709551616) does not fit in the type 'u64'
@@ -10990,7 +11066,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:35:17
    │
-35 │     ln : f32 : -3.402_823_48E+38;
+35 │     ln : f32 = -3.402_823_48E+38;
    │                 ^^^^^^^^^^^^^^^^
    │
    = the literal (of value 3.40282348e38) does not fit in the type 'f32'
@@ -10999,7 +11075,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:36:16
    │
-36 │     lx : f32 : 3.402_823_48E+38;
+36 │     lx : f32 = 3.402_823_48E+38;
    │                ^^^^^^^^^^^^^^^^
    │
    = the literal (of value 3.40282348e38) does not fit in the type 'f32'
@@ -11008,7 +11084,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:38:17
    │
-38 │     mn : f64 : -1.797_693_134_862_315_8E+308;
+38 │     mn : f64 = -1.797_693_134_862_315_8E+308;
    │                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    │
    = the literal (of value inf) does not fit in the type 'f64'
@@ -11017,7 +11093,7 @@ error[E034]: literal out of range
 error[E034]: literal out of range
    ┌─ ./tests/scir/E034.lun:39:16
    │
-39 │     mx : f64 : 1.797_693_134_862_315_8E+308;
+39 │     mx : f64 = 1.797_693_134_862_315_8E+308;
    │                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    │
    = the literal (of value inf) does not fit in the type 'f64'
@@ -11039,7 +11115,7 @@ error: compilation of `E034` failed due to 18 errors and 0 warnings
     rettypexpr: none;
     body: Block {
       stmts: [
-        VariableDef {
+        BindingDef {
           name: a @ 69..70 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -11100,7 +11176,7 @@ error: compilation of `E034` failed due to 18 errors and 0 warnings
 error[E036]: cannot borrow 'a' as mutable because it is not declared as mutable
   ┌─ ./tests/scir/E036.lun:4:5
   │
-3 │     a :: 12;
+3 │     a := 12;
   │     - defined here
 4 │     &mut a;
   │     ^^^^^^ mutable borrow here
@@ -15071,7 +15147,7 @@ error: compilation of `E040` failed due to 4 errors and 0 warnings
     rettypexpr: none;
     body: Block {
       stmts: [
-        VariableDef {
+        BindingDef {
           name: a @ 193..194 (fid = 0);
           mutability: not;
           typexpr: Expression {
@@ -15340,7 +15416,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
     rettypexpr: none;
     body: Block {
       stmts: [
-        VariableDef {
+        BindingDef {
           name: reachable @ 399..408 (fid = 0);
           mutability: not;
           typexpr: none;
@@ -15483,7 +15559,7 @@ warning: compilation of `label_kw_expr` succeeded but 3 warnings emitted.
     } @ 35..38 (fid = 0);
     body: Block {
       stmts: [
-        VariableDef {
+        BindingDef {
           name: a @ 45..46 (fid = 0);
           mutability: not;
           typexpr: Expression {

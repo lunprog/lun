@@ -1,5 +1,5 @@
 // EO36: error testing - BorrowMutWhenNotDefinedMut
 a :: fun() {
-    a :: 12;
+    a := 12;
     &mut a;
 }

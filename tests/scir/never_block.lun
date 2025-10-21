@@ -1,7 +1,7 @@
 cant_reach :: 1;
 
 main :: fun() -> usz {
-    a : usz : blk: {
+    a : usz = blk: {
         // test of unreachable last expression of a block
         cant_reach;
 

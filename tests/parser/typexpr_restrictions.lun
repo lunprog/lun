@@ -1,4 +1,4 @@
 a :: fun() {
-    a : u32 : loop {};
-    b : u32 = 12;
+    a : u32 = loop {};
+    mut b : u32 = 12;
 }
