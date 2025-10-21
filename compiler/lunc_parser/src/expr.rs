@@ -62,10 +62,10 @@ pub enum ExprKind {
     ///
     /// `integer | string | c_str | char | float`
     Lit(Lit),
-    /// grouping expression (just parenthesis)
+    /// parenthesis expression
     ///
     /// `"(" expr ")"`
-    Grouping(Box<Expression>),
+    Paren(Box<Expression>),
     /// an identifier expression
     ///
     /// `ident`
@@ -385,7 +385,7 @@ impl Parser {
         let mut lhs = match &self.token.tt {
             Lit(..) => self.parse_lit_expr()?,
             KwTrue | KwFalse => self.parse_boollit_expr()?,
-            LParen => self.parse_grouping_expr()?,
+            LParen => self.parse_paren_expr()?,
             Ident(_)
                 if !self.restrictions.contains(Restrictions::TYPEEXPR)
                     && self.is_labeled_expr() =>
@@ -492,8 +492,8 @@ impl Parser {
         }
     }
 
-    /// Parses a grouping expression
-    pub fn parse_grouping_expr(&mut self) -> IResult<Expression> {
+    /// Parses a parenthesis expression
+    pub fn parse_paren_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
         let lo = self.expect(ExpToken::LParen)?;
 
@@ -508,7 +508,7 @@ impl Parser {
         let hi = self.token_loc();
 
         Ok(Expression {
-            kind: ExprKind::Grouping(Box::new(expr)),
+            kind: ExprKind::Paren(Box::new(expr)),
             loc: Span::from_ends(lo, hi),
         })
     }

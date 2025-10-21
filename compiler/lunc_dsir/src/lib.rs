@@ -239,7 +239,7 @@ impl FromHigher for DsExpression {
             ExprKind::Lit(lit) => DsExprKind::Lit(lit),
             ExprKind::BoolLit(b) => DsExprKind::BoolLit(b),
             // we remove the parenthesis we don't need them anymore
-            ExprKind::Grouping(e) => return lower(*e),
+            ExprKind::Paren(e) => return lower(*e),
             ExprKind::Ident(id) => DsExprKind::Ident(LazySymbol::Name(id)),
             ExprKind::Binary { lhs, op, rhs } => DsExprKind::Binary {
                 lhs: lower(lhs),

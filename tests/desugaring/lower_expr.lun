@@ -16,7 +16,7 @@ main :: fun() {
     // float literal
     _ = 6.022e23;
 
-    // lowering of grouping expr to just an expr
+    // lowering of paren expr to just an expr
     _ = (12 + 3);
 
     // ident expr

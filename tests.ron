@@ -1733,17 +1733,17 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         } @ 219..231 (fid = 0) @ 219..231 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 287..288 (fid = 0);
+          lhs: Underscore @ 284..285 (fid = 0);
           op: Assignment;
           rhs: Binary {
-            lhs: integer 12 @ 292..294 (fid = 0);
+            lhs: integer 12 @ 289..291 (fid = 0);
             op: Add;
-            rhs: integer 3 @ 297..298 (fid = 0);
-          } @ 292..298 (fid = 0);
-        } @ 287..299 (fid = 0) @ 287..299 (fid = 0),
+            rhs: integer 3 @ 294..295 (fid = 0);
+          } @ 289..295 (fid = 0);
+        } @ 284..296 (fid = 0) @ 284..296 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 324..325 (fid = 0);
+          lhs: Underscore @ 321..322 (fid = 0);
           op: Assignment;
           rhs: Symbol {
             kind: function;
@@ -1754,121 +1754,121 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             typ: unknown;
             typeness: explicit;
             value: none;
-          } @ 328..332 (fid = 0);
-        } @ 324..332 (fid = 0) @ 324..332 (fid = 0),
+          } @ 325..329 (fid = 0);
+        } @ 321..329 (fid = 0) @ 321..329 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 356..357 (fid = 0);
+          lhs: Underscore @ 353..354 (fid = 0);
           op: Assignment;
           rhs: Binary {
-            lhs: integer 34 @ 360..362 (fid = 0);
+            lhs: integer 34 @ 357..359 (fid = 0);
             op: Add;
-            rhs: integer 35 @ 365..367 (fid = 0);
-          } @ 360..367 (fid = 0);
-        } @ 356..367 (fid = 0) @ 356..367 (fid = 0),
+            rhs: integer 35 @ 362..364 (fid = 0);
+          } @ 357..364 (fid = 0);
+        } @ 353..364 (fid = 0) @ 353..364 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 390..391 (fid = 0);
+          lhs: Underscore @ 387..388 (fid = 0);
           op: Assignment;
           rhs: Unary {
             op: Not;
-            expr: boolean false @ 395..400 (fid = 0);
-          } @ 394..400 (fid = 0);
-        } @ 390..400 (fid = 0) @ 390..400 (fid = 0),
+            expr: boolean false @ 392..397 (fid = 0);
+          } @ 391..397 (fid = 0);
+        } @ 387..397 (fid = 0) @ 387..397 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 406..407 (fid = 0);
+          lhs: Underscore @ 403..404 (fid = 0);
           op: Assignment;
           rhs: Unary {
             op: Negation;
-            expr: float 12.0 @ 411..415 (fid = 0);
-          } @ 410..415 (fid = 0);
-        } @ 406..415 (fid = 0) @ 406..415 (fid = 0),
+            expr: float 12.0 @ 408..412 (fid = 0);
+          } @ 407..412 (fid = 0);
+        } @ 403..412 (fid = 0) @ 403..412 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 438..439 (fid = 0);
+          lhs: Underscore @ 435..436 (fid = 0);
           op: Assignment;
           rhs: Call {
             callee: Symbol {
               kind: function;
-              name: some_fun @ 1162..1170 (fid = 0);
+              name: some_fun @ 1159..1167 (fid = 0);
               realname: none;
               which: 0;
               path: orb.some_fun;
               typ: unknown;
               typeness: explicit;
               value: none;
-            } @ 442..450 (fid = 0);
+            } @ 439..447 (fid = 0);
             args: [];
-          } @ 442..452 (fid = 0);
-        } @ 438..452 (fid = 0) @ 438..452 (fid = 0),
+          } @ 439..449 (fid = 0);
+        } @ 435..449 (fid = 0) @ 435..449 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 458..459 (fid = 0);
+          lhs: Underscore @ 455..456 (fid = 0);
           op: Assignment;
           rhs: Call {
             callee: Symbol {
               kind: function;
-              name: some_fun @ 1162..1170 (fid = 0);
+              name: some_fun @ 1159..1167 (fid = 0);
               realname: none;
               which: 0;
               path: orb.some_fun;
               typ: unknown;
               typeness: explicit;
               value: none;
-            } @ 462..470 (fid = 0);
+            } @ 459..467 (fid = 0);
             args: [
-              integer 1 @ 471..472 (fid = 0),
+              integer 1 @ 468..469 (fid = 0),
             ];
-          } @ 462..473 (fid = 0);
-        } @ 458..473 (fid = 0) @ 458..473 (fid = 0),
+          } @ 459..470 (fid = 0);
+        } @ 455..470 (fid = 0) @ 455..470 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 479..480 (fid = 0);
+          lhs: Underscore @ 476..477 (fid = 0);
           op: Assignment;
           rhs: Call {
             callee: Symbol {
               kind: function;
-              name: some_fun @ 1162..1170 (fid = 0);
+              name: some_fun @ 1159..1167 (fid = 0);
               realname: none;
               which: 0;
               path: orb.some_fun;
               typ: unknown;
               typeness: explicit;
               value: none;
-            } @ 483..491 (fid = 0);
+            } @ 480..488 (fid = 0);
             args: [
-              integer 1 @ 492..493 (fid = 0),
+              integer 1 @ 489..490 (fid = 0),
 
-              integer 2 @ 495..496 (fid = 0),
+              integer 2 @ 492..493 (fid = 0),
             ];
-          } @ 483..497 (fid = 0);
-        } @ 479..497 (fid = 0) @ 479..497 (fid = 0),
+          } @ 480..494 (fid = 0);
+        } @ 476..494 (fid = 0) @ 476..494 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 503..504 (fid = 0);
+          lhs: Underscore @ 500..501 (fid = 0);
           op: Assignment;
           rhs: Call {
             callee: Symbol {
               kind: function;
-              name: some_fun @ 1162..1170 (fid = 0);
+              name: some_fun @ 1159..1167 (fid = 0);
               realname: none;
               which: 0;
               path: orb.some_fun;
               typ: unknown;
               typeness: explicit;
               value: none;
-            } @ 507..515 (fid = 0);
+            } @ 504..512 (fid = 0);
             args: [
-              integer 1 @ 516..517 (fid = 0),
+              integer 1 @ 513..514 (fid = 0),
 
-              integer 2 @ 519..520 (fid = 0),
+              integer 2 @ 516..517 (fid = 0),
             ];
-          } @ 507..522 (fid = 0);
-        } @ 503..522 (fid = 0) @ 503..522 (fid = 0),
+          } @ 504..519 (fid = 0);
+        } @ 500..519 (fid = 0) @ 500..519 (fid = 0),
 
         If {
-          cond: boolean true @ 542..546 (fid = 0);
+          cond: boolean true @ 539..543 (fid = 0);
           then_br: Block {
             label: none;
             block: Block [
@@ -1882,13 +1882,13 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                   typ: unknown;
                   typeness: explicit;
                   value: none;
-                } @ 557..561 (fid = 0);
+                } @ 554..558 (fid = 0);
                 args: [];
-              } @ 557..563 (fid = 0) @ 557..563 (fid = 0),
+              } @ 554..560 (fid = 0) @ 554..560 (fid = 0),
 
               @last_expr: none,
-            ] @ 547..570 (fid = 0);
-          } @ 539..599 (fid = 0);
+            ] @ 544..567 (fid = 0);
+          } @ 536..596 (fid = 0);
           else_br: Block {
             label: none;
             block: Block [
@@ -1902,40 +1902,40 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                   typ: unknown;
                   typeness: explicit;
                   value: none;
-                } @ 586..590 (fid = 0);
+                } @ 583..587 (fid = 0);
                 args: [];
-              } @ 586..592 (fid = 0) @ 586..592 (fid = 0),
+              } @ 583..589 (fid = 0) @ 583..589 (fid = 0),
 
               @last_expr: none,
-            ] @ 576..599 (fid = 0);
-          } @ 576..599 (fid = 0);
-        } @ 539..599 (fid = 0) @ 539..599 (fid = 0),
+            ] @ 573..596 (fid = 0);
+          } @ 573..596 (fid = 0);
+        } @ 536..596 (fid = 0) @ 536..596 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 625..626 (fid = 0);
+          lhs: Underscore @ 622..623 (fid = 0);
           op: Assignment;
           rhs: If {
             cond: Binary {
-              lhs: integer 23 @ 632..634 (fid = 0);
+              lhs: integer 23 @ 629..631 (fid = 0);
               op: CompGT;
-              rhs: integer 12 @ 637..639 (fid = 0);
-            } @ 632..639 (fid = 0);
-            then_br: boolean false @ 645..650 (fid = 0);
-            else_br: boolean true @ 656..660 (fid = 0);
-          } @ 629..660 (fid = 0);
-        } @ 625..660 (fid = 0) @ 625..660 (fid = 0),
+              rhs: integer 12 @ 634..636 (fid = 0);
+            } @ 629..636 (fid = 0);
+            then_br: boolean false @ 642..647 (fid = 0);
+            else_br: boolean true @ 653..657 (fid = 0);
+          } @ 626..657 (fid = 0);
+        } @ 622..657 (fid = 0) @ 622..657 (fid = 0),
 
         Block {
           label: none;
           block: Block [
             Binary {
-              lhs: Underscore @ 690..691 (fid = 0);
+              lhs: Underscore @ 687..688 (fid = 0);
               op: Assignment;
-              rhs: integer 2 @ 694..695 (fid = 0);
-            } @ 690..695 (fid = 0) @ 690..695 (fid = 0),
+              rhs: integer 2 @ 691..692 (fid = 0);
+            } @ 687..692 (fid = 0) @ 687..692 (fid = 0),
 
             Binary {
-              lhs: Underscore @ 705..706 (fid = 0);
+              lhs: Underscore @ 702..703 (fid = 0);
               op: Assignment;
               rhs: Call {
                 callee: Symbol {
@@ -1947,14 +1947,14 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                   typ: unknown;
                   typeness: explicit;
                   value: none;
-                } @ 709..713 (fid = 0);
+                } @ 706..710 (fid = 0);
                 args: [];
-              } @ 709..715 (fid = 0);
-            } @ 705..715 (fid = 0) @ 705..715 (fid = 0),
+              } @ 706..712 (fid = 0);
+            } @ 702..712 (fid = 0) @ 702..712 (fid = 0),
 
             @last_expr: none,
-          ] @ 680..722 (fid = 0);
-        } @ 680..722 (fid = 0) @ 680..722 (fid = 0),
+          ] @ 677..719 (fid = 0);
+        } @ 677..719 (fid = 0) @ 677..719 (fid = 0),
 
         Loop {
           label: none;
@@ -1962,52 +1962,52 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             Break {
               label: none;
               expr: none;
-            } @ 780..785 (fid = 0) @ 780..785 (fid = 0),
+            } @ 777..782 (fid = 0) @ 777..782 (fid = 0),
 
             @last_expr: none,
-          ] @ 754..792 (fid = 0);
-        } @ 749..792 (fid = 0) @ 749..792 (fid = 0),
+          ] @ 751..789 (fid = 0);
+        } @ 746..789 (fid = 0) @ 746..789 (fid = 0),
 
         Return {
           expr: Binary {
-            lhs: integer 12 @ 819..821 (fid = 0);
+            lhs: integer 12 @ 816..818 (fid = 0);
             op: Mul;
-            rhs: integer 8 @ 824..825 (fid = 0);
-          } @ 819..825 (fid = 0);
-        } @ 812..825 (fid = 0) @ 812..825 (fid = 0),
+            rhs: integer 8 @ 821..822 (fid = 0);
+          } @ 816..822 (fid = 0);
+        } @ 809..822 (fid = 0) @ 809..822 (fid = 0),
 
         Return {
           expr: none;
-        } @ 831..837 (fid = 0) @ 831..837 (fid = 0),
+        } @ 828..834 (fid = 0) @ 828..834 (fid = 0),
 
-        Continue @ 860..868 (fid = 0) @ 860..868 (fid = 0),
+        Continue @ 857..865 (fid = 0) @ 857..865 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 887..888 (fid = 0);
+          lhs: Underscore @ 884..885 (fid = 0);
           op: Assignment;
-          rhs: Null @ 891..895 (fid = 0);
-        } @ 887..895 (fid = 0) @ 887..895 (fid = 0),
+          rhs: Null @ 888..892 (fid = 0);
+        } @ 884..892 (fid = 0) @ 884..892 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 915..916 (fid = 0);
+          lhs: Underscore @ 912..913 (fid = 0);
           op: Assignment;
           rhs: Unary {
             op: Dereference;
             expr: Symbol {
               kind: global;
-              name: some_pointer @ 1183..1195 (fid = 0);
+              name: some_pointer @ 1180..1192 (fid = 0);
               realname: none;
               which: 0;
               path: orb.some_pointer;
               typ: unknown;
               typeness: implicit;
               value: none;
-            } @ 919..931 (fid = 0);
-          } @ 919..933 (fid = 0);
-        } @ 915..933 (fid = 0) @ 915..933 (fid = 0),
+            } @ 916..928 (fid = 0);
+          } @ 916..930 (fid = 0);
+        } @ 912..930 (fid = 0) @ 912..930 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 975..976 (fid = 0);
+          lhs: Underscore @ 972..973 (fid = 0);
           op: Assignment;
           rhs: PointerType {
             mutability: not;
@@ -2022,12 +2022,12 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
               value: Type {
                 type: u32;
               };
-            } @ 980..983 (fid = 0);
-          } @ 979..983 (fid = 0);
-        } @ 975..983 (fid = 0) @ 975..983 (fid = 0),
+            } @ 977..980 (fid = 0);
+          } @ 976..980 (fid = 0);
+        } @ 972..980 (fid = 0) @ 972..980 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 989..990 (fid = 0);
+          lhs: Underscore @ 986..987 (fid = 0);
           op: Assignment;
           rhs: PointerType {
             mutability: mut;
@@ -2042,21 +2042,21 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
               value: Type {
                 type: u32;
               };
-            } @ 998..1001 (fid = 0);
-          } @ 993..1001 (fid = 0);
-        } @ 989..1001 (fid = 0) @ 989..1001 (fid = 0),
+            } @ 995..998 (fid = 0);
+          } @ 990..998 (fid = 0);
+        } @ 986..998 (fid = 0) @ 986..998 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 1037..1038 (fid = 0);
+          lhs: Underscore @ 1034..1035 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [];
             ret: none;
-          } @ 1041..1047 (fid = 0);
-        } @ 1037..1047 (fid = 0) @ 1037..1047 (fid = 0),
+          } @ 1038..1044 (fid = 0);
+        } @ 1034..1044 (fid = 0) @ 1034..1044 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 1053..1054 (fid = 0);
+          lhs: Underscore @ 1050..1051 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [
@@ -2071,7 +2071,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                 value: Type {
                   type: usz;
                 };
-              } @ 1062..1065 (fid = 0),
+              } @ 1059..1062 (fid = 0),
 
               Symbol {
                 kind: global;
@@ -2084,7 +2084,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                 value: Type {
                   type: bool;
                 };
-              } @ 1067..1071 (fid = 0),
+              } @ 1064..1068 (fid = 0),
             ];
             ret: Symbol {
               kind: global;
@@ -2097,12 +2097,12 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
               value: Type {
                 type: usz;
               };
-            } @ 1076..1079 (fid = 0);
-          } @ 1057..1079 (fid = 0);
-        } @ 1053..1079 (fid = 0) @ 1053..1079 (fid = 0),
+            } @ 1073..1076 (fid = 0);
+          } @ 1054..1076 (fid = 0);
+        } @ 1050..1076 (fid = 0) @ 1050..1076 (fid = 0),
 
         Binary {
-          lhs: Underscore @ 1085..1086 (fid = 0);
+          lhs: Underscore @ 1082..1083 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [
@@ -2117,7 +2117,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                 value: Type {
                   type: usz;
                 };
-              } @ 1094..1097 (fid = 0),
+              } @ 1091..1094 (fid = 0),
             ];
             ret: Symbol {
               kind: global;
@@ -2130,13 +2130,13 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
               value: Type {
                 type: usz;
               };
-            } @ 1103..1106 (fid = 0);
-          } @ 1089..1106 (fid = 0);
-        } @ 1085..1106 (fid = 0) @ 1085..1106 (fid = 0),
+            } @ 1100..1103 (fid = 0);
+          } @ 1086..1103 (fid = 0);
+        } @ 1082..1103 (fid = 0) @ 1082..1103 (fid = 0),
 
         @last_expr: none,
-      ] @ 25..1109 (fid = 0);
-    } @ 19..1109 (fid = 0);
+      ] @ 25..1106 (fid = 0);
+    } @ 19..1106 (fid = 0);
     sym: Symbol {
       kind: function;
       name: main @ 11..15 (fid = 0);
@@ -2147,10 +2147,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       typeness: explicit;
       value: none;
     };
-  } @ 11..1109 (fid = 0),
+  } @ 11..1106 (fid = 0),
 
   GlobalDef {
-    name: some_fun @ 1162..1170 (fid = 0);
+    name: some_fun @ 1159..1167 (fid = 0);
     mutability: not;
     typexpr: none;
     value: FunDefinition {
@@ -2158,11 +2158,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       rettypexpr: none;
       body: Block [
         @last_expr: none,
-      ] @ 1180..1182 (fid = 0);
-    } @ 1174..1182 (fid = 0);
+      ] @ 1177..1179 (fid = 0);
+    } @ 1171..1179 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: some_fun @ 1162..1170 (fid = 0);
+      name: some_fun @ 1159..1167 (fid = 0);
       realname: none;
       which: 0;
       path: orb.some_fun;
@@ -2170,19 +2170,19 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       typeness: explicit;
       value: none;
     };
-  } @ 1162..1182 (fid = 0),
+  } @ 1159..1179 (fid = 0),
 
   GlobalDef {
-    name: some_pointer @ 1183..1195 (fid = 0);
+    name: some_pointer @ 1180..1192 (fid = 0);
     mutability: not;
     typexpr: none;
     value: Borrow {
       mutability: not;
-      expr: integer 12 @ 1200..1202 (fid = 0);
-    } @ 1199..1202 (fid = 0);
+      expr: integer 12 @ 1197..1199 (fid = 0);
+    } @ 1196..1199 (fid = 0);
     sym: Symbol {
       kind: global;
-      name: some_pointer @ 1183..1195 (fid = 0);
+      name: some_pointer @ 1180..1192 (fid = 0);
       realname: none;
       which: 0;
       path: orb.some_pointer;
@@ -2190,7 +2190,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       typeness: implicit;
       value: none;
     };
-  } @ 1183..1203 (fid = 0),
+  } @ 1180..1200 (fid = 0),
 ]
 "#,
         compiler_code: 0,
@@ -6024,101 +6024,6 @@ error: compilation of `E006_global_def_3` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
-    "parser/E006_grouping_expr": (
-        compiler_out: "ast = [
-  GlobalConst {
-    name: a @ 39..40 (fid = 0);
-    typexpr: none;
-    value: Grouping {
-      expr: integer 12 @ 45..47 (fid = 0);
-    } @ 44..47 (fid = 0);
-  } @ 39..48 (fid = 0),
-]
-error[E006]: expected `)`, found `;`
-  ┌─ ./tests/parser/E006_grouping_expr.lun:2:9
-  │
-2 │ a :: (12;
-  │         ^
-
-error: compilation of `E006_grouping_expr` failed due to 1 error and 0 warnings
-
-",
-        compiler_code: 255,
-        test_out: "",
-        test_code: 0,
-    ),
-    "parser/E006_grouping_expr_resilience_1": (
-        compiler_out: "ast = [
-  GlobalConst {
-    name: a @ 51..52 (fid = 0);
-    typexpr: none;
-    value: FunDefinition {
-      args: [];
-      rettypexpr: none;
-      body: Block [
-        VariableDef {
-          name: b @ 72..73 (fid = 0);
-          mutability: not;
-          typexpr: none;
-          value: Grouping {
-            expr: Null @ 0..0 (fid = 0);
-          } @ 76..83 (fid = 0);
-        } @ 68..83 (fid = 0),
-
-        @last_expr: none,
-      ] @ 62..86 (fid = 0);
-    } @ 56..86 (fid = 0);
-  } @ 51..86 (fid = 0),
-]
-error[E006]: expected `(`, found `)`
-  ┌─ ./tests/parser/E006_grouping_expr_resilience_1.lun:4:19
-  │
-4 │     let b = ( fun );
-  │                   ^
-
-error: compilation of `E006_grouping_expr_resilience_1` failed due to 1 error and 0 warnings
-
-",
-        compiler_code: 255,
-        test_out: "",
-        test_code: 0,
-    ),
-    "parser/E006_grouping_expr_resilience_2": (
-        compiler_out: "ast = [
-  GlobalConst {
-    name: a @ 51..52 (fid = 0);
-    typexpr: none;
-    value: FunDefinition {
-      args: [];
-      rettypexpr: none;
-      body: Block [
-        VariableDef {
-          name: b @ 72..73 (fid = 0);
-          mutability: not;
-          typexpr: none;
-          value: Grouping {
-            expr: integer 1 @ 77..78 (fid = 0);
-          } @ 76..78 (fid = 0);
-        } @ 68..78 (fid = 0),
-
-        @last_expr: none,
-      ] @ 62..81 (fid = 0);
-    } @ 56..81 (fid = 0);
-  } @ 51..81 (fid = 0),
-]
-error[E006]: expected `)`, found `;`
-  ┌─ ./tests/parser/E006_grouping_expr_resilience_2.lun:4:15
-  │
-4 │     let b = (1;
-  │               ^
-
-error: compilation of `E006_grouping_expr_resilience_2` failed due to 1 error and 0 warnings
-
-",
-        compiler_code: 255,
-        test_out: "",
-        test_code: 0,
-    ),
     "parser/E006_if_else_1": (
         compiler_out: "ast = []
 error[E006]: expected keyword `else`, found identifier
@@ -6586,6 +6491,101 @@ error: compilation of `E006_mod_directive_resilience_2` failed due to 1 error an
         test_out: "",
         test_code: 0,
     ),
+    "parser/E006_paren_expr": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 39..40 (fid = 0);
+    typexpr: none;
+    value: Paren {
+      expr: integer 12 @ 45..47 (fid = 0);
+    } @ 44..47 (fid = 0);
+  } @ 39..48 (fid = 0),
+]
+error[E006]: expected `)`, found `;`
+  ┌─ ./tests/parser/E006_paren_expr.lun:2:9
+  │
+2 │ a :: (12;
+  │         ^
+
+error: compilation of `E006_paren_expr` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/E006_paren_expr_resilience_1": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 51..52 (fid = 0);
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        VariableDef {
+          name: b @ 72..73 (fid = 0);
+          mutability: not;
+          typexpr: none;
+          value: Paren {
+            expr: Null @ 0..0 (fid = 0);
+          } @ 76..83 (fid = 0);
+        } @ 68..83 (fid = 0),
+
+        @last_expr: none,
+      ] @ 62..86 (fid = 0);
+    } @ 56..86 (fid = 0);
+  } @ 51..86 (fid = 0),
+]
+error[E006]: expected `(`, found `)`
+  ┌─ ./tests/parser/E006_paren_expr_resilience_1.lun:4:19
+  │
+4 │     let b = ( fun );
+  │                   ^
+
+error: compilation of `E006_paren_expr_resilience_1` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
+    "parser/E006_paren_expr_resilience_2": (
+        compiler_out: "ast = [
+  GlobalConst {
+    name: a @ 51..52 (fid = 0);
+    typexpr: none;
+    value: FunDefinition {
+      args: [];
+      rettypexpr: none;
+      body: Block [
+        VariableDef {
+          name: b @ 72..73 (fid = 0);
+          mutability: not;
+          typexpr: none;
+          value: Paren {
+            expr: integer 1 @ 77..78 (fid = 0);
+          } @ 76..78 (fid = 0);
+        } @ 68..78 (fid = 0),
+
+        @last_expr: none,
+      ] @ 62..81 (fid = 0);
+    } @ 56..81 (fid = 0);
+  } @ 51..81 (fid = 0),
+]
+error[E006]: expected `)`, found `;`
+  ┌─ ./tests/parser/E006_paren_expr_resilience_2.lun:4:15
+  │
+4 │     let b = (1;
+  │               ^
+
+error: compilation of `E006_paren_expr_resilience_2` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
     "parser/E006_path_resilience_1": (
         compiler_out: "ast = [
   Import {
@@ -6918,230 +6918,230 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         } @ 219..231 (fid = 0) @ 219..231 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 259..260 (fid = 0);
+          lhs: ident _ @ 256..257 (fid = 0);
           op: Assignment;
-          rhs: Grouping {
+          rhs: Paren {
             expr: Binary {
-              lhs: integer 12 @ 264..266 (fid = 0);
+              lhs: integer 12 @ 261..263 (fid = 0);
               op: Add;
-              rhs: integer 3 @ 269..270 (fid = 0);
-            } @ 264..270 (fid = 0);
-          } @ 263..271 (fid = 0);
-        } @ 259..271 (fid = 0) @ 259..271 (fid = 0),
+              rhs: integer 3 @ 266..267 (fid = 0);
+            } @ 261..267 (fid = 0);
+          } @ 260..268 (fid = 0);
+        } @ 256..268 (fid = 0) @ 256..268 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 296..297 (fid = 0);
+          lhs: ident _ @ 293..294 (fid = 0);
           op: Assignment;
-          rhs: ident main @ 300..304 (fid = 0);
-        } @ 296..304 (fid = 0) @ 296..304 (fid = 0),
+          rhs: ident main @ 297..301 (fid = 0);
+        } @ 293..301 (fid = 0) @ 293..301 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 328..329 (fid = 0);
+          lhs: ident _ @ 325..326 (fid = 0);
           op: Assignment;
           rhs: Binary {
-            lhs: integer 34 @ 332..334 (fid = 0);
+            lhs: integer 34 @ 329..331 (fid = 0);
             op: Add;
-            rhs: integer 35 @ 337..339 (fid = 0);
-          } @ 332..339 (fid = 0);
-        } @ 328..339 (fid = 0) @ 328..339 (fid = 0),
+            rhs: integer 35 @ 334..336 (fid = 0);
+          } @ 329..336 (fid = 0);
+        } @ 325..336 (fid = 0) @ 325..336 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 362..363 (fid = 0);
+          lhs: ident _ @ 359..360 (fid = 0);
           op: Assignment;
           rhs: Unary {
             op: Not;
-            expr: boolean false @ 367..372 (fid = 0);
-          } @ 366..372 (fid = 0);
-        } @ 362..372 (fid = 0) @ 362..372 (fid = 0),
+            expr: boolean false @ 364..369 (fid = 0);
+          } @ 363..369 (fid = 0);
+        } @ 359..369 (fid = 0) @ 359..369 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 378..379 (fid = 0);
+          lhs: ident _ @ 375..376 (fid = 0);
           op: Assignment;
           rhs: Unary {
             op: Negation;
-            expr: float 12.0 @ 383..387 (fid = 0);
-          } @ 382..387 (fid = 0);
-        } @ 378..387 (fid = 0) @ 378..387 (fid = 0),
+            expr: float 12.0 @ 380..384 (fid = 0);
+          } @ 379..384 (fid = 0);
+        } @ 375..384 (fid = 0) @ 375..384 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 410..411 (fid = 0);
+          lhs: ident _ @ 407..408 (fid = 0);
           op: Assignment;
           rhs: Call {
-            callee: ident some_fun @ 414..422 (fid = 0);
+            callee: ident some_fun @ 411..419 (fid = 0);
             args: [];
-          } @ 414..424 (fid = 0);
-        } @ 410..424 (fid = 0) @ 410..424 (fid = 0),
+          } @ 411..421 (fid = 0);
+        } @ 407..421 (fid = 0) @ 407..421 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 430..431 (fid = 0);
+          lhs: ident _ @ 427..428 (fid = 0);
           op: Assignment;
           rhs: Call {
-            callee: ident some_fun @ 434..442 (fid = 0);
+            callee: ident some_fun @ 431..439 (fid = 0);
             args: [
-              integer 1 @ 443..444 (fid = 0),
+              integer 1 @ 440..441 (fid = 0),
             ];
-          } @ 434..445 (fid = 0);
-        } @ 430..445 (fid = 0) @ 430..445 (fid = 0),
+          } @ 431..442 (fid = 0);
+        } @ 427..442 (fid = 0) @ 427..442 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 451..452 (fid = 0);
+          lhs: ident _ @ 448..449 (fid = 0);
           op: Assignment;
           rhs: Call {
-            callee: ident some_fun @ 455..463 (fid = 0);
+            callee: ident some_fun @ 452..460 (fid = 0);
             args: [
-              integer 1 @ 464..465 (fid = 0),
+              integer 1 @ 461..462 (fid = 0),
 
-              integer 2 @ 467..468 (fid = 0),
+              integer 2 @ 464..465 (fid = 0),
             ];
-          } @ 455..469 (fid = 0);
-        } @ 451..469 (fid = 0) @ 451..469 (fid = 0),
+          } @ 452..466 (fid = 0);
+        } @ 448..466 (fid = 0) @ 448..466 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 475..476 (fid = 0);
+          lhs: ident _ @ 472..473 (fid = 0);
           op: Assignment;
           rhs: Call {
-            callee: ident some_fun @ 479..487 (fid = 0);
+            callee: ident some_fun @ 476..484 (fid = 0);
             args: [
-              integer 1 @ 488..489 (fid = 0),
+              integer 1 @ 485..486 (fid = 0),
 
-              integer 2 @ 491..492 (fid = 0),
+              integer 2 @ 488..489 (fid = 0),
             ];
-          } @ 479..494 (fid = 0);
-        } @ 475..494 (fid = 0) @ 475..494 (fid = 0),
+          } @ 476..491 (fid = 0);
+        } @ 472..491 (fid = 0) @ 472..491 (fid = 0),
 
         If {
-          cond: boolean true @ 514..518 (fid = 0);
+          cond: boolean true @ 511..515 (fid = 0);
           body: Block [
             Call {
-              callee: ident main @ 529..533 (fid = 0);
+              callee: ident main @ 526..530 (fid = 0);
               args: [];
-            } @ 529..535 (fid = 0) @ 529..535 (fid = 0),
+            } @ 526..532 (fid = 0) @ 526..532 (fid = 0),
 
             @last_expr: none,
-          ] @ 519..542 (fid = 0);
+          ] @ 516..539 (fid = 0);
           else_br: Block [
             Call {
-              callee: ident main @ 558..562 (fid = 0);
+              callee: ident main @ 555..559 (fid = 0);
               args: [];
-            } @ 558..564 (fid = 0) @ 558..564 (fid = 0),
+            } @ 555..561 (fid = 0) @ 555..561 (fid = 0),
 
             @last_expr: none,
-          ] @ 548..571 (fid = 0);
-        } @ 511..571 (fid = 0) @ 511..571 (fid = 0) @ 511..571 (fid = 0),
+          ] @ 545..568 (fid = 0);
+        } @ 508..568 (fid = 0) @ 508..568 (fid = 0) @ 508..568 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 597..598 (fid = 0);
+          lhs: ident _ @ 594..595 (fid = 0);
           op: Assignment;
           rhs: IfThenElse {
             cond: Binary {
-              lhs: integer 23 @ 604..606 (fid = 0);
+              lhs: integer 23 @ 601..603 (fid = 0);
               op: CompGT;
-              rhs: integer 12 @ 609..611 (fid = 0);
-            } @ 604..611 (fid = 0);
-            true_val: boolean false @ 617..622 (fid = 0);
-            false_val: boolean true @ 628..632 (fid = 0);
-          } @ 601..632 (fid = 0);
-        } @ 597..632 (fid = 0) @ 597..632 (fid = 0),
+              rhs: integer 12 @ 606..608 (fid = 0);
+            } @ 601..608 (fid = 0);
+            true_val: boolean false @ 614..619 (fid = 0);
+            false_val: boolean true @ 625..629 (fid = 0);
+          } @ 598..629 (fid = 0);
+        } @ 594..629 (fid = 0) @ 594..629 (fid = 0),
 
         Block [
           Binary {
-            lhs: ident _ @ 662..663 (fid = 0);
+            lhs: ident _ @ 659..660 (fid = 0);
             op: Assignment;
-            rhs: integer 2 @ 666..667 (fid = 0);
-          } @ 662..667 (fid = 0) @ 662..667 (fid = 0),
+            rhs: integer 2 @ 663..664 (fid = 0);
+          } @ 659..664 (fid = 0) @ 659..664 (fid = 0),
 
           Binary {
-            lhs: ident _ @ 677..678 (fid = 0);
+            lhs: ident _ @ 674..675 (fid = 0);
             op: Assignment;
             rhs: Call {
-              callee: ident main @ 681..685 (fid = 0);
+              callee: ident main @ 678..682 (fid = 0);
               args: [];
-            } @ 681..687 (fid = 0);
-          } @ 677..687 (fid = 0) @ 677..687 (fid = 0),
+            } @ 678..684 (fid = 0);
+          } @ 674..684 (fid = 0) @ 674..684 (fid = 0),
 
           @last_expr: none,
-        ] @ 652..694 (fid = 0) @ 652..694 (fid = 0) @ 652..694 (fid = 0),
+        ] @ 649..691 (fid = 0) @ 649..691 (fid = 0) @ 649..691 (fid = 0),
 
         BlockWithLabel {
-          label: label_block @ 700..711 (fid = 0);
+          label: label_block @ 697..708 (fid = 0);
           block: Block [
             Break {
               label: label_block;
               expr: none;
-            } @ 723..741 (fid = 0) @ 723..741 (fid = 0),
+            } @ 720..738 (fid = 0) @ 720..738 (fid = 0),
 
             @last_expr: none,
-          ] @ 713..748 (fid = 0);
-        } @ 700..748 (fid = 0) @ 700..748 (fid = 0),
+          ] @ 710..745 (fid = 0);
+        } @ 697..745 (fid = 0) @ 697..745 (fid = 0),
 
         PredicateLoop {
           label: none;
           cond: Call {
-            callee: ident predicate @ 782..791 (fid = 0);
+            callee: ident predicate @ 779..788 (fid = 0);
             args: [];
-          } @ 782..793 (fid = 0);
+          } @ 779..790 (fid = 0);
           body: Block [
             Call {
-              callee: ident println @ 804..811 (fid = 0);
+              callee: ident println @ 801..808 (fid = 0);
               args: [
-                string "Hello!" @ 812..820 (fid = 0),
+                string "Hello!" @ 809..817 (fid = 0),
               ];
-            } @ 804..821 (fid = 0) @ 804..821 (fid = 0),
+            } @ 801..818 (fid = 0) @ 801..818 (fid = 0),
 
             @last_expr: none,
-          ] @ 794..828 (fid = 0);
-        } @ 776..828 (fid = 0) @ 776..828 (fid = 0),
+          ] @ 791..825 (fid = 0);
+        } @ 773..825 (fid = 0) @ 773..825 (fid = 0),
 
         PredicateLoop {
-          label: label @ 834..839 (fid = 0);
-          cond: ident condition @ 847..856 (fid = 0);
+          label: label @ 831..836 (fid = 0);
+          cond: ident condition @ 844..853 (fid = 0);
           body: Block [
             Call {
-              callee: ident println @ 867..874 (fid = 0);
+              callee: ident println @ 864..871 (fid = 0);
               args: [
-                string "Hello from loop with label" @ 875..903 (fid = 0),
+                string "Hello from loop with label" @ 872..900 (fid = 0),
               ];
-            } @ 867..904 (fid = 0) @ 867..904 (fid = 0),
+            } @ 864..901 (fid = 0) @ 864..901 (fid = 0),
 
             Continue {
               label: label;
-            } @ 914..929 (fid = 0) @ 914..929 (fid = 0),
+            } @ 911..926 (fid = 0) @ 911..926 (fid = 0),
 
             @last_expr: none,
-          ] @ 857..936 (fid = 0);
-        } @ 834..936 (fid = 0) @ 834..936 (fid = 0),
+          ] @ 854..933 (fid = 0);
+        } @ 831..933 (fid = 0) @ 831..933 (fid = 0),
 
         IteratorLoop {
           label: none;
           variable: i;
           iterator: Call {
-            callee: ident range @ 972..977 (fid = 0);
+            callee: ident range @ 969..974 (fid = 0);
             args: [
-              integer 1 @ 978..979 (fid = 0),
+              integer 1 @ 975..976 (fid = 0),
 
-              integer 12 @ 981..983 (fid = 0),
+              integer 12 @ 978..980 (fid = 0),
             ];
-          } @ 972..984 (fid = 0);
+          } @ 969..981 (fid = 0);
           body: Block [
             @last_expr: none,
-          ] @ 985..1008 (fid = 0);
-        } @ 963..1008 (fid = 0) @ 963..1008 (fid = 0),
+          ] @ 982..1005 (fid = 0);
+        } @ 960..1005 (fid = 0) @ 960..1005 (fid = 0),
 
         IteratorLoop {
-          label: label2 @ 1014..1020 (fid = 0);
+          label: label2 @ 1011..1017 (fid = 0);
           variable: j;
           iterator: Call {
-            callee: ident range @ 1031..1036 (fid = 0);
+            callee: ident range @ 1028..1033 (fid = 0);
             args: [
-              integer 13 @ 1037..1039 (fid = 0),
+              integer 13 @ 1034..1036 (fid = 0),
 
-              integer 16 @ 1041..1043 (fid = 0),
+              integer 16 @ 1038..1040 (fid = 0),
             ];
-          } @ 1031..1044 (fid = 0);
+          } @ 1028..1041 (fid = 0);
           body: Block [
             @last_expr: none,
-          ] @ 1045..1068 (fid = 0);
-        } @ 1014..1068 (fid = 0) @ 1014..1068 (fid = 0),
+          ] @ 1042..1065 (fid = 0);
+        } @ 1011..1065 (fid = 0) @ 1011..1065 (fid = 0),
 
         InfiniteLoop {
           label: none;
@@ -7149,130 +7149,130 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
             Break {
               label: none;
               expr: none;
-            } @ 1126..1131 (fid = 0) @ 1126..1131 (fid = 0),
+            } @ 1123..1128 (fid = 0) @ 1123..1128 (fid = 0),
 
             @last_expr: none,
-          ] @ 1100..1138 (fid = 0);
-        } @ 1095..1138 (fid = 0) @ 1095..1138 (fid = 0),
+          ] @ 1097..1135 (fid = 0);
+        } @ 1092..1135 (fid = 0) @ 1092..1135 (fid = 0),
 
         InfiniteLoop {
-          label: label3 @ 1144..1150 (fid = 0);
+          label: label3 @ 1141..1147 (fid = 0);
           body: Block [
             @last_expr: none,
-          ] @ 1157..1180 (fid = 0);
-        } @ 1144..1180 (fid = 0) @ 1144..1180 (fid = 0),
+          ] @ 1154..1177 (fid = 0);
+        } @ 1141..1177 (fid = 0) @ 1141..1177 (fid = 0),
 
         Return {
           expr: Binary {
-            lhs: integer 12 @ 1207..1209 (fid = 0);
+            lhs: integer 12 @ 1204..1206 (fid = 0);
             op: Mul;
-            rhs: integer 8 @ 1212..1213 (fid = 0);
-          } @ 1207..1213 (fid = 0);
-        } @ 1200..1213 (fid = 0) @ 1200..1213 (fid = 0),
+            rhs: integer 8 @ 1209..1210 (fid = 0);
+          } @ 1204..1210 (fid = 0);
+        } @ 1197..1210 (fid = 0) @ 1197..1210 (fid = 0),
 
         Return {
           expr: none;
-        } @ 1219..1225 (fid = 0) @ 1219..1225 (fid = 0),
+        } @ 1216..1222 (fid = 0) @ 1216..1222 (fid = 0),
 
-        Continue @ 1248..1256 (fid = 0) @ 1248..1256 (fid = 0),
+        Continue @ 1245..1253 (fid = 0) @ 1245..1253 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1275..1276 (fid = 0);
+          lhs: ident _ @ 1272..1273 (fid = 0);
           op: Assignment;
-          rhs: Null @ 1279..1283 (fid = 0);
-        } @ 1275..1283 (fid = 0) @ 1275..1283 (fid = 0),
+          rhs: Null @ 1276..1280 (fid = 0);
+        } @ 1272..1280 (fid = 0) @ 1272..1280 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1303..1304 (fid = 0);
+          lhs: ident _ @ 1300..1301 (fid = 0);
           op: Assignment;
           rhs: Unary {
             op: Dereference;
-            expr: ident some_pointer @ 1307..1319 (fid = 0);
-          } @ 1307..1321 (fid = 0);
-        } @ 1303..1321 (fid = 0) @ 1303..1321 (fid = 0),
+            expr: ident some_pointer @ 1304..1316 (fid = 0);
+          } @ 1304..1318 (fid = 0);
+        } @ 1300..1318 (fid = 0) @ 1300..1318 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1349..1350 (fid = 0);
+          lhs: ident _ @ 1346..1347 (fid = 0);
           op: Assignment;
           rhs: Call {
             callee: Field {
-              expr: string "Hello" @ 1353..1360 (fid = 0);
+              expr: string "Hello" @ 1350..1357 (fid = 0);
               member: len;
-            } @ 1353..1364 (fid = 0);
+            } @ 1350..1361 (fid = 0);
             args: [];
-          } @ 1353..1366 (fid = 0);
-        } @ 1349..1366 (fid = 0) @ 1349..1366 (fid = 0),
+          } @ 1350..1363 (fid = 0);
+        } @ 1346..1363 (fid = 0) @ 1346..1363 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1373..1374 (fid = 0);
+          lhs: ident _ @ 1370..1371 (fid = 0);
           op: Assignment;
           rhs: Call {
             callee: Field {
               expr: Field {
-                expr: Orb @ 1377..1380 (fid = 0);
+                expr: Orb @ 1374..1377 (fid = 0);
                 member: driver;
-              } @ 1377..1387 (fid = 0);
+              } @ 1374..1384 (fid = 0);
               member: run;
-            } @ 1377..1391 (fid = 0);
+            } @ 1374..1388 (fid = 0);
             args: [];
-          } @ 1377..1393 (fid = 0);
-        } @ 1373..1393 (fid = 0) @ 1373..1393 (fid = 0),
+          } @ 1374..1390 (fid = 0);
+        } @ 1370..1390 (fid = 0) @ 1370..1390 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1435..1436 (fid = 0);
+          lhs: ident _ @ 1432..1433 (fid = 0);
           op: Assignment;
           rhs: PointerType {
             mutability: not;
-            typexpr: ident u32 @ 1440..1443 (fid = 0);
-          } @ 1439..1443 (fid = 0);
-        } @ 1435..1443 (fid = 0) @ 1435..1443 (fid = 0),
+            typexpr: ident u32 @ 1437..1440 (fid = 0);
+          } @ 1436..1440 (fid = 0);
+        } @ 1432..1440 (fid = 0) @ 1432..1440 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1449..1450 (fid = 0);
+          lhs: ident _ @ 1446..1447 (fid = 0);
           op: Assignment;
           rhs: PointerType {
             mutability: mut;
-            typexpr: ident u32 @ 1458..1461 (fid = 0);
-          } @ 1453..1461 (fid = 0);
-        } @ 1449..1461 (fid = 0) @ 1449..1461 (fid = 0),
+            typexpr: ident u32 @ 1455..1458 (fid = 0);
+          } @ 1450..1458 (fid = 0);
+        } @ 1446..1458 (fid = 0) @ 1446..1458 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1497..1498 (fid = 0);
+          lhs: ident _ @ 1494..1495 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [];
             ret: none;
-          } @ 1501..1507 (fid = 0);
-        } @ 1497..1507 (fid = 0) @ 1497..1507 (fid = 0),
+          } @ 1498..1504 (fid = 0);
+        } @ 1494..1504 (fid = 0) @ 1494..1504 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1513..1514 (fid = 0);
+          lhs: ident _ @ 1510..1511 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [
-              ident usz @ 1522..1525 (fid = 0),
+              ident usz @ 1519..1522 (fid = 0),
 
-              ident bool @ 1527..1531 (fid = 0),
+              ident bool @ 1524..1528 (fid = 0),
             ];
-            ret: ident usz @ 1536..1539 (fid = 0);
-          } @ 1517..1539 (fid = 0);
-        } @ 1513..1539 (fid = 0) @ 1513..1539 (fid = 0),
+            ret: ident usz @ 1533..1536 (fid = 0);
+          } @ 1514..1536 (fid = 0);
+        } @ 1510..1536 (fid = 0) @ 1510..1536 (fid = 0),
 
         Binary {
-          lhs: ident _ @ 1545..1546 (fid = 0);
+          lhs: ident _ @ 1542..1543 (fid = 0);
           op: Assignment;
           rhs: FunPtrType {
             args: [
-              ident usz @ 1554..1557 (fid = 0),
+              ident usz @ 1551..1554 (fid = 0),
             ];
-            ret: ident usz @ 1563..1566 (fid = 0);
-          } @ 1549..1566 (fid = 0);
-        } @ 1545..1566 (fid = 0) @ 1545..1566 (fid = 0),
+            ret: ident usz @ 1560..1563 (fid = 0);
+          } @ 1546..1563 (fid = 0);
+        } @ 1542..1563 (fid = 0) @ 1542..1563 (fid = 0),
 
         @last_expr: none,
-      ] @ 25..1569 (fid = 0);
-    } @ 19..1569 (fid = 0);
-  } @ 11..1569 (fid = 0),
+      ] @ 25..1566 (fid = 0);
+    } @ 19..1566 (fid = 0);
+  } @ 11..1566 (fid = 0),
 ]
 "#,
         compiler_code: 0,
@@ -7759,7 +7759,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
       VariableDef {
         name: b @ 42..43 (fid = 0);
         mutability: mut;
-        typexpr: Grouping {
+        typexpr: Paren {
           expr: Binary {
             lhs: ident a @ 47..48 (fid = 0);
             op: Assignment;
@@ -7772,7 +7772,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
       VariableDef {
         name: c @ 66..67 (fid = 0);
         mutability: not;
-        typexpr: Grouping {
+        typexpr: Paren {
           expr: InfiniteLoop {
             label: a @ 71..72 (fid = 0);
             body: Block [

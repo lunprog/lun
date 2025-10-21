@@ -94,8 +94,8 @@ impl PrettyDump for ExprKind {
         match self {
             ExprKind::Lit(lit) => write!(out, "{lit}"),
             ExprKind::BoolLit(b) => write!(out, "boolean {b}"),
-            ExprKind::Grouping(e) => {
-                ctx.pretty_struct("Grouping").field("expr", e).finish()?;
+            ExprKind::Paren(e) => {
+                ctx.pretty_struct("Paren").field("expr", e).finish()?;
 
                 Ok(())
             }
