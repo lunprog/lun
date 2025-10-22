@@ -301,7 +301,7 @@ Stages:
             "print" => Some(
                 "\
 * inputfile
-* tokenstream
+* token-stream
 * ast
 * dsir
 * scir

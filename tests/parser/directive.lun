@@ -2,6 +2,6 @@
 #mod module;
 
 // import directive
-#import orb.driver.run;
+#import orb::driver::run;
 #import std;
-#import std.rc.Rc as ReferenceCountedPtr;
+#import std::rc::Rc as ReferenceCountedPtr;

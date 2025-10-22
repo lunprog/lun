@@ -1,6 +1,6 @@
 //! Parsing of lun's expressions.
 
-use lunc_ast::{BinOp, Mutability, UnOp};
+use lunc_ast::{BinOp, Mutability, Path, PathSegment, UnOp};
 use lunc_diag::ResultExt;
 use lunc_token::Lit;
 use lunc_utils::opt_unreachable;
@@ -66,14 +66,10 @@ pub enum ExprKind {
     ///
     /// `"(" expr ")"`
     Paren(Box<Expression>),
-    /// an identifier expression
+    /// a path expression
     ///
-    /// `ident`
-    Ident(String),
-    // /// a path expression
-    // ///
     /// e.g: `abc`, `core::panic`, `core::Number::max`
-    // Path(Path),
+    Path(Path),
     /// binary operation
     ///
     /// `expr op expr`
@@ -169,10 +165,6 @@ pub enum ExprKind {
         expr: Box<Expression>,
         member: String,
     },
-    /// orb expression
-    ///
-    /// `"orb"`
-    Orb,
     //
     // definitions
     //
@@ -400,7 +392,7 @@ impl Parser {
                     _ => opt_unreachable!(),
                 }
             }
-            Ident(_) => self.parse_ident_expr()?,
+            Ident(_) | KwOrb => self.parse_path_expr()?,
             KwFun => self.parse_funkw_expr()?,
             KwIf => self.parse_if_else_expr(false)?,
             KwWhile => self.parse_predicate_loop_expr()?,
@@ -410,7 +402,6 @@ impl Parser {
             KwBreak => self.parse_break_expr()?,
             KwContinue => self.parse_continue_expr()?,
             KwNull => self.parse_null_expr()?,
-            KwOrb => self.parse_orb_expr()?,
             LCurly => self.parse_block_expr()?,
             And => self.parse_borrow_expr()?,
             Star if self.look_ahead(1, |t| t.tt == TokenType::KwFun) => {
@@ -513,15 +504,49 @@ impl Parser {
         })
     }
 
-    /// Parses an identifier expression
-    pub fn parse_ident_expr(&mut self) -> IResult<Expression> {
-        // TEST: n/a
-        let loc = self.expect(ExpToken::Ident)?;
-        let id = self.as_ident();
+    /// Parses a path expression.
+    pub fn parse_path_expr(&mut self) -> IResult<Expression> {
+        let mut path = Path::new();
+
+        if self.eat(ExpToken::Ident) {
+            path.push(self.as_ident());
+        } else if self.eat(ExpToken::KwOrb) {
+            path.push_seg(PathSegment::Orb);
+        } else {
+            // TEST: n/a
+            return self.etd_and_bump();
+        }
+
+        let lo = self.token_loc();
+        let mut hi = lo.clone();
+
+        while self.eat_no_expect(ExpToken::ColonColon) {
+            // TEST: no. 1
+            if self.eat(ExpToken::Ident) {
+                path.push(self.as_ident());
+                hi = self.token_loc();
+            } else {
+                self.recovery = Recovery::Yes;
+                let mut diag = self.expected_diag().into_diag();
+
+                if self.token.tt == TokenType::KwOrb {
+                    // TEST: no. 2
+                    diag.notes
+                        .push("'orb' can only be at the start of a path".to_string());
+                    path.push("~orb".to_string());
+                } else {
+                    path.push(self.as_ident());
+                }
+
+                self.sink.emit(diag);
+                self.bump();
+                hi = self.token_loc();
+            }
+        }
 
         Ok(Expression {
-            kind: ExprKind::Ident(id),
-            loc,
+            kind: ExprKind::Path(path),
+            loc: Span::from_ends(lo, hi),
         })
     }
 
@@ -1173,17 +1198,6 @@ impl Parser {
 
         Ok(Expression {
             kind: ExprKind::Null,
-            loc,
-        })
-    }
-
-    /// Parses orb expression
-    pub fn parse_orb_expr(&mut self) -> IResult<Expression> {
-        // TEST: n/a
-        let loc = self.expect(ExpToken::KwOrb)?;
-
-        Ok(Expression {
-            kind: ExprKind::Orb,
             loc,
         })
     }

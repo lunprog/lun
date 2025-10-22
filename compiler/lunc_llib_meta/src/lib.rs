@@ -109,6 +109,39 @@ impl ModuleTree {
         Some(current_module)
     }
 
+    // /// Relative goto the definition at `path` and returns its symbol.
+    // ///
+    // /// *e.g:*
+    // /// - `orb::mod1::mod2::def1`, it will search the module `orb::mod1::mod2`
+    // ///   and then in this module it will search for `def1`.
+    // /// - `mod1::mod2::def1`, it will search the module `mod2` in `mod1`, if
+    // ///   `self` is `mod1` and will return the symbol of `def1`.
+    // /// - `def1`, it will just search for `def1` in the root of the module tree.
+    // pub fn rel_goto(&self, path: &EffectivePath) -> Option<Symbol> {
+    //     if path.get(0)? != self.sym.name() || path.len() == 0 {
+    //         return None;
+    //     }
+    //     // todo!("{}", path.to_string());
+
+    //     let mut mod_path = path.clone();
+    //     let Some(name) = mod_path.pop() else {
+    //         // SAFETY: already checked that `path` is at least one segment long
+    //         opt_unreachable!()
+    //     };
+    //     if path.get(0)? == "orb" {
+    //         // absolute path we must remove the `orb` segment
+    //         mod_path.pop_front();
+    //     }
+
+    //     let mut current_mod = self;
+
+    //     for member in mod_path.as_slice() {
+    //         current_mod = current_mod.submod(member)?;
+    //     }
+
+    //     current_mod.def_or_mod(name)
+    // }
+
     /// Get a definition in the current module tree
     pub fn def(&self, name: impl AsRef<str>) -> Option<Symbol> {
         self.defs.get(name.as_ref()).cloned()

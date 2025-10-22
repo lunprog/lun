@@ -1,4 +1,4 @@
-#import orb.divide;
+#import orb::divide;
 
 #mod nested;
 

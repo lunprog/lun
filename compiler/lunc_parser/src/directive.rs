@@ -55,7 +55,7 @@ impl Parser {
         let lo = self.token_loc();
 
         let mut hi = lo.clone();
-        while self.eat_no_expect(ExpToken::Dot) {
+        while self.eat_no_expect(ExpToken::ColonColon) {
             // TEST: no. 2
             hi = self.expect(ExpToken::Ident).emit_wval(self.x(), default);
             path.push(self.as_ident());

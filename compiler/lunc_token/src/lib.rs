@@ -12,13 +12,14 @@ use std::{
     ops::Range,
 };
 
-use lunc_utils::{FileId, Span, opt_unreachable};
+use lunc_utils::{FileId, Span, opt_unreachable, span};
 
 /// A list of Tokens, and always ending with a `end of file` token
-#[derive(Clone, Default)]
+#[derive(Clone, Default, PartialEq)]
 pub struct TokenStream {
     toks: Vec<Token>,
     finished: bool,
+    eof: Option<Token>,
 }
 
 impl TokenStream {
@@ -27,6 +28,7 @@ impl TokenStream {
         TokenStream {
             toks: Vec::new(),
             finished: false,
+            eof: None,
         }
     }
 
@@ -42,6 +44,7 @@ impl TokenStream {
         );
 
         self.finished = true;
+        self.eof = Some(self.toks.last().unwrap().clone());
     }
 
     /// Pushes the TokenType with its start and end offsets and return `true`
@@ -136,6 +139,7 @@ impl TokenStream {
     /// # Panic
     ///
     /// This function will panic if you call it on a non-finished token stream
+    #[inline(always)]
     #[track_caller]
     pub fn get_eof(&self) -> &Token {
         assert!(
@@ -143,14 +147,40 @@ impl TokenStream {
             "can't access tokens while the token stream isn't finished."
         );
 
-        let Some(eof) = self.toks.last() else {
-            // SAFETY: a token stream is ensured to contain an eof token
+        let Some(eof) = &self.eof else {
+            // SAFETY: `TokenStream::eof` is always `Some(..)` when it is `TokenStream::finished`
             opt_unreachable!();
         };
 
         eof
     }
 
+    /// The count of tokens, including the last Eof token.
+    pub fn count(&self) -> usize {
+        self.toks.len()
+    }
+
+    /// Replace the token at index `idx` with two tokens, `replace_with`.
+    ///
+    /// # Note
+    ///
+    /// It's the only operation allowed to mutate the content of the token
+    /// stream if it's not finished.
+    pub fn replace_with_two(&mut self, idx: usize, replace_with: [Token; 2]) {
+        if idx <= self.count() {
+            let [first_t, second_t] = replace_with;
+
+            // SAFETY: we checked the boundaries just above
+            let first = unsafe { self.toks.get_unchecked_mut(idx) };
+            *first = first_t;
+
+            self.toks.insert(idx + 1, second_t);
+        } else {
+            unimplemented!("cannot `replace_with_two` if idx >= self.count().")
+        }
+    }
+
+    /// Format the tokenstream
     pub fn fmt(&self, out: &mut impl Write, src: &str) -> io::Result<()> {
         writeln!(out, "{{")?;
 
@@ -213,6 +243,7 @@ impl Token {
             | TokenType::Star
             | TokenType::Slash
             | TokenType::Colon
+            | TokenType::ColonColon
             | TokenType::Comma
             | TokenType::Eq
             | TokenType::EqEq
@@ -374,6 +405,32 @@ impl Token {
             TokenType::Ident(..) | TokenType::KwExtern | TokenType::Pound
         )
     }
+
+    /// Try to break up the token in two tokens.
+    pub fn break_up(&self) -> Option<[Token; 2]> {
+        let diff = self.loc.hi - self.loc.lo;
+        assert_eq!(
+            self.tt.length()?,
+            diff,
+            "can't break a token that has an unexpected loc."
+        );
+
+        let [first_tt, second_tt] = self.tt.break_up()?;
+
+        let first_loc = span(self.loc.lo, self.loc.lo + first_tt.length()?, self.loc.fid);
+        let second_loc = span(self.loc.hi - second_tt.length()?, self.loc.hi, self.loc.fid);
+
+        Some([
+            Token {
+                tt: first_tt,
+                loc: first_loc,
+            },
+            Token {
+                tt: second_tt,
+                loc: second_loc,
+            },
+        ])
+    }
 }
 
 impl PartialEq<TokenType> for Token {
@@ -411,6 +468,8 @@ pub enum TokenType {
     Slash,
     /// `:`
     Colon,
+    /// `::`
+    ColonColon,
     /// `,`
     Comma,
     /// `=`
@@ -620,6 +679,100 @@ impl TokenType {
         TokenType::KW_TRUE,
         TokenType::KW_WHILE,
     ];
+
+    /// Try to break this token type into if possible.
+    ///
+    /// eg: `ColonColon` -> `Some((Colon, Colon))`.
+    pub fn break_up(&self) -> Option<[TokenType; 2]> {
+        use TokenType as Tt;
+
+        match self {
+            Tt::ColonColon => Some([Tt::Colon, Tt::Colon]),
+            Tt::EqEq => Some([Tt::Eq, Tt::Eq]),
+            Tt::BangEq => Some([Tt::Bang, Tt::Eq]),
+            Tt::LtEq => Some([Tt::Lt, Tt::Eq]),
+            Tt::LtLt => Some([Tt::Lt, Tt::Lt]),
+            Tt::GtGt => Some([Tt::Gt, Tt::Gt]),
+            Tt::GtEq => Some([Tt::Gt, Tt::Eq]),
+            Tt::MinusGt => Some([Tt::Minus, Tt::Gt]),
+            Tt::AndAnd => Some([Tt::And, Tt::And]),
+            Tt::OrOr => Some([Tt::Or, Tt::Or]),
+            Tt::DotStar => Some([Tt::Dot, Tt::Star]),
+            _ => None,
+        }
+    }
+
+    /// Returns the length of a token, if TokenType is ident or a literal or
+    /// something that can have a variable length, None is returned.
+    ///
+    /// eg: `TokenType::EqEq` -> `Some(2)`
+    pub fn length(&self) -> Option<usize> {
+        match self {
+            Self::Eof => Some(0),
+
+            Self::LParen
+            | Self::RParen
+            | Self::LBracket
+            | Self::RBracket
+            | Self::LCurly
+            | Self::RCurly
+            | Self::Plus
+            | Self::Minus
+            | Self::Star
+            | Self::Slash
+            | Self::Colon
+            | Self::Comma
+            | Self::Eq
+            | Self::Bang
+            | Self::Lt
+            | Self::Gt
+            | Self::Semi
+            | Self::Caret
+            | Self::And
+            | Self::Or
+            | Self::Percent
+            | Self::Dot
+            | Self::Pound => Some(1),
+
+            Self::ColonColon
+            | Self::EqEq
+            | Self::BangEq
+            | Self::LtEq
+            | Self::LtLt
+            | Self::GtGt
+            | Self::MinusGt
+            | Self::AndAnd
+            | Self::OrOr
+            | Self::GtEq
+            | Self::DotStar
+            | Self::KwAs
+            | Self::KwIf
+            | Self::KwIn
+            | Self::KwPub => Some(2),
+
+            Self::KwFor | Self::KwFun | Self::KwLet | Self::KwMut | Self::KwOrb => Some(3),
+
+            Self::KwElse
+            | Self::KwImpl
+            | Self::KwLoop
+            | Self::KwNull
+            | Self::KwThen
+            | Self::KwTrue
+            | Self::KwSelfVal => Some(4),
+
+            Self::KwBreak | Self::KwDefer | Self::KwFalse | Self::KwTrait | Self::KwWhile => {
+                Some(5)
+            }
+
+            Self::KwExtern | Self::KwReturn => Some(6),
+
+            Self::KwComptime | Self::KwContinue => Some(8),
+
+            Self::Ident(_) => None,
+            Self::Lit(_) => None,
+            Self::Dummy => None,
+        }
+    }
 }
 
 impl Display for TokenType {
@@ -638,6 +791,7 @@ impl Display for TokenType {
             Tt::Star => write!(f, "`*`"),
             Tt::Slash => write!(f, "`/`"),
             Tt::Colon => write!(f, "`:`"),
+            Tt::ColonColon => write!(f, "`::`"),
             Tt::Comma => write!(f, "`,`"),
             Tt::Eq => write!(f, "`=`"),
             Tt::EqEq => write!(f, "`==`"),
@@ -724,6 +878,7 @@ impl PartialEq<ExpToken> for TokenType {
             Star,
             Slash,
             Colon,
+            ColonColon,
             Comma,
             Eq,
             EqEq,
@@ -936,6 +1091,7 @@ pub enum ExpToken {
     Star,
     Slash,
     Colon,
+    ColonColon,
     Comma,
     Eq,
     EqEq,
@@ -1005,6 +1161,7 @@ impl Display for ExpToken {
             Et::Star => write!(f, "`*`"),
             Et::Slash => write!(f, "`/`"),
             Et::Colon => write!(f, "`:`"),
+            Et::ColonColon => write!(f, "`::`"),
             Et::Comma => write!(f, "`,`"),
             Et::Eq => write!(f, "`=`"),
             Et::EqEq => write!(f, "`==`"),
@@ -1071,7 +1228,7 @@ impl PartialEq<TokenType> for ExpToken {
 /// *This is inspired by [rustc's TokenTypeSet].*
 ///
 /// [rustc's TokenTypeSet]: https://doc.rust-lang.org/nightly/nightly-rustc/rustc_parse/parser/token_type/struct.TokenTypeSet.html
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct ExpTokenSet(u64);
 
 impl ExpTokenSet {
@@ -1104,6 +1261,14 @@ impl ExpTokenSet {
 impl Default for ExpTokenSet {
     fn default() -> Self {
         ExpTokenSet::new()
+    }
+}
+
+impl Debug for ExpTokenSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let exps: Vec<_> = self.iter().map(|exp| format!("{exp:?}")).collect();
+
+        write!(f, "ExpTokenSet({})", exps.join(" | "))
     }
 }
 
@@ -1366,6 +1531,62 @@ mod tests {
             ),
             Cow::Owned(_) => panic!("expected Borrowed for single in-bounds element"),
         }
+    }
+
+    #[test]
+    fn token_break_up() {
+        let token = Token {
+            tt: TokenType::ColonColon,
+            loc: span(0usize, 2usize, FileId::ROOT_MODULE),
+        };
+
+        assert_eq!(
+            token.break_up(),
+            Some([
+                Token {
+                    tt: TokenType::Colon,
+                    loc: span(0usize, 1usize, FileId::ROOT_MODULE),
+                },
+                Token {
+                    tt: TokenType::Colon,
+                    loc: span(1usize, 2usize, FileId::ROOT_MODULE),
+                },
+            ])
+        )
+    }
+
+    #[test]
+    fn token_stream_replace_with() {
+        let mut expected_ts = TokenStream::new();
+        let mut ts = TokenStream::new();
+
+        expected_ts.push(TokenType::LParen, (0, 1), FileId::ROOT_MODULE);
+        ts.push(TokenType::LParen, (0, 1), FileId::ROOT_MODULE);
+
+        expected_ts.push(TokenType::RParen, (1, 2), FileId::ROOT_MODULE);
+        ts.push(TokenType::RParen, (1, 2), FileId::ROOT_MODULE);
+
+        expected_ts.push(TokenType::Colon, (2, 3), FileId::ROOT_MODULE);
+        expected_ts.push(TokenType::Colon, (3, 4), FileId::ROOT_MODULE);
+        ts.push(TokenType::ColonColon, (2, 4), FileId::ROOT_MODULE);
+
+        expected_ts.push(TokenType::KwComptime, (4, 12), FileId::ROOT_MODULE);
+        ts.push(TokenType::KwComptime, (4, 12), FileId::ROOT_MODULE);
+
+        expected_ts.push(TokenType::Eof, (12, 12), FileId::ROOT_MODULE);
+        ts.push(TokenType::Eof, (12, 12), FileId::ROOT_MODULE);
+
+        expected_ts.finish();
+        ts.finish();
+
+        const COLONCOLON_IDX: usize = 2;
+        let coloncolon = ts.get(COLONCOLON_IDX);
+
+        let tts = coloncolon.break_up().unwrap();
+
+        ts.replace_with_two(COLONCOLON_IDX, tts);
+
+        assert_eq!(ts, expected_ts);
     }
 
     macro_rules! eq_test {

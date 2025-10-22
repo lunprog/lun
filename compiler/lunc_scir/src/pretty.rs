@@ -161,7 +161,7 @@ impl PrettyDump for ScExprKind {
         match self {
             ScExprKind::Lit(lit) => write!(out, "{lit}"),
             ScExprKind::BoolLit(b) => write!(out, "boolean {b}"),
-            ScExprKind::Ident(sym) => sym.try_dump(ctx),
+            ScExprKind::Path(sym) => sym.try_dump(ctx),
             ScExprKind::Binary { lhs, op, rhs } => {
                 ctx.pretty_struct("Binary")
                     .field("lhs", lhs)

@@ -136,7 +136,7 @@ impl<'a> FunDefTranslator<'a> {
 
                 Some(self.fb.ins().iconst(self.cgen.lower_type(&expr.typ), imm))
             }
-            ScExprKind::Ident(sym) => match sym.kind() {
+            ScExprKind::Path(sym) => match sym.kind() {
                 SymKind::Local { .. } => {
                     let (ss, typ) = *self.slots.get(sym).expect("undefined var");
 
@@ -205,7 +205,7 @@ impl<'a> FunDefTranslator<'a> {
                 _ => opt_unreachable!(),
             },
             ScExprKind::Call { callee, args } => match &callee.expr {
-                ScExprKind::Ident(sym) if sym.kind() == SymKind::Function => {
+                ScExprKind::Path(sym) if sym.kind() == SymKind::Function => {
                     let Some(ClifId::Func {
                         id,
                         sig: _,
@@ -277,7 +277,7 @@ impl<'a> FunDefTranslator<'a> {
         let ptr_t = self.cgen.isa.pointer_type();
 
         match &expr.expr {
-            ScExprKind::Ident(sym) => match sym.kind() {
+            ScExprKind::Path(sym) => match sym.kind() {
                 SymKind::Local { .. } => {
                     let (ss, _) = *self.slots.get(sym).expect("undefined var");
 

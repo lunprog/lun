@@ -211,7 +211,7 @@ impl SemaChecker {
                 }
                 _ => Ok(()),
             },
-            ScExprKind::BoolLit(_) | ScExprKind::Ident(_) => Ok(()),
+            ScExprKind::BoolLit(_) | ScExprKind::Path(_) => Ok(()),
             ScExprKind::Binary { lhs, op: _, rhs } => {
                 self.safety_ck_expr(lhs)?;
 

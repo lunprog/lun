@@ -515,7 +515,7 @@ pub enum Signedness {
 /// A maybe not yet evaluated Symbol
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum LazySymbol {
-    Name(String),
+    Path(Path),
     Sym(Symbol),
 }
 
@@ -534,8 +534,16 @@ impl LazySymbol {
     /// Converts this lazy symbol to an option of a symbol.
     pub fn symbol(&self) -> Option<Symbol> {
         match self {
-            Self::Name(_) => None,
+            Self::Path(_) => None,
             Self::Sym(sym) => Some(sym.clone()),
+        }
+    }
+
+    /// Get the name of the lazy symbol
+    pub fn name(&self) -> String {
+        match self {
+            Self::Path(p) => p.last().unwrap().to_string(),
+            Self::Sym(s) => s.name(),
         }
     }
 }
@@ -543,15 +551,15 @@ impl LazySymbol {
 impl PrettyDump for LazySymbol {
     fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
         match self {
-            LazySymbol::Name(id) => write!(ctx.out, "lazy {id}"),
+            LazySymbol::Path(path) => path.try_dump(ctx),
             LazySymbol::Sym(sym) => sym.try_dump(ctx),
         }
     }
 }
 
-impl From<String> for LazySymbol {
-    fn from(value: String) -> Self {
-        LazySymbol::Name(value)
+impl From<Path> for LazySymbol {
+    fn from(value: Path) -> Self {
+        LazySymbol::Path(value)
     }
 }
 
@@ -899,7 +907,7 @@ impl PrettyDump for SymKind {
 
 /// A path to a definition in DSIR / DSIR
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct EffectivePath(Vec<String>);
+pub struct EffectivePath(pub(crate) Vec<String>);
 
 impl EffectivePath {
     /// Creates a new empty effective path
@@ -920,9 +928,9 @@ impl EffectivePath {
 
     /// Returns the amount of members in the path eg:
     ///
-    /// `orb`             -> 1
-    /// `orb.main`        -> 2
-    /// `std.panic.Panic` -> 3
+    /// `orb`               -> 1
+    /// `orb::main`         -> 2
+    /// `std::panic::Panic` -> 3
     /// etc..
     pub fn len(&self) -> usize {
         self.0.len()
@@ -931,6 +939,11 @@ impl EffectivePath {
     /// Is the path empty?
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    /// Get the `i`th segment of the EffectivePath
+    pub fn get(&self, i: usize) -> Option<&str> {
+        self.0.get(i).map(|s| s.as_str())
     }
 
     /// Returns a slice of the underlying path
@@ -942,8 +955,8 @@ impl EffectivePath {
     ///
     /// # Example
     ///
-    /// `orb`        -> mut ref to `orb`
-    /// `orb.driver` -> mut ref to `driver`
+    /// `orb`         -> mut ref to `orb`
+    /// `orb::driver` -> mut ref to `driver`
     /// *etc..*
     pub fn last_mut(&mut self) -> Option<&mut String> {
         self.0.last_mut()
@@ -974,6 +987,11 @@ impl EffectivePath {
         self.0.pop()
     }
 
+    /// Pop the first segment off the path.
+    pub fn pop_front(&mut self) -> String {
+        self.0.remove(0)
+    }
+
     /// Is this path, a path to root? `orb` -> true, something else false.
     pub fn is_root(&self) -> bool {
         self.0 == ["orb"]
@@ -996,7 +1014,7 @@ impl EffectivePath {
 
     /// Mangles an effective path into a realname.
     ///
-    /// An effective path `std.mem.transmute` is mangled like so:
+    /// An effective path `std::mem::transmute` is mangled like so:
     ///
     /// ## 1. The prefix `_L`
     ///
@@ -1057,7 +1075,7 @@ impl Default for EffectivePath {
 impl Display for EffectivePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if !self.is_empty() {
-            write!(f, "{}", self.as_slice().join("."))
+            write!(f, "{}", self.as_slice().join("::"))
         } else {
             write!(f, "∅")
         }
@@ -1138,7 +1156,7 @@ pub enum ValueExpr {
 
 use std::ops::{Add, Div, Mul, Rem, Sub};
 
-use crate::Mutability;
+use crate::{Mutability, Path};
 
 impl ValueExpr {
     /// Tries to convert this value to a type.

@@ -83,8 +83,7 @@ impl PrettyDump for ExprKind {
 
                 Ok(())
             }
-            ExprKind::Ident(id) => write!(out, "ident {id}"),
-            // Expr::Path(path) => write!(out, "path {path}"),
+            ExprKind::Path(path) => write!(out, "path {path}"),
             ExprKind::Binary { lhs, op, rhs } => {
                 ctx.pretty_struct("Binary")
                     .field("lhs", lhs)
@@ -207,9 +206,6 @@ impl PrettyDump for ExprKind {
                     .finish()?;
 
                 Ok(())
-            }
-            ExprKind::Orb => {
-                write!(ctx.out, "Orb")
             }
             ExprKind::FunDefinition {
                 args,
