@@ -115,7 +115,7 @@ impl Lmeta {
                     defs: HashMap::new(),
                     root_name: old_tree.root_name,
                     sym: match old_tree.sym {
-                        LazySymbol::Name(n) => LazySymbol::Name(n),
+                        LazySymbol::Path(p) => LazySymbol::Path(p),
                         LazySymbol::Sym(s) => LazySymbol::Sym(self.map_sym(s)?),
                     },
                 };
@@ -159,6 +159,7 @@ impl Lmeta {
 mod tests {
     use std::error::Error as StdError;
 
+    use lunc_ast::Path;
     use lunc_utils::{idtype, target::triple};
 
     use super::*;
@@ -169,11 +170,11 @@ mod tests {
     fn lmeta_vice_versa_empty() -> TestRes {
         let _lock = idtype::TEST_LOCK.lock()?;
 
-        let empty = "empty".to_string();
+        let empty = Path::with_root("empty");
         let vice = Lmeta::new(
             "0.1.0".to_string(),
             triple!("x86_64-unknown-linux-gnu"),
-            ModuleTree::new(Some(empty.clone()), LazySymbol::Name(empty)),
+            ModuleTree::new(Some(empty.to_string()), LazySymbol::Path(empty)),
         );
 
         let bytes = vice.to_bytes().unwrap();

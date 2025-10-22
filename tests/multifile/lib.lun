@@ -2,12 +2,12 @@
 
 #mod dbg;
 
-#import orb.dbg.nested as renamed;
+#import orb::dbg::nested as renamed;
 
 main :: fun () {
-    orb.dbg.puts("Hello world!");
-    dbg.puts("Hello world!");
-    renamed.fib(12);
+    orb::dbg::puts("Hello world!");
+    dbg::puts("Hello world!");
+    renamed::fib(12);
 }
 
 divide :: fun(lhs: f32, rhs: f32) -> f32 {

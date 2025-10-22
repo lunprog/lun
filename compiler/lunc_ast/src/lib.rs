@@ -16,6 +16,8 @@ use lunc_utils::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::symbol::EffectivePath;
+
 pub mod symbol;
 
 /// A 'Path' is a name in Lun, like `orb`, `hello`, `core::panic`, ..
@@ -35,7 +37,7 @@ impl Path {
     }
 
     /// Creates a new path with just a single segment
-    pub fn with_root_segment(root: impl Into<PathSegment>) -> Path {
+    pub fn with_root(root: impl Into<PathSegment>) -> Path {
         Path {
             segments: vec![root.into()],
         }
@@ -139,6 +141,21 @@ impl Path {
     pub fn starts_with_orb(&self) -> bool {
         matches!(self.first(), Some(PathSegment::Orb))
     }
+
+    /// Returns `true` if self == `_`
+    pub fn is_underscore(&self) -> bool {
+        self.len() == 1 && self.segments[0].is_ident_and(|id| id == "_")
+    }
+
+    /// Get the `i`th segment of the path.
+    pub fn get(&self, i: usize) -> Option<&PathSegment> {
+        self.segments.get(i)
+    }
+
+    /// Convert a `Path` to an `EffectivePath`
+    pub fn into_effective_path(self) -> EffectivePath {
+        EffectivePath(self.to_string_vec())
+    }
 }
 
 impl<S: ToString> FromIterator<S> for Path {
@@ -198,6 +215,17 @@ pub enum PathSegment {
     ///
     /// This segment is only valid as the first segment of a [Path]
     Orb,
+}
+
+impl PathSegment {
+    /// Returns `true` if `self` is `Ident(id)` and the value inside matches a
+    /// predicate `f`.
+    pub fn is_ident_and(&self, f: impl FnOnce(&str) -> bool) -> bool {
+        match self {
+            Self::Orb => false,
+            Self::Ident(id) => f(id),
+        }
+    }
 }
 
 impl Display for PathSegment {

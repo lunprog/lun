@@ -307,7 +307,7 @@ impl ScExpression {
     /// dereference expression.
     pub fn is_place(&self) -> Option<String> {
         match &self.expr {
-            ScExprKind::Ident(sym) => {
+            ScExprKind::Path(sym) => {
                 if sym.is_place() {
                     None
                 } else {
@@ -341,7 +341,7 @@ impl ScExpression {
                 ..
             }) => Typeness::Implicit,
             ScExprKind::BoolLit(_) | ScExprKind::Lit(_) => Typeness::Explicit,
-            ScExprKind::Ident(symref) => symref.typeness(),
+            ScExprKind::Path(symref) => symref.typeness(),
             ScExprKind::Binary { lhs, op: _, rhs } => {
                 if lhs.typeness() == Typeness::Explicit || rhs.typeness() == Typeness::Explicit {
                     Typeness::Explicit
@@ -389,7 +389,7 @@ impl FromHigher for ScExpression {
         let expr = match node.expr {
             DsExprKind::Lit(lit) => ScExprKind::Lit(lit),
             DsExprKind::BoolLit(b) => ScExprKind::BoolLit(b),
-            DsExprKind::Ident(lazy) => ScExprKind::Ident(lazy.unwrap_sym()),
+            DsExprKind::Path(lazy) => ScExprKind::Path(lazy.unwrap_sym()),
             DsExprKind::Binary { lhs, op, rhs } => ScExprKind::Binary {
                 lhs: lower(lhs),
                 op,
@@ -431,13 +431,12 @@ impl FromHigher for ScExpression {
             },
             DsExprKind::Continue { label } => ScExprKind::Continue { label, index: None },
             DsExprKind::Null => ScExprKind::Null,
-            DsExprKind::Field { expr, member } => ScExprKind::Field {
+            DsExprKind::Field {
+                expr,
+                field: member,
+            } => ScExprKind::Field {
                 expr: lower(expr),
                 member,
-            },
-            DsExprKind::QualifiedPath { path, sym: lazy } => ScExprKind::QualifiedPath {
-                path,
-                sym: lazy.unwrap_sym(),
             },
             DsExprKind::Underscore => ScExprKind::Underscore,
             DsExprKind::FunDefinition { .. } => ScExprKind::Poisoned {
@@ -491,10 +490,10 @@ pub enum ScExprKind {
     ///
     /// [`DsExprKind::BoolLit`]: lunc_dsir::DsExprKind::BoolLit
     BoolLit(bool),
-    /// See [`DsExprKind::Ident`]
+    /// See [`DsExprKind::Path`]
     ///
-    /// [`DsExprKind::Ident`]: lunc_dsir::DsExprKind::Ident
-    Ident(Symbol),
+    /// [`DsExprKind::Path`]: lunc_dsir::DsExprKind::Path
+    Path(Symbol),
     /// See [`DsExprKind::Binary`]
     ///
     /// [`DsExprKind::Binary`]: lunc_dsir::DsExprKind::Binary
@@ -889,9 +888,7 @@ impl SemaChecker {
                 Type::F64 => Ok(ValueExpr::F64(*f /* as f64 */)),
                 _ => Ok(ValueExpr::F32(*f as f32)),
             },
-            ScExprKind::Ident(sym) if sym.is_comptime_known() => {
-                sym.value().ok_or((expr_loc, None))
-            }
+            ScExprKind::Path(sym) if sym.is_comptime_known() => sym.value().ok_or((expr_loc, None)),
             ScExprKind::Binary { lhs, op, rhs } => {
                 let lhs_val = self.evaluate_expr(lhs)?;
                 let rhs_val = self.evaluate_expr(rhs)?;

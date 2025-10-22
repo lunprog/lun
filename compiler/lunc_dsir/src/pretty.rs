@@ -124,7 +124,7 @@ impl PrettyDump for DsExprKind {
         match self {
             DsExprKind::Lit(lit) => write!(out, "{lit}"),
             DsExprKind::BoolLit(b) => write!(out, "boolean {b}"),
-            DsExprKind::Ident(lazysym) => lazysym.try_dump(ctx),
+            DsExprKind::Path(lazysym) => lazysym.try_dump(ctx),
             DsExprKind::Binary { lhs, op, rhs } => {
                 ctx.pretty_struct("Binary")
                     .field("lhs", lhs)
@@ -208,18 +208,13 @@ impl PrettyDump for DsExprKind {
             DsExprKind::Null => {
                 write!(ctx.out, "Null")
             }
-            DsExprKind::Field { expr, member } => {
+            DsExprKind::Field {
+                expr,
+                field: member,
+            } => {
                 ctx.pretty_struct("Field")
                     .field("expr", expr)
                     .field("member", member)
-                    .finish()?;
-
-                Ok(())
-            }
-            DsExprKind::QualifiedPath { path, sym } => {
-                ctx.pretty_struct("QualifiedPath")
-                    .field("path", path)
-                    .field("sym", sym)
                     .finish()?;
 
                 Ok(())

@@ -502,7 +502,7 @@ impl SemaChecker {
                 kind: LitKind::Integer | LitKind::Float,
                 ..
             }) => {}
-            ScExprKind::Ident(symref) => match symref.typeness() {
+            ScExprKind::Path(symref) => match symref.typeness() {
                 Typeness::Implicit => {
                     symref.inspect_mut(|sym| {
                         sym.typ = typ.clone();
@@ -835,7 +835,7 @@ impl SemaChecker {
             ScExprKind::BoolLit(_) => {
                 expr.typ = Type::Bool;
             }
-            ScExprKind::Ident(symref) => {
+            ScExprKind::Path(symref) => {
                 expr.typ = symref.typ();
             }
             ScExprKind::Binary {
@@ -863,7 +863,7 @@ impl SemaChecker {
                     });
                 }
 
-                if let ScExprKind::Ident(symref) = &lhs.expr
+                if let ScExprKind::Path(symref) = &lhs.expr
                     && lhs.typeness() == Typeness::Implicit
                     && rhs.typeness() == Typeness::Explicit
                 {
@@ -1027,7 +1027,7 @@ impl SemaChecker {
 
                 self.ck_expr(exp, real_coerce)?;
 
-                if let ScExprKind::Ident(sym) = &exp.expr
+                if let ScExprKind::Path(sym) = &exp.expr
                     && !sym.is_place()
                 {
                     self.sink.emit(BorrowMutWhenNotDefinedMut {

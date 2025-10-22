@@ -1,2 +1,2 @@
 // EO06: error testing - ExpectedToken
-#import a.1;
+#import a::1;

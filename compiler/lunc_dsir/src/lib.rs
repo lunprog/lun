@@ -11,7 +11,7 @@ use diags::{
 };
 
 use lunc_ast::{
-    Abi, BinOp, Mutability, Spanned, UnOp,
+    Abi, BinOp, Mutability, Path, PathSegment, Spanned, UnOp,
     symbol::{EffectivePath, LazySymbol, SymKind, Symbol, Type, Typeness},
 };
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
@@ -162,7 +162,7 @@ impl FromHigher for DsItem {
                 value,
                 loc,
             } => DsItem::GlobalDef {
-                sym: LazySymbol::Name(name.node.clone()),
+                sym: LazySymbol::Path(Path::with_root(name.node.clone())),
                 name,
                 mutability,
                 typeexpr: lower(typeexpr),
@@ -174,7 +174,7 @@ impl FromHigher for DsItem {
                 typeexpr,
                 loc,
             } => DsItem::GlobalUninit {
-                sym: LazySymbol::Name(name.node.clone()),
+                sym: LazySymbol::Path(Path::with_root(name.node.clone())),
                 name,
                 typeexpr: lower(typeexpr),
                 loc: Some(loc),
@@ -219,7 +219,7 @@ impl FromHigher for DsExpression {
             ExprKind::BoolLit(b) => DsExprKind::BoolLit(b),
             // we remove the parenthesis we don't need them anymore
             ExprKind::Paren(e) => return lower(*e),
-            ExprKind::Path(_) => todo!(),
+            ExprKind::Path(p) => DsExprKind::Path(LazySymbol::Path(p)),
             ExprKind::Binary { lhs, op, rhs } => DsExprKind::Binary {
                 lhs: lower(lhs),
                 op,
@@ -316,7 +316,7 @@ impl FromHigher for DsExpression {
             ExprKind::Null => DsExprKind::Null,
             ExprKind::Field { expr, member } => DsExprKind::Field {
                 expr: lower(expr),
-                member,
+                field: member,
             },
             ExprKind::FunDefinition {
                 args,
@@ -381,10 +381,10 @@ pub enum DsExprKind {
     ///
     /// [`ExprKind::BoolLit`]: lunc_parser::expr::ExprKind::BoolLit
     BoolLit(bool),
-    /// See [`ExprKind::Ident`]
+    /// See [`ExprKind::Path`]
     ///
-    /// [`ExprKind::Ident`]: lunc_parser::expr::ExprKind::Ident
-    Ident(LazySymbol),
+    /// [`ExprKind::Path`]: lunc_parser::expr::ExprKind::Path
+    Path(LazySymbol),
     /// See [`ExprKind::Binary`]
     ///
     /// [`ExprKind::Binary`]: lunc_parser::expr::ExprKind::Binary
@@ -454,24 +454,13 @@ pub enum DsExprKind {
     Null,
     /// See [`ExprKind::Field`]
     ///
-    /// After the name resolution, member access of modules are converted to [`EffectivePath`]
     /// [`ExprKind::Field`]: lunc_parser::expr::ExprKind::Field
     Field {
         expr: Box<DsExpression>,
-        member: String,
+        field: String,
     },
-    /// Constructed from member access, eg:
-    ///
-    /// `orb.driver.run` are member accesses and it refers to a function "run",
-    /// so this expression is lowered down to an EffectivePath
-    QualifiedPath {
-        /// path to the symbol
-        path: SpannedPath,
-        /// the symbol we are referring to
-        sym: LazySymbol,
-    },
-    /// Constructed from the lazy ident `_`, but only in certain cases, like
-    /// when it's part of an assignment like so: `_ = expr`
+    /// Constructed from the lazy path `_`, but only in certain cases, like when
+    /// it's part of an assignment like so: `_ = expr`
     Underscore,
     /// See [`ExprKind::FunDefinition`]
     ///
@@ -560,9 +549,9 @@ pub fn expr_float(f: f64) -> DsExpression {
 }
 
 /// Creates an ident expression without location.
-pub fn expr_ident(id: impl Into<LazySymbol>) -> DsExpression {
+pub fn expr_path(path: impl IntoIterator<Item = PathSegment>) -> DsExpression {
     DsExpression {
-        expr: DsExprKind::Ident(id.into()),
+        expr: DsExprKind::Path(LazySymbol::Path(Path::from_iter(path))),
         loc: None,
     }
 }
@@ -686,7 +675,7 @@ pub fn expr_member_access(expr: DsExpression, member: impl ToString) -> DsExpres
     DsExpression {
         expr: DsExprKind::Field {
             expr: Box::new(expr),
-            member: member.to_string(),
+            field: member.to_string(),
         },
         loc: None,
     }
@@ -791,7 +780,7 @@ impl FromHigher for DsStatement {
                 typeexpr,
                 value,
             } => DsStmtKind::BindingDef {
-                sym: LazySymbol::Name(name.node.clone()),
+                sym: LazySymbol::Path(Path::with_root(name.node.clone())),
                 name,
                 mutability,
                 typeexpr: lower(typeexpr),
@@ -862,7 +851,7 @@ impl FromHigher for DsArg {
         } = node;
 
         DsArg {
-            sym: LazySymbol::Name(name.clone()),
+            sym: LazySymbol::Path(Path::with_root(name.clone())),
             name,
             name_loc: Some(name_loc),
             typeexpr: lower(typeexpr),
@@ -892,7 +881,7 @@ impl Desugarrer {
             table: SymbolTable::new(),
             orb: ModuleTree::new(
                 Some(orb_name.to_string()),
-                LazySymbol::Name("orb".to_string()),
+                LazySymbol::Path(Path::with_root("orb".to_string())),
             ),
             current_path: EffectivePath::with_root_segment("orb"),
         }
@@ -1015,7 +1004,7 @@ impl Desugarrer {
                         name: name.clone(),
                         module: submodule_dsir,
                         loc: loc.clone(),
-                        sym: LazySymbol::Name(name.clone()),
+                        sym: LazySymbol::Path(Path::with_root(name.clone())),
                     };
                 }
                 DsItem::ExternBlock { items, .. } => {
@@ -1188,7 +1177,7 @@ impl Desugarrer {
                 lhs,
                 op: BinOp::Assignment,
                 rhs,
-            } if matches!(&lhs.expr, DsExprKind::Ident(LazySymbol::Name(id)) if id.as_str() == "_") =>
+            } if matches!(&lhs.expr, DsExprKind::Path(LazySymbol::Path(path)) if path.is_underscore()) =>
             {
                 // we allow _ in lhs of assignment
                 lhs.expr = DsExprKind::Underscore;
@@ -1252,116 +1241,84 @@ impl Desugarrer {
 
                 Ok(())
             }
-            DsExprKind::Ident(LazySymbol::Name(name)) => {
-                if name == "_" {
+            DsExprKind::Path(LazySymbol::Path(path)) => {
+                if path.is_underscore() {
                     return Err(UnderscoreInExpression {
                         loc: expr.loc.clone().unwrap(),
                     }
                     .into_diag());
                 }
 
-                let Some(symref) = self.table.lookup(&*name) else {
-                    return Err(NotFoundInScope {
-                        name: name.clone(),
-                        loc: expr.loc.clone().unwrap(),
-                    }
-                    .into_diag());
-                };
+                // path of the module (without the last segment)
+                let mut mod_path = path.clone().into_effective_path();
+                let def_name = mod_path.pop();
 
-                expr.expr = DsExprKind::Ident(LazySymbol::Sym(symref.clone()));
+                // absolute version of the `mod_path`.
+                let mut abs_mod_path = self.current_path.clone();
+                abs_mod_path.append(mod_path.clone());
 
-                Ok(())
-            }
-            // NOTE: they cannot be reached because they are constructed in this
-            // method, its an internal error if it is reached, so we panic.
-            DsExprKind::Ident(LazySymbol::Sym(_))
-            | DsExprKind::Underscore
-            | DsExprKind::QualifiedPath {
-                path: _,
-                sym: LazySymbol::Sym(_),
-            } => unreachable!(),
-            DsExprKind::QualifiedPath { path, sym } => {
-                let LazySymbol::Name(sym_name) = sym else {
-                    // SAFETY: we already matched just above, it can only be that
-                    opt_unreachable!()
-                };
-                let mut mod_path = path.node.clone();
-
-                mod_path.pop();
-
-                let mut search_path = self.current_path.clone();
-                search_path.append(mod_path.clone());
-
-                if let Some(module) = self.orb.goto(&mod_path)
-                    && let Some(symref) = module.def_or_mod(&sym_name)
+                if path.len() == 1
+                    && let Some(PathSegment::Ident(name)) = path.get(0).cloned()
+                    && let Some(symref) = self.table.lookup(&name)
                 {
-                    // looked up in orb tree for absolute paths (in general)
-                    *sym = LazySymbol::Sym(symref);
+                    // a simple one segment path, just search in the symbol
+                    // table if we find something appropriate
+                    expr.expr = DsExprKind::Path(LazySymbol::Sym(symref));
 
                     Ok(())
-                } else if let Some(module) = self.orb.goto(&search_path)
-                    && let Some(symref) = module.def_or_mod(&sym_name)
+                } else if let Some(module) = self.orb.goto(&mod_path)
+                    && let Some(name) = &def_name
+                    && let Some(symref) = module.def_or_mod(name)
                 {
-                    // looked up in orb tree for relative paths (in general)
-                    *sym = LazySymbol::Sym(symref);
+                    // absolute path to a definition of the orb tree.
+                    expr.expr = DsExprKind::Path(LazySymbol::Sym(symref));
 
                     Ok(())
-                } else if let Some(symref) = self.table.lookup(&sym_name) {
-                    // looked up in scope for local module or imports (in general)
-                    *sym = LazySymbol::Sym(symref);
-
-                    Ok(())
-                } else if let Some(search_path) = self
-                    .table
-                    .lookup(mod_path.first().unwrap())
-                    .map(|sym| sym.path())
-                    && let Some(module) = self.orb.goto(&search_path)
-                    && let Some(symref) = module.def_or_mod(&sym_name)
+                } else if let Some(module) = self.orb.goto(&abs_mod_path)
+                    && let Some(name) = &def_name
+                    && let Some(symref) = module.def_or_mod(name)
                 {
-                    // looked up in orb tree for relative paths
+                    // relative path to a definition of the module but doesn't
+                    // take in charge import aliases.
                     //
-                    // a relative path is a path that does not start with `orb`,
-                    // and the first member is a refers to a module
+                    // In theory this is a peephole optimization to search
+                    // without thinking about import aliases.
+                    expr.expr = DsExprKind::Path(LazySymbol::Sym(symref));
 
-                    *sym = LazySymbol::Sym(symref);
+                    Ok(())
+                } else if let Some(first) = mod_path.first()
+                    && let Some(search_path) = self.table.lookup(first).map(|sym| sym.path())
+                    && let Some(module) = self.orb.goto(&search_path)
+                    && let Some(name) = &def_name
+                    && let Some(symref) = module.def_or_mod(name)
+                {
+                    // relative path to a definition with the first segment that
+                    // may be an import alias.
+                    expr.expr = DsExprKind::Path(LazySymbol::Sym(symref));
+
                     Ok(())
                 } else {
+                    // path not found.
                     Err(NotFoundInScope {
-                        name: path.node.to_string(),
-                        loc: path.loc.clone(),
+                        name: path.to_string(),
+                        loc: expr.loc.clone().unwrap(),
                     }
                     .into_diag())
                 }
             }
-            DsExprKind::Field { .. } => {
-                if let Some(path) = self.flatten_field_expr(expr) {
-                    *expr = DsExpression {
-                        expr: DsExprKind::QualifiedPath {
-                            sym: LazySymbol::Name(path.last().unwrap().clone()),
-                            path: SpannedPath {
-                                node: path,
-                                loc: expr.loc.clone().unwrap(),
-                            },
-                        },
-                        loc: expr.loc.clone(),
-                    };
+            DsExprKind::Path(LazySymbol::Sym(_)) | DsExprKind::Underscore => {
+                // SAFETY: they cannot be reached because they are constructed
+                // in this method, its an internal error if it is reached, so
+                // we panic.
+                opt_unreachable!()
+            }
+            DsExprKind::Field {
+                expr: exp,
+                field: _,
+            } => {
+                self.resolve_expr(&mut *exp)?;
 
-                    self.resolve_expr(expr)
-                } else {
-                    let DsExprKind::Field {
-                        expr: exp,
-                        member: _,
-                    } = &mut expr.expr
-                    else {
-                        // SAFETY: we already matched this expression we know
-                        // it is a member access for sure
-                        opt_unreachable!()
-                    };
-
-                    self.resolve_expr(&mut *exp)?;
-
-                    Ok(())
-                }
+                Ok(())
             }
             DsExprKind::FunDefinition {
                 args,
@@ -1424,35 +1381,6 @@ impl Desugarrer {
 
                 Ok(())
             }
-        }
-    }
-
-    /// Returns an effective path if the root of the effective path is a module,
-    /// and converts the nested member accesses to an effective path.
-    pub fn flatten_field_expr(&mut self, expr: &DsExpression) -> Option<EffectivePath> {
-        let mut path = Vec::new();
-        let mut current = expr;
-
-        while let DsExprKind::Field { expr, member } = &current.expr {
-            path.push(member.as_str());
-            current = &**expr;
-        }
-
-        match &current.expr {
-            DsExprKind::Ident(LazySymbol::Name(member)) => {
-                path.push(member);
-            }
-            _ => return None,
-        }
-
-        path.reverse();
-
-        if let Some(sym) = self.table.lookup(path.first().unwrap())
-            && sym.kind() == SymKind::Module
-        {
-            Some(EffectivePath::from_iter(path.iter()))
-        } else {
-            None
         }
     }
 
