@@ -9,6 +9,7 @@ lunc_ast = { workspace = true }
 lunc_cranelift_codegen = { workspace = true }
 lunc_diag = { workspace = true }
 lunc_dsir = { workspace = true }
+lunc_entity = { workspace = true }
 lunc_lexer = { workspace = true }
 lunc_linkage = { workspace = true }
 lunc_llib_meta = { workspace = true }

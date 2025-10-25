@@ -7,6 +7,7 @@ members = [
   "compiler/lunc_cranelift_codegen",
   "compiler/lunc_diag",
   "compiler/lunc_dsir",
+  "compiler/lunc_entity",
   "compiler/lunc_lexer",
   "compiler/lunc_linkage",
   "compiler/lunc_llib_meta",
@@ -29,6 +30,7 @@ lunc_ast = { path = "compiler/lunc_ast" }
 lunc_cranelift_codegen = { path = "compiler/lunc_cranelift_codegen" }
 lunc_diag = { path = "compiler/lunc_diag" }
 lunc_dsir = { path = "compiler/lunc_dsir" }
+lunc_entity = { path = "compiler/lunc_entity" }
 lunc_lexer = { path = "compiler/lunc_lexer" }
 lunc_linkage = { path = "compiler/lunc_linkage" }
 lunc_llib_meta = { path = "compiler/lunc_llib_meta" }
