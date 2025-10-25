@@ -16,6 +16,8 @@
 //!   file with the format corresponding to the orb type.
 //! - [lunc_llib_meta], contains the [ModuleTree], and everything related to the
 //!   metadata added inside of a `llib` orb type.
+//! - [lunc_entity], contains the entities types and definitions, used across
+//!   the compiler.
 //!
 //! [Tokens]: lunc_token::TokenStream
 //! [Ast]: lunc_parser::item::Module

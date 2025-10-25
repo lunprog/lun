@@ -856,6 +856,7 @@ dependencies = [
  "lunc_cranelift_codegen",
  "lunc_diag",
  "lunc_dsir",
+ "lunc_entity",
  "lunc_lexer",
  "lunc_linkage",
  "lunc_llib_meta",
@@ -913,6 +914,10 @@ dependencies = [
  "lunc_token",
  "lunc_utils",
 ]
+
+[[package]]
+name = "lunc_entity"
+version = "0.1.0"
 
 [[package]]
 name = "lunc_lexer"
