@@ -50,7 +50,7 @@ pub enum Item {
     },
     /// Extern block.
     ///
-    /// `"extern" ident "{" ( item )* "}"`
+    /// `"extern" strlit "{" ( item )* "}"`
     ExternBlock {
         abi: Abi,
         items: Vec<Item>,

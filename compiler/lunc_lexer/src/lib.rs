@@ -436,15 +436,16 @@ impl Lexer {
     fn lex_number_internal(&mut self) -> IResult<TokenType> {
         // Integer literal grammar:
         //
-        // int_lit = decimal_lit | binary_lit | octal_lit | hexadecimal_lit ;
-        // decimal_lit = "0" | decimal_digits ;
-        // binary_lit = ("0b" | "0B") binary_digits ;
-        // octal_lit = ("0o" | "0O") octal_digits ;
-        // hex_lit = ("0x" | "0X") hex_digits ;
-        // decimal_digits = { ["_"] decimal_digit } ;
-        // binary_digits = { ["_"] binary_digit } ;
-        // octal_digits = { ["_"] octal_digit } ;
-        // hex_digits = { ["_"] hex_digit } ;
+        // int_lit         = decimal_lit | binary_lit | octal_lit | hex_lit ;
+        // decimal_lit     = "0" | decimal_digits ;
+        // binary_lit      = ("0b" | "0B") binary_digits ;
+        // octal_lit       = ("0o" | "0O") octal_digits ;
+        // hex_lit         = ("0x" | "0X") hex_digits ;
+        //
+        // decimal_digits  = decimal_digit ( "_" decimal_digit )* ;
+        // binary_digits   = binary_digit  ( "_" binary_digit  )* ;
+        // octal_digits    = octal_digit   ( "_" octal_digit   )* ;
+        // hex_digits      = hex_digit     ( "_" hex_digit     )* ;
         let radix = match self.peek_nth(1) {
             Some('B' | 'b') if self.peek() == Some('0') => {
                 self.pop(); // 0
@@ -457,13 +458,14 @@ impl Lexer {
                 8
             }
             Some('X' | 'x') if self.peek() == Some('0') => {
-                // hexadecimal floating point number grammar:
+                // Hex float literal grammar:
                 //
-                // hex_float_lit = ("0x" | "0X") hex_mantissa hex_exponent ;
-                // hex_mantissa = ["_"] hex_digits "." [hex_digits]
-                //   | ["_"] hex_digits
-                //   | "." hex_digits ;
-                // hex_exponent = ("p" | "P") ["+" | "-"] decimal_digits ;
+                // hex_float_lit        = ("0x" | "0X") hex_mantissa hex_exponent ;
+                // hex_mantissa =
+                //       hex_digits "." [ hex_digits ]
+                //     | hex_digits
+                //     | "." hex_digits ;
+                // hex_exponent         = ("p" | "P") ["+" | "-"] decimal_digits ;
 
                 self.pop(); // 0
                 self.pop(); // X / x
@@ -608,13 +610,14 @@ impl Lexer {
 
         match self.peek() {
             Some('.') if radix == 10 => {
-                // Decimal floating point number grammar:
+                // Decimal float lit grammar:
                 //
-                // float_lit = decimal_float_lit | hex_float_lit ;
-                // decimal_float_lit = decimal_digits "." [decimal_digits] [ decimal_exponent ]
-                //   | decimal_digits decimal_exponent
-                //   | "." decimal_digits [decimal_exponent] ;
-                // decimal_exponent = ("e" | "E") ["+" | "-"] decimal_digits ;
+                // float_lit            = decimal_float_lit | hex_float_lit ;
+                // decimal_float_lit    =
+                //       decimal_digits "." [ decimal_digits ] [ decimal_exponent ]
+                //     | decimal_digits decimal_exponent
+                //     | "." decimal_digits [ decimal_exponent ] ;
+                // decimal_exponent     = ("e" | "E") ["+" | "-"] decimal_digits ;
                 self.pop();
 
                 let (frac_part, frac_divisor) = match self.peek() {
