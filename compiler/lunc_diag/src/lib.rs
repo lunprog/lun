@@ -213,7 +213,7 @@ impl SinkInner {
         let config = Config::default();
 
         for diag in &self.diags {
-            term::emit(writer, &config, &self.files, diag)?;
+            term::emit_to_write_style(writer, &config, &self.files, diag)?;
         }
 
         Ok(())
