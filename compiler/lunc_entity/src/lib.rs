@@ -260,7 +260,7 @@ impl<E: Entity, V: Clone> TightMap<E, V> {
 
             #[cfg(debug_assertions)]
             {
-                self.occupied.extend(std::iter::repeat(false).take(to_add));
+                self.occupied.extend(std::iter::repeat_n(false, to_add));
             }
         }
     }
@@ -318,5 +318,70 @@ impl<E: Entity, V: Clone> TightMap<E, V> {
 impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
     fn default() -> Self {
         TightMap::new()
+    }
+}
+
+/// Optimized version of [`Option<T>`] where T is an [`Entity`]. It uses the
+/// [reserved value] to represent the `None` variant, other things are similar
+/// to [`Option<T>`].
+///
+/// This type ensures that `Opt<E>` has the same size as `E`.
+///
+/// [reserved value]: Entity::RESERVED
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct Opt<E: Entity>(E);
+
+impl<E: Entity> Opt<E> {
+    /// Wraps `entity` in an `Opt<E>`.
+    ///
+    /// # Panic
+    ///
+    /// This function may panic if `entity` is the reserved value.
+    #[allow(non_snake_case)]
+    pub fn Some(entity: E) -> Opt<E> {
+        debug_assert_ne!(
+            entity,
+            E::RESERVED,
+            "Cannot make an Opt<E> from the reserved value."
+        );
+
+        Opt(entity)
+    }
+
+    /// Create a new `None` options.
+    #[allow(non_snake_case)]
+    pub const fn None() -> Opt<E> {
+        Opt(E::RESERVED)
+    }
+
+    /// Returns `true` if this is the `None` variant, `false` otherwise.
+    pub fn is_none(&self) -> bool {
+        self.0.is_reserved()
+    }
+
+    /// Returns `true` if this is the `Some(..)` variant, `false` otherwise.
+    pub fn is_some(&self) -> bool {
+        !self.0.is_reserved()
+    }
+
+    /// Expand the [`Opt<E>`] to a [`Option<E>`].
+    pub fn expand(self) -> Option<E> {
+        if self.is_none() { None } else { Some(self.0) }
+    }
+
+    /// Maps [`Opt<E>`] to [`Option<U>`] with `f`.
+    pub fn map<U>(self, f: impl FnOnce(E) -> U) -> Option<U> {
+        self.expand().map(f)
+    }
+
+    /// Unwrap the `Some(..)` variant or panic
+    #[track_caller]
+    pub fn unwrap(self) -> E {
+        self.expand().unwrap()
+    }
+
+    /// Takes the entity out of the option, leaving a `None` in its place.
+    pub fn take(&mut self) -> Opt<E> {
+        mem::replace(self, Self::None())
     }
 }
