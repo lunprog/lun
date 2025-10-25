@@ -14,6 +14,6 @@ lunc_token = { workspace = true }
 
 # other dependencies
 cranelift-frontend = { version = "0.124.1" }
-cranelift-codegen = { version = "0.124.1", features = ["all-native-arch"] }
+cranelift-codegen = { version = "0.125.3", features = ["all-native-arch"] }
 cranelift-module = { version = "0.124.1" }
 cranelift-object = { version = "0.124.1" }
