@@ -4,3 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    labels:
+      - "A-dependencies"
+    assignees:
+      - "thi8v"
