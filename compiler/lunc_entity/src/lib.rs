@@ -530,3 +530,192 @@ impl<E: Entity> Opt<E> {
         mem::replace(self, Self::None())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Create simple test entities with different associated Data types.
+    #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+    pub struct TestEntityA(u32);
+    entity!(TestEntityA, String);
+
+    #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+    pub struct TestEntityB(u32);
+    entity!(TestEntityB, i32);
+
+    #[test]
+    fn entity_new_and_index() {
+        let e0 = TestEntityA::new(0);
+        assert_eq!(e0.index(), 0);
+
+        let e7 = TestEntityA::new(7);
+        assert_eq!(e7.index(), 7);
+        assert!(e0 != e7);
+    }
+
+    #[test]
+    #[should_panic]
+    fn entity_new_reserved_panics() {
+        // The macro sets RESERVED = Self(u32::MAX) so creating with that id panics.
+        let _ = TestEntityA::new(u32::MAX as usize);
+    }
+
+    #[test]
+    fn entity_db_create_get_is_valid_count() {
+        let mut db = EntityDb::<TestEntityA>::new();
+        assert!(db.is_empty());
+        assert_eq!(db.count(), 0);
+
+        let a = db.create("first".to_string());
+        // The library intends each create to produce a distinct index.
+        // If implementation forgot to increment a last_id counter this assertion
+        // will catch it.
+        assert!(db.is_valid(a));
+        assert_eq!(db.count(), 1);
+        assert_eq!(db.get(a), "first");
+
+        let b = db.create("second".to_string());
+        assert!(db.is_valid(b));
+        assert_eq!(db.count(), 2);
+        // ensure values are stored and retrievable independently
+        assert_eq!(db.get(a), "first");
+        assert_eq!(db.get(b), "second");
+
+        // try_get on out-of-range entity returns None
+        let out_of_range = TestEntityA::new(1000);
+        assert_eq!(db.try_get(out_of_range), None);
+    }
+
+    #[test]
+    fn entity_db_get_mut() {
+        let mut db = EntityDb::<TestEntityA>::new();
+        let e = db.create("one".to_string());
+        {
+            let s = db.get_mut(e);
+            s.push_str(":mutated");
+        }
+        assert_eq!(db.get(e), "one:mutated");
+    }
+
+    #[test]
+    fn sparse_map_basic_ops() {
+        let mut m = SparseMap::<TestEntityA, usize>::new();
+        let e1 = TestEntityA::new(10);
+        assert!(!m.contains_entity(e1));
+        m.insert(e1, 123);
+        assert!(m.contains_entity(e1));
+        assert_eq!(m.get(e1), Some(&123));
+
+        // mutable access
+        if let Some(v) = m.get_mut(e1) {
+            *v += 7;
+        }
+        assert_eq!(m.get(e1), Some(&130));
+
+        m.clear();
+        assert!(!m.contains_entity(e1));
+        assert_eq!(m.get(e1), None);
+    }
+
+    #[test]
+    fn tight_map_insert_get_remove() {
+        // use i32 default value of 0
+        let mut tm = TightMap::<TestEntityB, i32>::with_default(0);
+
+        let e2 = TestEntityB::new(2);
+        // Initially out of range
+        assert_eq!(tm.get(e2), None);
+
+        tm.insert(e2, 55);
+        assert_eq!(tm.get(e2), Some(&55));
+
+        // insert at a higher index fills holes with default clone
+        let e5 = TestEntityB::new(5);
+        tm.insert(e5, 99);
+        assert_eq!(tm.get(e5), Some(&99));
+        // earlier indices that were never assigned should equal default (0)
+        assert_eq!(tm.get(TestEntityB::new(0)), Some(&0));
+
+        // remove returns previous value and resets slot to default
+        let prev = tm.remove(e5);
+        assert_eq!(prev, Some(99));
+        assert_eq!(tm.get(e5), Some(&0));
+
+        // removing an index that was never allocated returns None
+        let not_alloc = TestEntityB::new(1000);
+        assert_eq!(tm.remove(not_alloc), None);
+    }
+
+    #[test]
+    fn tight_map_get_mut_and_clear() {
+        let mut tm = TightMap::<TestEntityB, i32>::with_default(-1);
+        let e3 = TestEntityB::new(3);
+        tm.insert(e3, 7);
+
+        if let Some(v) = tm.get_mut(e3) {
+            *v = 42;
+        }
+        assert_eq!(tm.get(e3), Some(&42));
+
+        tm.clear();
+        assert_eq!(tm.get(e3), None);
+    }
+
+    #[test]
+    fn tight_map_default_new_works() {
+        // requires V: Default
+        let mut tm = TightMap::<TestEntityB, i32>::new();
+        // default is i32::default() == 0
+        let e1 = TestEntityB::new(1);
+        tm.insert(e1, 11);
+        assert_eq!(tm.get(e1), Some(&11));
+    }
+
+    #[test]
+    fn opt_some_none_and_expand() {
+        // None
+        let none_opt: Opt<TestEntityA> = Opt::None();
+        assert!(none_opt.is_none());
+        assert!(!none_opt.is_some());
+        assert_eq!(none_opt.expand(), None);
+
+        // Some
+        let some = Opt::Some(TestEntityA::new(3));
+        assert!(some.is_some());
+        assert!(!some.is_none());
+        assert_eq!(some.expand().unwrap().index(), 3);
+
+        // unwrap for Some
+        assert_eq!(Opt::Some(TestEntityA::new(4)).unwrap().index(), 4);
+
+        // map
+        let mapped = Opt::Some(TestEntityA::new(5)).map(|e| e.index() * 2);
+        assert_eq!(mapped, Some(10));
+
+        // take
+        let mut xx = Opt::Some(TestEntityA::new(6));
+        let taken = xx.take();
+        assert!(taken.is_some());
+        assert!(xx.is_none());
+    }
+
+    // debug-only test: creating Opt::Some with the reserved value triggers a debug assertion.
+    // Only run this test when debug assertions are enabled.
+    #[cfg(debug_assertions)]
+    #[test]
+    #[should_panic]
+    fn opt_some_with_reserved_panics_in_debug() {
+        let reserved = TestEntityA::RESERVED;
+        let _ = Opt::Some(reserved);
+    }
+
+    // debug-only test: ensure we can create the RESERVED sentinel via Opt::None
+    #[test]
+    fn opt_none_is_reserved_under_the_hood() {
+        let none: Opt<TestEntityA> = Opt::None();
+        assert!(none.is_none());
+        // expanding should yield None
+        assert_eq!(none.expand(), None);
+    }
+}
