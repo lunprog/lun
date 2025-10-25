@@ -1,42 +1,120 @@
-//! Entities, described in [#56].
+//! Entities -- strongly-typed, lightweight integer identifiers used
+//! throughout the compiler.
 //!
-//! [#56]: https://github.com/lunprog/lun/issues/56
-#![doc(
-    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
-)]
+//! This module implements a small, local replacement to the old
+//! globally-tracked `idtype`-like identifiers. An [`Entity`] is a `Copy`
+//! wrapper around an integer (by default `u32`) and carries an associated
+//! `Data` type. The important properties of [`Entity`] are:
+//!
+//! - **Local lifetime**: entities and their data live inside an
+//!   [`EntityDb<E>`]. There is no global registry and no reference-count-like
+//!   tracking of live handles. Dropping the database drops all associated data.
+//! - **Efficient representation**: entities are small (same size as the
+//!   primitive) and [`Opt<E>`] provides a same-sized representation for
+//!   optional entities by reserving one sentinel value.
+//! - **Two map flavours**: use [`SparseMap`] for sparse, non-contiguous ids and
+//!   [`TightMap`] for dense, mostly-contiguous ids (backed by a [`Vec`]).
+//!
+//! The APIs are intentionally small and predictable — this makes them easy
+//! to use inside compiler data structures such as control-flow graphs, symbol
+//! tables or intermediate representations.
+//!
+//! # Quick example
+//!
+//! ```rust
+//! # use std::fmt::Debug;
+//! # use std::hash::Hash;
+//! # use std::marker::PhantomData;
+//! # use std::collections::HashMap;
+//! use lunc_entity::{entity, EntityDb};
+//!
+//! // Define a new entity type and its data
+//! #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+//! pub struct MyEntity(u32);
+//!
+//! // Implement the entity using the helper macro in this crate. In real code
+//! // this macro is exported by the crate and you call it from user code.
+//! entity!(MyEntity, String);
+//!
+//! // Create a small database, insert one entity and read its data.
+//! let mut db = EntityDb::<MyEntity>::new();
+//! let e = db.create("hello".to_string());
+//! assert_eq!(db.get(e), &"hello".to_string());
+//! ```
 
 use std::{collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData, mem};
 
-/// An entity is a type that is a wrapper around an integer primitive and
-/// cost-less clone/copy, used across the compiler.
+/// An entity is a tiny, `Copy` identifier used across the compiler.
+///
+/// Think of an `Entity` as a type-safe wrapper around a primitive integer
+/// (commonly `u32`). Each `Entity` implementation must declare the associated
+/// `Data` type, that is the type stored inside an `EntityDb<E>` for that entity
+/// — and provide a `RESERVED` value which is used as a sentinel for `Opt<E>`.
+///
+/// Implementations are typically generated with the `entity!` macro.
+///
+/// # Example
+///
+/// ```rust
+/// # use std::fmt::Debug;
+/// # use std::hash::Hash;
+///
+/// use lunc_entity::{entity, Entity};
+///
+/// #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+/// pub struct Foo(u32);
+///
+/// entity!(Foo, ());
+///
+/// let x = Foo::new(0);
+/// assert_eq!(x.index(), 0);
+/// ```
 pub trait Entity: Debug + Copy + PartialEq + Eq + Hash {
-    /// The data that the entity stores.
+    /// The data associated with this entity. [`EntityDb<E>`] stores values of
+    /// this type.
     type Data: Sized;
 
-    /// A reserved value, an id that is illegal for the entity to take, by
-    /// default it should always be `u32::MAX`.
+    /// A reserved value that is illegal for normal entities. This sentinel is
+    /// used by [`Opt<E>`] to represent [`None`] without increasing size.
+    ///
+    /// The [`entity!`] macro defaults this to `Self(u32::MAX)` for wrapper
+    /// structs around `u32`.
+    ///
+    /// [`None`]: Opt::None
     const RESERVED: Self;
 
-    /// Create a new [`Entity`] with the given `id`.
+    /// Create a new `Entity` with the provided `id`.
     ///
-    /// # Panic
+    /// # Panics
     ///
-    /// This function will panic if the id is not representable: outside of the
-    /// range of the underlying type or if it is the [`Entity::RESERVED`].
+    /// Panics if `id` does not fit the underlying representation or if it
+    /// would equal [`Entity::RESERVED`].
     fn new(id: usize) -> Self;
 
-    /// Returns the underlying id of the [`Entity`], starts always at zero.
+    /// Returns the underlying zero-based index of this [`Entity`].
     fn index(self) -> usize;
 
-    /// Is this entity using the reserved id?
+    /// Is this the reserved sentinel value?
     #[inline(always)]
     fn is_reserved(self) -> bool {
         self == Entity::RESERVED
     }
 }
 
-/// Implement the [`Entity`] trait for `$entity` with `$entity_data` as the data
-/// type.
+/// Convenience macro to implement an [`Entity`] for a simple wrapper type (like
+/// `struct MyE(u32);`).
+///
+/// It fills in `Entity::Data`, `RESERVED` and the `new`/`index` helpers.
+///
+/// # Example
+///
+/// ```rust
+/// use lunc_entity::entity;
+///
+/// #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+/// pub struct MyEntity(u32);
+/// entity!(MyEntity, i32);
+/// ```
 #[macro_export]
 macro_rules! entity {
     ($entity:ty, $entity_data:ty) => {
@@ -65,8 +143,27 @@ macro_rules! entity {
     };
 }
 
-/// [`Entity`] database, this is where the associated data of an entity is
-/// stored.
+/// [`EntityDb<E>`] stores the primary data associated with an entity type `E`,
+/// [`Entity::Data`].
+///
+/// Internally it is just a `Vec<E::Data>` and entities are the indices into
+/// that vector. Use [`EntityDb::create`] to allocate a new entity and push its
+/// associated data. Data is dropped only when the [`EntityDb`] itself is dropped.
+///
+/// # Example
+///
+/// ```rust
+/// use lunc_entity::{entity, EntityDb};
+///
+/// #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+/// pub struct Id(u32);
+/// entity!(Id, String);
+///
+/// let mut db = EntityDb::<Id>::new();
+/// let id = db.create("value".to_string());
+/// assert!(db.is_valid(id));
+/// assert_eq!(db.get(id), &"value".to_string());
+/// ```
 #[derive(Debug, Clone)]
 pub struct EntityDb<E: Entity> {
     /// the data being stored
@@ -77,7 +174,7 @@ pub struct EntityDb<E: Entity> {
 }
 
 impl<E: Entity> EntityDb<E> {
-    /// Create a new [`EntityDb`].
+    /// Create a new, empty [`EntityDb`].
     pub fn new() -> EntityDb<E> {
         EntityDb {
             elems: Vec::new(),
@@ -86,7 +183,7 @@ impl<E: Entity> EntityDb<E> {
         }
     }
 
-    /// Create a new [`EntityDb`] with at least `cap`, pre-allocated.
+    /// Create a new [`EntityDb`] with capacity reserved for `cap` elements.
     pub fn with_capacity(cap: usize) -> EntityDb<E> {
         EntityDb {
             elems: Vec::with_capacity(cap),
@@ -94,51 +191,47 @@ impl<E: Entity> EntityDb<E> {
         }
     }
 
-    /// Create a new entity with the given `data`.
+    /// Allocate a new entity and store `data` for it. The returned value is a
+    /// fresh `E` whose index corresponds to the pushed slot.
     pub fn create(&mut self, data: E::Data) -> E {
         let entity = E::new(self.last_id);
+        self.last_id += 1;
 
         self.elems.push(data);
 
         entity
     }
 
-    /// Checks if `entity` is valid in this database.
+    /// Checks whether `entity` refers to a slot inside this database.
     pub fn is_valid(&self, entity: E) -> bool {
         entity.index() < self.elems.len()
     }
 
-    /// Tries to get the data associated with `entity`.
+    /// Try to get a reference to the data for `entity`.
     pub fn try_get(&self, entity: E) -> Option<&E::Data> {
         self.elems.get(entity.index())
     }
 
-    /// Tries to get the data associated with `entity`, but mutable version.
+    /// Mutable version of `try_get`.
     pub fn try_get_mut(&mut self, entity: E) -> Option<&mut E::Data> {
         self.elems.get_mut(entity.index())
     }
 
-    /// Get the data associated with `entity`.
+    /// Get the data for `entity` and panic if it is invalid.
     ///
-    /// # Panic
-    ///
-    /// This function may panic if `entity` is not valid.
+    /// This is a convenience wrapper around `try_get`.
     #[inline(always)]
     pub fn get(&self, entity: E) -> &E::Data {
         self.try_get(entity).unwrap()
     }
 
-    /// Get the data associated with `entity`, but mutable version.
-    ///
-    /// # Panic
-    ///
-    /// This function may panic if `entity` is not valid.
+    /// Mutable `get`.
     #[inline(always)]
-    pub fn get_mut(&mut self, entity: E) -> &E::Data {
+    pub fn get_mut(&mut self, entity: E) -> &mut E::Data {
         self.try_get_mut(entity).unwrap()
     }
 
-    /// Count of how many entities were created.
+    /// Number of entities allocated in this database.
     #[inline(always)]
     pub fn count(&self) -> usize {
         self.elems.len()
@@ -157,11 +250,27 @@ impl<E: Entity> Default for EntityDb<E> {
     }
 }
 
-/// A map to associate other data than [`Entity::Data`] to an [`Entity`].
-/// Designed for sparse ID sets: use when entities are assigned non-contiguous
-/// IDs with frequent holes.
+/// A [`SparseMap`] associates arbitrary values to [`Entity`]. Internally backed
+/// by an hash map and suitable for sparse, non-contiguous entity id sets.
 ///
-/// See also [`TightMap`].
+/// Prefer `SparseMap` when entity ids will have many gaps or when allocations
+/// are occasional.
+///
+/// # Example
+///
+/// ```rust
+/// use lunc_entity::{entity, SparseMap, Entity};
+///
+/// #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+/// pub struct Node(u32);
+/// entity!(Node, ());
+///
+/// let mut map = SparseMap::<Node, i32>::new();
+/// let n = Node::new(10);
+/// map.insert(n, 42);
+/// assert_eq!(map.get(n), Some(&42));
+/// assert!(map.contains_entity(n));
+/// ```
 #[derive(Debug, Clone)]
 pub struct SparseMap<E: Entity, V> {
     elems: HashMap<usize, V>,
@@ -177,7 +286,7 @@ impl<E: Entity, V> SparseMap<E, V> {
         }
     }
 
-    /// Insert a new `value` for `entity`, over-writing the previous one if any.
+    /// Insert a value for `entity`, replacing any previous value.
     pub fn insert(&mut self, entity: E, value: V) {
         self.elems.insert(entity.index(), value);
     }
@@ -187,17 +296,17 @@ impl<E: Entity, V> SparseMap<E, V> {
         self.elems.get(&entity.index())
     }
 
-    /// Get the value associated with `entity`, but mutable version.
+    /// Mutable `get`.
     pub fn get_mut(&mut self, entity: E) -> Option<&mut V> {
         self.elems.get_mut(&entity.index())
     }
 
-    /// Clear the hole map.
+    /// Clear the map.
     pub fn clear(&mut self) {
         self.elems.clear();
     }
 
-    /// Does this map contains the `entity`?
+    /// Does this map contain a value for `entity`?
     pub fn contains_entity(&self, entity: E) -> bool {
         self.get(entity).is_some()
     }
@@ -209,14 +318,34 @@ impl<E: Entity, V> Default for SparseMap<E, V> {
     }
 }
 
-/// A map to associate other data than [`Entity::Data`] to an [`Entity`].
-/// Optimized for densely-numbered entities: choose this collection when entity
-/// IDs are large and form a mostly contiguous range (rarely or never missing).
-/// If you cannot ensure that please use [`SparseMap`].
+/// [`TightMap`] associates additional data to entities using a contiguous
+/// `Vec`.
 ///
-/// With this collection, the "holes" will be filled with a default value.
+/// Use this map when the set of keys is dense or mostly contiguous. On
+/// insertions [`TightMap`] will extend its internal `Vec` and fill holes with a
+/// cloned `default` value.
 ///
-/// See also [`SparseMap`].
+/// # Note
+///
+/// `V` must implement [`Clone`] because the default value is cloned to fill new
+/// slots. When `remove` is called, the slot is reset back to the default value
+/// and the previous value is returned.
+///
+/// # Example
+///
+/// ```rust
+/// use lunc_entity::{entity, TightMap, Entity};
+///
+/// #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+/// pub struct Reg(u32);
+/// entity!(Reg, ());
+///
+/// // default value is 0
+/// let mut tm = TightMap::<Reg, i32>::new();
+/// let r = Reg::new(2);
+/// tm.insert(r, 7);
+/// assert_eq!(tm.get(r), Some(&7));
+/// ```
 #[derive(Debug, Clone)]
 pub struct TightMap<E: Entity, V: Clone> {
     _e: PhantomData<fn(E) -> V>,
@@ -230,8 +359,9 @@ pub struct TightMap<E: Entity, V: Clone> {
 }
 
 impl<E: Entity, V: Clone> TightMap<E, V> {
-    /// Create a new empty [`TightMap`] with the default value of `V` being
-    /// [`Default::default`].
+    /// Create a new [`TightMap`] using [`V::default()`] as the default.
+    ///
+    /// [`V::default()`]: Default::default
     pub fn new() -> TightMap<E, V>
     where
         V: Default,
@@ -239,8 +369,7 @@ impl<E: Entity, V: Clone> TightMap<E, V> {
         TightMap::with_default(Default::default())
     }
 
-    /// Create a new empty [`TightMap`] with the default value of `V` being
-    /// `default`.
+    /// Create a new [`TightMap`] with the provided `default` value.
     pub fn with_default(default: V) -> TightMap<E, V> {
         TightMap {
             _e: PhantomData,
@@ -265,7 +394,8 @@ impl<E: Entity, V: Clone> TightMap<E, V> {
         }
     }
 
-    /// Insert a new `value` for `entity`, over-writing the previous one if any.
+    /// Insert a value for `entity`, expanding the underlying `Vec` if
+    /// necessary. This overwrites any previous value.
     pub fn insert(&mut self, entity: E, value: V) {
         self.ensure_index(entity.index());
 
@@ -278,10 +408,8 @@ impl<E: Entity, V: Clone> TightMap<E, V> {
         };
     }
 
-    /// Remove the `entity` from this map, return the value stored before,
-    /// please note that the value before may be the default value of this map,
-    /// if this function return `Some(..)` it does not guarantee that there was
-    /// ever a matching `TightMap::insert` call.
+    /// Remove the value for `entity`. Returns the previous value (which may be
+    /// the default), or [`None`] if the index is out of range.
     pub fn remove(&mut self, entity: E) -> Option<V> {
         let idx = entity.index();
 
@@ -299,17 +427,17 @@ impl<E: Entity, V: Clone> TightMap<E, V> {
         }
     }
 
-    /// Get the value associated with `entity`.
+    /// Get the value for `entity`.
     pub fn get(&self, entity: E) -> Option<&V> {
         self.elems.get(entity.index())
     }
 
-    /// Get the value associated with `entity`, but mutable version.
+    /// Mutable `get`.
     pub fn get_mut(&mut self, entity: E) -> Option<&mut V> {
         self.elems.get_mut(entity.index())
     }
 
-    /// Clear the hole map.
+    /// Clear the map contents.
     pub fn clear(&mut self) {
         self.elems.clear();
     }
@@ -321,22 +449,39 @@ impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
     }
 }
 
-/// Optimized version of [`Option<T>`] where T is an [`Entity`]. It uses the
-/// [reserved value] to represent the `None` variant, other things are similar
-/// to [`Option<T>`].
+/// [`Opt<E>`] is an optimized [`Option<E>`]: it stores an [`Entity`] but reuses
+/// the [`Entity::RESERVED`] sentinel to represent `None`. This ensures `Opt<E>`
+/// is the same size as `E`.
 ///
-/// This type ensures that `Opt<E>` has the same size as `E`.
+/// # Note
 ///
-/// [reserved value]: Entity::RESERVED
+/// Constructing [`Opt::Some`] with the reserved value will trigger a panic in
+/// debug mode (in release mod it's just an Undefined Behavior).
+///
+/// # Example
+///
+/// ```rust
+/// use lunc_entity::{entity, Opt, Entity};
+///
+/// #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+/// pub struct Slot(u32);
+/// entity!(Slot, ());
+///
+/// // None variant:
+/// let mut o: Opt<Slot> = Opt::None();
+/// assert!(o.is_none());
+///
+/// // Some variant:
+/// let some = Opt::Some(Slot::new(1));
+/// assert!(some.is_some());
+/// assert_eq!(some.unwrap().index(), 1);
+/// ```
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Opt<E: Entity>(E);
 
 impl<E: Entity> Opt<E> {
-    /// Wraps `entity` in an `Opt<E>`.
-    ///
-    /// # Panic
-    ///
-    /// This function may panic if `entity` is the reserved value.
+    /// Construct a [`Some(entity)`]. Panics (in debug mode) if `entity` is the
+    /// reserved Entity.
     #[allow(non_snake_case)]
     pub fn Some(entity: E) -> Opt<E> {
         debug_assert_ne!(
@@ -348,39 +493,39 @@ impl<E: Entity> Opt<E> {
         Opt(entity)
     }
 
-    /// Create a new `None` options.
+    /// Construct a `None` option.
     #[allow(non_snake_case)]
     pub const fn None() -> Opt<E> {
         Opt(E::RESERVED)
     }
 
-    /// Returns `true` if this is the `None` variant, `false` otherwise.
+    /// Is this `None`?
     pub fn is_none(&self) -> bool {
         self.0.is_reserved()
     }
 
-    /// Returns `true` if this is the `Some(..)` variant, `false` otherwise.
+    /// Is this `Some`?
     pub fn is_some(&self) -> bool {
         !self.0.is_reserved()
     }
 
-    /// Expand the [`Opt<E>`] to a [`Option<E>`].
+    /// Convert to a standard `Option<E>`.
     pub fn expand(self) -> Option<E> {
         if self.is_none() { None } else { Some(self.0) }
     }
 
-    /// Maps [`Opt<E>`] to [`Option<U>`] with `f`.
+    /// Map an `Opt<E>` to `Option<U>` using the provided function.
     pub fn map<U>(self, f: impl FnOnce(E) -> U) -> Option<U> {
         self.expand().map(f)
     }
 
-    /// Unwrap the `Some(..)` variant or panic
+    /// Unwrap the contained `Entity` or panic if `None`.
     #[track_caller]
     pub fn unwrap(self) -> E {
         self.expand().unwrap()
     }
 
-    /// Takes the entity out of the option, leaving a `None` in its place.
+    /// Take the stored entity, leaving a `None` in its place.
     pub fn take(&mut self) -> Opt<E> {
         mem::replace(self, Self::None())
     }
