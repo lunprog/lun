@@ -9,11 +9,11 @@ use lunc_ast::{
     Abi, BinOp, ItemContainer, Mutability, Spanned, UnOp,
     symbol::{SymKind, Symbol, Type, Typeness, ValueExpr},
 };
-use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
-use lunc_dsir::{
+use lunc_desugar::{
     DsArg, DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsStatement,
     DsStmtKind, OSpan, SpannedPath,
 };
+use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
 use lunc_llib_meta::ModuleTree;
 use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::{
@@ -32,7 +32,7 @@ mod safety_ck;
 
 /// A semantic checked module, see the dsir version [`DsModule`]
 ///
-/// [`DsModule`]: lunc_dsir::DsModule
+/// [`DsModule`]: lunc_desugar::DsModule
 #[derive(Debug, Clone)]
 pub struct ScModule {
     pub items: Vec<ScItem>,
@@ -65,12 +65,12 @@ impl FromHigher for ScModule {
 
 /// A semantic checked item, see the dsir version [`DsItem`]
 ///
-/// [`DsItem`]: lunc_dsir::DsItem
+/// [`DsItem`]: lunc_desugar::DsItem
 #[derive(Debug, Clone)]
 pub enum ScItem {
     /// See [`DsItem::GlobalDef`]
     ///
-    /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
+    /// [`DsItem::GlobalDef`]: lunc_desugar::DsItem::GlobalDef
     GlobalDef {
         name: Spanned<String>,
         mutability: Mutability,
@@ -82,7 +82,7 @@ pub enum ScItem {
     },
     /// See [`DsItem::GlobalUninit`]
     ///
-    /// [`DsItem::GlobalUninit`]: lunc_dsir::DsItem::GlobalUninit
+    /// [`DsItem::GlobalUninit`]: lunc_desugar::DsItem::GlobalUninit
     GlobalUninit {
         name: Spanned<String>,
         typeexpr: ScExpression,
@@ -92,8 +92,8 @@ pub enum ScItem {
     },
     /// A [`DsItem::GlobalDef`] and a [`DsExprKind::FunDefinition`] combined.
     ///
-    /// [`DsExprKind::FunDefinition`]: lunc_dsir::DsExprKind::FunDefinition
-    /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
+    /// [`DsExprKind::FunDefinition`]: lunc_desugar::DsExprKind::FunDefinition
+    /// [`DsItem::GlobalDef`]: lunc_desugar::DsItem::GlobalDef
     FunDefinition {
         name: Spanned<String>,
         typeexpr: Box<Option<ScExpression>>,
@@ -107,8 +107,8 @@ pub enum ScItem {
     },
     /// A [`DsItem::GlobalDef`] and a [`DsExprKind::FunDeclaration`] combined.
     ///
-    /// [`DsExprKind::FunDeclaration`]: lunc_dsir::DsExprKind::FunDeclaration
-    /// [`DsItem::GlobalDef`]: lunc_dsir::DsItem::GlobalDef
+    /// [`DsExprKind::FunDeclaration`]: lunc_desugar::DsExprKind::FunDeclaration
+    /// [`DsItem::GlobalDef`]: lunc_desugar::DsItem::GlobalDef
     FunDeclaration {
         name: Spanned<String>,
         typeexpr: Box<Option<ScExpression>>,
@@ -123,7 +123,7 @@ pub enum ScItem {
     },
     /// See [`DsItem::Module`]
     ///
-    /// [`DsItem::Module`]: lunc_dsir::DsItem::Module
+    /// [`DsItem::Module`]: lunc_desugar::DsItem::Module
     Module {
         /// the name of the module when declared
         name: String,
@@ -136,7 +136,7 @@ pub enum ScItem {
     },
     /// See [`DsItem::ExternBlock`]
     ///
-    /// [`DsItem::ExternBlock`]: lunc_dsir::DsItem::ExternBlock
+    /// [`DsItem::ExternBlock`]: lunc_desugar::DsItem::ExternBlock
     ExternBlock {
         abi: Abi,
         items: Vec<ScItem>,
@@ -288,7 +288,7 @@ pub struct FunDefInfo {
 
 /// A semantic checked expression, see the dsir version [`DsExpression`]
 ///
-/// [`DsExpr`]: lunc_dsir::DsExpression
+/// [`DsExpr`]: lunc_desugar::DsExpression
 #[derive(Debug, Clone)]
 pub struct ScExpression {
     pub expr: ScExprKind,
@@ -479,24 +479,24 @@ impl FromHigher for ScExpression {
 
 /// A semantic checked internal expression, see the dsir version [`DsExprKind`]
 ///
-/// [`DsExprKind`]: lunc_dsir::DsExprKind
+/// [`DsExprKind`]: lunc_desugar::DsExprKind
 #[derive(Debug, Clone)]
 pub enum ScExprKind {
     /// See [`DsExprKind::Lit`]
     ///
-    /// [`DsExprKind::Lit`]: lunc_dsir::DsExprKind::Lit
+    /// [`DsExprKind::Lit`]: lunc_desugar::DsExprKind::Lit
     Lit(Lit),
     /// See [`DsExprKind::BoolLit`]
     ///
-    /// [`DsExprKind::BoolLit`]: lunc_dsir::DsExprKind::BoolLit
+    /// [`DsExprKind::BoolLit`]: lunc_desugar::DsExprKind::BoolLit
     BoolLit(bool),
     /// See [`DsExprKind::Path`]
     ///
-    /// [`DsExprKind::Path`]: lunc_dsir::DsExprKind::Path
+    /// [`DsExprKind::Path`]: lunc_desugar::DsExprKind::Path
     Path(Symbol),
     /// See [`DsExprKind::Binary`]
     ///
-    /// [`DsExprKind::Binary`]: lunc_dsir::DsExprKind::Binary
+    /// [`DsExprKind::Binary`]: lunc_desugar::DsExprKind::Binary
     Binary {
         lhs: Box<ScExpression>,
         op: BinOp,
@@ -504,22 +504,22 @@ pub enum ScExprKind {
     },
     /// See [`DsExprKind::Unary`]
     ///
-    /// [`DsExprKind::Unary`]: lunc_dsir::DsExprKind::Unary
+    /// [`DsExprKind::Unary`]: lunc_desugar::DsExprKind::Unary
     Unary { op: UnOp, expr: Box<ScExpression> },
     /// See [`DsExprKind::Borrow`]
     ///
-    /// [`DsExprKind::Borrow`]: lunc_dsir::DsExprKind::Borrow
+    /// [`DsExprKind::Borrow`]: lunc_desugar::DsExprKind::Borrow
     Borrow(Mutability, Box<ScExpression>),
     /// See [`DsExprKind::Call`]
     ///
-    /// [`DsExprKind::Call`]: lunc_dsir::DsExprKind::Call
+    /// [`DsExprKind::Call`]: lunc_desugar::DsExprKind::Call
     Call {
         callee: Box<ScExpression>,
         args: Vec<ScExpression>,
     },
     /// See [`DsExprKind::If`]
     ///
-    /// [`DsExprKind::If`]: lunc_dsir::DsExprKind::If
+    /// [`DsExprKind::If`]: lunc_desugar::DsExprKind::If
     If {
         cond: Box<ScExpression>,
         then_br: Box<ScExpression>,
@@ -527,7 +527,7 @@ pub enum ScExprKind {
     },
     /// See [`DsExprKind::Block`]
     ///
-    /// [`DsExprKind::Block`]: lunc_dsir::DsExprKind::Block
+    /// [`DsExprKind::Block`]: lunc_desugar::DsExprKind::Block
     Block {
         label: Option<Spanned<String>>,
         block: ScBlock,
@@ -536,7 +536,7 @@ pub enum ScExprKind {
     },
     /// See [`DsExprKind::Loop`]
     ///
-    /// [`DsExprKind::Loop`]: lunc_dsir::DsExprKind::Loop
+    /// [`DsExprKind::Loop`]: lunc_desugar::DsExprKind::Loop
     Loop {
         label: Option<Spanned<String>>,
         body: ScBlock,
@@ -545,11 +545,11 @@ pub enum ScExprKind {
     },
     /// See [`DsExprKind::Return`]
     ///
-    /// [`DsExprKind::Return`]: lunc_dsir::DsExprKind::Return
+    /// [`DsExprKind::Return`]: lunc_desugar::DsExprKind::Return
     Return { expr: Option<Box<ScExpression>> },
     /// See [`DsExprKind::Break`]
     ///
-    /// [`DsExprKind::Break`]: lunc_dsir::DsExprKind::Break
+    /// [`DsExprKind::Break`]: lunc_desugar::DsExprKind::Break
     Break {
         label: Option<String>,
         expr: Option<Box<ScExpression>>,
@@ -558,7 +558,7 @@ pub enum ScExprKind {
     },
     /// See [`DsExprKind::Continue`]
     ///
-    /// [`DsExprKind::Continue`]: lunc_dsir::DsExprKind::Continue
+    /// [`DsExprKind::Continue`]: lunc_desugar::DsExprKind::Continue
     Continue {
         label: Option<String>,
         /// label index after checking MUST be `Some(..)`
@@ -566,13 +566,13 @@ pub enum ScExprKind {
     },
     /// See [`DsExprKind::Null`]
     ///
-    /// [`DsExprKind::Null`]: lunc_dsir::DsExprKind::Null
+    /// [`DsExprKind::Null`]: lunc_desugar::DsExprKind::Null
     Null,
     /// See [`DsExprKind::Field`]
     ///
     /// After the name resolution, member access of modules are converted to [`EffectivePath`]
     ///
-    /// [`DsExprKind::Field`]: lunc_dsir::DsExprKind::Field
+    /// [`DsExprKind::Field`]: lunc_desugar::DsExprKind::Field
     /// [`EffectivePath`]: lunc_ast::symbol::EffectivePath
     Field {
         expr: Box<ScExpression>,
@@ -593,11 +593,11 @@ pub enum ScExprKind {
     Underscore,
     /// See [`DsExprKind::PointerType`]
     ///
-    /// [`DsExprKind::PointerType`]: lunc_dsir::DsExprKind::PointerType
+    /// [`DsExprKind::PointerType`]: lunc_desugar::DsExprKind::PointerType
     PointerType(Mutability, Box<ScExpression>),
     /// See [`DsExprKind::FunPtrType`]
     ///
-    /// [`DsExprKind::FunPtrType`]: lunc_dsir::DsExprKind::FunPtrType
+    /// [`DsExprKind::FunPtrType`]: lunc_desugar::DsExprKind::FunPtrType
     FunPtrType {
         args: Vec<ScExpression>,
         ret: Option<Box<ScExpression>>,
@@ -609,13 +609,13 @@ pub enum ScExprKind {
     /// This node is not emitted from the DsExpr equivalent it is emitted when
     /// we encounter an error in the lowering.
     ///
-    /// [`DsExprKind::Poisoned`]: lunc_dsir::DsExprKind::Poisoned
+    /// [`DsExprKind::Poisoned`]: lunc_desugar::DsExprKind::Poisoned
     Poisoned { diag: Option<Diagnostic> },
 }
 
 /// A semantic checked argument, see the dsir version [`DsArg`]
 ///
-/// [`DsArg`]: lunc_dsir::DsArg
+/// [`DsArg`]: lunc_desugar::DsArg
 #[derive(Debug, Clone)]
 pub struct ScArg {
     pub name: String,
@@ -649,7 +649,7 @@ impl FromHigher for ScArg {
 
 /// A semantic checked block, see the dsir version [`DsBlock`]
 ///
-/// [`DsBlock`]: lunc_dsir::DsBlock
+/// [`DsBlock`]: lunc_desugar::DsBlock
 #[derive(Debug, Clone)]
 pub struct ScBlock {
     pub stmts: Vec<ScStatement>,
@@ -686,7 +686,7 @@ impl FromHigher for ScBlock {
 
 /// A semantic checked statement, see the dsir version [`DsStatement`]
 ///
-/// [`DsStatement`]: lunc_dsir::DsStatement
+/// [`DsStatement`]: lunc_desugar::DsStatement
 #[derive(Debug, Clone)]
 pub struct ScStatement {
     pub stmt: ScStmtKind,
@@ -726,7 +726,7 @@ impl FromHigher for ScStatement {
 pub enum ScStmtKind {
     /// See [`DsStmtKind::BindingDef`]
     ///
-    /// [`DsStmtKind::BindingDef`]: lunc_dsir::DsStmtKind::BindingDef
+    /// [`DsStmtKind::BindingDef`]: lunc_desugar::DsStmtKind::BindingDef
     BindingDef {
         name: Spanned<String>,
         mutability: Mutability,
@@ -736,11 +736,11 @@ pub enum ScStmtKind {
     },
     /// See [`DsStmtKind::Defer`]
     ///
-    /// [`DsStmtKind::Defer`]: lunc_dsir::DsStmtKind::Defer
+    /// [`DsStmtKind::Defer`]: lunc_desugar::DsStmtKind::Defer
     Defer { expr: ScExpression },
     /// See [`DsStmtKind::Expression`]
     ///
-    /// [`DsStmtKind::Expression`]: lunc_dsir::DsStmtKind::Expression
+    /// [`DsStmtKind::Expression`]: lunc_desugar::DsStmtKind::Expression
     Expression(ScExpression),
 }
 

@@ -6,7 +6,7 @@
 //!   [lunc_parser].
 //! - [lunc_parser], parses the [Tokens] into an [Ast]
 //! - [lunc_ast], AST types shared across compiler stages
-//! - [lunc_dsir], desugars the [Ast] to [Dsir] and resolve names
+//! - [lunc_desugar], desugars the [Ast] to [Dsir] and resolve names
 //! - [lunc_scir], lowers [Dsir] to [Scir] and perform various semantic checks
 //!   and add types
 //! - [lunc_cranelift_codegen], generates the Cranelift IR from [Scir]
@@ -21,7 +21,7 @@
 //!
 //! [Tokens]: lunc_token::TokenStream
 //! [Ast]: lunc_parser::item::Module
-//! [Dsir]: lunc_dsir::DsModule
+//! [Dsir]: lunc_desugar::DsModule
 //! [Scir]: lunc_scir::ScModule
 //! [codegen]: lunc_cranelift_codegen
 //! [ModuleTree]: lunc_llib_meta::ModuleTree
@@ -49,8 +49,8 @@ use termcolor::{ColorChoice, ColorChoiceParseError, StandardStream};
 use thiserror::Error;
 
 use lunc_cranelift_codegen::{ClifGen, ClifGenContext, OptLevel};
+use lunc_desugar::Desugarrer;
 use lunc_diag::{DiagnosticSink, FileId};
-use lunc_dsir::Desugarrer;
 use lunc_lexer::Lexer;
 use lunc_parser::Parser;
 use lunc_scir::SemaChecker;

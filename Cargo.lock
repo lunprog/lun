@@ -854,8 +854,8 @@ dependencies = [
  "humantime",
  "lunc_ast",
  "lunc_cranelift_codegen",
+ "lunc_desugar",
  "lunc_diag",
- "lunc_dsir",
  "lunc_entity",
  "lunc_lexer",
  "lunc_linkage",
@@ -894,16 +894,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "lunc_diag"
-version = "0.1.0"
-dependencies = [
- "codespan-reporting",
- "lunc_utils",
- "thiserror",
-]
-
-[[package]]
-name = "lunc_dsir"
+name = "lunc_desugar"
 version = "0.1.0"
 dependencies = [
  "lunc_ast",
@@ -913,6 +904,15 @@ dependencies = [
  "lunc_parser",
  "lunc_token",
  "lunc_utils",
+]
+
+[[package]]
+name = "lunc_diag"
+version = "0.1.0"
+dependencies = [
+ "codespan-reporting",
+ "lunc_utils",
+ "thiserror",
 ]
 
 [[package]]
@@ -970,8 +970,8 @@ name = "lunc_scir"
 version = "0.1.0"
 dependencies = [
  "lunc_ast",
+ "lunc_desugar",
  "lunc_diag",
- "lunc_dsir",
  "lunc_llib_meta",
  "lunc_token",
  "lunc_utils",

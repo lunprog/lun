@@ -1,6 +1,6 @@
 [package]
-name = "lunc_dsir"
-description = "Desugared Intermediate Representation of Lun."
+name = "lunc_desugar"
+description = "Desugared Intermediate Representation of Lun and its machinery."
 version.workspace = true
 license.workspace = true
 edition = "2024"
