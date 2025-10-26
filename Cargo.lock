@@ -669,6 +669,7 @@ version = "0.1.0"
 dependencies = [
  "lunc_ast",
  "lunc_diag",
+ "lunc_entity",
  "lunc_lexer",
  "lunc_llib_meta",
  "lunc_parser",

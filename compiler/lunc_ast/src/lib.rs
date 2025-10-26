@@ -16,10 +16,6 @@ use lunc_utils::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::symbol::EffectivePath;
-
-pub mod symbol;
-
 /// A 'Path' is a name in Lun, like `orb`, `hello`, `core::panic`, ..
 ///
 /// It is composed of segments of path, identifiers or orb.
@@ -150,11 +146,6 @@ impl Path {
     /// Get the `i`th segment of the path.
     pub fn get(&self, i: usize) -> Option<&PathSegment> {
         self.segments.get(i)
-    }
-
-    /// Convert a `Path` to an `EffectivePath`
-    pub fn into_effective_path(self) -> EffectivePath {
-        EffectivePath(self.to_string_vec())
     }
 }
 
@@ -451,11 +442,19 @@ pub enum Mutability {
 }
 
 impl Mutability {
-    /// Returns `""` if `No` or `"mut "` if `Mut`.
+    /// Returns `""` if `Not` or `"mut "` if `Mut`.
     pub fn prefix_str(self) -> &'static str {
         match self {
             Self::Not => "",
             Self::Mut => "mut ",
+        }
+    }
+
+    /// Returns `"immutable"` if `Not` or `"mutable"` if `Mut`.
+    pub fn suffix_str(self) -> &'static str {
+        match self {
+            Self::Not => "immutable",
+            Self::Mut => "mutable",
         }
     }
 

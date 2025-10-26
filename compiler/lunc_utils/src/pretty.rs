@@ -366,23 +366,25 @@ impl<T: PrettyDump> PrettyDump for Box<T> {
 }
 
 /// A macro to implement pretty dump for a type that implements display
-macro_rules! impl_pretty_dump_for_display {
+#[macro_export]
+macro_rules! impl_pdump {
     ($T:ty) => {
-        impl PrettyDump for $T {
-            fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        impl $crate::pretty::PrettyDump for $T {
+            fn try_dump(&self, ctx: &mut $crate::pretty::PrettyCtxt) -> ::std::io::Result<()> {
+                use ::std::io::Write;
                 write!(ctx.out, "{self}")
             }
         }
     };
     ( $T:ty $(, $U:ty )* $( , )? ) => {
-        impl_pretty_dump_for_display!($T);
+        impl_pdump!($T);
         $(
-            impl_pretty_dump_for_display!($U);
+            impl_pdump!($U);
         )*
     }
 }
 
-impl_pretty_dump_for_display! {
+impl_pdump! {
     Span,
     bool,
     char,
