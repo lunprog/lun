@@ -1040,7 +1040,7 @@ bar
 ",
         test_code: 0,
     ),
-    "desugaring/E010": (
+    "dsir/E010": (
         compiler_out: "dsir = [
   Directive:Import {
     path: bim::boum @ 49..58 (fid = 0);
@@ -1092,19 +1092,19 @@ bar
   } @ 72..104 (fid = 0),
 ]
 error[E010]: cannot find `bim::boum` in this scope
-  ┌─ ./tests/desugaring/E010.lun:2:9
+  ┌─ ./tests/dsir/E010.lun:2:9
   │
 2 │ #import bim::boum;
   │         ^^^^^^^^^
 
 error[E010]: cannot find `bim::boum` in this scope
-  ┌─ ./tests/desugaring/E010.lun:7:5
+  ┌─ ./tests/dsir/E010.lun:7:5
   │
 7 │     bim::boum();
   │     ^^^^^^^^^
 
 error[E010]: cannot find `b` in this scope
-  ┌─ ./tests/desugaring/E010.lun:8:5
+  ┌─ ./tests/dsir/E010.lun:8:5
   │
 8 │     b;
   │     ^
@@ -1116,7 +1116,7 @@ error: compilation of `E010` failed due to 3 errors and 0 warnings
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/E013": (
+    "dsir/E013": (
         compiler_out: "dsir = [
   GlobalDef {
     name: _ @ 54..55 (fid = 0);
@@ -1202,7 +1202,7 @@ error: compilation of `E010` failed due to 3 errors and 0 warnings
   } @ 74..92 (fid = 0),
 ]
 error[E013]: `_` is a reserved identifier
-  ┌─ ./tests/desugaring/E013.lun:2:1
+  ┌─ ./tests/dsir/E013.lun:2:1
   │
 2 │ _ :: 12;
   │ ^
@@ -1210,7 +1210,7 @@ error[E013]: `_` is a reserved identifier
   = you can't use `_` as a symbol name
 
 error[E013]: `_` is a reserved identifier
-  ┌─ ./tests/desugaring/E013.lun:4:1
+  ┌─ ./tests/dsir/E013.lun:4:1
   │
 4 │ _ := 34;
   │ ^
@@ -1218,7 +1218,7 @@ error[E013]: `_` is a reserved identifier
   = you can't use `_` as a symbol name
 
 error[E013]: `_` is a reserved identifier
-  ┌─ ./tests/desugaring/E013.lun:6:10
+  ┌─ ./tests/dsir/E013.lun:6:10
   │
 6 │ a :: fun(_: i8) {}
   │          ^
@@ -1232,7 +1232,7 @@ error: compilation of `E013` failed due to 3 errors and 0 warnings
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/E014": (
+    "dsir/E014": (
         compiler_out: "dsir = [
   GlobalDef {
     name: a @ 48..49 (fid = 0);
@@ -1285,7 +1285,7 @@ error: compilation of `E013` failed due to 3 errors and 0 warnings
   } @ 48..73 (fid = 0),
 ]
 error[E014]: `_` can only be used in left hand side of assignment not in expressions
-  ┌─ ./tests/desugaring/E014.lun:3:15
+  ┌─ ./tests/dsir/E014.lun:3:15
   │
 3 │     b : usz = _;
   │               ^
@@ -1297,7 +1297,7 @@ error: compilation of `E014` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/E019": (
+    "dsir/E019": (
         compiler_out: "dsir = [
   GlobalDef {
     name: a @ 50..51 (fid = 0);
@@ -1334,7 +1334,7 @@ error: compilation of `E014` failed due to 1 error and 0 warnings
   } @ 59..67 (fid = 0),
 ]
 error[E019]: the name `a` is defined multiple times
-  ┌─ ./tests/desugaring/E019.lun:3:1
+  ┌─ ./tests/dsir/E019.lun:3:1
   │
 2 │ a :: 12;
   │ - defined here for the first time
@@ -1348,19 +1348,19 @@ error: compilation of `E019` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/E026": (
+    "dsir/E026": (
         compiler_out: "dsir = [
   Directive:Mod {
     name: peekaboo;
   } @ 48..62 (fid = 0),
 ]
 error[E026]: file not found for module 'peekaboo'
-  ┌─ ./tests/desugaring/E026.lun:2:1
+  ┌─ ./tests/dsir/E026.lun:2:1
   │
 2 │ #mod peekaboo;
   │ ^^^^^^^^^^^^^^
   │
-  = help: to create the module 'peekaboo', create the file at path './tests/desugaring/peekaboo.lun'
+  = help: to create the module 'peekaboo', create the file at path './tests/dsir/peekaboo.lun'
 
 error: compilation of `E026` failed due to 1 error and 0 warnings
 
@@ -1369,14 +1369,14 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/bim": (
+    "dsir/bim": (
         compiler_out: "dsir = []
 ",
         compiler_code: 0,
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/forward_use": (
+    "dsir/forward_use": (
         compiler_out: "dsir = [
   GlobalDef {
     name: main @ 79..83 (fid = 0);
@@ -1562,7 +1562,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/global_def": (
+    "dsir/global_def": (
         compiler_out: r#"dsir = [
   GlobalDef {
     name: main @ 19..23 (fid = 0);
@@ -1683,7 +1683,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/lower_expr": (
+    "dsir/lower_expr": (
         compiler_out: r#"dsir = [
   GlobalDef {
     name: main @ 11..15 (fid = 0);
@@ -2194,7 +2194,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/my_module": (
+    "dsir/my_module": (
         compiler_out: r#"dsir = [
   Module {
     name: global_def @ 61..77 (fid = 0);
@@ -2438,14 +2438,14 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/nested": (
+    "dsir/nested": (
         compiler_out: "dsir = []
 ",
         compiler_code: 0,
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/predicate_loop": (
+    "dsir/predicate_loop": (
         compiler_out: r#"dsir = [
   GlobalDef {
     name: println @ 138..145 (fid = 0);
@@ -2679,7 +2679,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         test_out: "",
         test_code: 0,
     ),
-    "desugaring/shadowing": (
+    "dsir/shadowing": (
         compiler_out: "dsir = [
   GlobalDef {
     name: a @ 0..1 (fid = 0);

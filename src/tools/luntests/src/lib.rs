@@ -439,7 +439,7 @@ impl FromStr for TestStage {
             Ok(TestStage::Lexer)
         } else if s.starts_with("parser/") {
             Ok(TestStage::Parser)
-        } else if s.starts_with("desugaring/") {
+        } else if s.starts_with("dsir/") {
             Ok(TestStage::Dsir)
         } else if s.starts_with("scir/") {
             Ok(TestStage::Scir)
