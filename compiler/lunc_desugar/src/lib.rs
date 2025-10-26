@@ -832,8 +832,7 @@ pub fn stmt_expr(expr: DsExpression) -> DsStatement {
 /// [`Arg`]: lunc_parser::expr::Arg
 #[derive(Debug, Clone)]
 pub struct DsArg {
-    pub name: String,
-    pub name_loc: OSpan,
+    pub name: Spanned<String>,
     pub typeexpr: DsExpression,
     pub loc: OSpan,
     pub sym: LazySymbol,
@@ -845,15 +844,13 @@ impl FromHigher for DsArg {
     fn lower(node: Self::Higher) -> Self {
         let Arg {
             name,
-            name_loc,
             typeexpr,
             loc,
         } = node;
 
         DsArg {
-            sym: LazySymbol::Path(Path::with_root(name.clone())),
+            sym: LazySymbol::Path(Path::with_root(name.node.clone())),
             name,
-            name_loc: Some(name_loc),
             typeexpr: lower(typeexpr),
             loc: Some(loc),
         }
@@ -1381,7 +1378,6 @@ impl Desugarrer {
 
                 for DsArg {
                     name,
-                    name_loc,
                     typeexpr,
                     loc: _,
                     sym,
@@ -1395,14 +1391,14 @@ impl Desugarrer {
                     }
 
                     let symref = self.symdb.create_param(
-                        name.clone(),
+                        name.node.clone(),
                         self.table.param_count(),
-                        name_loc.clone().unwrap(),
+                        name.loc.clone(),
                     );
 
                     *sym = LazySymbol::Sym(symref);
 
-                    self.bind(name.clone(), symref)?;
+                    self.bind(name.node.clone(), symref)?;
                 }
 
                 if let Some(retty) = rettypeexpr {

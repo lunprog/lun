@@ -215,8 +215,7 @@ pub enum Else {
 
 #[derive(Debug, Clone)]
 pub struct Arg {
-    pub name: String,
-    pub name_loc: Span,
+    pub name: Spanned<String>,
     pub typeexpr: Expression,
     pub loc: Span,
 }
@@ -732,8 +731,10 @@ impl Parser {
                     match self.parse_typeexpr() {
                         Ok(t) => {
                             args.push(Arg {
-                                name,
-                                name_loc: lo_arg.clone(),
+                                name: Spanned {
+                                    node: name,
+                                    loc: lo_arg.clone(),
+                                },
                                 typeexpr: t.clone(),
                                 loc: Span::from_ends(lo_arg, t.loc),
                             });

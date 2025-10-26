@@ -166,7 +166,7 @@ error: compilation of `E010` failed due to 3 errors and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: _;
+          name: _ @ 83..84 (fid = 0);
           typeexpr: Symbol {
             kind: primitive type;
             name: i8;
@@ -411,7 +411,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: a;
+          name: a @ 144..145 (fid = 0);
           typeexpr: Symbol {
             kind: primitive type;
             name: isz;
@@ -427,7 +427,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         } @ 144..150 (fid = 0),
 
         Arg {
-          name: b;
+          name: b @ 152..153 (fid = 0);
           typeexpr: Symbol {
             kind: primitive type;
             name: isz;
@@ -1075,7 +1075,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             value: FunDefinition {
               args: [
                 Arg {
-                  name: a;
+                  name: a @ 76..77 (fid = 2);
                   typeexpr: Symbol {
                     kind: primitive type;
                     name: usz;
@@ -1091,7 +1091,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                 } @ 76..82 (fid = 2),
 
                 Arg {
-                  name: b;
+                  name: b @ 84..85 (fid = 2);
                   typeexpr: Symbol {
                     kind: primitive type;
                     name: usz;
@@ -1378,7 +1378,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: a;
+          name: a @ 18..19 (fid = 0);
           typeexpr: Symbol {
             kind: primitive type;
             name: void;
@@ -3620,12 +3620,12 @@ error: compilation of `E006_fundecl_expr_resilience_3` failed due to 1 error and
     value: FunDefinition {
       args: [
         Arg {
-          name: a;
+          name: a @ 60..61 (fid = 0);
           typeexpr: path u8 @ 63..65 (fid = 0);
         } @ 60..65 (fid = 0),
 
         Arg {
-          name: �;
+          name: � @ 65..66 (fid = 0);
           typeexpr: Binary {
             lhs: integer 1 @ 67..68 (fid = 0);
             op: BitwiseXor;
@@ -3634,7 +3634,7 @@ error: compilation of `E006_fundecl_expr_resilience_3` failed due to 1 error and
         } @ 65..70 (fid = 0),
 
         Arg {
-          name: c;
+          name: c @ 72..73 (fid = 0);
           typeexpr: path u16 @ 75..78 (fid = 0);
         } @ 72..78 (fid = 0),
       ];
@@ -3673,7 +3673,7 @@ error: compilation of `E006_fundef_expr_resilience_1` failed due to 2 errors and
     value: FunDefinition {
       args: [
         Arg {
-          name: a;
+          name: a @ 60..61 (fid = 0);
           typeexpr: path u8 @ 63..65 (fid = 0);
         } @ 60..65 (fid = 0),
       ];
@@ -3706,7 +3706,7 @@ error: compilation of `E006_fundef_expr_resilience_2` failed due to 1 error and 
     value: FunDefinition {
       args: [
         Arg {
-          name: a;
+          name: a @ 60..61 (fid = 0);
           typeexpr: path u32 @ 63..66 (fid = 0);
         } @ 60..66 (fid = 0),
       ];
@@ -5556,7 +5556,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: e;
+          name: e @ 30..31 (fid = 0);
           typeexpr: Block [
             @last_expr: Binary {
               lhs: path a @ 34..35 (fid = 0);
@@ -5580,7 +5580,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: f;
+          name: f @ 55..56 (fid = 0);
           typeexpr: Block [
             @last_expr: InfiniteLoop {
               label: a @ 60..61 (fid = 0);
@@ -5649,7 +5649,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         value: FunDefinition {
           args: [
             Arg {
-              name: l;
+              name: l @ 53..54 (fid = 0);
               typeexpr: IteratorLoop {
                 label: none;
                 variable: _;
@@ -5679,7 +5679,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         value: FunDefinition {
           args: [
             Arg {
-              name: m;
+              name: m @ 97..98 (fid = 0);
               typeexpr: IteratorLoop {
                 label: none;
                 variable: _;
@@ -5725,7 +5725,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         value: FunDefinition {
           args: [
             Arg {
-              name: o;
+              name: o @ 46..47 (fid = 0);
               typeexpr: FunDefinition {
                 args: [];
                 rettypeexpr: none;
@@ -5790,7 +5790,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         value: FunDefinition {
           args: [
             Arg {
-              name: i;
+              name: i @ 81..82 (fid = 0);
               typeexpr: If {
                 cond: boolean false @ 87..92 (fid = 0);
                 body: Block [
@@ -5832,7 +5832,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: g;
+          name: g @ 33..34 (fid = 0);
           typeexpr: Block [
             BindingDef {
               name: a @ 46..47 (fid = 0);
@@ -5876,7 +5876,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         value: FunDefinition {
           args: [
             Arg {
-              name: n;
+              name: n @ 53..54 (fid = 0);
               typeexpr: InfiniteLoop {
                 label: none;
                 body: Block [
@@ -5958,7 +5958,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: k;
+          name: k @ 35..36 (fid = 0);
           typeexpr: PredicateLoop {
             label: none;
             cond: boolean true @ 44..48 (fid = 0);

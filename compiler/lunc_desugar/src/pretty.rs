@@ -381,13 +381,10 @@ impl PrettyDump<EntityDb<Symbol>> for DsArg {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &EntityDb<Symbol>) -> io::Result<()> {
         let DsArg {
             name,
-            name_loc,
             typeexpr,
             loc,
             sym,
         } = self;
-
-        _ = name_loc;
 
         pretty_struct! (
             ctx,

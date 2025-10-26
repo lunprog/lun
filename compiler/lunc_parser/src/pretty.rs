@@ -368,12 +368,9 @@ impl<E: Clone> PrettyDump<E> for Arg {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
         let Arg {
             name,
-            name_loc,
             typeexpr,
             loc,
         } = self;
-
-        _ = name_loc;
 
         pretty_struct! (
             ctx,
