@@ -172,7 +172,7 @@ pub enum ExprKind {
     ///
     /// `"fun" "(" ( ident ":" expr ),* ")" [ "->" expr ] block`
     FunDefinition {
-        args: Vec<Arg>,
+        params: Vec<Param>,
         rettypeexpr: Option<Box<Expression>>,
         body: Block,
     },
@@ -180,7 +180,7 @@ pub enum ExprKind {
     ///
     /// `"fun" "(" ( expr ),* ")" [ "->" expr ]`
     FunDeclaration {
-        args: Vec<Expression>,
+        params: Vec<Expression>,
         rettypeexpr: Option<Box<Expression>>,
     },
     //
@@ -213,8 +213,9 @@ pub enum Else {
     Block(Block),
 }
 
+/// Function parameter
 #[derive(Debug, Clone)]
-pub struct Arg {
+pub struct Param {
     pub name: Spanned<String>,
     pub typeexpr: Expression,
     pub loc: Span,
@@ -713,7 +714,7 @@ impl Parser {
                 // KwFun, LParen, Ident, Colon, ...
                 //                ^^^^^ self.token
 
-                let mut args = Vec::new();
+                let mut params = Vec::new();
 
                 loop {
                     if self.check(ExpToken::RParen) {
@@ -730,7 +731,7 @@ impl Parser {
 
                     match self.parse_typeexpr() {
                         Ok(t) => {
-                            args.push(Arg {
+                            params.push(Param {
                                 name: Spanned {
                                     node: name,
                                     loc: lo_arg.clone(),
@@ -781,7 +782,7 @@ impl Parser {
 
                 Ok(Expression {
                     kind: ExprKind::FunDefinition {
-                        args,
+                        params,
                         rettypeexpr,
                         body,
                     },
@@ -823,7 +824,7 @@ impl Parser {
 
                     Ok(Expression {
                         kind: ExprKind::FunDeclaration {
-                            args: Vec::new(),
+                            params: Vec::new(),
                             rettypeexpr,
                         },
                         loc: Span::from_ends(lo, hi),
@@ -838,7 +839,7 @@ impl Parser {
 
                     Ok(Expression {
                         kind: ExprKind::FunDefinition {
-                            args: Vec::new(),
+                            params: Vec::new(),
                             rettypeexpr,
                             body,
                         },
@@ -849,7 +850,7 @@ impl Parser {
             _ => {
                 // function declaration
 
-                let mut args = Vec::new();
+                let mut params = Vec::new();
 
                 loop {
                     if self.eat_no_expect(ExpToken::RParen) {
@@ -858,7 +859,7 @@ impl Parser {
 
                     match self.parse_typeexpr() {
                         Ok(t) => {
-                            args.push(t);
+                            params.push(t);
                         }
                         Err(recovered) => {
                             if let Recovered::Unable(d) = recovered {
@@ -903,7 +904,10 @@ impl Parser {
                     .unwrap_or(hi_paren);
 
                 Ok(Expression {
-                    kind: ExprKind::FunDeclaration { args, rettypeexpr },
+                    kind: ExprKind::FunDeclaration {
+                        params,
+                        rettypeexpr,
+                    },
                     loc: Span::from_ends(lo, hi),
                 })
             }

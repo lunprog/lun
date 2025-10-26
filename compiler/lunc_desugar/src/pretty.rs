@@ -9,7 +9,7 @@ use lunc_utils::{
 };
 
 use crate::{
-    DsArg, DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsStatement,
+    DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsParam, DsStatement,
     DsStmtKind, symbol::Symbol,
 };
 
@@ -314,7 +314,7 @@ impl PrettyDump<EntityDb<Symbol>> for DsExprKind {
             }
             DsExprKind::Underscore => write!(ctx.out, "Underscore"),
             DsExprKind::FunDefinition {
-                args,
+                params,
                 rettypeexpr,
                 body,
             } => {
@@ -323,7 +323,7 @@ impl PrettyDump<EntityDb<Symbol>> for DsExprKind {
                     extra,
                     "FunDefinition",
                     {
-                        args,
+                        params,
                         rettypeexpr,
                         body,
                     },
@@ -377,9 +377,9 @@ impl PrettyDump<EntityDb<Symbol>> for DsExprKind {
     }
 }
 
-impl PrettyDump<EntityDb<Symbol>> for DsArg {
+impl PrettyDump<EntityDb<Symbol>> for DsParam {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &EntityDb<Symbol>) -> io::Result<()> {
-        let DsArg {
+        let DsParam {
             name,
             typeexpr,
             loc,
@@ -389,7 +389,7 @@ impl PrettyDump<EntityDb<Symbol>> for DsArg {
         pretty_struct! (
             ctx,
             extra,
-            "Arg",
+            "Param",
             {
                 name,
                 typeexpr,

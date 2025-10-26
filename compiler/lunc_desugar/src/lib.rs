@@ -17,7 +17,7 @@ use lunc_lexer::Lexer;
 use lunc_parser::{
     Parser,
     directive::Directive,
-    expr::{Arg, Else, ExprKind, Expression, IfExpression},
+    expr::{Else, ExprKind, Expression, IfExpression, Param},
     item::{Item, Module},
     stmt::{Block, Statement, StmtKind},
 };
@@ -319,15 +319,18 @@ impl FromHigher for DsExpression {
                 field: member,
             },
             ExprKind::FunDefinition {
-                args,
+                params,
                 rettypeexpr,
                 body,
             } => DsExprKind::FunDefinition {
-                args: lower(args),
+                params: lower(params),
                 rettypeexpr: lower(rettypeexpr),
                 body: lower(body),
             },
-            ExprKind::FunDeclaration { args, rettypeexpr } => DsExprKind::FunDeclaration {
+            ExprKind::FunDeclaration {
+                params: args,
+                rettypeexpr,
+            } => DsExprKind::FunDeclaration {
                 args: lower(args),
                 rettypeexpr: lower(rettypeexpr),
             },
@@ -466,7 +469,7 @@ pub enum DsExprKind {
     ///
     /// [`ExprKind::FunDefinition`]: lunc_parser::expr::ExprKind::FunDefinition
     FunDefinition {
-        args: Vec<DsArg>,
+        params: Vec<DsParam>,
         rettypeexpr: Option<Box<DsExpression>>,
         body: DsBlock,
     },
@@ -683,13 +686,13 @@ pub fn expr_member_access(expr: DsExpression, member: impl ToString) -> DsExpres
 
 /// Creates a function definition expression without location.
 pub fn expr_fundef(
-    args: Vec<DsArg>,
+    params: Vec<DsParam>,
     rettypeexpr: impl Into<Option<DsExpression>>,
     body: DsBlock,
 ) -> DsExpression {
     DsExpression {
         expr: DsExprKind::FunDefinition {
-            args,
+            params,
             rettypeexpr: rettypeexpr.into().map(Box::new),
             body,
         },
@@ -827,28 +830,28 @@ pub fn stmt_expr(expr: DsExpression) -> DsStatement {
     }
 }
 
-/// A desugared argument, see the sweet version [`Arg`]
+/// A desugared argument, see the sweet version [`Param`]
 ///
-/// [`Arg`]: lunc_parser::expr::Arg
+/// [`Param`]: lunc_parser::expr::Param
 #[derive(Debug, Clone)]
-pub struct DsArg {
+pub struct DsParam {
     pub name: Spanned<String>,
     pub typeexpr: DsExpression,
     pub loc: OSpan,
     pub sym: LazySymbol,
 }
 
-impl FromHigher for DsArg {
-    type Higher = Arg;
+impl FromHigher for DsParam {
+    type Higher = Param;
 
     fn lower(node: Self::Higher) -> Self {
-        let Arg {
+        let Param {
             name,
             typeexpr,
             loc,
         } = node;
 
-        DsArg {
+        DsParam {
             sym: LazySymbol::Path(Path::with_root(name.node.clone())),
             name,
             typeexpr: lower(typeexpr),
@@ -1370,18 +1373,18 @@ impl Desugarrer {
                 Ok(())
             }
             DsExprKind::FunDefinition {
-                args,
+                params,
                 rettypeexpr,
                 body,
             } => {
                 self.table.scope_enter(); // fundef scope
 
-                for DsArg {
+                for DsParam {
                     name,
                     typeexpr,
                     loc: _,
                     sym,
-                } in args
+                } in params
                 {
                     match self.resolve_expr(typeexpr) {
                         Ok(()) => {}

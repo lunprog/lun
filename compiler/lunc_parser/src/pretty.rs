@@ -9,7 +9,7 @@ use lunc_utils::{
 
 use crate::{
     directive::Directive,
-    expr::{Arg, Else, ExprKind, Expression, IfExpression},
+    expr::{Else, ExprKind, Expression, IfExpression, Param},
     item::{Item, Module},
     stmt::{Block, Statement, StmtKind},
 };
@@ -304,7 +304,7 @@ impl<E: Clone> PrettyDump<E> for ExprKind {
                 Ok(())
             }
             ExprKind::FunDefinition {
-                args,
+                params,
                 rettypeexpr,
                 body,
             } => {
@@ -313,7 +313,7 @@ impl<E: Clone> PrettyDump<E> for ExprKind {
                     extra,
                     "FunDefinition",
                     {
-                        args,
+                        params,
                         rettypeexpr,
                         body,
                     },
@@ -321,13 +321,16 @@ impl<E: Clone> PrettyDump<E> for ExprKind {
 
                 Ok(())
             }
-            ExprKind::FunDeclaration { args, rettypeexpr } => {
+            ExprKind::FunDeclaration {
+                params,
+                rettypeexpr,
+            } => {
                 pretty_struct! (
                     ctx,
                     extra,
                     "FunDeclaration",
                     {
-                        args,
+                        params,
                         rettypeexpr,
                     },
                 );
@@ -364,9 +367,9 @@ impl<E: Clone> PrettyDump<E> for ExprKind {
     }
 }
 
-impl<E: Clone> PrettyDump<E> for Arg {
+impl<E: Clone> PrettyDump<E> for Param {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
-        let Arg {
+        let Param {
             name,
             typeexpr,
             loc,
@@ -375,7 +378,7 @@ impl<E: Clone> PrettyDump<E> for Arg {
         pretty_struct! (
             ctx,
             extra,
-            "Arg",
+            "Param",
             {
                 name,
                 typeexpr,
