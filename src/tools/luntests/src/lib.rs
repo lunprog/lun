@@ -415,8 +415,9 @@ impl TestStage {
             TestStage::Lexer => &["-Zhalt=lexer", "-Zprint=token-stream"],
             TestStage::Parser => &["-Zhalt=parser", "-Zprint=ast"],
             TestStage::Dsir => &["-Zhalt=dsir", "-Zprint=dsir"],
-            TestStage::Scir => &["-Zhalt=scir", "-Zprint=scir", "--orb-type", "llib"],
-            TestStage::Behavior => &["-Zprint=ssa", "-Zprint=scir"],
+            // TestStage::Scir => &["-Zhalt=scir", "-Zprint=scir", "--orb-type", "llib"],
+            // TestStage::Behavior => &["-Zprint=ssa", "-Zprint=scir"],
+            TestStage::Scir | TestStage::Behavior => &[],
             TestStage::Multifile => &[
                 "-Zprint=scir",
                 "-Zhalt=scir", // remove after cranelift gen is fully implemented

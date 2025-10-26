@@ -120,7 +120,11 @@ fn main() -> ExitCode {
 
             ExitCode::SUCCESS
         }
+        #[allow(unreachable_code)]
         Cmd::Examples => {
+            eprintln!("PLEASE NOTE THAT EXAMPLES TESTING IS DISABLED WHILE WE IMPLEMENT THE SIR.");
+            return ExitCode::SUCCESS;
+
             // collect the examples
             let mut examples = Vec::new();
 

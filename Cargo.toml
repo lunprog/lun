@@ -4,7 +4,6 @@ members = [
   # compiler
   "compiler/lunc",
   "compiler/lunc_ast",
-  "compiler/lunc_cranelift_codegen",
   "compiler/lunc_diag",
   "compiler/lunc_desugar",
   "compiler/lunc_entity",
@@ -12,7 +11,6 @@ members = [
   "compiler/lunc_linkage",
   "compiler/lunc_llib_meta",
   "compiler/lunc_parser",
-  "compiler/lunc_scir",
   "compiler/lunc_token",
   "compiler/lunc_utils",
 
@@ -27,7 +25,6 @@ license = "MIT"
 
 [workspace.dependencies]
 lunc_ast = { path = "compiler/lunc_ast" }
-lunc_cranelift_codegen = { path = "compiler/lunc_cranelift_codegen" }
 lunc_diag = { path = "compiler/lunc_diag" }
 lunc_desugar = { path = "compiler/lunc_desugar" }
 lunc_entity = { path = "compiler/lunc_entity" }
@@ -35,7 +32,6 @@ lunc_lexer = { path = "compiler/lunc_lexer" }
 lunc_linkage = { path = "compiler/lunc_linkage" }
 lunc_llib_meta = { path = "compiler/lunc_llib_meta" }
 lunc_parser = { path = "compiler/lunc_parser" }
-lunc_scir = { path = "compiler/lunc_scir" }
 lunc_token = { path = "compiler/lunc_token" }
 lunc_utils = { path = "compiler/lunc_utils" }
 
