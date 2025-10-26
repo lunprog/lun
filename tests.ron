@@ -164,8 +164,8 @@ error: compilation of `E010` failed due to 3 errors and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [
-        Arg {
+      params: [
+        Param {
           name: _ @ 83..84 (fid = 0);
           typeexpr: Symbol {
             kind: primitive type;
@@ -354,7 +354,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         BindingDef {
@@ -409,8 +409,8 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [
-        Arg {
+      params: [
+        Param {
           name: a @ 144..145 (fid = 0);
           typeexpr: Symbol {
             kind: primitive type;
@@ -426,7 +426,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           } @ 144..145 (fid = 0);
         } @ 144..150 (fid = 0),
 
-        Arg {
+        Param {
           name: b @ 152..153 (fid = 0);
           typeexpr: Symbol {
             kind: primitive type;
@@ -486,7 +486,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         @last_expr: none,
@@ -575,7 +575,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         Binary {
@@ -954,7 +954,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         @last_expr: none,
@@ -999,7 +999,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         mutability: not;
         typeexpr: none;
         value: FunDefinition {
-          args: [];
+          params: [];
           rettypeexpr: none;
           body: Block [
             @last_expr: none,
@@ -1073,8 +1073,8 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             mutability: not;
             typeexpr: none;
             value: FunDefinition {
-              args: [
-                Arg {
+              params: [
+                Param {
                   name: a @ 76..77 (fid = 2);
                   typeexpr: Symbol {
                     kind: primitive type;
@@ -1090,7 +1090,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                   } @ 76..77 (fid = 2);
                 } @ 76..82 (fid = 2),
 
-                Arg {
+                Param {
                   name: b @ 84..85 (fid = 2);
                   typeexpr: Symbol {
                     kind: primitive type;
@@ -1173,7 +1173,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         @last_expr: none,
@@ -1192,7 +1192,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         BindingDef {
@@ -1376,8 +1376,8 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [
-        Arg {
+      params: [
+        Param {
           name: a @ 18..19 (fid = 0);
           typeexpr: Symbol {
             kind: primitive type;
@@ -1429,7 +1429,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         BindingDef {
@@ -2714,7 +2714,7 @@ BUG: internal compiler error: unexpected panic.
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         BindingDef {
@@ -3045,7 +3045,7 @@ error: compilation of `E006_break_expr_resilience_2` failed due to 1 error and 0
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         BindingDef {
@@ -3089,7 +3089,7 @@ error: compilation of `E006_call_expr_resilience_1` failed due to 2 errors and 0
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         BindingDef {
@@ -3534,7 +3534,7 @@ error: compilation of `E006_funcall_expr` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDeclaration {
-      args: [];
+      params: [];
       rettypeexpr: none;
     } @ 56..61 (fid = 0);
   } @ 51..67 (fid = 0),
@@ -3559,7 +3559,7 @@ error: compilation of `E006_fundecl_expr_resilience_1` failed due to 1 error and
     mutability: not;
     typeexpr: none;
     value: FunDeclaration {
-      args: [
+      params: [
         path u32 @ 60..63 (fid = 0),
 
         PointerType {
@@ -3591,7 +3591,7 @@ error: compilation of `E006_fundecl_expr_resilience_2` failed due to 1 error and
     mutability: not;
     typeexpr: none;
     value: FunDeclaration {
-      args: [
+      params: [
         path u32 @ 60..63 (fid = 0),
       ];
       rettypeexpr: none;
@@ -3618,13 +3618,13 @@ error: compilation of `E006_fundecl_expr_resilience_3` failed due to 1 error and
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [
-        Arg {
+      params: [
+        Param {
           name: a @ 60..61 (fid = 0);
           typeexpr: path u8 @ 63..65 (fid = 0);
         } @ 60..65 (fid = 0),
 
-        Arg {
+        Param {
           name: � @ 65..66 (fid = 0);
           typeexpr: Binary {
             lhs: integer 1 @ 67..68 (fid = 0);
@@ -3633,7 +3633,7 @@ error: compilation of `E006_fundecl_expr_resilience_3` failed due to 1 error and
           } @ 67..70 (fid = 0);
         } @ 65..70 (fid = 0),
 
-        Arg {
+        Param {
           name: c @ 72..73 (fid = 0);
           typeexpr: path u16 @ 75..78 (fid = 0);
         } @ 72..78 (fid = 0),
@@ -3671,8 +3671,8 @@ error: compilation of `E006_fundef_expr_resilience_1` failed due to 2 errors and
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [
-        Arg {
+      params: [
+        Param {
           name: a @ 60..61 (fid = 0);
           typeexpr: path u8 @ 63..65 (fid = 0);
         } @ 60..65 (fid = 0),
@@ -3704,8 +3704,8 @@ error: compilation of `E006_fundef_expr_resilience_2` failed due to 1 error and 
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [
-        Arg {
+      params: [
+        Param {
           name: a @ 60..61 (fid = 0);
           typeexpr: path u32 @ 63..66 (fid = 0);
         } @ 60..66 (fid = 0),
@@ -3737,7 +3737,7 @@ error: compilation of `E006_fundef_expr_resilience_3` failed due to 1 error and 
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         @last_expr: none,
@@ -4553,7 +4553,7 @@ error: compilation of `E006_paren_expr` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         BindingDef {
@@ -4590,7 +4590,7 @@ error: compilation of `E006_paren_expr_resilience_1` failed due to 1 error and 0
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         BindingDef {
@@ -5020,7 +5020,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         Binary {
@@ -5428,7 +5428,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         @last_expr: none,
@@ -5468,7 +5468,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         mutability: not;
         typeexpr: none;
         value: FunDeclaration {
-          args: [];
+          params: [];
           rettypeexpr: none;
         } @ 164..169 (fid = 0);
       } @ 155..170 (fid = 0),
@@ -5495,7 +5495,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         BindingDef {
@@ -5554,8 +5554,8 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [
-        Arg {
+      params: [
+        Param {
           name: e @ 30..31 (fid = 0);
           typeexpr: Block [
             @last_expr: Binary {
@@ -5578,8 +5578,8 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [
-        Arg {
+      params: [
+        Param {
           name: f @ 55..56 (fid = 0);
           typeexpr: Block [
             @last_expr: InfiniteLoop {
@@ -5647,8 +5647,8 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         mutability: not;
         typeexpr: none;
         value: FunDefinition {
-          args: [
-            Arg {
+          params: [
+            Param {
               name: l @ 53..54 (fid = 0);
               typeexpr: IteratorLoop {
                 label: none;
@@ -5677,8 +5677,8 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         mutability: not;
         typeexpr: none;
         value: FunDefinition {
-          args: [
-            Arg {
+          params: [
+            Param {
               name: m @ 97..98 (fid = 0);
               typeexpr: IteratorLoop {
                 label: none;
@@ -5723,11 +5723,11 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         mutability: not;
         typeexpr: none;
         value: FunDefinition {
-          args: [
-            Arg {
+          params: [
+            Param {
               name: o @ 46..47 (fid = 0);
               typeexpr: FunDefinition {
-                args: [];
+                params: [];
                 rettypeexpr: none;
                 body: Block [
                   @last_expr: InfiniteLoop {
@@ -5788,8 +5788,8 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         mutability: not;
         typeexpr: none;
         value: FunDefinition {
-          args: [
-            Arg {
+          params: [
+            Param {
               name: i @ 81..82 (fid = 0);
               typeexpr: If {
                 cond: boolean false @ 87..92 (fid = 0);
@@ -5830,8 +5830,8 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [
-        Arg {
+      params: [
+        Param {
           name: g @ 33..34 (fid = 0);
           typeexpr: Block [
             BindingDef {
@@ -5874,8 +5874,8 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         mutability: not;
         typeexpr: none;
         value: FunDefinition {
-          args: [
-            Arg {
+          params: [
+            Param {
               name: n @ 53..54 (fid = 0);
               typeexpr: InfiniteLoop {
                 label: none;
@@ -5956,8 +5956,8 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [
-        Arg {
+      params: [
+        Param {
           name: k @ 35..36 (fid = 0);
           typeexpr: PredicateLoop {
             label: none;
@@ -5992,7 +5992,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     mutability: not;
     typeexpr: none;
     value: FunDefinition {
-      args: [];
+      params: [];
       rettypeexpr: none;
       body: Block [
         BindingDef {
