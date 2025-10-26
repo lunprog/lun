@@ -2,7 +2,10 @@
 
 use std::io::{self, Write};
 
-use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
+use lunc_utils::{
+    pretty::{PrettyCtxt, PrettyDump},
+    pretty_struct,
+};
 
 use crate::{
     directive::Directive,
@@ -11,14 +14,14 @@ use crate::{
     stmt::{Block, Statement, StmtKind},
 };
 
-impl PrettyDump for Module {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        self.items.as_slice().try_dump(ctx)
+impl<E: Clone> PrettyDump<E> for Module {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
+        self.items.as_slice().try_dump(ctx, extra)
     }
 }
 
-impl PrettyDump for Item {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E: Clone> PrettyDump<E> for Item {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
         match self {
             Item::GlobalDef {
                 name,
@@ -27,13 +30,18 @@ impl PrettyDump for Item {
                 value,
                 loc,
             } => {
-                ctx.pretty_struct("GlobalDef")
-                    .field("name", name)
-                    .field("mutability", mutability)
-                    .field("typeexpr", typeexpr)
-                    .field("value", value)
-                    .finish()?;
-                ctx.print_loc(loc)?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "GlobalDef",
+                    {
+                        name,
+                        mutability,
+                        typeexpr,
+                        value,
+                    },
+                    loc
+                );
 
                 Ok(())
             }
@@ -42,114 +50,166 @@ impl PrettyDump for Item {
                 typeexpr,
                 loc,
             } => {
-                ctx.pretty_struct("GlobalUninit")
-                    .field("name", name)
-                    .field("typeexpr", typeexpr)
-                    .finish()?;
-                ctx.print_loc(loc)?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "GlobalUninit",
+                    {
+                        name,
+                        typeexpr,
+                    },
+                    loc
+                );
 
                 Ok(())
             }
             Item::ExternBlock { abi, items, loc } => {
-                ctx.pretty_struct("ExternBlock")
-                    .field("abi", abi)
-                    .field("items", items.as_slice())
-                    .finish()?;
-                ctx.print_loc(loc)?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "ExternBlock",
+                    {
+                        abi,
+                        items,
+                    },
+                    loc
+                );
 
                 Ok(())
             }
-            Item::Directive(directive) => directive.try_dump(ctx),
+            Item::Directive(directive) => directive.try_dump(ctx, extra),
         }
     }
 }
 
-impl PrettyDump for Expression {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        self.kind.try_dump(ctx)?;
+impl<E: Clone> PrettyDump<E> for Expression {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
+        self.kind.try_dump(ctx, extra)?;
         ctx.print_loc(&self.loc)?;
         Ok(())
     }
 }
 
-impl PrettyDump for ExprKind {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E: Clone> PrettyDump<E> for ExprKind {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
         let out = &mut ctx.out;
         match self {
             ExprKind::Lit(lit) => write!(out, "{lit}"),
             ExprKind::BoolLit(b) => write!(out, "boolean {b}"),
-            ExprKind::Paren(e) => {
-                ctx.pretty_struct("Paren").field("expr", e).finish()?;
+            ExprKind::Paren(expr) => {
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Paren",
+                    {
+                        expr,
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::Path(path) => write!(out, "path {path}"),
             ExprKind::Binary { lhs, op, rhs } => {
-                ctx.pretty_struct("Binary")
-                    .field("lhs", lhs)
-                    .field("op", op)
-                    .field("rhs", rhs)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Binary",
+                    {
+                        lhs,
+                        op,
+                        rhs,
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::Unary { op, expr } => {
-                ctx.pretty_struct("Unary")
-                    .field("op", op)
-                    .field("expr", expr)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Unary",
+                    {
+                        op,
+                        expr,
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::Borrow(mutability, expr) => {
-                ctx.pretty_struct("Borrow")
-                    .field("mutability", mutability)
-                    .field("expr", expr)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Borrow",
+                    {
+                        mutability,
+                        expr,
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::Call { callee, args } => {
-                ctx.pretty_struct("Call")
-                    .field("callee", callee)
-                    .field("args", args.as_slice())
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Call",
+                    {
+                        callee,
+                        args,
+                    },
+                );
 
                 Ok(())
             }
-            ExprKind::If(ifexpr) => ifexpr.try_dump(ctx),
+            ExprKind::If(ifexpr) => ifexpr.try_dump(ctx, extra),
             ExprKind::IfThenElse {
                 cond,
                 true_val,
                 false_val,
             } => {
-                ctx.pretty_struct("IfThenElse")
-                    .field("cond", cond)
-                    .field("true_val", true_val)
-                    .field("false_val", false_val)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "IfThenElse",
+                    {
+                        cond,
+                        true_val,
+                        false_val,
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::Block(block) => {
-                block.try_dump(ctx)?;
+                block.try_dump(ctx, extra)?;
 
                 Ok(())
             }
             ExprKind::BlockWithLabel { label, block } => {
-                ctx.pretty_struct("BlockWithLabel")
-                    .field("label", label)
-                    .field("block", block)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "LabeledBlock",
+                    {
+                        label,
+                        block,
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::PredicateLoop { label, cond, body } => {
-                ctx.pretty_struct("PredicateLoop")
-                    .field("label", label)
-                    .field("cond", cond)
-                    .field("body", body)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "PredicateLoop",
+                    {
+                        label,
+                        cond,
+                        body,
+                    },
+                );
 
                 Ok(())
             }
@@ -160,38 +220,69 @@ impl PrettyDump for ExprKind {
                 body,
                 loc: _,
             } => {
-                ctx.pretty_struct("IteratorLoop")
-                    .field("label", label)
-                    .field("variable", variable)
-                    .field("iterator", iterator)
-                    .field("body", body)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "IteratorLoop",
+                    {
+                        label,
+                        variable,
+                        iterator,
+                        body
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::InfiniteLoop { label, body } => {
-                ctx.pretty_struct("InfiniteLoop")
-                    .field("label", label)
-                    .field("body", body)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "InfiniteLoop",
+                    {
+                        label,
+                        body
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::Return { expr } => {
-                ctx.pretty_struct("Return").field("expr", expr).finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Return",
+                    {
+                        expr,
+                    },
+                );
+
                 Ok(())
             }
             ExprKind::Break { label, expr } => {
-                ctx.pretty_struct("Break")
-                    .field("label", label)
-                    .field("expr", expr)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Break",
+                    {
+                        label,
+                        expr,
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::Continue { label } => {
                 if label.is_some() {
-                    ctx.pretty_struct("Continue").field("label", label).finish()
+                    pretty_struct! (
+                        ctx,
+                        extra,
+                        "Continue",
+                        {
+                            label,
+                        },
+                    );
+                    Ok(())
                 } else {
                     write!(ctx.out, "Continue")
                 }
@@ -200,10 +291,15 @@ impl PrettyDump for ExprKind {
                 write!(ctx.out, "Null")
             }
             ExprKind::Field { expr, member } => {
-                ctx.pretty_struct("Field")
-                    .field("expr", expr)
-                    .field("member", member)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Field",
+                    {
+                        expr,
+                        member,
+                    },
+                );
 
                 Ok(())
             }
@@ -212,35 +308,55 @@ impl PrettyDump for ExprKind {
                 rettypeexpr,
                 body,
             } => {
-                ctx.pretty_struct("FunDefinition")
-                    .field("args", args.as_slice())
-                    .field("rettypeexpr", rettypeexpr)
-                    .field("body", body)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "FunDefinition",
+                    {
+                        args,
+                        rettypeexpr,
+                        body,
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::FunDeclaration { args, rettypeexpr } => {
-                ctx.pretty_struct("FunDeclaration")
-                    .field("args", args.as_slice())
-                    .field("rettypeexpr", rettypeexpr)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "FunDeclaration",
+                    {
+                        args,
+                        rettypeexpr,
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::PointerType(mutability, typeexpr) => {
-                ctx.pretty_struct("PointerType")
-                    .field("mutability", mutability)
-                    .field("typeexpr", typeexpr)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "PointerType",
+                    {
+                        mutability,
+                        typeexpr,
+                    },
+                );
 
                 Ok(())
             }
             ExprKind::FunPtrType { args, ret } => {
-                ctx.pretty_struct("FunPtrType")
-                    .field("args", args.as_slice())
-                    .field("ret", ret)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "FunPtrType",
+                    {
+                        args,
+                        ret,
+                    },
+                );
 
                 Ok(())
             }
@@ -248,8 +364,8 @@ impl PrettyDump for ExprKind {
     }
 }
 
-impl PrettyDump for Arg {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E: Clone> PrettyDump<E> for Arg {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
         let Arg {
             name,
             name_loc,
@@ -257,18 +373,25 @@ impl PrettyDump for Arg {
             loc,
         } = self;
 
-        ctx.pretty_struct("Arg")
-            .field("name", (name, name_loc))
-            .field("typeexpr", typeexpr)
-            .finish()?;
-        ctx.print_loc(loc)?;
+        _ = name_loc;
+
+        pretty_struct! (
+            ctx,
+            extra,
+            "Arg",
+            {
+                name,
+                typeexpr,
+            },
+            loc
+        );
 
         Ok(())
     }
 }
 
-impl PrettyDump for IfExpression {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E: Clone> PrettyDump<E> for IfExpression {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
         let IfExpression {
             cond,
             body,
@@ -276,25 +399,30 @@ impl PrettyDump for IfExpression {
             loc,
         } = &self;
 
-        ctx.pretty_struct("If")
-            .field("cond", cond)
-            .field("body", body)
-            .field("else_br", else_br)
-            .finish()?;
+        pretty_struct! (
+            ctx,
+            extra,
+            "If",
+            {
+                cond,
+                body,
+                else_br,
+            },
+            loc
+        );
 
-        ctx.print_loc(loc)?;
         Ok(())
     }
 }
 
-impl PrettyDump for Block {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E: Clone> PrettyDump<E> for Block {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
         struct LastExpr<'a>(&'a Option<Box<Expression>>);
 
-        impl<'a> PrettyDump for LastExpr<'a> {
-            fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+        impl<'a, E: Clone> PrettyDump<E> for LastExpr<'a> {
+            fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
                 write!(ctx.out, "@last_expr: ")?;
-                self.0.try_dump(ctx)?;
+                self.0.try_dump(ctx, extra)?;
 
                 Ok(())
             }
@@ -302,7 +430,7 @@ impl PrettyDump for Block {
 
         let last = LastExpr(&self.last_expr);
 
-        ctx.pretty_list(Some("Block".to_string()))
+        ctx.pretty_list(Some("Block".to_string()), extra)
             .items(self.stmts.iter())
             .item(last)
             .finish()?;
@@ -313,16 +441,16 @@ impl PrettyDump for Block {
     }
 }
 
-impl PrettyDump for Statement {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        self.stmt.try_dump(ctx)?;
+impl<E: Clone> PrettyDump<E> for Statement {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
+        self.stmt.try_dump(ctx, extra)?;
         ctx.print_loc(&self.loc)?;
         Ok(())
     }
 }
 
-impl PrettyDump for StmtKind {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E: Clone> PrettyDump<E> for StmtKind {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
         match self {
             StmtKind::BindingDef {
                 name,
@@ -330,51 +458,75 @@ impl PrettyDump for StmtKind {
                 typeexpr,
                 value,
             } => {
-                ctx.pretty_struct("BindingDef")
-                    .field("name", name)
-                    .field("mutability", mutability)
-                    .field("typeexpr", typeexpr)
-                    .field("value", value)
-                    .finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "BindingDef",
+                    {
+                        name,
+                        mutability,
+                        typeexpr,
+                        value,
+                    },
+                );
+
                 Ok(())
             }
             StmtKind::Defer { expr } => {
-                ctx.pretty_struct("Defer").field("expr", expr).finish()?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Defer",
+                    {
+                        expr,
+                    },
+                );
                 Ok(())
             }
             StmtKind::Expression(expr) => {
-                expr.try_dump(ctx)?;
+                expr.try_dump(ctx, extra)?;
                 Ok(())
             }
         }
     }
 }
 
-impl PrettyDump for Else {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E: Clone> PrettyDump<E> for Else {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
         match self {
-            Else::IfExpr(ifexpr) => ifexpr.try_dump(ctx),
-            Else::Block(block) => block.try_dump(ctx),
+            Else::IfExpr(ifexpr) => ifexpr.try_dump(ctx, extra),
+            Else::Block(block) => block.try_dump(ctx, extra),
         }
     }
 }
 
-impl PrettyDump for Directive {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E> PrettyDump<E> for Directive {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
         match self {
             Directive::Mod { name, loc } => {
-                ctx.pretty_struct("Mod").field("name", name).finish()?;
-                ctx.print_loc(loc)?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Directive:Mod",
+                    {
+                        name,
+                    },
+                    loc
+                );
 
                 Ok(())
             }
             Directive::Import { path, alias, loc } => {
-                ctx.pretty_struct("Import")
-                    .field("path", path)
-                    .field("alias", alias)
-                    .finish()?;
-
-                ctx.print_loc(loc)?;
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Directive:Import",
+                    {
+                        path,
+                        alias,
+                    },
+                    loc
+                );
 
                 Ok(())
             }

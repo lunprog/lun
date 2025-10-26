@@ -789,7 +789,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     //    maybe print the ast
     if argv.debug.print(InterRes::Ast) {
         eprint!("ast = ");
-        ast.dump();
+        ast.dump(&());
         eprintln!();
     }
     if sink.failed() {
@@ -809,12 +809,11 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     // 5. desugarring, AST => DSIR
     let mut desugarrer = Desugarrer::new(sink.clone(), opts.orb_name());
     let dsir = desugarrer.produce(ast).ok_or_else(builderr)?;
-    let orbtree = desugarrer.module_tree();
 
     //    maybe print the DSIR
     if argv.debug.print(InterRes::Dsir) {
         eprint!("dsir = ");
-        dsir.dump();
+        dsir.dump(&desugarrer.symdb);
         eprintln!();
     }
     if sink.failed() {
@@ -827,6 +826,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
         return Err(builderr());
     }
+    let orbtree = desugarrer.module_tree();
 
     timings.dsir = dsir_instant.elapsed();
     let sir_instant = Instant::now();

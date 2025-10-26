@@ -2,7 +2,7 @@
 
 use std::{
     fmt::{self, Display},
-    io,
+    io::{self, Write},
 };
 
 use lunc_ast::{Mutability, Path, PathSegment};
@@ -10,11 +10,12 @@ use lunc_entity::{EntityDb, entity};
 use lunc_utils::{
     Span, impl_pdump,
     pretty::{PrettyCtxt, PrettyDump},
+    pretty_struct,
 };
 
 /// Symbol entity, see also [`SymbolData`].
 ///
-/// This is used in the DSIR stage to bring idents more informations on what do
+/// This is used in the DSIR stage to bring idents more information on what do
 /// they refer to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Symbol(u32);
@@ -199,8 +200,10 @@ impl Display for SymbolKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Param => write!(f, "parameter"),
-            Self::UserBinding(mutability) => write!(f, "user-binding {}", mutability.suffix_str()),
-            Self::GlobalDef(mutability) => write!(f, "global-def {}", mutability.suffix_str()),
+            Self::UserBinding(mutability) => {
+                write!(f, "{} user-binding", mutability.adjective_str())
+            }
+            Self::GlobalDef(mutability) => write!(f, "{} global-def", mutability.adjective_str()),
             Self::Function => write!(f, "function"),
             Self::Module => write!(f, "module"),
             Self::PrimitiveType => write!(f, "primitive type"),
@@ -233,7 +236,7 @@ impl LazySymbol {
     pub fn symbol(&self) -> Option<Symbol> {
         match self {
             Self::Path(_) => None,
-            Self::Sym(sym) => Some(sym.clone()),
+            Self::Sym(sym) => Some(*sym),
         }
     }
 
@@ -246,11 +249,34 @@ impl LazySymbol {
     }
 }
 
-impl PrettyDump for LazySymbol {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl PrettyDump<EntityDb<Symbol>> for LazySymbol {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &EntityDb<Symbol>) -> io::Result<()> {
         match self {
-            LazySymbol::Path(path) => path.try_dump(ctx),
-            LazySymbol::Sym(sym) => todo!("{sym:?}, PRETTY-DUMP WITH EXTRA CONTEXT"),
+            LazySymbol::Path(path) => path.try_dump(ctx, extra),
+            LazySymbol::Sym(sym) => {
+                let SymbolData {
+                    kind,
+                    name,
+                    ordinal,
+                    path,
+                    loc,
+                } = extra.get(*sym);
+
+                pretty_struct! (
+                    ctx,
+                    extra,
+                    "Symbol",
+                    {
+                        kind,
+                        name,
+                        ordinal,
+                        path,
+                    },
+                    loc
+                );
+
+                Ok(())
+            }
         }
     }
 }

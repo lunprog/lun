@@ -71,19 +71,15 @@ bar
   } @ 41..59 (fid = 0),
 
   Module {
-    name: bim @ 61..70 (fid = 0);
+    name: bim;
     module: [];
     sym: Symbol {
       kind: module;
-      name: bim @ 61..70 (fid = 0);
-      realname: none;
-      which: 0;
+      name: bim;
+      ordinal: 0;
       path: orb::bim;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
-  },
+    } @ 61..70 (fid = 0);
+  } @ 61..70 (fid = 0),
 
   GlobalDef {
     name: a @ 72..73 (fid = 0);
@@ -103,15 +99,11 @@ bar
       ] @ 77..104 (fid = 0);
     } @ 77..104 (fid = 0);
     sym: Symbol {
-      kind: global;
-      name: a @ 72..73 (fid = 0);
-      realname: none;
-      which: 0;
+      kind: immutable global-def;
+      name: a;
+      ordinal: 0;
       path: orb::a;
-      typ: unknown;
-      typeness: implicit;
-      value: none;
-    };
+    } @ 72..73 (fid = 0);
   } @ 72..104 (fid = 0),
 ]
 error[E010]: cannot find `bim::boum` in this scope
@@ -147,15 +139,11 @@ error: compilation of `E010` failed due to 3 errors and 0 warnings
     typeexpr: none;
     value: integer 12 @ 59..61 (fid = 0);
     sym: Symbol {
-      kind: global;
-      name: _ @ 54..55 (fid = 0);
-      realname: none;
-      which: 0;
+      kind: immutable global-def;
+      name: _;
+      ordinal: 0;
       path: orb::_;
-      typ: unknown;
-      typeness: implicit;
-      value: none;
-    };
+    } @ 54..55 (fid = 0);
   } @ 54..62 (fid = 0),
 
   GlobalDef {
@@ -164,15 +152,11 @@ error: compilation of `E010` failed due to 3 errors and 0 warnings
     typeexpr: none;
     value: integer 34 @ 69..71 (fid = 0);
     sym: Symbol {
-      kind: global;
-      name: _ @ 64..65 (fid = 0);
-      realname: none;
-      which: 0;
+      kind: mutable global-def;
+      name: _;
+      ordinal: 0;
       path: orb::_;
-      typ: unknown;
-      typeness: implicit;
-      value: none;
-    };
+    } @ 64..65 (fid = 0);
   } @ 64..72 (fid = 0),
 
   GlobalDef {
@@ -182,29 +166,19 @@ error: compilation of `E010` failed due to 3 errors and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: _ @ 83..84 (fid = 0);
+          name: _;
           typeexpr: Symbol {
-            kind: global;
-            name: i8 @ none;
-            realname: none;
-            which: 0;
+            kind: primitive type;
+            name: i8;
+            ordinal: 0;
             path: ∅;
-            typ: type;
-            typeness: explicit;
-            value: Type {
-              type: i8;
-            };
-          } @ 86..88 (fid = 0);
+          } @ 0..0 (fid = 0) @ 86..88 (fid = 0);
           sym: Symbol {
-            kind: argument;
-            name: _ @ 83..84 (fid = 0);
-            realname: none;
-            which: 0;
+            kind: parameter;
+            name: _;
+            ordinal: 0;
             path: _;
-            typ: unknown;
-            typeness: explicit;
-            value: none;
-          };
+          } @ 83..84 (fid = 0);
         } @ 83..88 (fid = 0),
       ];
       rettypeexpr: none;
@@ -214,14 +188,10 @@ error: compilation of `E010` failed due to 3 errors and 0 warnings
     } @ 79..92 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: a @ 74..75 (fid = 0);
-      realname: none;
-      which: 0;
+      name: a;
+      ordinal: 0;
       path: orb::a;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 74..75 (fid = 0);
   } @ 74..92 (fid = 0),
 ]
 error[E013]: `_` is a reserved identifier
@@ -268,43 +238,29 @@ error: compilation of `E013` failed due to 3 errors and 0 warnings
           name: b @ 59..60 (fid = 0);
           mutability: not;
           typeexpr: Symbol {
-            kind: global;
-            name: usz @ none;
-            realname: none;
-            which: 0;
+            kind: primitive type;
+            name: usz;
+            ordinal: 0;
             path: ∅;
-            typ: type;
-            typeness: explicit;
-            value: Type {
-              type: usz;
-            };
-          } @ 63..66 (fid = 0);
+          } @ 0..0 (fid = 0) @ 63..66 (fid = 0);
           value: _ @ 69..70 (fid = 0);
           sym: Symbol {
-            kind: local;
-            name: b @ 59..60 (fid = 0);
-            realname: none;
-            which: 0;
+            kind: immutable user-binding;
+            name: b;
+            ordinal: 0;
             path: b;
-            typ: unknown;
-            typeness: explicit;
-            value: none;
-          };
+          } @ 59..60 (fid = 0);
         } @ 59..70 (fid = 0),
 
         @last_expr: none,
       ] @ 53..73 (fid = 0);
     } @ 53..73 (fid = 0);
     sym: Symbol {
-      kind: global;
-      name: a @ 48..49 (fid = 0);
-      realname: none;
-      which: 0;
+      kind: immutable global-def;
+      name: a;
+      ordinal: 0;
       path: orb::a;
-      typ: unknown;
-      typeness: implicit;
-      value: none;
-    };
+    } @ 48..49 (fid = 0);
   } @ 48..73 (fid = 0),
 ]
 error[E014]: `_` can only be used in left hand side of assignment not in expressions
@@ -328,15 +284,11 @@ error: compilation of `E014` failed due to 1 error and 0 warnings
     typeexpr: none;
     value: integer 12 @ 55..57 (fid = 0);
     sym: Symbol {
-      kind: global;
-      name: a @ 50..51 (fid = 0);
-      realname: none;
-      which: 0;
+      kind: immutable global-def;
+      name: a;
+      ordinal: 0;
       path: orb::a;
-      typ: unknown;
-      typeness: implicit;
-      value: none;
-    };
+    } @ 50..51 (fid = 0);
   } @ 50..58 (fid = 0),
 
   GlobalDef {
@@ -345,15 +297,11 @@ error: compilation of `E014` failed due to 1 error and 0 warnings
     typeexpr: none;
     value: integer 34 @ 64..66 (fid = 0);
     sym: Symbol {
-      kind: global;
-      name: a @ 59..60 (fid = 0);
-      realname: none;
-      which: 0;
+      kind: mutable global-def;
+      name: a;
+      ordinal: 0;
       path: orb::a;
-      typ: unknown;
-      typeness: implicit;
-      value: none;
-    };
+    } @ 59..60 (fid = 0);
   } @ 59..67 (fid = 0),
 ]
 error[E019]: the name `a` is defined multiple times
@@ -416,14 +364,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           value: Call {
             callee: Symbol {
               kind: function;
-              name: add @ 133..136 (fid = 0);
-              realname: none;
-              which: 0;
+              name: add;
+              ordinal: 0;
               path: orb::add;
-              typ: unknown;
-              typeness: explicit;
-              value: none;
-            } @ 106..109 (fid = 0);
+            } @ 133..136 (fid = 0) @ 106..109 (fid = 0);
             args: [
               integer 1 @ 110..111 (fid = 0),
 
@@ -431,30 +375,22 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             ];
           } @ 106..115 (fid = 0);
           sym: Symbol {
-            kind: local;
-            name: res @ 99..102 (fid = 0);
-            realname: none;
-            which: 0;
+            kind: immutable user-binding;
+            name: res;
+            ordinal: 0;
             path: res;
-            typ: unknown;
-            typeness: implicit;
-            value: none;
-          };
+          } @ 99..102 (fid = 0);
         } @ 99..115 (fid = 0),
 
         Binary {
           lhs: Underscore @ 121..122 (fid = 0);
           op: Assignment;
           rhs: Symbol {
-            kind: local;
-            name: res @ 99..102 (fid = 0);
-            realname: none;
-            which: 0;
+            kind: immutable user-binding;
+            name: res;
+            ordinal: 0;
             path: res;
-            typ: unknown;
-            typeness: implicit;
-            value: none;
-          } @ 125..128 (fid = 0);
+          } @ 99..102 (fid = 0) @ 125..128 (fid = 0);
         } @ 121..128 (fid = 0) @ 121..128 (fid = 0),
 
         @last_expr: none,
@@ -462,14 +398,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     } @ 87..131 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: main @ 79..83 (fid = 0);
-      realname: none;
-      which: 0;
+      name: main;
+      ordinal: 0;
       path: orb::main;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 79..83 (fid = 0);
   } @ 79..131 (fid = 0),
 
   GlobalDef {
@@ -479,105 +411,67 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: a @ 144..145 (fid = 0);
+          name: a;
           typeexpr: Symbol {
-            kind: global;
-            name: isz @ none;
-            realname: none;
-            which: 0;
+            kind: primitive type;
+            name: isz;
+            ordinal: 0;
             path: ∅;
-            typ: type;
-            typeness: explicit;
-            value: Type {
-              type: isz;
-            };
-          } @ 147..150 (fid = 0);
+          } @ 0..0 (fid = 0) @ 147..150 (fid = 0);
           sym: Symbol {
-            kind: argument;
-            name: a @ 144..145 (fid = 0);
-            realname: none;
-            which: 0;
+            kind: parameter;
+            name: a;
+            ordinal: 0;
             path: a;
-            typ: unknown;
-            typeness: explicit;
-            value: none;
-          };
+          } @ 144..145 (fid = 0);
         } @ 144..150 (fid = 0),
 
         Arg {
-          name: b @ 152..153 (fid = 0);
+          name: b;
           typeexpr: Symbol {
-            kind: global;
-            name: isz @ none;
-            realname: none;
-            which: 0;
+            kind: primitive type;
+            name: isz;
+            ordinal: 0;
             path: ∅;
-            typ: type;
-            typeness: explicit;
-            value: Type {
-              type: isz;
-            };
-          } @ 155..158 (fid = 0);
+          } @ 0..0 (fid = 0) @ 155..158 (fid = 0);
           sym: Symbol {
-            kind: argument;
-            name: b @ 152..153 (fid = 0);
-            realname: none;
-            which: 1;
+            kind: parameter;
+            name: b;
+            ordinal: 1;
             path: b;
-            typ: unknown;
-            typeness: explicit;
-            value: none;
-          };
+          } @ 152..153 (fid = 0);
         } @ 152..158 (fid = 0),
       ];
       rettypeexpr: Symbol {
-        kind: global;
-        name: isz @ none;
-        realname: none;
-        which: 0;
+        kind: primitive type;
+        name: isz;
+        ordinal: 0;
         path: ∅;
-        typ: type;
-        typeness: explicit;
-        value: Type {
-          type: isz;
-        };
-      } @ 163..166 (fid = 0);
+      } @ 0..0 (fid = 0) @ 163..166 (fid = 0);
       body: Block [
         @last_expr: Binary {
           lhs: Symbol {
-            kind: argument;
-            name: a @ 144..145 (fid = 0);
-            realname: none;
-            which: 0;
+            kind: parameter;
+            name: a;
+            ordinal: 0;
             path: a;
-            typ: unknown;
-            typeness: explicit;
-            value: none;
-          } @ 173..174 (fid = 0);
+          } @ 144..145 (fid = 0) @ 173..174 (fid = 0);
           op: Add;
           rhs: Symbol {
-            kind: argument;
-            name: b @ 152..153 (fid = 0);
-            realname: none;
-            which: 1;
+            kind: parameter;
+            name: b;
+            ordinal: 1;
             path: b;
-            typ: unknown;
-            typeness: explicit;
-            value: none;
-          } @ 177..178 (fid = 0);
+          } @ 152..153 (fid = 0) @ 177..178 (fid = 0);
         } @ 173..178 (fid = 0),
       ] @ 167..180 (fid = 0);
     } @ 140..180 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: add @ 133..136 (fid = 0);
-      realname: none;
-      which: 0;
+      name: add;
+      ordinal: 0;
       path: orb::add;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 133..136 (fid = 0);
   } @ 133..180 (fid = 0),
 ]
 ",
@@ -600,42 +494,28 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     } @ 27..35 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: main @ 19..23 (fid = 0);
-      realname: none;
-      which: 0;
+      name: main;
+      ordinal: 0;
       path: orb::main;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 19..23 (fid = 0);
   } @ 19..35 (fid = 0),
 
   GlobalDef {
     name: avogadro @ 36..44 (fid = 0);
     mutability: not;
     typeexpr: Symbol {
-      kind: global;
-      name: f64 @ none;
-      realname: none;
-      which: 0;
+      kind: primitive type;
+      name: f64;
+      ordinal: 0;
       path: ∅;
-      typ: type;
-      typeness: explicit;
-      value: Type {
-        type: f64;
-      };
-    } @ 47..50 (fid = 0);
+    } @ 0..0 (fid = 0) @ 47..50 (fid = 0);
     value: float 6.0219999999999996e23 @ 53..61 (fid = 0);
     sym: Symbol {
-      kind: global;
-      name: avogadro @ 36..44 (fid = 0);
-      realname: none;
-      which: 0;
+      kind: immutable global-def;
+      name: avogadro;
+      ordinal: 0;
       path: orb::avogadro;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 36..44 (fid = 0);
   } @ 36..62 (fid = 0),
 
   GlobalDef {
@@ -644,29 +524,19 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     typeexpr: PointerType {
       mutability: not;
       typeexpr: Symbol {
-        kind: global;
-        name: str @ none;
-        realname: none;
-        which: 0;
+        kind: primitive type;
+        name: str;
+        ordinal: 0;
         path: ∅;
-        typ: type;
-        typeness: explicit;
-        value: Type {
-          type: str;
-        };
-      } @ 87..90 (fid = 0);
+      } @ 0..0 (fid = 0) @ 87..90 (fid = 0);
     } @ 86..90 (fid = 0);
     value: string "Hello" @ 93..100 (fid = 0);
     sym: Symbol {
-      kind: global;
-      name: hello @ 78..83 (fid = 0);
-      realname: none;
-      which: 0;
+      kind: mutable global-def;
+      name: hello;
+      ordinal: 0;
       path: orb::hello;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 78..83 (fid = 0);
   } @ 78..101 (fid = 0),
 
   GlobalDef {
@@ -675,31 +545,23 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     typeexpr: none;
     value: float 12.0 @ 115..119 (fid = 0);
     sym: Symbol {
-      kind: global;
-      name: globFloat @ 102..111 (fid = 0);
-      realname: none;
-      which: 0;
+      kind: mutable global-def;
+      name: globFloat;
+      ordinal: 0;
       path: orb::globFloat;
-      typ: unknown;
-      typeness: implicit;
-      value: none;
-    };
+    } @ 102..111 (fid = 0);
   } @ 102..120 (fid = 0),
 
   Module {
-    name: nested @ 179..191 (fid = 0);
+    name: nested;
     module: [];
     sym: Symbol {
       kind: module;
-      name: nested @ 179..191 (fid = 0);
-      realname: none;
-      which: 0;
+      name: nested;
+      ordinal: 0;
       path: orb::nested;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
-  },
+    } @ 179..191 (fid = 0);
+  } @ 179..191 (fid = 0),
 ]
 "#,
         compiler_code: 0,
@@ -767,14 +629,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           op: Assignment;
           rhs: Symbol {
             kind: function;
-            name: main @ 11..15 (fid = 0);
-            realname: none;
-            which: 0;
+            name: main;
+            ordinal: 0;
             path: orb::main;
-            typ: unknown;
-            typeness: explicit;
-            value: none;
-          } @ 325..329 (fid = 0);
+          } @ 11..15 (fid = 0) @ 325..329 (fid = 0);
         } @ 321..329 (fid = 0) @ 321..329 (fid = 0),
 
         Binary {
@@ -811,14 +669,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           rhs: Call {
             callee: Symbol {
               kind: function;
-              name: some_fun @ 1159..1167 (fid = 0);
-              realname: none;
-              which: 0;
+              name: some_fun;
+              ordinal: 0;
               path: orb::some_fun;
-              typ: unknown;
-              typeness: explicit;
-              value: none;
-            } @ 439..447 (fid = 0);
+            } @ 1159..1167 (fid = 0) @ 439..447 (fid = 0);
             args: [];
           } @ 439..449 (fid = 0);
         } @ 435..449 (fid = 0) @ 435..449 (fid = 0),
@@ -829,14 +683,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           rhs: Call {
             callee: Symbol {
               kind: function;
-              name: some_fun @ 1159..1167 (fid = 0);
-              realname: none;
-              which: 0;
+              name: some_fun;
+              ordinal: 0;
               path: orb::some_fun;
-              typ: unknown;
-              typeness: explicit;
-              value: none;
-            } @ 459..467 (fid = 0);
+            } @ 1159..1167 (fid = 0) @ 459..467 (fid = 0);
             args: [
               integer 1 @ 468..469 (fid = 0),
             ];
@@ -849,14 +699,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           rhs: Call {
             callee: Symbol {
               kind: function;
-              name: some_fun @ 1159..1167 (fid = 0);
-              realname: none;
-              which: 0;
+              name: some_fun;
+              ordinal: 0;
               path: orb::some_fun;
-              typ: unknown;
-              typeness: explicit;
-              value: none;
-            } @ 480..488 (fid = 0);
+            } @ 1159..1167 (fid = 0) @ 480..488 (fid = 0);
             args: [
               integer 1 @ 489..490 (fid = 0),
 
@@ -871,14 +717,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           rhs: Call {
             callee: Symbol {
               kind: function;
-              name: some_fun @ 1159..1167 (fid = 0);
-              realname: none;
-              which: 0;
+              name: some_fun;
+              ordinal: 0;
               path: orb::some_fun;
-              typ: unknown;
-              typeness: explicit;
-              value: none;
-            } @ 504..512 (fid = 0);
+            } @ 1159..1167 (fid = 0) @ 504..512 (fid = 0);
             args: [
               integer 1 @ 513..514 (fid = 0),
 
@@ -895,14 +737,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
               Call {
                 callee: Symbol {
                   kind: function;
-                  name: main @ 11..15 (fid = 0);
-                  realname: none;
-                  which: 0;
+                  name: main;
+                  ordinal: 0;
                   path: orb::main;
-                  typ: unknown;
-                  typeness: explicit;
-                  value: none;
-                } @ 554..558 (fid = 0);
+                } @ 11..15 (fid = 0) @ 554..558 (fid = 0);
                 args: [];
               } @ 554..560 (fid = 0) @ 554..560 (fid = 0),
 
@@ -915,14 +753,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
               Call {
                 callee: Symbol {
                   kind: function;
-                  name: main @ 11..15 (fid = 0);
-                  realname: none;
-                  which: 0;
+                  name: main;
+                  ordinal: 0;
                   path: orb::main;
-                  typ: unknown;
-                  typeness: explicit;
-                  value: none;
-                } @ 583..587 (fid = 0);
+                } @ 11..15 (fid = 0) @ 583..587 (fid = 0);
                 args: [];
               } @ 583..589 (fid = 0) @ 583..589 (fid = 0),
 
@@ -960,14 +794,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
               rhs: Call {
                 callee: Symbol {
                   kind: function;
-                  name: main @ 11..15 (fid = 0);
-                  realname: none;
-                  which: 0;
+                  name: main;
+                  ordinal: 0;
                   path: orb::main;
-                  typ: unknown;
-                  typeness: explicit;
-                  value: none;
-                } @ 706..710 (fid = 0);
+                } @ 11..15 (fid = 0) @ 706..710 (fid = 0);
                 args: [];
               } @ 706..712 (fid = 0);
             } @ 702..712 (fid = 0) @ 702..712 (fid = 0),
@@ -1014,15 +844,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           rhs: Unary {
             op: Dereference;
             expr: Symbol {
-              kind: global;
-              name: some_pointer @ 1180..1192 (fid = 0);
-              realname: none;
-              which: 0;
+              kind: immutable global-def;
+              name: some_pointer;
+              ordinal: 0;
               path: orb::some_pointer;
-              typ: unknown;
-              typeness: implicit;
-              value: none;
-            } @ 916..928 (fid = 0);
+            } @ 1180..1192 (fid = 0) @ 916..928 (fid = 0);
           } @ 916..930 (fid = 0);
         } @ 912..930 (fid = 0) @ 912..930 (fid = 0),
 
@@ -1032,17 +858,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           rhs: PointerType {
             mutability: not;
             typeexpr: Symbol {
-              kind: global;
-              name: u32 @ none;
-              realname: none;
-              which: 0;
+              kind: primitive type;
+              name: u32;
+              ordinal: 0;
               path: ∅;
-              typ: type;
-              typeness: explicit;
-              value: Type {
-                type: u32;
-              };
-            } @ 977..980 (fid = 0);
+            } @ 0..0 (fid = 0) @ 977..980 (fid = 0);
           } @ 976..980 (fid = 0);
         } @ 972..980 (fid = 0) @ 972..980 (fid = 0),
 
@@ -1052,17 +872,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           rhs: PointerType {
             mutability: mut;
             typeexpr: Symbol {
-              kind: global;
-              name: u32 @ none;
-              realname: none;
-              which: 0;
+              kind: primitive type;
+              name: u32;
+              ordinal: 0;
               path: ∅;
-              typ: type;
-              typeness: explicit;
-              value: Type {
-                type: u32;
-              };
-            } @ 995..998 (fid = 0);
+            } @ 0..0 (fid = 0) @ 995..998 (fid = 0);
           } @ 990..998 (fid = 0);
         } @ 986..998 (fid = 0) @ 986..998 (fid = 0),
 
@@ -1081,43 +895,25 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           rhs: FunPtrType {
             args: [
               Symbol {
-                kind: global;
-                name: usz @ none;
-                realname: none;
-                which: 0;
+                kind: primitive type;
+                name: usz;
+                ordinal: 0;
                 path: ∅;
-                typ: type;
-                typeness: explicit;
-                value: Type {
-                  type: usz;
-                };
-              } @ 1059..1062 (fid = 0),
+              } @ 0..0 (fid = 0) @ 1059..1062 (fid = 0),
 
               Symbol {
-                kind: global;
-                name: bool @ none;
-                realname: none;
-                which: 0;
+                kind: primitive type;
+                name: bool;
+                ordinal: 0;
                 path: ∅;
-                typ: type;
-                typeness: explicit;
-                value: Type {
-                  type: bool;
-                };
-              } @ 1064..1068 (fid = 0),
+              } @ 0..0 (fid = 0) @ 1064..1068 (fid = 0),
             ];
             ret: Symbol {
-              kind: global;
-              name: usz @ none;
-              realname: none;
-              which: 0;
+              kind: primitive type;
+              name: usz;
+              ordinal: 0;
               path: ∅;
-              typ: type;
-              typeness: explicit;
-              value: Type {
-                type: usz;
-              };
-            } @ 1073..1076 (fid = 0);
+            } @ 0..0 (fid = 0) @ 1073..1076 (fid = 0);
           } @ 1054..1076 (fid = 0);
         } @ 1050..1076 (fid = 0) @ 1050..1076 (fid = 0),
 
@@ -1127,30 +923,18 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           rhs: FunPtrType {
             args: [
               Symbol {
-                kind: global;
-                name: usz @ none;
-                realname: none;
-                which: 0;
+                kind: primitive type;
+                name: usz;
+                ordinal: 0;
                 path: ∅;
-                typ: type;
-                typeness: explicit;
-                value: Type {
-                  type: usz;
-                };
-              } @ 1091..1094 (fid = 0),
+              } @ 0..0 (fid = 0) @ 1091..1094 (fid = 0),
             ];
             ret: Symbol {
-              kind: global;
-              name: usz @ none;
-              realname: none;
-              which: 0;
+              kind: primitive type;
+              name: usz;
+              ordinal: 0;
               path: ∅;
-              typ: type;
-              typeness: explicit;
-              value: Type {
-                type: usz;
-              };
-            } @ 1100..1103 (fid = 0);
+            } @ 0..0 (fid = 0) @ 1100..1103 (fid = 0);
           } @ 1086..1103 (fid = 0);
         } @ 1082..1103 (fid = 0) @ 1082..1103 (fid = 0),
 
@@ -1159,14 +943,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     } @ 19..1106 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: main @ 11..15 (fid = 0);
-      realname: none;
-      which: 0;
+      name: main;
+      ordinal: 0;
       path: orb::main;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 11..15 (fid = 0);
   } @ 11..1106 (fid = 0),
 
   GlobalDef {
@@ -1182,14 +962,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     } @ 1171..1179 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: some_fun @ 1159..1167 (fid = 0);
-      realname: none;
-      which: 0;
+      name: some_fun;
+      ordinal: 0;
       path: orb::some_fun;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 1159..1167 (fid = 0);
   } @ 1159..1179 (fid = 0),
 
   GlobalDef {
@@ -1201,15 +977,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
       expr: integer 12 @ 1197..1199 (fid = 0);
     } @ 1196..1199 (fid = 0);
     sym: Symbol {
-      kind: global;
-      name: some_pointer @ 1180..1192 (fid = 0);
-      realname: none;
-      which: 0;
+      kind: immutable global-def;
+      name: some_pointer;
+      ordinal: 0;
       path: orb::some_pointer;
-      typ: unknown;
-      typeness: implicit;
-      value: none;
-    };
+    } @ 1180..1192 (fid = 0);
   } @ 1180..1200 (fid = 0),
 ]
 "#,
@@ -1220,7 +992,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     "dsir/my_module": (
         compiler_out: r#"dsir = [
   Module {
-    name: global_def @ 61..77 (fid = 0);
+    name: global_def;
     module: [
       GlobalDef {
         name: main @ 19..23 (fid = 1);
@@ -1235,42 +1007,28 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         } @ 27..35 (fid = 1);
         sym: Symbol {
           kind: function;
-          name: main @ 19..23 (fid = 1);
-          realname: none;
-          which: 0;
+          name: main;
+          ordinal: 0;
           path: orb::global_def::main;
-          typ: unknown;
-          typeness: explicit;
-          value: none;
-        };
+        } @ 19..23 (fid = 1);
       } @ 19..35 (fid = 1),
 
       GlobalDef {
         name: avogadro @ 36..44 (fid = 1);
         mutability: not;
         typeexpr: Symbol {
-          kind: global;
-          name: f64 @ none;
-          realname: none;
-          which: 0;
+          kind: primitive type;
+          name: f64;
+          ordinal: 0;
           path: ∅;
-          typ: type;
-          typeness: explicit;
-          value: Type {
-            type: f64;
-          };
-        } @ 47..50 (fid = 1);
+        } @ 0..0 (fid = 0) @ 47..50 (fid = 1);
         value: float 6.0219999999999996e23 @ 53..61 (fid = 1);
         sym: Symbol {
-          kind: global;
-          name: avogadro @ 36..44 (fid = 1);
-          realname: none;
-          which: 0;
+          kind: immutable global-def;
+          name: avogadro;
+          ordinal: 0;
           path: orb::global_def::avogadro;
-          typ: unknown;
-          typeness: explicit;
-          value: none;
-        };
+        } @ 36..44 (fid = 1);
       } @ 36..62 (fid = 1),
 
       GlobalDef {
@@ -1279,29 +1037,19 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         typeexpr: PointerType {
           mutability: not;
           typeexpr: Symbol {
-            kind: global;
-            name: str @ none;
-            realname: none;
-            which: 0;
+            kind: primitive type;
+            name: str;
+            ordinal: 0;
             path: ∅;
-            typ: type;
-            typeness: explicit;
-            value: Type {
-              type: str;
-            };
-          } @ 87..90 (fid = 1);
+          } @ 0..0 (fid = 0) @ 87..90 (fid = 1);
         } @ 86..90 (fid = 1);
         value: string "Hello" @ 93..100 (fid = 1);
         sym: Symbol {
-          kind: global;
-          name: hello @ 78..83 (fid = 1);
-          realname: none;
-          which: 0;
+          kind: mutable global-def;
+          name: hello;
+          ordinal: 0;
           path: orb::global_def::hello;
-          typ: unknown;
-          typeness: explicit;
-          value: none;
-        };
+        } @ 78..83 (fid = 1);
       } @ 78..101 (fid = 1),
 
       GlobalDef {
@@ -1310,19 +1058,15 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
         typeexpr: none;
         value: float 12.0 @ 115..119 (fid = 1);
         sym: Symbol {
-          kind: global;
-          name: globFloat @ 102..111 (fid = 1);
-          realname: none;
-          which: 0;
+          kind: mutable global-def;
+          name: globFloat;
+          ordinal: 0;
           path: orb::global_def::globFloat;
-          typ: unknown;
-          typeness: implicit;
-          value: none;
-        };
+        } @ 102..111 (fid = 1);
       } @ 102..120 (fid = 1),
 
       Module {
-        name: nested @ 179..191 (fid = 1);
+        name: nested;
         module: [
           GlobalDef {
             name: add @ 65..68 (fid = 2);
@@ -1331,130 +1075,84 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             value: FunDefinition {
               args: [
                 Arg {
-                  name: a @ 76..77 (fid = 2);
+                  name: a;
                   typeexpr: Symbol {
-                    kind: global;
-                    name: usz @ none;
-                    realname: none;
-                    which: 0;
+                    kind: primitive type;
+                    name: usz;
+                    ordinal: 0;
                     path: ∅;
-                    typ: type;
-                    typeness: explicit;
-                    value: Type {
-                      type: usz;
-                    };
-                  } @ 79..82 (fid = 2);
+                  } @ 0..0 (fid = 0) @ 79..82 (fid = 2);
                   sym: Symbol {
-                    kind: argument;
-                    name: a @ 76..77 (fid = 2);
-                    realname: none;
-                    which: 0;
+                    kind: parameter;
+                    name: a;
+                    ordinal: 0;
                     path: a;
-                    typ: unknown;
-                    typeness: explicit;
-                    value: none;
-                  };
+                  } @ 76..77 (fid = 2);
                 } @ 76..82 (fid = 2),
 
                 Arg {
-                  name: b @ 84..85 (fid = 2);
+                  name: b;
                   typeexpr: Symbol {
-                    kind: global;
-                    name: usz @ none;
-                    realname: none;
-                    which: 0;
+                    kind: primitive type;
+                    name: usz;
+                    ordinal: 0;
                     path: ∅;
-                    typ: type;
-                    typeness: explicit;
-                    value: Type {
-                      type: usz;
-                    };
-                  } @ 87..90 (fid = 2);
+                  } @ 0..0 (fid = 0) @ 87..90 (fid = 2);
                   sym: Symbol {
-                    kind: argument;
-                    name: b @ 84..85 (fid = 2);
-                    realname: none;
-                    which: 1;
+                    kind: parameter;
+                    name: b;
+                    ordinal: 1;
                     path: b;
-                    typ: unknown;
-                    typeness: explicit;
-                    value: none;
-                  };
+                  } @ 84..85 (fid = 2);
                 } @ 84..90 (fid = 2),
               ];
               rettypeexpr: Symbol {
-                kind: global;
-                name: usz @ none;
-                realname: none;
-                which: 0;
+                kind: primitive type;
+                name: usz;
+                ordinal: 0;
                 path: ∅;
-                typ: type;
-                typeness: explicit;
-                value: Type {
-                  type: usz;
-                };
-              } @ 95..98 (fid = 2);
+              } @ 0..0 (fid = 0) @ 95..98 (fid = 2);
               body: Block [
                 @last_expr: Binary {
                   lhs: Symbol {
-                    kind: argument;
-                    name: a @ 76..77 (fid = 2);
-                    realname: none;
-                    which: 0;
+                    kind: parameter;
+                    name: a;
+                    ordinal: 0;
                     path: a;
-                    typ: unknown;
-                    typeness: explicit;
-                    value: none;
-                  } @ 105..106 (fid = 2);
+                  } @ 76..77 (fid = 2) @ 105..106 (fid = 2);
                   op: Add;
                   rhs: Symbol {
-                    kind: argument;
-                    name: b @ 84..85 (fid = 2);
-                    realname: none;
-                    which: 1;
+                    kind: parameter;
+                    name: b;
+                    ordinal: 1;
                     path: b;
-                    typ: unknown;
-                    typeness: explicit;
-                    value: none;
-                  } @ 109..110 (fid = 2);
+                  } @ 84..85 (fid = 2) @ 109..110 (fid = 2);
                 } @ 105..110 (fid = 2),
               ] @ 99..112 (fid = 2);
             } @ 72..112 (fid = 2);
             sym: Symbol {
               kind: function;
-              name: add @ 65..68 (fid = 2);
-              realname: none;
-              which: 0;
+              name: add;
+              ordinal: 0;
               path: orb::global_def::nested::add;
-              typ: unknown;
-              typeness: explicit;
-              value: none;
-            };
+            } @ 65..68 (fid = 2);
           } @ 65..112 (fid = 2),
         ];
         sym: Symbol {
           kind: module;
-          name: nested @ 179..191 (fid = 1);
-          realname: none;
-          which: 0;
+          name: nested;
+          ordinal: 0;
           path: orb::global_def::nested;
-          typ: unknown;
-          typeness: explicit;
-          value: none;
-        };
-      },
+        } @ 179..191 (fid = 1);
+      } @ 179..191 (fid = 1),
     ];
     sym: Symbol {
       kind: module;
-      name: global_def @ 61..77 (fid = 0);
-      realname: none;
-      which: 0;
+      name: global_def;
+      ordinal: 0;
       path: orb::global_def;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
-  },
+    } @ 61..77 (fid = 0);
+  } @ 61..77 (fid = 0),
 ]
 "#,
         compiler_code: 0,
@@ -1483,14 +1181,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     } @ 149..157 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: println @ 138..145 (fid = 0);
-      realname: none;
-      which: 0;
+      name: println;
+      ordinal: 0;
       path: orb::println;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 138..145 (fid = 0);
   } @ 138..157 (fid = 0),
 
   GlobalDef {
@@ -1507,15 +1201,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           typeexpr: none;
           value: integer 0 @ 188..189 (fid = 0);
           sym: Symbol {
-            kind: local;
-            name: i @ 179..182 (fid = 0);
-            realname: none;
-            which: 0;
+            kind: mutable user-binding;
+            name: i;
+            ordinal: 0;
             path: i;
-            typ: unknown;
-            typeness: implicit;
-            value: none;
-          };
+          } @ 179..182 (fid = 0);
         } @ 179..189 (fid = 0),
 
         Loop {
@@ -1526,15 +1216,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                 op: Not;
                 expr: Binary {
                   lhs: Symbol {
-                    kind: local;
-                    name: i @ 179..182 (fid = 0);
-                    realname: none;
-                    which: 0;
+                    kind: mutable user-binding;
+                    name: i;
+                    ordinal: 0;
                     path: i;
-                    typ: unknown;
-                    typeness: implicit;
-                    value: none;
-                  } @ 202..203 (fid = 0);
+                  } @ 179..182 (fid = 0) @ 202..203 (fid = 0);
                   op: CompLT;
                   rhs: integer 10 @ 206..208 (fid = 0);
                 } @ 202..208 (fid = 0);
@@ -1552,27 +1238,19 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                 Call {
                   callee: Symbol {
                     kind: function;
-                    name: println @ 138..145 (fid = 0);
-                    realname: none;
-                    which: 0;
+                    name: println;
+                    ordinal: 0;
                     path: orb::println;
-                    typ: unknown;
-                    typeness: explicit;
-                    value: none;
-                  } @ 219..226 (fid = 0);
+                  } @ 138..145 (fid = 0) @ 219..226 (fid = 0);
                   args: [
                     string "i = {}" @ 227..235 (fid = 0),
 
                     Symbol {
-                      kind: local;
-                      name: i @ 179..182 (fid = 0);
-                      realname: none;
-                      which: 0;
+                      kind: mutable user-binding;
+                      name: i;
+                      ordinal: 0;
                       path: i;
-                      typ: unknown;
-                      typeness: implicit;
-                      value: none;
-                    } @ 237..238 (fid = 0),
+                    } @ 179..182 (fid = 0) @ 237..238 (fid = 0),
                   ];
                 } @ 219..239 (fid = 0) @ 219..239 (fid = 0),
 
@@ -1590,15 +1268,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           typeexpr: none;
           value: integer 3 @ 261..262 (fid = 0);
           sym: Symbol {
-            kind: local;
-            name: j @ 252..255 (fid = 0);
-            realname: none;
-            which: 1;
+            kind: mutable user-binding;
+            name: j;
+            ordinal: 1;
             path: j;
-            typ: unknown;
-            typeness: implicit;
-            value: none;
-          };
+          } @ 252..255 (fid = 0);
         } @ 252..262 (fid = 0),
 
         @last_expr: Loop {
@@ -1610,30 +1284,22 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                 expr: Binary {
                   lhs: Binary {
                     lhs: Symbol {
-                      kind: local;
-                      name: j @ 252..255 (fid = 0);
-                      realname: none;
-                      which: 1;
+                      kind: mutable user-binding;
+                      name: j;
+                      ordinal: 1;
                       path: j;
-                      typ: unknown;
-                      typeness: implicit;
-                      value: none;
-                    } @ 282..283 (fid = 0);
+                    } @ 252..255 (fid = 0) @ 282..283 (fid = 0);
                     op: CompLT;
                     rhs: integer 10 @ 286..288 (fid = 0);
                   } @ 282..288 (fid = 0);
                   op: LogicalAnd;
                   rhs: Binary {
                     lhs: Symbol {
-                      kind: local;
-                      name: j @ 252..255 (fid = 0);
-                      realname: none;
-                      which: 1;
+                      kind: mutable user-binding;
+                      name: j;
+                      ordinal: 1;
                       path: j;
-                      typ: unknown;
-                      typeness: implicit;
-                      value: none;
-                    } @ 292..293 (fid = 0);
+                    } @ 252..255 (fid = 0) @ 292..293 (fid = 0);
                     op: CompGT;
                     rhs: integer 2 @ 296..297 (fid = 0);
                   } @ 292..297 (fid = 0);
@@ -1652,27 +1318,19 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
                 Call {
                   callee: Symbol {
                     kind: function;
-                    name: println @ 138..145 (fid = 0);
-                    realname: none;
-                    which: 0;
+                    name: println;
+                    ordinal: 0;
                     path: orb::println;
-                    typ: unknown;
-                    typeness: explicit;
-                    value: none;
-                  } @ 308..315 (fid = 0);
+                  } @ 138..145 (fid = 0) @ 308..315 (fid = 0);
                   args: [
                     string "j = {}" @ 316..324 (fid = 0),
 
                     Symbol {
-                      kind: local;
-                      name: j @ 252..255 (fid = 0);
-                      realname: none;
-                      which: 1;
+                      kind: mutable user-binding;
+                      name: j;
+                      ordinal: 1;
                       path: j;
-                      typ: unknown;
-                      typeness: implicit;
-                      value: none;
-                    } @ 326..327 (fid = 0),
+                    } @ 252..255 (fid = 0) @ 326..327 (fid = 0),
                   ];
                 } @ 308..328 (fid = 0) @ 308..328 (fid = 0),
 
@@ -1687,14 +1345,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     } @ 167..337 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: main @ 159..163 (fid = 0);
-      realname: none;
-      which: 0;
+      name: main;
+      ordinal: 0;
       path: orb::main;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 159..163 (fid = 0);
   } @ 159..337 (fid = 0),
 ]
 "#,
@@ -1710,15 +1364,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     typeexpr: none;
     value: integer 1 @ 5..6 (fid = 0);
     sym: Symbol {
-      kind: global;
-      name: a @ 0..1 (fid = 0);
-      realname: none;
-      which: 0;
+      kind: immutable global-def;
+      name: a;
+      ordinal: 0;
       path: orb::a;
-      typ: unknown;
-      typeness: implicit;
-      value: none;
-    };
+    } @ 0..1 (fid = 0);
   } @ 0..7 (fid = 0),
 
   GlobalDef {
@@ -1728,29 +1378,19 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: a @ 18..19 (fid = 0);
+          name: a;
           typeexpr: Symbol {
-            kind: global;
-            name: void @ none;
-            realname: none;
-            which: 0;
+            kind: primitive type;
+            name: void;
+            ordinal: 0;
             path: ∅;
-            typ: type;
-            typeness: explicit;
-            value: Type {
-              type: void;
-            };
-          } @ 21..25 (fid = 0);
+          } @ 0..0 (fid = 0) @ 21..25 (fid = 0);
           sym: Symbol {
-            kind: argument;
-            name: a @ 18..19 (fid = 0);
-            realname: none;
-            which: 0;
+            kind: parameter;
+            name: a;
+            ordinal: 0;
             path: a;
-            typ: unknown;
-            typeness: explicit;
-            value: none;
-          };
+          } @ 18..19 (fid = 0);
         } @ 18..25 (fid = 0),
       ];
       rettypeexpr: none;
@@ -1766,15 +1406,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
             ] @ 38..40 (fid = 0);
           } @ 38..40 (fid = 0);
           sym: Symbol {
-            kind: local;
-            name: a @ 33..34 (fid = 0);
-            realname: none;
-            which: 0;
+            kind: immutable user-binding;
+            name: a;
+            ordinal: 0;
             path: a;
-            typ: unknown;
-            typeness: implicit;
-            value: none;
-          };
+          } @ 33..34 (fid = 0);
         } @ 33..40 (fid = 0),
 
         @last_expr: none,
@@ -1782,14 +1418,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     } @ 14..43 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: b @ 9..10 (fid = 0);
-      realname: none;
-      which: 0;
+      name: b;
+      ordinal: 0;
       path: orb::b;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 9..10 (fid = 0);
   } @ 9..43 (fid = 0),
 
   GlobalDef {
@@ -1806,15 +1438,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           typeexpr: none;
           value: integer 1 @ 67..68 (fid = 0);
           sym: Symbol {
-            kind: local;
-            name: d @ 62..63 (fid = 0);
-            realname: none;
-            which: 0;
+            kind: immutable user-binding;
+            name: d;
+            ordinal: 0;
             path: d;
-            typ: unknown;
-            typeness: implicit;
-            value: none;
-          };
+          } @ 62..63 (fid = 0);
         } @ 62..68 (fid = 0),
 
         BindingDef {
@@ -1823,15 +1451,11 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
           typeexpr: none;
           value: integer 2 @ 79..80 (fid = 0);
           sym: Symbol {
-            kind: local;
-            name: d @ 74..75 (fid = 0);
-            realname: none;
-            which: 1;
+            kind: immutable user-binding;
+            name: d;
+            ordinal: 1;
             path: d;
-            typ: unknown;
-            typeness: implicit;
-            value: none;
-          };
+          } @ 74..75 (fid = 0);
         } @ 74..80 (fid = 0),
 
         @last_expr: none,
@@ -1839,14 +1463,10 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
     } @ 50..83 (fid = 0);
     sym: Symbol {
       kind: function;
-      name: c @ 45..46 (fid = 0);
-      realname: none;
-      which: 0;
+      name: c;
+      ordinal: 0;
       path: orb::c;
-      typ: unknown;
-      typeness: explicit;
-      value: none;
-    };
+    } @ 45..46 (fid = 0);
   } @ 45..83 (fid = 0),
 ]
 ",
@@ -4000,12 +3620,12 @@ error: compilation of `E006_fundecl_expr_resilience_3` failed due to 1 error and
     value: FunDefinition {
       args: [
         Arg {
-          name: a @ 60..61 (fid = 0);
+          name: a;
           typeexpr: path u8 @ 63..65 (fid = 0);
         } @ 60..65 (fid = 0),
 
         Arg {
-          name: � @ 65..66 (fid = 0);
+          name: �;
           typeexpr: Binary {
             lhs: integer 1 @ 67..68 (fid = 0);
             op: BitwiseXor;
@@ -4014,7 +3634,7 @@ error: compilation of `E006_fundecl_expr_resilience_3` failed due to 1 error and
         } @ 65..70 (fid = 0),
 
         Arg {
-          name: c @ 72..73 (fid = 0);
+          name: c;
           typeexpr: path u16 @ 75..78 (fid = 0);
         } @ 72..78 (fid = 0),
       ];
@@ -4053,7 +3673,7 @@ error: compilation of `E006_fundef_expr_resilience_1` failed due to 2 errors and
     value: FunDefinition {
       args: [
         Arg {
-          name: a @ 60..61 (fid = 0);
+          name: a;
           typeexpr: path u8 @ 63..65 (fid = 0);
         } @ 60..65 (fid = 0),
       ];
@@ -4086,7 +3706,7 @@ error: compilation of `E006_fundef_expr_resilience_2` failed due to 1 error and 
     value: FunDefinition {
       args: [
         Arg {
-          name: a @ 60..61 (fid = 0);
+          name: a;
           typeexpr: path u32 @ 63..66 (fid = 0);
         } @ 60..66 (fid = 0),
       ];
@@ -4525,7 +4145,7 @@ error: compilation of `E006_import_directive_1` failed due to 1 error and 0 warn
     ),
     "parser/E006_import_directive_2": (
         compiler_out: "ast = [
-  Import {
+  Directive:Import {
     path: a @ 47..48 (fid = 0);
     alias: b;
   } @ 39..53 (fid = 0),
@@ -5056,7 +4676,7 @@ error: compilation of `E006_path_expr_2` failed due to 1 error and 0 warnings
     ),
     "parser/E006_path_resilience_1": (
         compiler_out: "ast = [
-  Import {
+  Directive:Import {
     path: a::�::� @ 59..0 (fid = 0);
     alias: none;
   } @ 51..67 (fid = 0),
@@ -5089,7 +4709,7 @@ error: compilation of `E006_path_resilience_1` failed due to 2 errors and 0 warn
     ),
     "parser/E006_qualified_path_1": (
         compiler_out: "ast = [
-  Import {
+  Directive:Import {
     path: ∅ @ 0..0 (fid = 0);
     alias: none;
   } @ 39..49 (fid = 0),
@@ -5109,7 +4729,7 @@ error: compilation of `E006_qualified_path_1` failed due to 1 error and 0 warnin
     ),
     "parser/E006_qualified_path_2": (
         compiler_out: "ast = [
-  Import {
+  Directive:Import {
     path: a::� @ 47..0 (fid = 0);
     alias: none;
   } @ 39..52 (fid = 0),
@@ -5369,21 +4989,21 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     ),
     "parser/directive": (
         compiler_out: "ast = [
-  Mod {
+  Directive:Mod {
     name: module;
   } @ 20..32 (fid = 0),
 
-  Import {
+  Directive:Import {
     path: orb::driver::run @ 62..78 (fid = 0);
     alias: none;
   } @ 54..79 (fid = 0),
 
-  Import {
+  Directive:Import {
     path: std @ 88..91 (fid = 0);
     alias: none;
   } @ 80..92 (fid = 0),
 
-  Import {
+  Directive:Import {
     path: std::rc::Rc @ 101..112 (fid = 0);
     alias: ReferenceCountedPtr;
   } @ 93..136 (fid = 0),
@@ -5584,7 +5204,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
           @last_expr: none,
         ] @ 649..691 (fid = 0) @ 649..691 (fid = 0) @ 649..691 (fid = 0),
 
-        BlockWithLabel {
+        LabeledBlock {
           label: label_block @ 697..708 (fid = 0);
           block: Block [
             Break {
@@ -5936,7 +5556,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: e @ 30..31 (fid = 0);
+          name: e;
           typeexpr: Block [
             @last_expr: Binary {
               lhs: path a @ 34..35 (fid = 0);
@@ -5960,7 +5580,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: f @ 55..56 (fid = 0);
+          name: f;
           typeexpr: Block [
             @last_expr: InfiniteLoop {
               label: a @ 60..61 (fid = 0);
@@ -6029,7 +5649,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         value: FunDefinition {
           args: [
             Arg {
-              name: l @ 53..54 (fid = 0);
+              name: l;
               typeexpr: IteratorLoop {
                 label: none;
                 variable: _;
@@ -6059,7 +5679,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         value: FunDefinition {
           args: [
             Arg {
-              name: m @ 97..98 (fid = 0);
+              name: m;
               typeexpr: IteratorLoop {
                 label: none;
                 variable: _;
@@ -6105,7 +5725,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         value: FunDefinition {
           args: [
             Arg {
-              name: o @ 46..47 (fid = 0);
+              name: o;
               typeexpr: FunDefinition {
                 args: [];
                 rettypeexpr: none;
@@ -6170,11 +5790,11 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         value: FunDefinition {
           args: [
             Arg {
-              name: i @ 81..82 (fid = 0);
+              name: i;
               typeexpr: If {
                 cond: boolean false @ 87..92 (fid = 0);
                 body: Block [
-                  @last_expr: BlockWithLabel {
+                  @last_expr: LabeledBlock {
                     label: a @ 103..104 (fid = 0);
                     block: Block [
                       @last_expr: none,
@@ -6212,7 +5832,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: g @ 33..34 (fid = 0);
+          name: g;
           typeexpr: Block [
             BindingDef {
               name: a @ 46..47 (fid = 0);
@@ -6256,7 +5876,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
         value: FunDefinition {
           args: [
             Arg {
-              name: n @ 53..54 (fid = 0);
+              name: n;
               typeexpr: InfiniteLoop {
                 label: none;
                 body: Block [
@@ -6338,7 +5958,7 @@ error: compilation of `E038` failed due to 1 error and 0 warnings
     value: FunDefinition {
       args: [
         Arg {
-          name: k @ 35..36 (fid = 0);
+          name: k;
           typeexpr: PredicateLoop {
             label: none;
             cond: boolean true @ 44..48 (fid = 0);

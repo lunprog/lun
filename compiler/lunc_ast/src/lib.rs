@@ -188,8 +188,8 @@ impl Display for Path {
     }
 }
 
-impl PrettyDump for Path {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E> PrettyDump<E> for Path {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
         write!(ctx.out, "{self}")
     }
 }
@@ -357,8 +357,8 @@ impl BinOp {
     }
 }
 
-impl PrettyDump for BinOp {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E> PrettyDump<E> for BinOp {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
         write!(ctx.out, "{self:?}")
     }
 }
@@ -412,8 +412,8 @@ impl UnOp {
     }
 }
 
-impl PrettyDump for UnOp {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E> PrettyDump<E> for UnOp {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
         write!(ctx.out, "{self:?}")
     }
 }
@@ -425,9 +425,9 @@ pub struct Spanned<T> {
     pub loc: Span,
 }
 
-impl<T: PrettyDump> PrettyDump for Spanned<T> {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        self.node.try_dump(ctx)?;
+impl<T: PrettyDump<E>, E> PrettyDump<E> for Spanned<T> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
+        self.node.try_dump(ctx, extra)?;
         ctx.print_loc(&self.loc)?;
 
         Ok(())
@@ -451,7 +451,7 @@ impl Mutability {
     }
 
     /// Returns `"immutable"` if `Not` or `"mutable"` if `Mut`.
-    pub fn suffix_str(self) -> &'static str {
+    pub fn adjective_str(self) -> &'static str {
         match self {
             Self::Not => "immutable",
             Self::Mut => "mutable",
@@ -477,8 +477,8 @@ impl Mutability {
     }
 }
 
-impl PrettyDump for Mutability {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E> PrettyDump<E> for Mutability {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
         match self {
             Self::Not => write!(ctx.out, "not"),
             Self::Mut => write!(ctx.out, "mut"),
@@ -505,8 +505,8 @@ impl FromStr for Abi {
     }
 }
 
-impl PrettyDump for Abi {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E> PrettyDump<E> for Abi {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
         match self {
             Abi::C => write!(ctx.out, "C"),
         }

@@ -872,7 +872,7 @@ pub struct Desugarrer {
     /// current path of the module we are desugarring
     current_path: Path,
     /// symbol database
-    symdb: EntityDb<Symbol>,
+    pub symdb: EntityDb<Symbol>,
 }
 
 impl Desugarrer {
@@ -941,7 +941,7 @@ impl Desugarrer {
             .into_diag());
         }
 
-        self.table.last_map_mut().map.insert(name, sym.clone());
+        self.table.last_map_mut().map.insert(name, sym);
 
         Ok(())
     }
@@ -1208,7 +1208,7 @@ impl Desugarrer {
                     name.loc.clone(),
                 );
 
-                *sym = LazySymbol::Sym(symref.clone());
+                *sym = LazySymbol::Sym(symref);
 
                 self.bind(name.node.clone(), symref)?;
 
@@ -1400,7 +1400,7 @@ impl Desugarrer {
                         name_loc.clone().unwrap(),
                     );
 
-                    *sym = LazySymbol::Sym(symref.clone());
+                    *sym = LazySymbol::Sym(symref);
 
                     self.bind(name.clone(), symref)?;
                 }
@@ -1474,9 +1474,9 @@ impl Desugarrer {
                 self.orb
                     .goto_mut(&self.current_path)
                     .unwrap()
-                    .define(name.node.clone(), symref.clone());
+                    .define(name.node.clone(), symref);
 
-                *sym = LazySymbol::Sym(symref.clone());
+                *sym = LazySymbol::Sym(symref);
 
                 if self.current_path == resolve_path {
                     match self.bind(name.node.clone(), symref) {
@@ -1512,9 +1512,9 @@ impl Desugarrer {
                 self.orb
                     .goto_mut(&self.current_path)
                     .unwrap()
-                    .define(name.node.clone(), symref.clone());
+                    .define(name.node.clone(), symref);
 
-                *sym = LazySymbol::Sym(symref.clone());
+                *sym = LazySymbol::Sym(symref);
 
                 if self.current_path == resolve_path {
                     match self.bind(name.node.clone(), symref) {
@@ -1548,9 +1548,9 @@ impl Desugarrer {
                 self.orb
                     .goto_mut(&self.current_path)
                     .unwrap()
-                    .define(name.node.clone(), symref.clone());
+                    .define(name.node.clone(), symref);
 
-                *sym = LazySymbol::Sym(symref.clone());
+                *sym = LazySymbol::Sym(symref);
 
                 if self.current_path == resolve_path {
                     match self.bind(name.node.clone(), symref) {
@@ -1577,12 +1577,12 @@ impl Desugarrer {
                         .create_module(name.clone(), path, loc.clone().unwrap())
                 });
 
-                *sym = LazySymbol::Sym(symref.clone());
+                *sym = LazySymbol::Sym(symref);
 
                 self.orb
                     .goto_mut(&self.current_path)
                     .unwrap()
-                    .define_mod(name.clone(), symref.clone());
+                    .define_mod(name.clone(), symref);
 
                 if self.current_path == resolve_path {
                     match self.bind(name.clone(), symref) {
@@ -1630,7 +1630,7 @@ impl Desugarrer {
                 let name = mod_path.pop().unwrap();
 
                 if let Some(module) = self.orb.goto(&mod_path)
-                    && let Some(symref) = module.def_or_mod(&name.to_string())
+                    && let Some(symref) = module.def_or_mod(name.to_string())
                 {
                     self.bind(alias.clone().unwrap_or(name.to_string()), symref)
                 } else {
@@ -1778,7 +1778,7 @@ impl SymbolTable {
 
         for tab in self.tabs.iter().rev() {
             if let Some(symref) = tab.map.get(name) {
-                return Some(symref.clone());
+                return Some(*symref);
             }
         }
 
@@ -1857,7 +1857,7 @@ impl ModuleTree {
 
     /// Define a new symbol inside the current module tree
     pub fn define(&mut self, name: String, sym: Symbol) {
-        self.defs.insert(name, sym.clone());
+        self.defs.insert(name, sym);
     }
 
     /// Define a new module in the current module tree
