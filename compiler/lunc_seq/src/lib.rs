@@ -112,8 +112,8 @@ entity!(Tmp, Temporary);
 /// A temporary.
 #[derive(Debug, Clone)]
 pub struct Temporary {
-    pub id: Tmp,
     pub comptime: Comptime,
+    pub id: Tmp,
     pub typ: Type,
 }
 

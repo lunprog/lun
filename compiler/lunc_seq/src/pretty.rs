@@ -66,12 +66,14 @@ struct OrbDumperInner {
 
 impl<E> PrettyDump<E> for Orb {
     fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
+        let Orb { items } = self;
+
         let dumper = OrbDumper(Rc::new(Mutex::new(OrbDumperInner {
             orb: &raw const *self,
             item: None,
         })));
 
-        for (id, item) in self.items.full_iter() {
+        for (id, item) in items.full_iter() {
             if id.index() != 0 {
                 writeln!(ctx.out)?;
             }
@@ -95,16 +97,23 @@ impl PrettyDump<OrbDumper> for Item {
 
 impl PrettyDump<OrbDumper> for Fundef {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        let Fundef {
+            path,
+            params,
+            ret,
+            body,
+        } = self;
+
         write!(
             ctx.out,
             "<{}> :: fun({}) -> ",
-            self.path,
-            join_pretty(&self.params, extra)
+            path,
+            join_pretty(&params, extra)
         )?;
 
-        self.ret.try_dump(ctx, extra)?;
+        ret.try_dump(ctx, extra)?;
 
-        self.body.try_dump(ctx, extra)?;
+        body.try_dump(ctx, extra)?;
 
         Ok(())
     }
@@ -112,24 +121,31 @@ impl PrettyDump<OrbDumper> for Fundef {
 
 impl PrettyDump<OrbDumper> for Body {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        let Body {
+            bindings,
+            temporaries,
+            comptime_bbs,
+            bbs,
+        } = self;
+
         writeln!(ctx.out, " {{")?;
         ctx.indent();
 
-        for binding in self.bindings.data_iter() {
+        for binding in bindings.data_iter() {
             binding.try_dump(ctx, extra)?;
         }
 
-        if !self.temporaries.is_empty() && !self.bindings.is_empty() {
+        if !temporaries.is_empty() && !bindings.is_empty() {
             writeln!(ctx.out)?;
         }
-        for temporary in self.temporaries.data_iter() {
+        for temporary in temporaries.data_iter() {
             temporary.try_dump(ctx, extra)?;
         }
 
-        if !self.comptime_bbs.is_empty() && !self.temporaries.is_empty() {
+        if !comptime_bbs.is_empty() && !temporaries.is_empty() {
             writeln!(ctx.out)?;
         }
-        for bb in self.comptime_bbs.data_iter() {
+        for bb in comptime_bbs.data_iter() {
             bb.try_dump(ctx, extra)?;
         }
 
@@ -141,9 +157,11 @@ impl PrettyDump<OrbDumper> for Body {
 
 impl PrettyDump<OrbDumper> for Param {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
-        write!(ctx.out, "{}: ", self.tmp)?;
+        let Param { tmp, typ } = self;
 
-        self.typ.try_dump(ctx, extra)?;
+        write!(ctx.out, "{}: ", tmp)?;
+
+        typ.try_dump(ctx, extra)?;
 
         Ok(())
     }
@@ -225,19 +243,26 @@ impl Display for PrimitiveType {
 
 impl PrettyDump<OrbDumper> for Binding {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        let Binding {
+            comptime,
+            mutability,
+            name,
+            typ,
+            loc,
+        } = self;
+
         ctx.write_indent()?;
 
         write!(
             ctx.out,
             "{comptime}{mutability}{name}: ",
-            comptime = self.comptime.prefix_str(),
-            mutability = self.mutability.prefix_str(),
-            name = self.name,
+            comptime = comptime.prefix_str(),
+            mutability = mutability.prefix_str(),
         )?;
 
-        self.typ.try_dump(ctx, extra)?;
+        typ.try_dump(ctx, extra)?;
 
-        writeln!(ctx.out, "; // -> {}", self.loc)?;
+        writeln!(ctx.out, "; // -> {}", loc)?;
 
         Ok(())
     }
@@ -245,16 +270,18 @@ impl PrettyDump<OrbDumper> for Binding {
 
 impl PrettyDump<OrbDumper> for Temporary {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        let Temporary { comptime, id, typ } = self;
+
         ctx.write_indent()?;
 
         write!(
             ctx.out,
             "{comptime}tmp {name}: ",
-            comptime = self.comptime.prefix_str(),
-            name = self.id
+            comptime = comptime.prefix_str(),
+            name = id
         )?;
 
-        self.typ.try_dump(ctx, extra)?;
+        typ.try_dump(ctx, extra)?;
 
         writeln!(ctx.out, ";")?;
 
@@ -264,17 +291,24 @@ impl PrettyDump<OrbDumper> for Temporary {
 
 impl PrettyDump<OrbDumper> for BasicBlock {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        let BasicBlock {
+            id,
+            comptime,
+            stmts,
+            term,
+        } = self;
+
         ctx.write_indent()?;
 
-        writeln!(ctx.out, "{}{}: {{", self.comptime.prefix_str(), self.id)?;
+        writeln!(ctx.out, "{}{}: {{", comptime.prefix_str(), id)?;
         ctx.indent();
 
-        for statement in &self.stmts {
+        for statement in stmts {
             statement.try_dump(ctx, extra)?;
         }
 
         ctx.write_indent()?;
-        self.term.try_dump(ctx, extra)?;
+        term.try_dump(ctx, extra)?;
         writeln!(ctx.out, ";")?;
 
         ctx.deindent();
