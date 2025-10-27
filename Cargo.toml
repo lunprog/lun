@@ -11,6 +11,7 @@ members = [
   "compiler/lunc_linkage",
   "compiler/lunc_llib_meta",
   "compiler/lunc_parser",
+  "compiler/lunc_seq",
   "compiler/lunc_token",
   "compiler/lunc_utils",
 
@@ -32,6 +33,7 @@ lunc_lexer = { path = "compiler/lunc_lexer" }
 lunc_linkage = { path = "compiler/lunc_linkage" }
 lunc_llib_meta = { path = "compiler/lunc_llib_meta" }
 lunc_parser = { path = "compiler/lunc_parser" }
+lunc_seq = { path = "compiler/lunc_seq" }
 lunc_token = { path = "compiler/lunc_token" }
 lunc_utils = { path = "compiler/lunc_utils" }
 

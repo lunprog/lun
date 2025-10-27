@@ -442,7 +442,7 @@ pub enum Mutability {
 }
 
 impl Mutability {
-    /// Returns `""` if `Not` or `"mut "` if `Mut`.
+    /// Returns `""` or `"mut "` based on the mutability.
     pub fn prefix_str(self) -> &'static str {
         match self {
             Self::Not => "",
@@ -450,7 +450,7 @@ impl Mutability {
         }
     }
 
-    /// Returns `"immutable"` if `Not` or `"mutable"` if `Mut`.
+    /// Returns `"immutable"` or `"mutable"` based on the mutability.
     pub fn adjective_str(self) -> &'static str {
         match self {
             Self::Not => "immutable",
@@ -482,6 +482,23 @@ impl<E> PrettyDump<E> for Mutability {
         match self {
             Self::Not => write!(ctx.out, "not"),
             Self::Mut => write!(ctx.out, "mut"),
+        }
+    }
+}
+
+/// Compile-time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Comptime {
+    Yes,
+    No,
+}
+
+impl Comptime {
+    /// Return `"comptime "` or `""` based on comptime-ness.
+    pub fn prefix_str(self) -> &'static str {
+        match self {
+            Comptime::Yes => "comptime ",
+            Comptime::No => "",
         }
     }
 }
