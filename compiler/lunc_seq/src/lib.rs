@@ -38,6 +38,20 @@ impl Item {
     }
 }
 
+/// SIR body, contains the temporaries, user-bindings and basic blocks of a
+/// function defintion or a global definition
+#[derive(Debug, Clone)]
+pub struct Body {
+    /// User-defined bindings
+    pub bindings: EntityDb<BindingId>,
+    /// temporaries
+    pub temporaries: EntityDb<Tmp>,
+    /// compile-time only basic blocks
+    pub comptime_bbs: EntityDb<Bb>,
+    /// basic-blocks.
+    pub bbs: EntityDb<Bb>,
+}
+
 /// A function definition
 ///
 /// ```text
@@ -55,14 +69,8 @@ pub struct Fundef {
     pub params: Vec<Param>,
     /// Function return type
     pub ret: Type,
-    /// User-defined bindings
-    pub bindings: EntityDb<BindingId>,
-    /// temporaries
-    pub temporaries: EntityDb<Tmp>,
-    /// compile-time only basic blocks
-    pub comptime_bbs: EntityDb<Bb>,
-    /// basic-blocks.
-    pub bbs: EntityDb<Bb>,
+    /// Body of the function
+    pub body: Body,
 }
 
 /// Id of a [`Binding`].

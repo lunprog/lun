@@ -33,7 +33,7 @@ use clap::{ArgAction, Parser as ArgParser, ValueEnum};
 use lunc_ast::{Comptime, Mutability, Path};
 use lunc_entity::{Entity, EntityDb};
 use lunc_seq::{
-    BasicBlock, Bb, Binding, Int, Item, ItemId, Orb, PValue, Param, PrimitiveType, RValue,
+    BasicBlock, Bb, Binding, Body, Int, Item, ItemId, Orb, PValue, Param, PrimitiveType, RValue,
     Statement, Temporary, Terminator, Tmp, Type,
 };
 // use lunc_linkage::Linker;
@@ -932,10 +932,12 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
             },
         ],
         ret: Type::PrimitiveType(PrimitiveType::Never),
-        bindings,
-        temporaries,
-        comptime_bbs,
-        bbs,
+        body: Body {
+            bindings,
+            temporaries,
+            comptime_bbs,
+            bbs,
+        },
     }));
 
     let orb = Orb { items };

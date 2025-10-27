@@ -32,16 +32,16 @@ impl OrbDumper {
         let inner = self.0.lock().unwrap();
 
         // SAFETY: lifetime of `orb` guaranteed by the creator of OrbDumpInner.
-        let binding = unsafe {
+        let body = unsafe {
             match inner.item {
                 Some(item_id) => match (*inner.orb).items.get(item_id) {
-                    Item::Fundef(fundef) => fundef.bindings.get(id),
+                    Item::Fundef(fundef) => &fundef.body,
                 },
                 None => panic!("no current item"),
             }
         };
 
-        accessor(binding)
+        accessor(body.bindings.get(id))
     }
 
     /// Set the current item id
@@ -97,6 +97,15 @@ impl PrettyDump<OrbDumper> for Fundef {
         )?;
 
         self.ret.try_dump(ctx, extra)?;
+
+        self.body.try_dump(ctx, extra)?;
+
+        Ok(())
+    }
+}
+
+impl PrettyDump<OrbDumper> for Body {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         writeln!(ctx.out, " {{")?;
         ctx.indent();
 
