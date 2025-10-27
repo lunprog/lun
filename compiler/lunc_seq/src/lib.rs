@@ -7,7 +7,7 @@ pub mod pretty;
 
 use std::io::{self, Write};
 
-use lunc_ast::{Comptime, Mutability, Path};
+use lunc_ast::{Abi, Comptime, Mutability, Path};
 use lunc_entity::{EntityDb, entity};
 use lunc_utils::Span;
 
@@ -27,6 +27,7 @@ entity!(ItemId, Item);
 #[derive(Debug, Clone)]
 pub enum Item {
     Fundef(Fundef),
+    Fundecl(Fundecl),
 }
 
 impl Item {
@@ -34,6 +35,7 @@ impl Item {
     pub fn path(&self) -> &Path {
         match self {
             Self::Fundef(fundef) => &fundef.path,
+            Self::Fundecl(fundecl) => &fundecl.path,
         }
     }
 }
@@ -441,6 +443,27 @@ impl UnOp {
             UnOp::Not => "!",
         }
     }
+}
+
+/// A function declaration
+///
+/// ```text
+/// "<" path ">" :: extern "ABI" name "NAME" fun({TMP: TYPE}) -> TYPE;
+/// // here ABI, is for now one of: C, Lun
+/// // and NAME, before link_name is the name of the function declaration to look for.
+/// ```
+#[derive(Debug, Clone)]
+pub struct Fundecl {
+    /// Absolute path of the fundecl
+    pub path: Path,
+    /// Abi
+    pub abi: Abi,
+    /// Name of the symbol to declare
+    pub name: String,
+    /// Function parameters
+    pub params: Vec<Type>,
+    /// Function return type
+    pub ret: Type,
 }
 
 /// SIR type.

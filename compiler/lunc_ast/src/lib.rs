@@ -511,6 +511,15 @@ pub enum Abi {
     C,
 }
 
+impl Abi {
+    /// Abi name as an anonymous enum variant, like `.Field`.
+    pub fn enum_str(&self) -> &'static str {
+        match self {
+            Abi::C => ".C",
+        }
+    }
+}
+
 impl FromStr for Abi {
     type Err = ();
 

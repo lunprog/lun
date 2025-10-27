@@ -36,6 +36,7 @@ impl OrbDumper {
             match inner.item {
                 Some(item_id) => match (*inner.orb).items.get(item_id) {
                     Item::Fundef(fundef) => &fundef.body,
+                    _ => panic!("no body for this item kind."),
                 },
                 None => panic!("no current item"),
             }
@@ -71,6 +72,10 @@ impl<E> PrettyDump<E> for Orb {
         })));
 
         for (id, item) in self.items.full_iter() {
+            if id.index() != 0 {
+                writeln!(ctx.out)?;
+            }
+
             dumper.set_current_item(id);
             item.try_dump(ctx, &dumper)?;
         }
@@ -83,6 +88,7 @@ impl PrettyDump<OrbDumper> for Item {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         match self {
             Item::Fundef(fundef) => fundef.try_dump(ctx, extra),
+            Item::Fundecl(fundecl) => fundecl.try_dump(ctx, extra),
         }
     }
 }
@@ -405,5 +411,31 @@ impl PrettyDump<OrbDumper> for Terminator {
                 write!(ctx.out, "unreachable")
             }
         }
+    }
+}
+
+impl PrettyDump<OrbDumper> for Fundecl {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        let Fundecl {
+            path,
+            abi,
+            name,
+            params,
+            ret,
+        } = self;
+
+        write!(
+            ctx.out,
+            "<{}> :: extern {}, name {:?} fun({}) -> ",
+            path,
+            abi.enum_str(),
+            name,
+            join_pretty(&params, extra)
+        )?;
+
+        ret.try_dump(ctx, extra)?;
+        writeln!(ctx.out, ";")?;
+
+        Ok(())
     }
 }
