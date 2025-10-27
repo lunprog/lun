@@ -7,9 +7,9 @@
 //! - [lunc_parser], parses the [Tokens] into an [Ast]
 //! - [lunc_ast], AST types shared across compiler stages
 //! - [lunc_desugar], desugars the [Ast] to [Dsir] and resolve names
-//! - [lunc_scir], lowers [Dsir] to [Scir] and perform various semantic checks
-//!   and add types
-//! - [lunc_cranelift_codegen], generates the Cranelift IR from [Scir]
+//! - [lunc_seq], Sequential Intermediate Representation, lowered from [Dsir],
+//!   used to perform the type-checking and other semantic analysis.
+//! - [lunc_cranelift_codegen], generates the Cranelift IR from ..
 //! - [lunc_diag], the error handling, the diagnostic system, with the Sink.
 //! - [lunc_utils], various internal utilities of the compiler
 //! - [lunc_linkage], takes the object file from the [codegen], and outputs a
@@ -22,7 +22,7 @@
 //! [Tokens]: lunc_token::TokenStream
 //! [Ast]: lunc_parser::item::Module
 //! [Dsir]: lunc_desugar::DsModule
-//! [Scir]: lunc_scir::ScModule
+//! [Sir]: lunc_seq::Orb
 //! [codegen]: lunc_cranelift_codegen
 //! [ModuleTree]: lunc_llib_meta::ModuleTree
 #![doc(
@@ -30,6 +30,12 @@
 )]
 
 use clap::{ArgAction, Parser as ArgParser, ValueEnum};
+use lunc_ast::{Comptime, Mutability, Path};
+use lunc_entity::{Entity, EntityDb};
+use lunc_seq::{
+    BasicBlock, Bb, Binding, Int, Item, ItemId, Orb, PValue, Param, PrimitiveType, RValue,
+    Statement, Temporary, Terminator, Tmp, Type,
+};
 // use lunc_linkage::Linker;
 use std::{
     backtrace::{Backtrace, BacktraceStatus},
@@ -54,7 +60,7 @@ use lunc_lexer::Lexer;
 use lunc_parser::Parser;
 use lunc_token::is_identifier;
 use lunc_utils::{
-    BuildOptions, OrbType,
+    BuildOptions, OrbType, Span,
     pretty::PrettyDump,
     target::{self, Triple},
 };
@@ -837,5 +843,104 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     _ = sir_instant;
 
     // 6. type-checking and all the semantic analysis, DSIR => SCIR
+
+    let mut path = Path::new();
+    path.push("example".to_string());
+    path.push("sum".to_string());
+
+    let mut bindings = EntityDb::new();
+    bindings.create(Binding {
+        comptime: Comptime::No,
+        mutability: Mutability::Mut,
+        name: String::from("acc"),
+        typ: Type::Ptr(
+            Mutability::Not,
+            Box::new(Type::PrimitiveType(PrimitiveType::U8)),
+        ),
+        loc: Span::ZERO,
+    });
+
+    let mut temporaries = EntityDb::new();
+
+    // %0, %RET
+    temporaries.create(Temporary {
+        id: Tmp::new(0),
+        comptime: Comptime::No,
+        typ: Type::PrimitiveType(PrimitiveType::Never),
+    });
+
+    // %1
+    temporaries.create(Temporary {
+        id: Tmp::new(1),
+        comptime: Comptime::No,
+        typ: Type::PrimitiveType(PrimitiveType::Isz),
+    });
+
+    // %2
+    temporaries.create(Temporary {
+        id: Tmp::new(2),
+        comptime: Comptime::No,
+        typ: Type::PrimitiveType(PrimitiveType::Isz),
+    });
+
+    // %3
+    temporaries.create(Temporary {
+        id: Tmp::new(3),
+        comptime: Comptime::Yes,
+        typ: Type::PrimitiveType(PrimitiveType::Type),
+    });
+
+    let mut comptime_bbs = EntityDb::new();
+
+    // comptime @entry BB0
+    comptime_bbs.create(BasicBlock {
+        id: Bb::new(0),
+        comptime: Comptime::Yes,
+        stmts: vec![Statement::Assignment(
+            PValue::Tmp(Tmp::new(3)),
+            RValue::Call {
+                callee: PValue::Item(ItemId::new(0)),
+                args: vec![],
+            },
+        )],
+        term: Terminator::Return,
+    });
+
+    let mut bbs = EntityDb::new();
+    bbs.create(BasicBlock {
+        id: Bb::new(0),
+        comptime: Comptime::No,
+        stmts: vec![Statement::Assignment(
+            PValue::Tmp(Tmp::new(0)),
+            RValue::Uint(Int::IntSz(120)),
+        )],
+        term: Terminator::Return,
+    });
+
+    let mut items = EntityDb::new();
+
+    items.create(Item::Fundef(lunc_seq::Fundef {
+        path,
+        params: vec![
+            Param {
+                tmp: Tmp::new(1),
+                typ: Type::PrimitiveType(PrimitiveType::Isz),
+            },
+            Param {
+                tmp: Tmp::new(2),
+                typ: Type::Tmp(Tmp::new(3)),
+            },
+        ],
+        ret: Type::PrimitiveType(PrimitiveType::Never),
+        bindings,
+        temporaries,
+        comptime_bbs,
+        bbs,
+    }));
+
+    let orb = Orb { items };
+
+    orb.dump(&());
+
     todo!("IMPLEMENT SIR AND THE FOLLOWING")
 }

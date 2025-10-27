@@ -242,6 +242,23 @@ impl<E: Entity> EntityDb<E> {
     pub fn is_empty(&self) -> bool {
         self.count() == 0
     }
+
+    /// Returns an iterator on the data of the entities.
+    ///
+    /// The iterator yields all the data in the order they were created.
+    pub fn data_iter(&self) -> impl Iterator<Item = &E::Data> {
+        self.elems.iter()
+    }
+
+    /// Returns an iterator on the entity and its associated data.
+    ///
+    /// The iterator yields all the data in the order they were created.
+    pub fn full_iter(&self) -> impl Iterator<Item = (E, &E::Data)> {
+        self.elems
+            .iter()
+            .enumerate()
+            .map(|(id, data)| (E::new(id), data))
+    }
 }
 
 impl<E: Entity> Default for EntityDb<E> {

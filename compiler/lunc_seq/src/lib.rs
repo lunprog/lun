@@ -3,6 +3,10 @@
     html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
+pub mod pretty;
+
+use std::io::{self, Write};
+
 use lunc_ast::{Comptime, Mutability, Path};
 use lunc_entity::{EntityDb, entity};
 use lunc_utils::Span;
@@ -23,6 +27,15 @@ entity!(ItemId, Item);
 #[derive(Debug, Clone)]
 pub enum Item {
     Fundef(Fundef),
+}
+
+impl Item {
+    /// Returns the path of the item.
+    pub fn path(&self) -> &Path {
+        match self {
+            Self::Fundef(fundef) => &fundef.path,
+        }
+    }
 }
 
 /// A function definition
@@ -67,6 +80,8 @@ pub struct Binding {
     pub comptime: Comptime,
     /// Is it mutable?
     pub mutability: Mutability,
+    /// Name of the binding
+    pub name: String,
     /// Type of the binding
     pub typ: Type,
     /// Location of the whole statement defining it
@@ -87,6 +102,7 @@ entity!(Tmp, Temporary);
 /// A temporary.
 #[derive(Debug, Clone)]
 pub struct Temporary {
+    pub id: Tmp,
     pub comptime: Comptime,
     pub typ: Type,
 }
@@ -178,7 +194,7 @@ pub enum PValue {
     /// `TEMP`
     ///
     /// A reference to a temporary
-    Tmp(Temporary),
+    Tmp(Tmp),
     /// `<path>`
     ///
     /// Reference to an `Item`
@@ -257,6 +273,52 @@ pub enum Int {
     Int64(u64),
     /// 128-bit
     Int128(u128),
+    /// *pointer-size*-bit
+    IntSz(u128),
+}
+
+impl Int {
+    /// Write the [`Int`] like if it was unsigned.
+    pub fn write_as_string_unsigned(&self, w: &mut dyn Write) -> io::Result<()> {
+        match self {
+            Self::Int8(u) => write!(w, "{u}"),
+            Self::Int16(u) => write!(w, "{u}"),
+            Self::Int32(u) => write!(w, "{u}"),
+            Self::Int64(u) => write!(w, "{u}"),
+            Self::Int128(u) => write!(w, "{u}"),
+            Self::IntSz(u) => write!(w, "{u}"),
+        }
+    }
+
+    /// Write the [`Int`] like if it was signed.
+    pub fn write_as_string_signed(&self, w: &mut dyn Write) -> io::Result<()> {
+        match self {
+            Self::Int8(u) => {
+                let i = u.cast_signed();
+                write!(w, "{i}")
+            }
+            Self::Int16(u) => {
+                let i = u.cast_signed();
+                write!(w, "{i}")
+            }
+            Self::Int32(u) => {
+                let i = u.cast_signed();
+                write!(w, "{i}")
+            }
+            Self::Int64(u) => {
+                let i = u.cast_signed();
+                write!(w, "{i}")
+            }
+            Self::Int128(u) => {
+                let i = u.cast_signed();
+                write!(w, "{i}")
+            }
+            Self::IntSz(u) => {
+                let i = u.cast_signed();
+                write!(w, "{i}")
+            }
+        }
+    }
 }
 
 /// An immediate float value, IEEE 754-2008 compliant.
@@ -266,6 +328,18 @@ pub enum Float {
     F32(f32),
     F64(f64),
     F128(u128),
+}
+
+impl Float {
+    /// Write the [`Float`].
+    pub fn write(&self, w: &mut dyn Write) -> io::Result<()> {
+        match self {
+            Self::F16(f) => write!(w, "{f:+e}"),
+            Self::F32(f) => write!(w, "{f:+e}"),
+            Self::F64(f) => write!(w, "{f:+e}"),
+            Self::F128(f) => write!(w, "{f:+e}"),
+        }
+    }
 }
 
 /// Binary operation, subset of [`lunc_ast::BinOp`].
@@ -312,6 +386,31 @@ pub enum BinOp {
     Shl,
 }
 
+impl BinOp {
+    /// Returns the equivalent operator
+    pub fn op_str(&self) -> &'static str {
+        match self {
+            BinOp::Add => "+",
+            BinOp::Sub => "-",
+            BinOp::Mul => "*",
+            BinOp::Div => "/",
+            BinOp::Rem => "%",
+            BinOp::CompLT => "<",
+            BinOp::CompLE => "<=",
+            BinOp::CompGT => ">",
+            BinOp::CompGE => ">=",
+            BinOp::CompEq => "==",
+            BinOp::CompNe => "!=",
+            BinOp::Assignment => "=",
+            BinOp::And => "&",
+            BinOp::Xor => "^",
+            BinOp::Or => "|",
+            BinOp::Shr => ">>",
+            BinOp::Shl => "<<",
+        }
+    }
+}
+
 /// Unary Operations, a subset of [`lunc_ast::UnOp`]
 ///
 /// # Note
@@ -324,6 +423,16 @@ pub enum UnOp {
     Negation,
     /// `! expression`
     Not,
+}
+
+impl UnOp {
+    /// Returns the equivalent operator.
+    pub fn op_str(&self) -> &'static str {
+        match self {
+            UnOp::Negation => "-",
+            UnOp::Not => "!",
+        }
+    }
 }
 
 /// SIR type.
