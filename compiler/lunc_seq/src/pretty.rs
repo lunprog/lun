@@ -172,6 +172,13 @@ impl PrettyDump<OrbDumper> for Body {
             bb.try_dump(ctx, extra)?;
         }
 
+        if !bbs.is_empty() && !comptime_bbs.is_empty() {
+            writeln!(ctx.out)?;
+        }
+        for bb in bbs.data_iter() {
+            bb.try_dump(ctx, extra)?;
+        }
+
         writeln!(ctx.out, "}}")?;
 
         Ok(())
