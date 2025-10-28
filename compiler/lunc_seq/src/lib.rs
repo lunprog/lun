@@ -29,6 +29,7 @@ pub enum Item {
     Fundef(Fundef),
     Fundecl(Fundecl),
     GlobalUninit(GlobalUninit),
+    GlobalDef(GlobalDef),
 }
 
 impl Item {
@@ -37,7 +38,8 @@ impl Item {
         match self {
             Self::Fundef(fundef) => &fundef.path,
             Self::Fundecl(fundecl) => &fundecl.path,
-            Self::GlobalUninit(glob) => &glob.path,
+            Self::GlobalUninit(glob_uninit) => &glob_uninit.path,
+            Self::GlobalDef(globdef) => &globdef.path,
         }
     }
 }
@@ -554,6 +556,42 @@ pub struct GlobalUninit {
     pub typ: Type,
     /// Name of the symbol to declare
     pub name: String,
+}
+
+/// A global definition
+///
+/// ```text
+/// "<" path ">" : TYPE = {
+///     { mut? ident: TYPE; }  // user-defined bindings with their type
+///     { tmp TMP: TYPE; }     // compiler generated temporary
+///     { BASIC_BLOCK }        // control-flow graph
+/// }
+/// ```
+///
+/// Global definitions are compiled the same way functions are compiled, but
+/// basic-block are ALWAYS comptime, the `%RET` temporary contains the final
+/// result after compile-time evaluation and the `Return` terminator does not
+/// "return to the caller", but indicates to the compile-time evaluator that the
+/// evaluation has terminated.
+///
+/// # Note
+///
+/// *Please note that the global-defs are run at COMPILE-TIME, there is no "life
+/// before main" shenanigans.*
+#[derive(Debug, Clone)]
+pub struct GlobalDef {
+    /// Absolute path of the global uninit
+    pub path: Path,
+    /// Type of the Global.
+    pub typ: Type,
+    /// Body
+    ///
+    /// # Note
+    ///
+    /// Here because the comptime is implied by the fact that this is a
+    /// GlobalDef nothing is marked as `comptime`, but it behaves exactly as if
+    /// it were.
+    pub body: Body,
 }
 
 /// SIR type.
