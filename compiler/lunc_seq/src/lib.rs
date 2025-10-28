@@ -41,7 +41,7 @@ impl Item {
 }
 
 /// SIR body, contains the temporaries, user-bindings and basic blocks of a
-/// function defintion or a global definition
+/// function definition or a global definition
 #[derive(Debug, Clone)]
 pub struct Body {
     /// User-defined bindings

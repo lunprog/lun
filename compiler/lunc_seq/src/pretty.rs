@@ -126,7 +126,7 @@ impl PrettyDump<OrbDumper> for Fundef {
             ctx.out,
             "<{}> :: fun({}) -> ",
             path,
-            join_pretty(&params, extra)
+            join_pretty(params, extra)
         )?;
 
         ret.try_dump(ctx, extra)?;
@@ -494,7 +494,7 @@ impl PrettyDump<OrbDumper> for Fundecl {
             path,
             abi.enum_str(),
             name,
-            join_pretty(&params, extra)
+            join_pretty(params, extra)
         )?;
 
         ret.try_dump(ctx, extra)?;
