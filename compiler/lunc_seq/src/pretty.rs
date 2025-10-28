@@ -414,9 +414,27 @@ impl PrettyDump<OrbDumper> for RValue {
                 write!(ctx.out, "&{}", mutability.prefix_str())?;
                 pvalue.try_dump(ctx, extra)
             }
-            RValue::Uint(int) => int.write_as_string_unsigned(&mut ctx.out),
-            RValue::Sint(int) => int.write_as_string_signed(&mut ctx.out),
-            RValue::Float(float) => float.write(&mut ctx.out),
+            RValue::Uint(int) => {
+                write!(ctx.out, "u{}(", int.size_str())?;
+                int.write_as_string_unsigned(&mut ctx.out)?;
+                write!(ctx.out, ")")?;
+
+                Ok(())
+            }
+            RValue::Sint(int) => {
+                write!(ctx.out, "s{}(", int.size_str())?;
+                int.write_as_string_signed(&mut ctx.out)?;
+                write!(ctx.out, ")")?;
+
+                Ok(())
+            }
+            RValue::Float(float) => {
+                write!(ctx.out, "f{}(", float.size_str())?;
+                float.write(&mut ctx.out)?;
+                write!(ctx.out, ")")?;
+
+                Ok(())
+            }
             RValue::Bool(bool) => write!(ctx.out, "{bool}"),
             RValue::String(str, tag) => {
                 if let Some(tag) = tag {

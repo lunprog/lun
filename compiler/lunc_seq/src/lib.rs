@@ -329,6 +329,48 @@ impl Int {
             }
         }
     }
+
+    /// Returns a string representing the size of the integer
+    pub fn size_str(&self) -> &'static str {
+        match self {
+            Self::Int8(_) => "8",
+            Self::Int16(_) => "16",
+            Self::Int32(_) => "32",
+            Self::Int64(_) => "64",
+            Self::Int128(_) => "128",
+            Self::IntSz(_) => "sz",
+        }
+    }
+
+    /// Create a new `IntSz` with `i` as a signed integer.
+    pub fn from_isz(i: i128) -> Int {
+        Int::IntSz(i.cast_unsigned())
+    }
+
+    /// Create a new `Int128` with `i` as a signed integer.
+    pub fn from_i128(i: i128) -> Int {
+        Int::Int128(i.cast_unsigned())
+    }
+
+    /// Create a new `Int64` with `i` as a signed integer.
+    pub fn from_i64(i: i64) -> Int {
+        Int::Int64(i.cast_unsigned())
+    }
+
+    /// Create a new `Int32` with `i` as a signed integer.
+    pub fn from_i32(i: i32) -> Int {
+        Int::Int32(i.cast_unsigned())
+    }
+
+    /// Create a new `Int16` with `i` as a signed integer.
+    pub fn from_i16(i: i16) -> Int {
+        Int::Int16(i.cast_unsigned())
+    }
+
+    /// Create a new `Int8` with `i` as a signed integer.
+    pub fn from_i8(i: i8) -> Int {
+        Int::Int8(i.cast_unsigned())
+    }
 }
 
 /// An immediate float value, IEEE 754-2008 compliant.
@@ -344,10 +386,20 @@ impl Float {
     /// Write the [`Float`].
     pub fn write(&self, w: &mut dyn Write) -> io::Result<()> {
         match self {
-            Self::F16(f) => write!(w, "{f:+e}"),
-            Self::F32(f) => write!(w, "{f:+e}"),
-            Self::F64(f) => write!(w, "{f:+e}"),
-            Self::F128(f) => write!(w, "{f:+e}"),
+            Self::F16(f) => write!(w, "{f:e}"),
+            Self::F32(f) => write!(w, "{f:e}"),
+            Self::F64(f) => write!(w, "{f:e}"),
+            Self::F128(f) => write!(w, "{f:e}"),
+        }
+    }
+
+    /// Returns a string representing the size of the integer
+    pub fn size_str(&self) -> &'static str {
+        match self {
+            Self::F16(_) => "16",
+            Self::F32(_) => "32",
+            Self::F64(_) => "64",
+            Self::F128(_) => "128",
         }
     }
 }
