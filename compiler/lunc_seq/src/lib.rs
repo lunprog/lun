@@ -63,6 +63,10 @@ pub struct Body {
 ///     { comptime? BASIC_BLOCK }       // control-flow graph
 /// }
 /// ```
+///
+/// # Note
+///
+/// A function definition MUST have an entry point that is not comptime.
 #[derive(Debug, Clone)]
 pub struct Fundef {
     /// Absolute path of the fundef
@@ -185,6 +189,14 @@ pub enum Terminator {
     /// `return`
     ///
     /// Return to the caller.
+    ///
+    /// # Note
+    ///
+    /// When using `return` the `%RET` temporary `MUST` be initialized, even
+    /// when the return type of the function is a ZST, then you initialize it
+    /// like that: `%RET = nothing;`. Only function that has `never` has return
+    /// type will not initialize `%RET`, because they do not use the `Return`
+    /// terminator.
     Return,
     /// `unreachable`
     ///
@@ -268,6 +280,15 @@ pub enum RValue {
     ///
     /// Calls the function `PVALUE0` with `PVALUE1..` as arguments
     Call { callee: PValue, args: Vec<PValue> },
+    /// `nothing`
+    ///
+    /// A value of type `void`, used to initialize the `%RET` before returning.
+    ///
+    /// # Note
+    ///
+    /// In practice this value is a no-op, it's just used to ensure everything
+    /// used is initialized.
+    Nothing,
 }
 
 /// An immediate integer value, doesn't have a signedness associated to it.

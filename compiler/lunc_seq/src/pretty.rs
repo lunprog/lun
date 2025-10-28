@@ -469,6 +469,9 @@ impl PrettyDump<OrbDumper> for RValue {
 
                 Ok(())
             }
+            RValue::Nothing => {
+                write!(ctx.out, "nothing")
+            }
         }
     }
 }
