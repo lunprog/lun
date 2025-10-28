@@ -8,3 +8,13 @@ updates:
       - "A-dependencies"
     assignees:
       - "thi8v"
+    open-pull-requests-limit: 10
+    groups:
+      cranelift:
+        # group all crates that start with "cranelift-"
+        patterns:
+          - "cranelift-*"
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"
