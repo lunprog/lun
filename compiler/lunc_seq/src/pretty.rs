@@ -109,6 +109,7 @@ impl PrettyDump<OrbDumper> for Item {
         match self {
             Item::Fundef(fundef) => fundef.try_dump(ctx, extra),
             Item::Fundecl(fundecl) => fundecl.try_dump(ctx, extra),
+            Item::GlobalUninit(glob) => glob.try_dump(ctx, extra),
         }
     }
 }
@@ -520,6 +521,18 @@ impl PrettyDump<OrbDumper> for Fundecl {
 
         ret.try_dump(ctx, extra)?;
         writeln!(ctx.out, ";")?;
+
+        Ok(())
+    }
+}
+
+impl PrettyDump<OrbDumper> for GlobalUninit {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        let GlobalUninit { path, typ, name } = self;
+
+        write!(ctx.out, "<{}> : ", path,)?;
+        typ.try_dump(ctx, extra)?;
+        writeln!(ctx.out, ", name {:?};", name)?;
 
         Ok(())
     }

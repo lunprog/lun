@@ -28,6 +28,7 @@ entity!(ItemId, Item);
 pub enum Item {
     Fundef(Fundef),
     Fundecl(Fundecl),
+    GlobalUninit(GlobalUninit),
 }
 
 impl Item {
@@ -36,6 +37,7 @@ impl Item {
         match self {
             Self::Fundef(fundef) => &fundef.path,
             Self::Fundecl(fundecl) => &fundecl.path,
+            Self::GlobalUninit(glob) => &glob.path,
         }
     }
 }
@@ -537,6 +539,21 @@ pub struct Fundecl {
     pub params: Vec<Type>,
     /// Function return type
     pub ret: Type,
+}
+
+/// A global uninit
+///
+/// ```text
+/// "<" path ">" : TYPE, name "NAME";
+/// ```
+#[derive(Debug, Clone)]
+pub struct GlobalUninit {
+    /// Absolute path of the global uninit
+    pub path: Path,
+    /// Type of the Global.
+    pub typ: Type,
+    /// Name of the symbol to declare
+    pub name: String,
 }
 
 /// SIR type.
