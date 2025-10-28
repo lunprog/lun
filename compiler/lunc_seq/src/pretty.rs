@@ -24,6 +24,7 @@ impl OrbDumper {
     pub fn access_item<R>(&self, id: ItemId, mut accessor: impl FnMut(&Item) -> R) -> R {
         let inner = self.0.lock().unwrap();
 
+        // SAFETY: lifetime of `orb` guaranteed by the creator of OrbDumpInner.
         unsafe { accessor((*inner.orb).items.get(id)) }
     }
 
@@ -50,6 +51,23 @@ impl OrbDumper {
         let mut inner = self.0.lock().unwrap();
 
         inner.item = Some(id);
+    }
+
+    /// Is this temporary a parameter of a fundef?
+    pub fn is_tmp_a_param(&self, tmp: Tmp) -> bool {
+        let inner = self.0.lock().unwrap();
+
+        if let Some(id) = inner.item
+            // SAFETY: lifetime of `orb` guaranteed by the creator of OrbDumpInner.
+            && let Item::Fundef(fundef) = unsafe { (*inner.orb).items.get(id) }
+        {
+            let temporary = fundef.body.temporaries.get(tmp);
+            let range = 1..=fundef.params.len();
+
+            range.contains(&temporary.id.index())
+        } else {
+            false
+        }
     }
 }
 
@@ -139,6 +157,11 @@ impl PrettyDump<OrbDumper> for Body {
             writeln!(ctx.out)?;
         }
         for temporary in temporaries.data_iter() {
+            if extra.is_tmp_a_param(temporary.id) {
+                // the temporary is a parameter, it's already defined.
+                continue;
+            }
+
             temporary.try_dump(ctx, extra)?;
         }
 
