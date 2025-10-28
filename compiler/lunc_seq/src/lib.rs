@@ -248,8 +248,8 @@ pub enum RValue {
     Bool(bool),
     /// a string literal, (`.0`), and its tag (`.1`)
     String(String, Option<String>),
-    /// a primitive type, because types in Lun are first-class citizens.
-    PrimitiveType(PrimitiveType),
+    /// a type, because types in Lun are first-class citizens.
+    Type(Type),
     /// `PVALUE as TYPE`
     ///
     /// a primitive cast of `PVALUE` to type `TYPE`.

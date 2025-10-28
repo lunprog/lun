@@ -425,7 +425,7 @@ impl PrettyDump<OrbDumper> for RValue {
                     write!(ctx.out, "{str:?}")
                 }
             }
-            RValue::PrimitiveType(ptype) => write!(ctx.out, "{ptype}"),
+            RValue::Type(typ) => typ.try_dump(ctx, extra),
             RValue::Cast(pvalue, typ) => {
                 pvalue.try_dump(ctx, extra)?;
                 write!(ctx.out, " as ")?;
