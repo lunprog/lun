@@ -548,6 +548,6 @@ impl PrettyDump<OrbDumper> for GlobalDef {
         write!(ctx.out, " =")?;
         body.try_dump(ctx, extra)?;
 
-        todo!()
+        Ok(())
     }
 }
