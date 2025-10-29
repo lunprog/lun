@@ -212,7 +212,7 @@ impl PrettyDump<OrbDumper> for Param {
 impl PrettyDump<OrbDumper> for Type {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         match self {
-            Type::PrimitiveType(ptype) => write!(ctx.out, "{ptype}"),
+            Type::PrimType(ptype) => write!(ctx.out, "{ptype}"),
             Type::Ptr(mutability, pointee) => {
                 write!(ctx.out, "*{}", mutability.prefix_str())?;
 
@@ -255,31 +255,31 @@ impl PrettyDump<OrbDumper> for Type {
     }
 }
 
-impl Display for PrimitiveType {
+impl Display for PrimType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            PrimitiveType::Isz => write!(f, "isz"),
-            PrimitiveType::I128 => write!(f, "i128"),
-            PrimitiveType::I64 => write!(f, "i64"),
-            PrimitiveType::I32 => write!(f, "i32"),
-            PrimitiveType::I16 => write!(f, "i16"),
-            PrimitiveType::I8 => write!(f, "i8"),
-            PrimitiveType::Usz => write!(f, "usz"),
-            PrimitiveType::U128 => write!(f, "u128"),
-            PrimitiveType::U64 => write!(f, "u64"),
-            PrimitiveType::U32 => write!(f, "u32"),
-            PrimitiveType::U16 => write!(f, "u16"),
-            PrimitiveType::U8 => write!(f, "u8"),
-            PrimitiveType::F128 => write!(f, "f128"),
-            PrimitiveType::F64 => write!(f, "f64"),
-            PrimitiveType::F32 => write!(f, "f32"),
-            PrimitiveType::F16 => write!(f, "f16"),
-            PrimitiveType::Bool => write!(f, "bool"),
-            PrimitiveType::Str => write!(f, "str"),
-            PrimitiveType::Char => write!(f, "char"),
-            PrimitiveType::Never => write!(f, "never"),
-            PrimitiveType::Void => write!(f, "void"),
-            PrimitiveType::Type => write!(f, "type"),
+            PrimType::Isz => write!(f, "isz"),
+            PrimType::I128 => write!(f, "i128"),
+            PrimType::I64 => write!(f, "i64"),
+            PrimType::I32 => write!(f, "i32"),
+            PrimType::I16 => write!(f, "i16"),
+            PrimType::I8 => write!(f, "i8"),
+            PrimType::Usz => write!(f, "usz"),
+            PrimType::U128 => write!(f, "u128"),
+            PrimType::U64 => write!(f, "u64"),
+            PrimType::U32 => write!(f, "u32"),
+            PrimType::U16 => write!(f, "u16"),
+            PrimType::U8 => write!(f, "u8"),
+            PrimType::F128 => write!(f, "f128"),
+            PrimType::F64 => write!(f, "f64"),
+            PrimType::F32 => write!(f, "f32"),
+            PrimType::F16 => write!(f, "f16"),
+            PrimType::Bool => write!(f, "bool"),
+            PrimType::Str => write!(f, "str"),
+            PrimType::Char => write!(f, "char"),
+            PrimType::Never => write!(f, "never"),
+            PrimType::Void => write!(f, "void"),
+            PrimType::Type => write!(f, "type"),
         }
     }
 }

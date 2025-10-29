@@ -608,7 +608,7 @@ pub struct GlobalDef {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
     /// Primitive type
-    PrimitiveType(PrimitiveType),
+    PrimType(PrimType),
     /// A pointer
     Ptr(Mutability, Box<Type>),
     /// A function pointer
@@ -649,7 +649,7 @@ impl Type {
 
 /// Primitive types of SIR.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PrimitiveType {
+pub enum PrimType {
     /// Signed pointer-size integer
     Isz,
     /// Signed 128-bit integer
