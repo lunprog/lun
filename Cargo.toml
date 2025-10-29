@@ -27,6 +27,7 @@ license = "MIT"
 
 [workspace.dependencies]
 lunc_ast = { path = "compiler/lunc_ast" }
+lunc_cranelift_codegen = { path = "compiler/lunc_cranelift_codegen" }
 lunc_diag = { path = "compiler/lunc_diag" }
 lunc_desugar = { path = "compiler/lunc_desugar" }
 lunc_entity = { path = "compiler/lunc_entity" }

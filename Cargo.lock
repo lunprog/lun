@@ -853,6 +853,7 @@ dependencies = [
  "clap",
  "humantime",
  "lunc_ast",
+ "lunc_cranelift_codegen",
  "lunc_desugar",
  "lunc_diag",
  "lunc_entity",
