@@ -8,7 +8,7 @@ pub mod pretty;
 use std::io::{self, Write};
 
 use lunc_ast::{Abi, Comptime, Mutability, Path};
-use lunc_entity::{EntityDb, SparseMap, entity};
+use lunc_entity::{Entity, EntityDb, SparseMap, entity};
 use lunc_utils::Span;
 
 /// A Lun orb.
@@ -605,22 +605,46 @@ pub struct GlobalDef {
 }
 
 /// SIR type.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
-    /// The type is not known, used when we convert the DSIR to SIR, should not
-    /// be present anymore after type-checking.
-    #[default]
-    Unknown,
     /// Primitive type
     PrimitiveType(PrimitiveType),
     /// A pointer
     Ptr(Mutability, Box<Type>),
     /// A function pointer
-    Funptr(Vec<Type>, Box<Type>),
+    FunPtr(Vec<Type>, Box<Type>),
+    /// Anonymous type of a function definition/declaration. Each function has a unique type.
+    ///
+    /// e.g:
+    /// ```lun
+    /// foo :: fun(a: u8, b: u8) -> u8 {
+    ///     a + b
+    /// }
+    /// // this function would have type `fun(u8, u8) -> u8 { example::foo }`
+    /// ```
+    FunDef {
+        fundef: ItemId,
+        params: Vec<Type>,
+        ret: Box<Type>,
+    },
     /// A local that has "type" `Type`.
     Local(LocalId),
     /// A reference to an item with "type" `Type`.
     Item(ItemId),
+}
+
+impl Type {
+    /// Dummy type, used when the type is not yet known, used when we convert
+    /// from the DSIR to SIR, should not be present anymore after type-checking.
+    pub const fn dummy() -> Type {
+        Type::Item(ItemId::RESERVED)
+    }
+
+    /// Is this type the [`dummy`] type?
+    #[inline(always)]
+    pub fn is_dummy(&self) -> bool {
+        *self == Type::dummy()
+    }
 }
 
 /// Primitive types of SIR.

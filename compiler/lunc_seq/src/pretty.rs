@@ -212,7 +212,6 @@ impl PrettyDump<OrbDumper> for Param {
 impl PrettyDump<OrbDumper> for Type {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         match self {
-            Type::Unknown => write!(ctx.out, "UNKNOWN"),
             Type::PrimitiveType(ptype) => write!(ctx.out, "{ptype}"),
             Type::Ptr(mutability, pointee) => {
                 write!(ctx.out, "*{}", mutability.prefix_str())?;
@@ -221,14 +220,28 @@ impl PrettyDump<OrbDumper> for Type {
 
                 Ok(())
             }
-            Type::Funptr(params, ret) => {
-                write!(ctx.out, "*fun({}) ->", join_pretty(params, extra))?;
+            Type::FunPtr(params, ret) => {
+                write!(ctx.out, "*fun({}) -> ", join_pretty(params, extra))?;
 
                 ret.try_dump(ctx, extra)?;
 
                 Ok(())
             }
+            Type::FunDef {
+                fundef,
+                params,
+                ret,
+            } => {
+                write!(ctx.out, "fun({}) -> ", join_pretty(params, extra))?;
+
+                ret.try_dump(ctx, extra)?;
+
+                extra.access_item(*fundef, |item| write!(ctx.out, " {{ {} }}", item.path()))?;
+
+                Ok(())
+            }
             Type::Local(local) => local.try_dump(ctx, extra),
+            _ if self.is_dummy() => write!(ctx.out, "UNKNOWN"),
             Type::Item(id) => {
                 extra.access_item(*id, |item| -> io::Result<()> {
                     write!(ctx.out, "<{}>", item.path())?;
