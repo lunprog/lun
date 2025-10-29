@@ -410,30 +410,31 @@ impl Int {
 /// An immediate float value, IEEE 754-2008 compliant.
 #[derive(Debug, Clone)]
 pub enum Float {
-    F16(u16),
+    // FIXME: add support for f16 and f128
+    // F16(u16),
     F32(f32),
     F64(f64),
-    F128(u128),
+    // F128(u128),
 }
 
 impl Float {
     /// Write the [`Float`].
     pub fn write(&self, w: &mut dyn Write) -> io::Result<()> {
         match self {
-            Self::F16(f) => write!(w, "{f:e}"),
+            // Self::F16(f) => write!(w, "{f:e}"),
             Self::F32(f) => write!(w, "{f:e}"),
             Self::F64(f) => write!(w, "{f:e}"),
-            Self::F128(f) => write!(w, "{f:e}"),
+            // Self::F128(f) => write!(w, "{f:e}"),
         }
     }
 
     /// Returns a string representing the size of the integer
     pub fn size_str(&self) -> &'static str {
         match self {
-            Self::F16(_) => "16",
+            // Self::F16(_) => "16",
             Self::F32(_) => "32",
             Self::F64(_) => "64",
-            Self::F128(_) => "128",
+            // Self::F128(_) => "128",
         }
     }
 }
