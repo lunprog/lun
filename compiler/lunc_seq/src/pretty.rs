@@ -7,13 +7,13 @@ use std::{
     sync::Mutex,
 };
 
-use lunc_entity::Entity;
+use lunc_entity::{Entity, EntityDb, SparseMap};
 use lunc_utils::{
     join_pretty,
     pretty::{PrettyCtxt, PrettyDump},
 };
 
-use super::*;
+use super::sir::*;
 
 /// Struct used to [`PrettyDump`] SIR.
 #[derive(Debug, Clone)]

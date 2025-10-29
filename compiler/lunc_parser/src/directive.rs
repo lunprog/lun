@@ -34,7 +34,7 @@ impl Directive {
     ];
 }
 
-/// Spanned [EffectivePath].
+/// Spanned [Path].
 pub type SpannedPath = Spanned<Path>;
 
 /// Directive parsing
