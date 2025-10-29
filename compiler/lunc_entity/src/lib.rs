@@ -202,6 +202,43 @@ impl<E: Entity> EntityDb<E> {
         entity
     }
 
+    /// Create a new entity with `ctor` that takes the id as argument, and
+    /// returns the data to associate with the entity. This method returns the
+    /// entity created.
+    pub fn create_with(&mut self, ctor: impl FnOnce(E) -> E::Data) -> E {
+        let entity = E::new(self.last_id);
+        self.create(ctor(entity));
+
+        entity
+    }
+
+    /// Creates `count` new entities with the data returned by `ctor`, returns a
+    /// Vector containing all created entities.
+    ///
+    /// `ctor` takes to arguments:
+    /// - the entity being created as the first param
+    /// - the index, e.g: when `ctor` is called for the first entity, the
+    ///   `index == 0`, for the second entity created `index == 1` etc..
+    pub fn create_many(
+        &mut self,
+        mut ctor: impl FnMut(E, usize) -> E::Data,
+        count: usize,
+    ) -> Vec<E> {
+        self.elems.reserve(count);
+        let mut entities = Vec::with_capacity(count);
+
+        for i in 0..count {
+            let entity = E::new(self.last_id);
+            entities.push(entity);
+            let data = ctor(entity, i);
+            let res = self.create(data);
+
+            debug_assert_eq!(entity, res);
+        }
+
+        entities
+    }
+
     /// Checks whether `entity` refers to a slot inside this database.
     pub fn is_valid(&self, entity: E) -> bool {
         entity.index() < self.elems.len()
@@ -331,6 +368,11 @@ impl<E: Entity, V> SparseMap<E, V> {
     /// Does this map contain a value for `entity`?
     pub fn contains_entity(&self, entity: E) -> bool {
         self.get(entity).is_some()
+    }
+
+    /// Is this map empty?
+    pub fn is_empty(&self) -> bool {
+        self.elems.is_empty()
     }
 }
 

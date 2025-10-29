@@ -27,7 +27,7 @@ macro_rules! pretty_struct {
             writeln!($ctx.out, ";")?;
         )*
 
-        $ctx.deindent();
+        $ctx.dedent();
         $ctx.write_indent()?;
         write!($ctx.out, "}}")?;
 
@@ -117,7 +117,7 @@ impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
 
         if self.res.is_ok() {
             self.res = (|| {
-                self.ctx.deindent();
+                self.ctx.dedent();
 
                 if !self.is_empty {
                     self.ctx.write_indent()?;
@@ -197,7 +197,7 @@ impl<'w> PrettyCtxt<'w> {
     }
 
     /// decrease the indent level by one indent
-    pub fn deindent(&mut self) {
+    pub fn dedent(&mut self) {
         self.current_indent -= self.indent;
     }
 

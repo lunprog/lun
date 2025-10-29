@@ -29,7 +29,7 @@ impl OrbDumper {
     }
 
     #[track_caller]
-    fn current_body(&self) -> Option<&Body> {
+    fn current_body(&self) -> Option<&dyn CtBody> {
         let inner = self.0.lock().unwrap();
 
         // SAFETY: lifetime of `orb` guaranteed by the creator of OrbDumpInner.
@@ -52,8 +52,7 @@ impl OrbDumper {
     /// Is this temporary a parameter of a fundef?
     fn is_local_a_param(&self, local: LocalId) -> bool {
         if let Some(body) = self.current_body() {
-            body.local_dbgs
-                .get(local)
+            body.get_local_dbg(local)
                 .is_some_and(|dbg| dbg.kind == LocalKind::Param)
         } else {
             false
@@ -111,6 +110,7 @@ impl PrettyDump<OrbDumper> for Fundef {
             path,
             params,
             ret,
+            sig_finished: _,
             body,
         } = self;
 
@@ -129,6 +129,45 @@ impl PrettyDump<OrbDumper> for Fundef {
     }
 }
 
+fn pretty_ct_parts_of_body(
+    ctx: &mut PrettyCtxt,
+    extra: &OrbDumper,
+    locals: &EntityDb<LocalId>,
+    local_dbgs: &SparseMap<LocalId, LocalDbg>,
+    comptime_bbs: &EntityDb<Bb>,
+) -> io::Result<()> {
+    // have we printed something about this local yet?
+    let mut printed = false;
+
+    for local in locals.data_iter() {
+        // is this local a function parameter?
+        let is_param = extra.is_local_a_param(local.id);
+
+        if !is_param {
+            local.try_dump(ctx, extra)?;
+            printed = true;
+        }
+
+        if let Some(dbg) = local_dbgs.get(local.id) {
+            dbg.try_dump(ctx, extra)?;
+            printed = true;
+        }
+
+        if printed {
+            writeln!(ctx.out)?;
+        }
+    }
+
+    if !comptime_bbs.is_empty() && !locals.is_empty() && !printed {
+        writeln!(ctx.out)?;
+    }
+    for bb in comptime_bbs.data_iter() {
+        bb.try_dump(ctx, extra)?;
+    }
+
+    Ok(())
+}
+
 impl PrettyDump<OrbDumper> for Body {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         let Body {
@@ -141,34 +180,7 @@ impl PrettyDump<OrbDumper> for Body {
         writeln!(ctx.out, " {{")?;
         ctx.indent();
 
-        for local in locals.data_iter() {
-            // is this local a function parameter?
-            let is_param = extra.is_local_a_param(local.id);
-            // have we printed something about this local yet?
-            let mut printed = false;
-
-            if !is_param {
-                local.try_dump(ctx, extra)?;
-                printed = true;
-            }
-
-            if let Some(dbg) = local_dbgs.get(local.id) {
-                dbg.try_dump(ctx, extra)?;
-                printed = true;
-            }
-
-            if printed {
-                writeln!(ctx.out)?;
-            }
-        }
-
-        if !comptime_bbs.is_empty() && !locals.is_empty() && local_dbgs.get(locals.last()).is_none()
-        {
-            writeln!(ctx.out)?;
-        }
-        for bb in comptime_bbs.data_iter() {
-            bb.try_dump(ctx, extra)?;
-        }
+        pretty_ct_parts_of_body(ctx, extra, locals, local_dbgs, comptime_bbs)?;
 
         if !bbs.is_empty() && !comptime_bbs.is_empty() {
             writeln!(ctx.out)?;
@@ -177,9 +189,34 @@ impl PrettyDump<OrbDumper> for Body {
             bb.try_dump(ctx, extra)?;
         }
 
+        ctx.dedent();
         writeln!(ctx.out, "}}")?;
 
         Ok(())
+    }
+}
+
+impl PrettyDump<OrbDumper> for CtoBody {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        let CtoBody {
+            locals,
+            local_dbgs,
+            bbs,
+            optional,
+        } = self;
+
+        if *optional && self.is_empty() {
+            Ok(())
+        } else {
+            writeln!(ctx.out, " comptime {{")?;
+            ctx.indent();
+
+            pretty_ct_parts_of_body(ctx, extra, locals, local_dbgs, bbs)?;
+
+            writeln!(ctx.out, "}}")?;
+
+            Ok(())
+        }
     }
 }
 
@@ -188,7 +225,7 @@ impl PrettyDump<OrbDumper> for LocalId {
         if self.index() == 0 {
             write!(ctx.out, "%RET")
         } else if let Some(body) = extra.current_body()
-            && let Some(debug_info) = body.local_dbgs.get(*self)
+            && let Some(debug_info) = body.get_local_dbg(*self)
         {
             write!(ctx.out, "%{}", debug_info.name)
         } else {
@@ -347,8 +384,11 @@ impl PrettyDump<OrbDumper> for BasicBlock {
             id,
             comptime,
             stmts,
-            term,
-        } = self;
+            term: Some(term),
+        } = self
+        else {
+            panic!("invalid basic-block")
+        };
 
         ctx.write_indent()?;
 
@@ -363,7 +403,7 @@ impl PrettyDump<OrbDumper> for BasicBlock {
         term.try_dump(ctx, extra)?;
         writeln!(ctx.out, ";")?;
 
-        ctx.deindent();
+        ctx.dedent();
         ctx.write_indent()?;
         writeln!(ctx.out, "}}")?;
 
@@ -522,6 +562,7 @@ impl PrettyDump<OrbDumper> for Fundecl {
             name,
             params,
             ret,
+            body,
         } = self;
 
         write!(
@@ -534,6 +575,8 @@ impl PrettyDump<OrbDumper> for Fundecl {
         )?;
 
         ret.try_dump(ctx, extra)?;
+
+        body.try_dump(ctx, extra)?;
         writeln!(ctx.out, ";")?;
 
         Ok(())
@@ -542,11 +585,20 @@ impl PrettyDump<OrbDumper> for Fundecl {
 
 impl PrettyDump<OrbDumper> for GlobalUninit {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
-        let GlobalUninit { path, typ, name } = self;
+        let GlobalUninit {
+            path,
+            typ,
+            name,
+            body,
+        } = self;
 
         write!(ctx.out, "<{}> : ", path)?;
         typ.try_dump(ctx, extra)?;
-        writeln!(ctx.out, ", name {:?};", name)?;
+        write!(ctx.out, ", name {:?}", name)?;
+
+        body.try_dump(ctx, extra)?;
+
+        writeln!(ctx.out, ";")?;
 
         Ok(())
     }

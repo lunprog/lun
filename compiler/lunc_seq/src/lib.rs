@@ -8,6 +8,7 @@ pub mod pretty;
 use std::io::{self, Write};
 
 use lunc_ast::{Abi, Comptime, Mutability, Path};
+use lunc_desugar::DsParam;
 use lunc_entity::{Entity, EntityDb, SparseMap, entity};
 use lunc_utils::Span;
 
@@ -44,6 +45,112 @@ impl Item {
     }
 }
 
+/// A SIR body capable of **c**ompile-**t**ime.
+pub trait CtBody {
+    // COMPTIME BASIC-BLOCKS
+
+    /// Get the compile-time basic-blocks
+    fn ct_blocks(&self) -> &EntityDb<Bb>;
+
+    /// Mutable [`CtBody::ct_blocks`].
+    fn ct_blocks_mut(&mut self) -> &mut EntityDb<Bb>;
+
+    /// Create a compile-time basic block without a terminator.
+    fn new_ctbb(&mut self) -> Bb {
+        self.ct_blocks_mut().create_with(|id| BasicBlock {
+            id,
+            comptime: Comptime::Yes,
+            stmts: Vec::new(),
+            term: None,
+        })
+    }
+
+    // LOCALS
+
+    /// Get the locals database.
+    fn locals(&self) -> &EntityDb<LocalId>;
+
+    /// Mutable [`CtBody::locals`].
+    fn locals_mut(&mut self) -> &mut EntityDb<LocalId>;
+
+    /// Get the `local`.
+    fn get_local(&self, local: LocalId) -> &Local {
+        self.locals().get(local)
+    }
+
+    /// Mutable [`CtBody::get_local`]
+    fn get_local_mut(&mut self, local: LocalId) -> &mut Local {
+        self.locals_mut().get_mut(local)
+    }
+
+    /// Create a new local
+    fn new_local(&mut self, comptime: Comptime, mutability: Mutability, typ: Type) -> LocalId {
+        self.locals_mut().create_with(|id| Local {
+            comptime,
+            id,
+            mutability,
+            typ,
+        })
+    }
+
+    /// Create a new local and associate it debug information
+    fn new_local_with_dbg(
+        &mut self,
+        comptime: Comptime,
+        mutability: Mutability,
+        kind: LocalKind,
+        name: String,
+        typ: Type,
+        loc: Span,
+    ) -> LocalId {
+        let local = self.new_local(comptime, mutability, typ);
+
+        self.local_dbgs_mut().insert(
+            local,
+            LocalDbg {
+                id: local,
+                name,
+                kind,
+                loc,
+            },
+        );
+
+        local
+    }
+
+    // LOCAL DBG INFOS
+
+    /// Get the local debug infos map.
+    fn local_dbgs(&self) -> &SparseMap<LocalId, LocalDbg>;
+
+    /// Mutable [`CtBody::local_dbgs`]
+    fn local_dbgs_mut(&mut self) -> &mut SparseMap<LocalId, LocalDbg>;
+
+    /// Get the debug information of `local` if any.
+    fn get_local_dbg(&self, local: LocalId) -> Option<&LocalDbg> {
+        self.local_dbgs().get(local)
+    }
+}
+
+/// A **c**ompile time and **r**un**t**ime capable body.
+pub trait CrtBody: CtBody {
+    /// Get the non-comptime basic-blocks.
+    fn blocks(&self) -> &EntityDb<Bb>;
+
+    /// Mutable [`CrtBody::blocks`].
+    fn blocks_mut(&mut self) -> &mut EntityDb<Bb>;
+
+    /// Create a new empty basic-block without a terminator.
+    fn new_bb(&mut self) -> Bb {
+        self.blocks_mut().create_with(|id| BasicBlock {
+            id,
+            comptime: Comptime::No,
+            stmts: Vec::new(),
+            term: None,
+        })
+    }
+}
+
 /// SIR body, contains the temporaries, user-bindings and basic blocks of a
 /// function definition or a global definition
 #[derive(Debug, Clone)]
@@ -56,6 +163,139 @@ pub struct Body {
     pub comptime_bbs: EntityDb<Bb>,
     /// Basic-blocks.
     pub bbs: EntityDb<Bb>,
+}
+
+impl CtBody for Body {
+    fn ct_blocks(&self) -> &EntityDb<Bb> {
+        &self.comptime_bbs
+    }
+
+    fn ct_blocks_mut(&mut self) -> &mut EntityDb<Bb> {
+        &mut self.comptime_bbs
+    }
+
+    fn locals(&self) -> &EntityDb<LocalId> {
+        &self.locals
+    }
+
+    fn locals_mut(&mut self) -> &mut EntityDb<LocalId> {
+        &mut self.locals
+    }
+
+    fn local_dbgs(&self) -> &SparseMap<LocalId, LocalDbg> {
+        &self.local_dbgs
+    }
+
+    fn local_dbgs_mut(&mut self) -> &mut SparseMap<LocalId, LocalDbg> {
+        &mut self.local_dbgs
+    }
+}
+
+impl CrtBody for Body {
+    fn blocks(&self) -> &EntityDb<Bb> {
+        &self.bbs
+    }
+
+    fn blocks_mut(&mut self) -> &mut EntityDb<Bb> {
+        &mut self.bbs
+    }
+}
+
+/// Compile-Time Only SIR [`Body`].
+///
+/// # Note
+///
+/// Here because the comptime is implied by the fact that this is compile-time
+/// only body, nothing is marked as `comptime`, but it behaves exactly as if
+/// it were.
+#[non_exhaustive]
+#[derive(Debug, Clone)]
+pub struct CtoBody {
+    /// Locals
+    pub locals: EntityDb<LocalId>,
+    /// Local debug information
+    pub local_dbgs: SparseMap<LocalId, LocalDbg>,
+    /// Compile-time only basic blocks
+    pub bbs: EntityDb<Bb>,
+    /// When set to `true` if the cto-body contains no locals, no debug infos, and
+    /// one basic-block with only a `Ret` terminator, it will [`PrettyDump`] it with
+    /// nothing `""`.
+    ///
+    /// Otherwise if `false` it will always print the block.
+    pub optional: bool,
+}
+
+impl CtoBody {
+    fn empty(optional: bool) -> CtoBody {
+        CtoBody {
+            locals: EntityDb::new(),
+            local_dbgs: SparseMap::new(),
+            bbs: EntityDb::new(),
+            optional,
+        }
+    }
+
+    /// Create a new empty cto-body with `%RET: UNKNOWN`.
+    pub fn new(optional: bool) -> CtoBody {
+        let mut body = CtoBody::empty(optional);
+
+        body.new_local(Comptime::No, Mutability::Mut, Type::dummy());
+
+        body
+    }
+
+    /// Create a cto-body with `%RET: void`.
+    pub fn with_ret(optional: bool) -> CtoBody {
+        let mut body = CtoBody::empty(optional);
+
+        body.new_local(
+            Comptime::No,
+            Mutability::Mut,
+            Type::PrimType(PrimType::Void),
+        );
+
+        body
+    }
+
+    /// Is this block empty ? (described in [`CtoBody`] docs)
+    pub fn is_empty(&self) -> bool {
+        self.locals.count() <= 1
+            && self.local_dbgs.is_empty()
+            && self.bbs.try_get(Bb::new(0)).is_some_and(|bb| {
+                bb.stmts
+                    == [Statement::Assignment(
+                        PValue::Local(LocalId::RET),
+                        RValue::Nothing,
+                    )]
+                    && *bb.term() == Terminator::Return
+            })
+    }
+}
+
+impl CtBody for CtoBody {
+    fn ct_blocks(&self) -> &EntityDb<Bb> {
+        &self.bbs
+    }
+
+    fn ct_blocks_mut(&mut self) -> &mut EntityDb<Bb> {
+        &mut self.bbs
+    }
+
+    fn locals(&self) -> &EntityDb<LocalId> {
+        &self.locals
+    }
+
+    fn locals_mut(&mut self) -> &mut EntityDb<LocalId> {
+        &mut self.locals
+    }
+
+    fn local_dbgs(&self) -> &SparseMap<LocalId, LocalDbg> {
+        &self.local_dbgs
+    }
+
+    fn local_dbgs_mut(&mut self) -> &mut SparseMap<LocalId, LocalDbg> {
+        &mut self.local_dbgs
+    }
 }
 
 /// A function definition
@@ -71,6 +311,9 @@ pub struct Body {
 /// # Note
 ///
 /// A function definition MUST have an entry point that is not comptime.
+///
+/// A [`Fundef`] should be created using [`Fundef::new`].
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct Fundef {
     /// Absolute path of the fundef
@@ -79,8 +322,112 @@ pub struct Fundef {
     pub params: Vec<Param>,
     /// Function return type
     pub ret: Type,
+    /// Is the signature finished?
+    sig_finished: bool,
     /// Body of the function
     pub body: Body,
+}
+
+impl Fundef {
+    /// Create a new function definition with the provided path, and with the
+    /// DSIR params.
+    ///
+    /// # Note
+    ///
+    /// The created function have [`Type::dummy()`] has type for every created
+    /// parameter and the return type. Translation isn't performed.
+    pub fn new(path: Path, params: &[DsParam]) -> Fundef {
+        let mut locals = EntityDb::new();
+        let mut local_dbgs = SparseMap::new();
+
+        // register the %RET local
+        locals.create(Local {
+            comptime: Comptime::No,
+            id: LocalId::new(0),
+            mutability: Mutability::Mut,
+            typ: Type::dummy(),
+        });
+
+        // register the param locals
+        let params_l = locals.create_many(
+            |id, i| {
+                local_dbgs.insert(
+                    id,
+                    LocalDbg {
+                        id,
+                        name: params[i].name.node.clone(),
+                        kind: LocalKind::Param,
+                        loc: params[i].loc.clone().unwrap(),
+                    },
+                );
+
+                Local {
+                    comptime: Comptime::No,
+                    id,
+                    mutability: Mutability::Not,
+                    typ: Type::dummy(),
+                }
+            },
+            params.len(),
+        );
+
+        Fundef {
+            path,
+            params: params_l
+                .iter()
+                .map(|id| Param {
+                    local: *id,
+                    typ: Type::dummy(),
+                })
+                .collect(),
+            ret: Type::dummy(),
+            sig_finished: false,
+            body: Body {
+                locals,
+                local_dbgs,
+                comptime_bbs: EntityDb::new(),
+                bbs: EntityDb::new(),
+            },
+        }
+    }
+
+    #[track_caller]
+    fn assert_sig_not_finished(&self) {
+        if self.sig_finished {
+            panic!("expected the signature of the function to not be finished.");
+        }
+    }
+
+    /// Set the `nth` parameter of the function to type `typ`.
+    #[track_caller]
+    pub fn set_param_type(&mut self, nth: usize, typ: Type) {
+        self.assert_sig_not_finished();
+
+        self.params.get_mut(nth).expect("valid parameter index").typ = typ;
+    }
+
+    /// Set the type of `ret`.
+    #[track_caller]
+    pub fn set_ret(&mut self, typ: Type) {
+        self.assert_sig_not_finished();
+
+        self.body.get_local_mut(LocalId::RET).typ = typ.clone();
+        self.ret = typ;
+    }
+
+    /// Mark the signature of the function to be finished.
+    #[track_caller]
+    pub fn finish_sig(&mut self) {
+        self.assert_sig_not_finished();
+
+        if self.params.iter().any(|param| param.typ.is_dummy()) || self.ret.is_dummy() {
+            panic!(
+                "function param type or return type cannot be the dummy type after the signature is marked as finished"
+            );
+        }
+
+        self.sig_finished = true;
+    }
 }
 
 /// Id of a [`Local`].
@@ -98,6 +445,11 @@ pub struct Fundef {
 ///   local, in this case the local was generated by the compiler.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct LocalId(u32);
+
+impl LocalId {
+    /// The `%RET` local.
+    pub const RET: LocalId = LocalId(0);
+}
 
 entity!(LocalId, Local);
 
@@ -176,12 +528,24 @@ pub struct BasicBlock {
     pub comptime: Comptime,
     /// Statements contained in the bb.
     pub stmts: Vec<Statement>,
-    /// Terminator of the
-    pub term: Terminator,
+    /// Terminator of the basic block
+    ///
+    /// # Note
+    ///
+    /// It should only be `None` when we first construct the block.
+    pub term: Option<Terminator>,
+}
+
+impl BasicBlock {
+    /// Get the terminator of the basic-block.
+    #[track_caller]
+    pub fn term(&self) -> &Terminator {
+        self.term.as_ref().expect("unterminated basic-block")
+    }
 }
 
 /// Statement -- performs some computation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Statement {
     /// `PVALUE = RVALUE`
     ///
@@ -192,7 +556,7 @@ pub enum Statement {
 }
 
 /// Terminator -- edges of the CFG.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Terminator {
     /// `goto(BB)`
     ///
@@ -224,7 +588,7 @@ pub enum Terminator {
 }
 
 /// Place value -- a memory location with an appropriate type.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PValue {
     /// `LOCAL`
     ///
@@ -245,7 +609,7 @@ pub enum PValue {
 ///
 /// The SIR is sequential so it doesn't contain nested expressions: everything
 /// is flattened out, that's why we need temporaries.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum RValue {
     /// `use(PVALUE)`
     ///
@@ -305,7 +669,7 @@ pub enum RValue {
 }
 
 /// An immediate integer value, doesn't have a signedness associated to it.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Int {
     /// 8-bit
     Int8(u8),
@@ -408,7 +772,7 @@ impl Int {
 }
 
 /// An immediate float value, IEEE 754-2008 compliant.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Float {
     // FIXME: add support for f16 and f128
     // F16(u16),
@@ -445,7 +809,7 @@ impl Float {
 ///
 /// This is a subset because it does not contain the short-circuiting operations
 /// like `LogicalAnd` & `LogicalOr`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BinOp {
     /// Addition, +
     Add,
@@ -539,6 +903,7 @@ impl UnOp {
 /// // here ABI, is for now one of: C, Lun
 /// // and NAME, before link_name is the name of the function declaration to look for.
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct Fundecl {
     /// Absolute path of the fundecl
@@ -551,6 +916,25 @@ pub struct Fundecl {
     pub params: Vec<Type>,
     /// Function return type
     pub ret: Type,
+    /// Body, used to hold the type-expression SIR.
+    ///
+    /// The `%RET` local always has `void` type.
+    pub body: CtoBody,
+}
+
+impl Fundecl {
+    /// Create a new function declaration, without params and a dummy return
+    /// type.
+    pub fn new(path: Path, abi: Abi, name: String) -> Fundecl {
+        Fundecl {
+            path,
+            abi,
+            name,
+            params: Vec::new(),
+            ret: Type::dummy(),
+            body: CtoBody::with_ret(true),
+        }
+    }
 }
 
 /// A global uninit
@@ -558,6 +942,7 @@ pub struct Fundecl {
 /// ```text
 /// "<" path ">" : TYPE, name "NAME";
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct GlobalUninit {
     /// Absolute path of the global uninit
@@ -566,6 +951,22 @@ pub struct GlobalUninit {
     pub typ: Type,
     /// Name of the symbol to declare
     pub name: String,
+    /// Body, used to hold the type-expression SIR.
+    ///
+    /// The `%RET` local always has `void` type.
+    pub body: CtoBody,
+}
+
+impl GlobalUninit {
+    /// Create a new global uninit with a dummy type.
+    pub fn new(path: Path, name: String) -> GlobalUninit {
+        GlobalUninit {
+            path,
+            typ: Type::dummy(),
+            name,
+            body: CtoBody::with_ret(true),
+        }
+    }
 }
 
 /// A global definition
@@ -588,6 +989,7 @@ pub struct GlobalUninit {
 ///
 /// *Please note that the global-defs are run at COMPILE-TIME, there is no "life
 /// before main" shenanigans.*
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct GlobalDef {
     /// Absolute path of the global uninit
@@ -595,13 +997,20 @@ pub struct GlobalDef {
     /// Type of the Global.
     pub typ: Type,
     /// Body
-    ///
-    /// # Note
-    ///
-    /// Here because the comptime is implied by the fact that this is a
-    /// GlobalDef nothing is marked as `comptime`, but it behaves exactly as if
-    /// it were.
-    pub body: Body,
+    pub body: CtoBody,
+}
+
+impl GlobalDef {
+    /// Create a new global-def
+    pub fn new(path: Path) -> GlobalDef {
+        let body = CtoBody::new(false);
+
+        GlobalDef {
+            path,
+            typ: Type::dummy(),
+            body,
+        }
+    }
 }
 
 /// SIR type.
