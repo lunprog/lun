@@ -14,17 +14,16 @@
 //! - [lunc_utils], various internal utilities of the compiler
 //! - [lunc_linkage], takes the object file from the [codegen], and outputs a
 //!   file with the format corresponding to the orb type.
-//! - [lunc_llib_meta], contains the [ModuleTree], and everything related to the
-//!   metadata added inside of a `llib` orb type.
+//! - [lunc_llib_meta], everything related to the  metadata added inside of a
+//!   `llib` orb type.
 //! - [lunc_entity], contains the entities types and definitions, used across
 //!   the compiler.
 //!
 //! [Tokens]: lunc_token::TokenStream
 //! [Ast]: lunc_parser::item::Module
 //! [Dsir]: lunc_desugar::DsModule
-//! [Sir]: lunc_seq::Orb
+//! [Sir]: lunc_seq::sir
 //! [codegen]: lunc_cranelift_codegen
-//! [ModuleTree]: lunc_llib_meta::ModuleTree
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]

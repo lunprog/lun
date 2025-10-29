@@ -1,0 +1,18 @@
+[package]
+name = "lunc_cranelift_codegen"
+description = "Cranelift codegen for Lun."
+version.workspace = true
+license.workspace = true
+edition = "2024"
+
+[dependencies]
+lunc_utils = { workspace = true }
+lunc_llib_meta = { workspace = true }
+lunc_ast = { workspace = true }
+lunc_token = { workspace = true }
+
+# other dependencies
+cranelift-frontend = { version = "0.124.1" }
+cranelift-codegen = { version = "0.124.1", features = ["all-native-arch"] }
+cranelift-module = { version = "0.124.1" }
+cranelift-object = { version = "0.124.1" }

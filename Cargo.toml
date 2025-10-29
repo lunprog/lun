@@ -4,6 +4,7 @@ members = [
   # compiler
   "compiler/lunc",
   "compiler/lunc_ast",
+  "compiler/lunc_cranelift_codegen",
   "compiler/lunc_diag",
   "compiler/lunc_desugar",
   "compiler/lunc_entity",
