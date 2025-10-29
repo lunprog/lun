@@ -259,6 +259,11 @@ impl<E: Entity> EntityDb<E> {
             .enumerate()
             .map(|(id, data)| (E::new(id), data))
     }
+
+    /// Get the last entity we created
+    pub fn last(&self) -> E {
+        E::new(self.last_id - 1)
+    }
 }
 
 impl<E: Entity> Default for EntityDb<E> {

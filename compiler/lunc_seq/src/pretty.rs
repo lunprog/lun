@@ -21,50 +21,40 @@ pub struct OrbDumper(Rc<Mutex<OrbDumperInner>>);
 
 impl OrbDumper {
     /// Get access to an item.
-    pub fn access_item<R>(&self, id: ItemId, mut accessor: impl FnMut(&Item) -> R) -> R {
+    fn access_item<R>(&self, id: ItemId, mut accessor: impl FnMut(&Item) -> R) -> R {
         let inner = self.0.lock().unwrap();
 
         // SAFETY: lifetime of `orb` guaranteed by the creator of OrbDumpInner.
         unsafe { accessor((*inner.orb).items.get(id)) }
     }
 
-    /// Get access to a binding in the current item.
-    pub fn access_bindings<R>(&self, id: BindingId, mut accessor: impl FnMut(&Binding) -> R) -> R {
+    #[track_caller]
+    fn current_body(&self) -> Option<&Body> {
         let inner = self.0.lock().unwrap();
 
         // SAFETY: lifetime of `orb` guaranteed by the creator of OrbDumpInner.
-        let body = unsafe {
-            match inner.item {
-                Some(item_id) => match (*inner.orb).items.get(item_id) {
-                    Item::Fundef(fundef) => &fundef.body,
-                    _ => panic!("no body for this item kind."),
-                },
-                None => panic!("no current item"),
+        unsafe {
+            match (*inner.orb).items.get(inner.item?) {
+                Item::Fundef(fundef) => Some(&fundef.body),
+                Item::GlobalDef(globdef) => Some(&globdef.body),
+                _ => None,
             }
-        };
-
-        accessor(body.bindings.get(id))
+        }
     }
 
     /// Set the current item id
-    pub fn set_current_item(&self, id: ItemId) {
+    fn set_current_item(&self, id: ItemId) {
         let mut inner = self.0.lock().unwrap();
 
         inner.item = Some(id);
     }
 
     /// Is this temporary a parameter of a fundef?
-    pub fn is_tmp_a_param(&self, tmp: Tmp) -> bool {
-        let inner = self.0.lock().unwrap();
-
-        if let Some(id) = inner.item
-            // SAFETY: lifetime of `orb` guaranteed by the creator of OrbDumpInner.
-            && let Item::Fundef(fundef) = unsafe { (*inner.orb).items.get(id) }
-        {
-            let temporary = fundef.body.temporaries.get(tmp);
-            let range = 1..=fundef.params.len();
-
-            range.contains(&temporary.id.index())
+    fn is_local_a_param(&self, local: LocalId) -> bool {
+        if let Some(body) = self.current_body() {
+            body.local_dbgs
+                .get(local)
+                .is_some_and(|dbg| dbg.kind == LocalKind::Param)
         } else {
             false
         }
@@ -142,8 +132,8 @@ impl PrettyDump<OrbDumper> for Fundef {
 impl PrettyDump<OrbDumper> for Body {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         let Body {
-            bindings,
-            temporaries,
+            locals,
+            local_dbgs,
             comptime_bbs,
             bbs,
         } = self;
@@ -151,23 +141,29 @@ impl PrettyDump<OrbDumper> for Body {
         writeln!(ctx.out, " {{")?;
         ctx.indent();
 
-        for binding in bindings.data_iter() {
-            binding.try_dump(ctx, extra)?;
-        }
+        for local in locals.data_iter() {
+            // is this local a function parameter?
+            let is_param = extra.is_local_a_param(local.id);
+            // have we printed something about this local yet?
+            let mut printed = false;
 
-        if !temporaries.is_empty() && !bindings.is_empty() {
-            writeln!(ctx.out)?;
-        }
-        for temporary in temporaries.data_iter() {
-            if extra.is_tmp_a_param(temporary.id) {
-                // the temporary is a parameter, it's already defined.
-                continue;
+            if !is_param {
+                local.try_dump(ctx, extra)?;
+                printed = true;
             }
 
-            temporary.try_dump(ctx, extra)?;
+            if let Some(dbg) = local_dbgs.get(local.id) {
+                dbg.try_dump(ctx, extra)?;
+                printed = true;
+            }
+
+            if printed {
+                writeln!(ctx.out)?;
+            }
         }
 
-        if !comptime_bbs.is_empty() && !temporaries.is_empty() {
+        if !comptime_bbs.is_empty() && !locals.is_empty() && local_dbgs.get(locals.last()).is_none()
+        {
             writeln!(ctx.out)?;
         }
         for bb in comptime_bbs.data_iter() {
@@ -187,25 +183,29 @@ impl PrettyDump<OrbDumper> for Body {
     }
 }
 
-impl PrettyDump<OrbDumper> for Param {
+impl PrettyDump<OrbDumper> for LocalId {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
-        let Param { tmp, typ } = self;
-
-        write!(ctx.out, "{}: ", tmp)?;
-
-        typ.try_dump(ctx, extra)?;
-
-        Ok(())
+        if self.index() == 0 {
+            write!(ctx.out, "%RET")
+        } else if let Some(body) = extra.current_body()
+            && let Some(debug_info) = body.local_dbgs.get(*self)
+        {
+            write!(ctx.out, "%{}", debug_info.name)
+        } else {
+            write!(ctx.out, "%{}", self.index())
+        }
     }
 }
 
-impl Display for Tmp {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.index() == 0 {
-            write!(f, "%RET")
-        } else {
-            write!(f, "%{}", self.index())
-        }
+impl PrettyDump<OrbDumper> for Param {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        let Param { local, typ } = self;
+
+        local.try_dump(ctx, extra)?;
+        write!(ctx.out, ": ")?;
+        typ.try_dump(ctx, extra)?;
+
+        Ok(())
     }
 }
 
@@ -228,9 +228,7 @@ impl PrettyDump<OrbDumper> for Type {
 
                 Ok(())
             }
-            Type::Tmp(tmp) => {
-                write!(ctx.out, "{tmp}")
-            }
+            Type::Local(local) => local.try_dump(ctx, extra),
             Type::Item(id) => {
                 extra.access_item(*id, |item| -> io::Result<()> {
                     write!(ctx.out, "<{}>", item.path())?;
@@ -273,49 +271,58 @@ impl Display for PrimitiveType {
     }
 }
 
-impl PrettyDump<OrbDumper> for Binding {
+impl PrettyDump<OrbDumper> for Local {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
-        let Binding {
+        let Local {
             comptime,
+            id,
             mutability,
-            name,
             typ,
-            loc,
         } = self;
 
         ctx.write_indent()?;
 
         write!(
             ctx.out,
-            "{comptime}{mutability}{name}: ",
+            "{comptime}{mutability}",
             comptime = comptime.prefix_str(),
             mutability = mutability.prefix_str(),
         )?;
-
+        id.try_dump(ctx, extra)?;
+        write!(ctx.out, ": ")?;
         typ.try_dump(ctx, extra)?;
-
-        writeln!(ctx.out, "; // -> {}", loc)?;
+        writeln!(ctx.out, ";")?;
 
         Ok(())
     }
 }
 
-impl PrettyDump<OrbDumper> for Temporary {
+impl Display for LocalKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Binding => write!(f, ".Binding"),
+            Self::Param => write!(f, ".Param"),
+        }
+    }
+}
+
+impl PrettyDump<OrbDumper> for LocalDbg {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
-        let Temporary { comptime, id, typ } = self;
+        // NOTE: name is not used because it was already been used in the Local
+        // prettydump.
+        let LocalDbg {
+            id,
+            name: _,
+            kind,
+            loc,
+        } = self;
 
         ctx.write_indent()?;
+        write!(ctx.out, "debug({}) ", kind)?;
 
-        write!(
-            ctx.out,
-            "{comptime}tmp {name}: ",
-            comptime = comptime.prefix_str(),
-            name = id
-        )?;
+        id.try_dump(ctx, extra)?;
 
-        typ.try_dump(ctx, extra)?;
-
-        writeln!(ctx.out, ";")?;
+        writeln!(ctx.out, " => {loc};")?;
 
         Ok(())
     }
@@ -380,14 +387,7 @@ impl PrettyDump<OrbDumper> for Statement {
 impl PrettyDump<OrbDumper> for PValue {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         match self {
-            PValue::Binding(id) => extra.access_bindings(*id, |binding| -> io::Result<()> {
-                write!(ctx.out, "{}", binding.name)?;
-
-                Ok(())
-            }),
-            PValue::Tmp(tmp) => {
-                write!(ctx.out, "{tmp}")
-            }
+            PValue::Local(local) => local.try_dump(ctx, extra),
             PValue::Item(id) => extra.access_item(*id, |item| -> io::Result<()> {
                 write!(ctx.out, "<{}>", item.path())?;
 
