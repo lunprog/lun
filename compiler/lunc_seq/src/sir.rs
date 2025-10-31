@@ -27,6 +27,12 @@ impl Orb {
     }
 }
 
+impl Default for Orb {
+    fn default() -> Self {
+        Orb::new()
+    }
+}
+
 /// Id of an [`Item`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ItemId(u32);
@@ -311,7 +317,7 @@ impl CtoBody {
     /// Create a [`SirBuilder`] for the basic-blocks.
     ///
     /// [`SirBuilder`]: crate::builder::SirBuilder
-    pub fn builder(&mut self) -> () {
+    pub fn builder<'body>(&'body mut self) -> CtBuilder<'body> {
         todo!();
     }
 }
