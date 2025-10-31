@@ -32,6 +32,8 @@ pub mod target {
 }
 use target_lexicon::Triple;
 
+use crate::pretty::PrettyDump;
+
 /// Location of something in a file.
 ///
 /// # Note
@@ -209,6 +211,23 @@ pub fn join_display<T: Display>(items: &[T]) -> String {
         .map(|item| item.to_string())
         .collect::<Vec<_>>()
         .join(", ")
+}
+
+/// Formats a list with commas between
+pub fn join_pretty<T: PrettyDump<E>, E>(items: &[T], extra: &E) -> String {
+    let mut res: Vec<u8> = Vec::new();
+
+    let mut items_str = Vec::with_capacity(items.len());
+
+    for item in items {
+        item.dump_to(&mut res, extra);
+
+        items_str.push(String::from_utf8_lossy(&res).into_owned());
+
+        res.clear();
+    }
+
+    join_display(&items_str)
 }
 
 /// Compute the number of "digits" needed to represent `n` in the given radix (`RADIX`).
@@ -415,8 +434,9 @@ pub fn levenshtein_distance(a: &str, b: &str) -> usize {
     for (i, item) in dp.iter_mut().enumerate().take(n + 1) {
         item[0] = i;
     }
-    for j in 0..=m {
-        dp[0][j] = j;
+
+    for (j, item) in dp.iter_mut().enumerate().take(m + 1) {
+        item[j] = j;
     }
 
     for i in 1..=n {

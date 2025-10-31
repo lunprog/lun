@@ -16,10 +16,6 @@ use lunc_utils::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::symbol::EffectivePath;
-
-pub mod symbol;
-
 /// A 'Path' is a name in Lun, like `orb`, `hello`, `core::panic`, ..
 ///
 /// It is composed of segments of path, identifiers or orb.
@@ -151,11 +147,6 @@ impl Path {
     pub fn get(&self, i: usize) -> Option<&PathSegment> {
         self.segments.get(i)
     }
-
-    /// Convert a `Path` to an `EffectivePath`
-    pub fn into_effective_path(self) -> EffectivePath {
-        EffectivePath(self.to_string_vec())
-    }
 }
 
 impl<S: ToString> FromIterator<S> for Path {
@@ -197,8 +188,8 @@ impl Display for Path {
     }
 }
 
-impl PrettyDump for Path {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E> PrettyDump<E> for Path {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
         write!(ctx.out, "{self}")
     }
 }
@@ -366,8 +357,8 @@ impl BinOp {
     }
 }
 
-impl PrettyDump for BinOp {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E> PrettyDump<E> for BinOp {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
         write!(ctx.out, "{self:?}")
     }
 }
@@ -421,8 +412,8 @@ impl UnOp {
     }
 }
 
-impl PrettyDump for UnOp {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E> PrettyDump<E> for UnOp {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
         write!(ctx.out, "{self:?}")
     }
 }
@@ -434,9 +425,9 @@ pub struct Spanned<T> {
     pub loc: Span,
 }
 
-impl<T: PrettyDump> PrettyDump for Spanned<T> {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
-        self.node.try_dump(ctx)?;
+impl<T: PrettyDump<E>, E> PrettyDump<E> for Spanned<T> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &E) -> io::Result<()> {
+        self.node.try_dump(ctx, extra)?;
         ctx.print_loc(&self.loc)?;
 
         Ok(())
@@ -451,11 +442,19 @@ pub enum Mutability {
 }
 
 impl Mutability {
-    /// Returns `""` if `No` or `"mut "` if `Mut`.
+    /// Returns `""` or `"mut "` based on the mutability.
     pub fn prefix_str(self) -> &'static str {
         match self {
             Self::Not => "",
             Self::Mut => "mut ",
+        }
+    }
+
+    /// Returns `"immutable"` or `"mutable"` based on the mutability.
+    pub fn adjective_str(self) -> &'static str {
+        match self {
+            Self::Not => "immutable",
+            Self::Mut => "mutable",
         }
     }
 
@@ -478,8 +477,8 @@ impl Mutability {
     }
 }
 
-impl PrettyDump for Mutability {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E> PrettyDump<E> for Mutability {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
         match self {
             Self::Not => write!(ctx.out, "not"),
             Self::Mut => write!(ctx.out, "mut"),
@@ -487,12 +486,62 @@ impl PrettyDump for Mutability {
     }
 }
 
+/// Compile-time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Comptime {
+    Yes,
+    No,
+}
+
+impl Comptime {
+    /// Return `"comptime "` or `""` based on comptime-ness.
+    pub fn prefix_str(self) -> &'static str {
+        match self {
+            Comptime::Yes => "comptime ",
+            Comptime::No => "",
+        }
+    }
+}
+
+mod private {
+    pub trait Sealed {}
+
+    impl Sealed for super::CtYes {}
+    impl Sealed for super::CtNo {}
+}
+
+/// [`Comptime`] equivalent but as a type so it can be used in generics params
+pub trait CompileTime: private::Sealed {}
+
+/// Yes. It **is** compile-time.
+///
+/// See [`CompileTime`] documentation
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CtYes;
+impl CompileTime for CtYes {}
+
+/// No. It **is not** compile-time.
+///
+/// See [`CompileTime`] documentation
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CtNo;
+impl CompileTime for CtNo {}
+
 /// ABI names usable in an extern block
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub enum Abi {
     /// `C`
     #[default]
     C,
+}
+
+impl Abi {
+    /// Abi name as an anonymous enum variant, like `.Field`.
+    pub fn enum_str(&self) -> &'static str {
+        match self {
+            Abi::C => ".C",
+        }
+    }
 }
 
 impl FromStr for Abi {
@@ -506,8 +555,8 @@ impl FromStr for Abi {
     }
 }
 
-impl PrettyDump for Abi {
-    fn try_dump(&self, ctx: &mut PrettyCtxt) -> io::Result<()> {
+impl<E> PrettyDump<E> for Abi {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
         match self {
             Abi::C => write!(ctx.out, "C"),
         }

@@ -1,13 +1,12 @@
 [package]
 name = "lunc_cranelift_codegen"
-description = "Cranelift IR Generator, SCIR -> CLIF"
+description = "Cranelift codegen for Lun."
 version.workspace = true
 license.workspace = true
 edition = "2024"
 
 [dependencies]
 lunc_utils = { workspace = true }
-lunc_scir = { workspace = true }
 lunc_llib_meta = { workspace = true }
 lunc_ast = { workspace = true }
 lunc_token = { workspace = true }

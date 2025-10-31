@@ -42,7 +42,13 @@
 //! assert_eq!(db.get(e), &"hello".to_string());
 //! ```
 
-use std::{collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData, mem};
+use std::{
+    collections::HashMap,
+    fmt::{self, Debug},
+    hash::Hash,
+    marker::PhantomData,
+    mem,
+};
 
 /// An entity is a tiny, `Copy` identifier used across the compiler.
 ///
@@ -202,6 +208,43 @@ impl<E: Entity> EntityDb<E> {
         entity
     }
 
+    /// Create a new entity with `ctor` that takes the id as argument, and
+    /// returns the data to associate with the entity. This method returns the
+    /// entity created.
+    pub fn create_with(&mut self, ctor: impl FnOnce(E) -> E::Data) -> E {
+        let entity = E::new(self.last_id);
+        self.create(ctor(entity));
+
+        entity
+    }
+
+    /// Creates `count` new entities with the data returned by `ctor`, returns a
+    /// Vector containing all created entities.
+    ///
+    /// `ctor` takes to arguments:
+    /// - the entity being created as the first param
+    /// - the index, e.g: when `ctor` is called for the first entity, the
+    ///   `index == 0`, for the second entity created `index == 1` etc..
+    pub fn create_many(
+        &mut self,
+        mut ctor: impl FnMut(E, usize) -> E::Data,
+        count: usize,
+    ) -> Vec<E> {
+        self.elems.reserve(count);
+        let mut entities = Vec::with_capacity(count);
+
+        for i in 0..count {
+            let entity = E::new(self.last_id);
+            entities.push(entity);
+            let data = ctor(entity, i);
+            let res = self.create(data);
+
+            debug_assert_eq!(entity, res);
+        }
+
+        entities
+    }
+
     /// Checks whether `entity` refers to a slot inside this database.
     pub fn is_valid(&self, entity: E) -> bool {
         entity.index() < self.elems.len()
@@ -241,6 +284,28 @@ impl<E: Entity> EntityDb<E> {
     #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.count() == 0
+    }
+
+    /// Returns an iterator on the data of the entities.
+    ///
+    /// The iterator yields all the data in the order they were created.
+    pub fn data_iter(&self) -> impl Iterator<Item = &E::Data> {
+        self.elems.iter()
+    }
+
+    /// Returns an iterator on the entity and its associated data.
+    ///
+    /// The iterator yields all the data in the order they were created.
+    pub fn full_iter(&self) -> impl Iterator<Item = (E, &E::Data)> {
+        self.elems
+            .iter()
+            .enumerate()
+            .map(|(id, data)| (E::new(id), data))
+    }
+
+    /// Get the last entity we created
+    pub fn last(&self) -> E {
+        E::new(self.last_id - 1)
     }
 }
 
@@ -309,6 +374,11 @@ impl<E: Entity, V> SparseMap<E, V> {
     /// Does this map contain a value for `entity`?
     pub fn contains_entity(&self, entity: E) -> bool {
         self.get(entity).is_some()
+    }
+
+    /// Is this map empty?
+    pub fn is_empty(&self) -> bool {
+        self.elems.is_empty()
     }
 }
 
@@ -468,7 +538,7 @@ impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
 /// entity!(Slot, ());
 ///
 /// // None variant:
-/// let mut o: Opt<Slot> = Opt::None();
+/// let mut o: Opt<Slot> = Opt::None;
 /// assert!(o.is_none());
 ///
 /// // Some variant:
@@ -494,10 +564,8 @@ impl<E: Entity> Opt<E> {
     }
 
     /// Construct a `None` option.
-    #[allow(non_snake_case)]
-    pub const fn None() -> Opt<E> {
-        Opt(E::RESERVED)
-    }
+    #[allow(non_upper_case_globals)]
+    pub const None: Opt<E> = Opt(E::RESERVED);
 
     /// Is this `None`?
     pub fn is_none(&self) -> bool {
@@ -527,7 +595,17 @@ impl<E: Entity> Opt<E> {
 
     /// Take the stored entity, leaving a `None` in its place.
     pub fn take(&mut self) -> Opt<E> {
-        mem::replace(self, Self::None())
+        mem::replace(self, Self::None)
+    }
+}
+
+impl<E: Entity> Debug for Opt<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_some() {
+            f.debug_tuple("Some").field(&self.0).finish()
+        } else {
+            f.debug_struct("None").finish()
+        }
     }
 }
 
@@ -675,7 +753,7 @@ mod tests {
     #[test]
     fn opt_some_none_and_expand() {
         // None
-        let none_opt: Opt<TestEntityA> = Opt::None();
+        let none_opt: Opt<TestEntityA> = Opt::None;
         assert!(none_opt.is_none());
         assert!(!none_opt.is_some());
         assert_eq!(none_opt.expand(), None);
@@ -713,7 +791,7 @@ mod tests {
     // debug-only test: ensure we can create the RESERVED sentinel via Opt::None
     #[test]
     fn opt_none_is_reserved_under_the_hood() {
-        let none: Opt<TestEntityA> = Opt::None();
+        let none: Opt<TestEntityA> = Opt::None;
         assert!(none.is_none());
         // expanding should yield None
         assert_eq!(none.expand(), None);

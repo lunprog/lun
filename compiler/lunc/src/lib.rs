@@ -7,30 +7,29 @@
 //! - [lunc_parser], parses the [Tokens] into an [Ast]
 //! - [lunc_ast], AST types shared across compiler stages
 //! - [lunc_desugar], desugars the [Ast] to [Dsir] and resolve names
-//! - [lunc_scir], lowers [Dsir] to [Scir] and perform various semantic checks
-//!   and add types
-//! - [lunc_cranelift_codegen], generates the Cranelift IR from [Scir]
+//! - [lunc_seq], Sequential Intermediate Representation, lowered from [Dsir],
+//!   used to perform the type-checking and other semantic analysis.
+//! - [lunc_cranelift_codegen], generates the Cranelift IR from ..
 //! - [lunc_diag], the error handling, the diagnostic system, with the Sink.
 //! - [lunc_utils], various internal utilities of the compiler
 //! - [lunc_linkage], takes the object file from the [codegen], and outputs a
 //!   file with the format corresponding to the orb type.
-//! - [lunc_llib_meta], contains the [ModuleTree], and everything related to the
-//!   metadata added inside of a `llib` orb type.
+//! - [lunc_llib_meta], everything related to the  metadata added inside of a
+//!   `llib` orb type.
 //! - [lunc_entity], contains the entities types and definitions, used across
 //!   the compiler.
 //!
 //! [Tokens]: lunc_token::TokenStream
 //! [Ast]: lunc_parser::item::Module
 //! [Dsir]: lunc_desugar::DsModule
-//! [Scir]: lunc_scir::ScModule
+//! [Sir]: lunc_seq::sir
 //! [codegen]: lunc_cranelift_codegen
-//! [ModuleTree]: lunc_llib_meta::ModuleTree
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
 use clap::{ArgAction, Parser as ArgParser, ValueEnum};
-use lunc_linkage::Linker;
+// use lunc_linkage::Linker;
 use std::{
     backtrace::{Backtrace, BacktraceStatus},
     env,
@@ -48,12 +47,10 @@ use std::{
 use termcolor::{ColorChoice, ColorChoiceParseError, StandardStream};
 use thiserror::Error;
 
-use lunc_cranelift_codegen::{ClifGen, ClifGenContext, OptLevel};
 use lunc_desugar::Desugarrer;
 use lunc_diag::{DiagnosticSink, FileId};
 use lunc_lexer::Lexer;
 use lunc_parser::Parser;
-use lunc_scir::SemaChecker;
 use lunc_token::is_identifier;
 use lunc_utils::{
     BuildOptions, OrbType,
@@ -294,7 +291,7 @@ Stages:
 * lexer
 * parser
 * dsir
-* scir
+* sir
 * ssa
 * linkage
 * codegen\
@@ -306,7 +303,7 @@ Stages:
 * token-stream
 * ast
 * dsir
-* scir
+* sir
 * ssa
 * asm\
                 ",
@@ -414,20 +411,20 @@ impl DebugOptions {
 }
 
 /// Codegen options
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CodegenOptions {
-    opt_level: OptLevel,
+    // opt_level: OptLevel,
     output_obj: bool,
 }
 
-impl Default for CodegenOptions {
-    fn default() -> Self {
-        CodegenOptions {
-            opt_level: OptLevel::None,
-            output_obj: false,
-        }
-    }
-}
+// impl Default for CodegenOptions {
+//     fn default() -> Self {
+//         CodegenOptions {
+//             opt_level: OptLevel::None,
+//             output_obj: false,
+//         }
+//     }
+// }
 
 /// Compilation stage
 #[derive(Debug, Clone, ValueEnum, PartialEq, Eq)]
@@ -435,7 +432,7 @@ pub enum CompStage {
     Lexer,
     Parser,
     Dsir,
-    Scir,
+    Sir,
     Ssa,
     Codegen,
     Linkage,
@@ -448,7 +445,7 @@ pub enum InterRes {
     TokenStream,
     Ast,
     Dsir,
-    Scir,
+    Sir,
     Ssa,
     Asm,
 }
@@ -466,8 +463,8 @@ pub struct Timings {
     parser: Duration,
     /// duration of dsir
     dsir: Duration,
-    /// duration of scir
-    scir: Duration,
+    /// duration of sir
+    sir: Duration,
     /// duration of the ssa generation
     ssa: Duration,
     /// sum of stages from setup to ssa
@@ -481,7 +478,7 @@ pub struct Timings {
 impl Timings {
     /// Sum up and put it in lun_sum
     pub fn sum_up(&mut self) {
-        self.lun_sum = self.setup + self.lexer + self.parser + self.dsir + self.scir + self.ssa;
+        self.lun_sum = self.setup + self.lexer + self.parser + self.dsir + self.sir + self.ssa;
     }
 }
 
@@ -492,7 +489,7 @@ impl fmt::Display for Timings {
             lexer,
             parser,
             dsir,
-            scir,
+            sir,
             ssa,
             lun_sum,
             linkage,
@@ -504,7 +501,7 @@ impl fmt::Display for Timings {
         writeln!(f, "      lexer: {}", humantime::format_duration(lexer))?;
         writeln!(f, "     parser: {}", humantime::format_duration(parser))?;
         writeln!(f, "       dsir: {}", humantime::format_duration(dsir))?;
-        writeln!(f, "       scir: {}", humantime::format_duration(scir))?;
+        writeln!(f, "        sir: {}", humantime::format_duration(sir))?;
         writeln!(f, "        ssa: {}", humantime::format_duration(ssa))?;
         writeln!(f, "= Total Lun: {}\n", humantime::format_duration(lun_sum))?;
         writeln!(f, "    linkage: {}", humantime::format_duration(linkage))?;
@@ -679,10 +676,11 @@ pub fn run() -> Result<()> {
                     ));
                 }
 
-                codegen.opt_level = val
-                    .parse()
-                    .map_err(|_| CliError::invalid_val("-C help", "-C opt-level", &val))?;
+                // codegen.opt_level = val
+                //     .parse()
+                //     .map_err(|_| CliError::invalid_val("-C help", "-C opt-level", &val))?;
                 codegen_optlevel_def = true;
+                todo!("BRING BACK THE OPT_LEVEL, {codegen_optlevel_def}");
             }
             CodegenKey::OutputObj => {
                 if codegen_outputobj_def {
@@ -790,7 +788,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     //    maybe print the ast
     if argv.debug.print(InterRes::Ast) {
         eprint!("ast = ");
-        ast.dump();
+        ast.dump(&());
         eprintln!();
     }
     if sink.failed() {
@@ -810,12 +808,11 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     // 5. desugarring, AST => DSIR
     let mut desugarrer = Desugarrer::new(sink.clone(), opts.orb_name());
     let dsir = desugarrer.produce(ast).ok_or_else(builderr)?;
-    let orbtree = desugarrer.module_tree();
 
     //    maybe print the DSIR
     if argv.debug.print(InterRes::Dsir) {
         eprint!("dsir = ");
-        dsir.dump();
+        dsir.dump(&desugarrer.symdb);
         eprintln!();
     }
     if sink.failed() {
@@ -828,95 +825,16 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
         return Err(builderr());
     }
+    let orbtree = desugarrer.module_tree();
 
     timings.dsir = dsir_instant.elapsed();
-    let scir_instant = Instant::now();
+    let sir_instant = Instant::now();
+
+    _ = argv.output;
+    _ = argv.codegen;
+    _ = orbtree;
+    _ = sir_instant;
 
     // 6. type-checking and all the semantic analysis, DSIR => SCIR
-    let mut semacker = SemaChecker::new(sink.clone(), orbtree, opts.clone());
-    let scir = semacker.produce(dsir).ok_or_else(builderr)?;
-    let orbtree = semacker.module_tree();
-
-    //    maybe print the SCIR
-    if argv.debug.print(InterRes::Scir) {
-        eprint!("scir = ");
-        scir.dump();
-        eprintln!();
-    }
-    if sink.failed() {
-        return Err(builderr());
-    }
-    if argv.debug.halt(CompStage::Scir) {
-        if sink.is_empty() {
-            return Ok(());
-        }
-
-        return Err(builderr());
-    }
-
-    timings.scir = scir_instant.elapsed();
-    let ssa_instant = Instant::now();
-
-    // 7. generate the clif, SCIR => SSA (CLIF) => ASM at the same time.
-    let cliftxt = argv.debug.print(InterRes::Ssa);
-    let mut clifgen = ClifGen::new(opts.clone(), cliftxt, argv.codegen.opt_level, orbtree);
-    clifgen.produce(&mut ClifGenContext::default(), scir);
-
-    //    maybe print the SSA
-    if argv.debug.print(InterRes::Ssa) {
-        eprintln!("; SSA of orb {}", opts.orb_name());
-        eprint!("{}", clifgen.textrepr());
-    }
-    if argv.debug.halt(CompStage::Ssa) || argv.debug.halt(CompStage::Codegen) {
-        // NOTE: we do not emit diags anymore.
-        return Ok(());
-    }
-
-    // write the object to file
-    let objpath = argv
-        .codegen
-        .output_obj
-        .then_some(argv.output.with_extension("o"));
-
-    let (obj, orbtree) = clifgen.finish();
-    let obj_bytes = obj.emit().unwrap();
-
-    timings.ssa = ssa_instant.elapsed();
-    let linkage_instant = Instant::now();
-
-    // 8. link the object files, .o => Bin / Llib file
-    let mut linker = Linker::new(obj_bytes, objpath, &argv.output, orbtree, opts.clone());
-
-    linker.write_obj()?;
-    if argv.debug.halt(CompStage::Linkage) {
-        // NOTE: we don't emit diagnostics
-        return Ok(());
-    }
-
-    match linker.link() {
-        Ok(()) => {}
-        Err(lunc_linkage::Error::Linker(out)) => {
-            let out = String::from_utf8_lossy(&out.stderr).trim().to_string();
-
-            return Err(CliError::LinkerFailed(out));
-        }
-        Err(e) => return Err(e.into()),
-    }
-
-    _ = orbtree;
-
-    timings.linkage = linkage_instant.elapsed();
-
-    timings.total = top_instant.elapsed();
-    timings.sum_up();
-
-    if argv.debug.timings {
-        eprint!("\n{timings}");
-    }
-
-    if sink.is_empty() {
-        Ok(())
-    } else {
-        Err(builderr())
-    }
+    todo!("IMPLEMENT SIR AND THE FOLLOWING")
 }
