@@ -491,12 +491,8 @@ impl PrettyDump<OrbDumper> for RValue {
                 Ok(())
             }
             RValue::Bool(bool) => write!(ctx.out, "{bool}"),
-            RValue::String(str, tag) => {
-                if let Some(tag) = tag {
-                    write!(ctx.out, "{tag}{str:?}")
-                } else {
-                    write!(ctx.out, "{str:?}")
-                }
+            RValue::String(str) => {
+                write!(ctx.out, "{str:?}")
             }
             RValue::Type(typ) => typ.try_dump(ctx, extra),
             RValue::Cast(pvalue, typ) => {

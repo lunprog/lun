@@ -503,6 +503,30 @@ impl Comptime {
     }
 }
 
+mod private {
+    pub trait Sealed {}
+
+    impl Sealed for super::CtYes {}
+    impl Sealed for super::CtNo {}
+}
+
+/// [`Comptime`] equivalent but as a type so it can be used in generics params
+pub trait CompileTime: private::Sealed {}
+
+/// Yes. It **is** compile-time.
+///
+/// See [`CompileTime`] documentation
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CtYes;
+impl CompileTime for CtYes {}
+
+/// No. It **is not** compile-time.
+///
+/// See [`CompileTime`] documentation
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CtNo;
+impl CompileTime for CtNo {}
+
 /// ABI names usable in an extern block
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub enum Abi {

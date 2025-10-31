@@ -42,7 +42,13 @@
 //! assert_eq!(db.get(e), &"hello".to_string());
 //! ```
 
-use std::{collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData, mem};
+use std::{
+    collections::HashMap,
+    fmt::{self, Debug},
+    hash::Hash,
+    marker::PhantomData,
+    mem,
+};
 
 /// An entity is a tiny, `Copy` identifier used across the compiler.
 ///
@@ -532,7 +538,7 @@ impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
 /// entity!(Slot, ());
 ///
 /// // None variant:
-/// let mut o: Opt<Slot> = Opt::None();
+/// let mut o: Opt<Slot> = Opt::None;
 /// assert!(o.is_none());
 ///
 /// // Some variant:
@@ -558,10 +564,8 @@ impl<E: Entity> Opt<E> {
     }
 
     /// Construct a `None` option.
-    #[allow(non_snake_case)]
-    pub const fn None() -> Opt<E> {
-        Opt(E::RESERVED)
-    }
+    #[allow(non_upper_case_globals)]
+    pub const None: Opt<E> = Opt(E::RESERVED);
 
     /// Is this `None`?
     pub fn is_none(&self) -> bool {
@@ -591,7 +595,17 @@ impl<E: Entity> Opt<E> {
 
     /// Take the stored entity, leaving a `None` in its place.
     pub fn take(&mut self) -> Opt<E> {
-        mem::replace(self, Self::None())
+        mem::replace(self, Self::None)
+    }
+}
+
+impl<E: Entity> Debug for Opt<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_some() {
+            f.debug_tuple("Some").field(&self.0).finish()
+        } else {
+            f.debug_struct("None").finish()
+        }
     }
 }
 
@@ -739,7 +753,7 @@ mod tests {
     #[test]
     fn opt_some_none_and_expand() {
         // None
-        let none_opt: Opt<TestEntityA> = Opt::None();
+        let none_opt: Opt<TestEntityA> = Opt::None;
         assert!(none_opt.is_none());
         assert!(!none_opt.is_some());
         assert_eq!(none_opt.expand(), None);
@@ -777,7 +791,7 @@ mod tests {
     // debug-only test: ensure we can create the RESERVED sentinel via Opt::None
     #[test]
     fn opt_none_is_reserved_under_the_hood() {
-        let none: Opt<TestEntityA> = Opt::None();
+        let none: Opt<TestEntityA> = Opt::None;
         assert!(none.is_none());
         // expanding should yield None
         assert_eq!(none.expand(), None);

@@ -1,16 +1,30 @@
 //! Sequential Intermediate Representation of Lun.
 
-use std::io::{self, Write};
+use std::{
+    fmt,
+    io::{self, Write},
+};
 
 use lunc_ast::{Abi, Comptime, Mutability, Path};
 use lunc_desugar::DsParam;
 use lunc_entity::{Entity, EntityDb, SparseMap, entity};
 use lunc_utils::Span;
 
+use crate::builder::{CtBuilder, RtBuilder};
+
 /// A Lun orb.
 #[derive(Debug, Clone)]
 pub struct Orb {
     pub items: EntityDb<ItemId>,
+}
+
+impl Orb {
+    /// Create a new empty orb.
+    pub fn new() -> Orb {
+        Orb {
+            items: EntityDb::new(),
+        }
+    }
 }
 
 /// Id of an [`Item`].
@@ -40,32 +54,17 @@ impl Item {
     }
 }
 
-/// A SIR body capable of **c**ompile-**t**ime.
-pub trait CtBody {
-    // COMPTIME BASIC-BLOCKS
-
-    /// Get the compile-time basic-blocks
-    fn ct_blocks(&self) -> &EntityDb<Bb>;
-
-    /// Mutable [`CtBody::ct_blocks`].
-    fn ct_blocks_mut(&mut self) -> &mut EntityDb<Bb>;
-
-    /// Create a compile-time basic block without a terminator.
-    fn new_ctbb(&mut self) -> Bb {
-        self.ct_blocks_mut().create_with(|id| BasicBlock {
-            id,
-            comptime: Comptime::Yes,
-            stmts: Vec::new(),
-            term: None,
-        })
-    }
-
+/// Usually, a SIR-body ([CtBody] or [CrtBody]) capable of storing [`Local`]s
+/// and their [debug information].
+///
+/// [debug information]: crate::sir::LocalDbg
+pub trait LocalAble: fmt::Debug {
     // LOCALS
 
     /// Get the locals database.
     fn locals(&self) -> &EntityDb<LocalId>;
 
-    /// Mutable [`CtBody::locals`].
+    /// Mutable [`LocalAble::locals`].
     fn locals_mut(&mut self) -> &mut EntityDb<LocalId>;
 
     /// Get the `local`.
@@ -73,7 +72,7 @@ pub trait CtBody {
         self.locals().get(local)
     }
 
-    /// Mutable [`CtBody::get_local`]
+    /// Mutable [`LocalAble::get_local`]
     fn get_local_mut(&mut self, local: LocalId) -> &mut Local {
         self.locals_mut().get_mut(local)
     }
@@ -118,7 +117,7 @@ pub trait CtBody {
     /// Get the local debug infos map.
     fn local_dbgs(&self) -> &SparseMap<LocalId, LocalDbg>;
 
-    /// Mutable [`CtBody::local_dbgs`]
+    /// Mutable [`LocalAble::local_dbgs`]
     fn local_dbgs_mut(&mut self) -> &mut SparseMap<LocalId, LocalDbg>;
 
     /// Get the debug information of `local` if any.
@@ -127,8 +126,29 @@ pub trait CtBody {
     }
 }
 
+/// A SIR body capable of **c**ompile-**t**ime.
+pub trait CtBody: LocalAble {
+    // COMPTIME BASIC-BLOCKS
+
+    /// Get the compile-time basic-blocks
+    fn ct_blocks(&self) -> &EntityDb<Bb>;
+
+    /// Mutable [`CtBody::ct_blocks`].
+    fn ct_blocks_mut(&mut self) -> &mut EntityDb<Bb>;
+
+    /// Create a compile-time basic block without a terminator.
+    fn new_ctbb(&mut self) -> Bb {
+        self.ct_blocks_mut().create_with(|id| BasicBlock {
+            id,
+            comptime: Comptime::Yes,
+            stmts: Vec::new(),
+            term: None,
+        })
+    }
+}
+
 /// A **c**ompile time and **r**un**t**ime capable body.
-pub trait CrtBody: CtBody {
+pub trait CrtBody: CtBody + LocalAble {
     /// Get the non-comptime basic-blocks.
     fn blocks(&self) -> &EntityDb<Bb>;
 
@@ -160,15 +180,29 @@ pub struct Body {
     pub bbs: EntityDb<Bb>,
 }
 
-impl CtBody for Body {
-    fn ct_blocks(&self) -> &EntityDb<Bb> {
-        &self.comptime_bbs
+impl Body {
+    /// Create a [`SirBuilder`] for the basic-blocks.
+    ///
+    /// See `Body::ct_builder` for the compile-time version.
+    ///
+    /// [`SirBuilder`]: crate::builder::SirBuilder
+    pub fn builder<'body>(&'body mut self) -> RtBuilder<'body> {
+        // RtBuilder { body: self }
+        todo!()
     }
 
-    fn ct_blocks_mut(&mut self) -> &mut EntityDb<Bb> {
-        &mut self.comptime_bbs
+    /// Create a [`SirBuilder`] for the compile-time basic-blocks.
+    ///
+    /// See `Body::builder` for the *non* compile-time version.
+    ///
+    /// [`SirBuilder`]: crate::builder::SirBuilder
+    pub fn ct_builder<'body>(&'body mut self) -> CtBuilder<'body> {
+        // CtBuilder { body: self }
+        todo!()
     }
+}
 
+impl LocalAble for Body {
     fn locals(&self) -> &EntityDb<LocalId> {
         &self.locals
     }
@@ -183,6 +217,16 @@ impl CtBody for Body {
 
     fn local_dbgs_mut(&mut self) -> &mut SparseMap<LocalId, LocalDbg> {
         &mut self.local_dbgs
+    }
+}
+
+impl CtBody for Body {
+    fn ct_blocks(&self) -> &EntityDb<Bb> {
+        &self.comptime_bbs
+    }
+
+    fn ct_blocks_mut(&mut self) -> &mut EntityDb<Bb> {
+        &mut self.comptime_bbs
     }
 }
 
@@ -258,26 +302,21 @@ impl CtoBody {
     pub fn is_empty(&self) -> bool {
         self.locals.count() <= 1
             && self.local_dbgs.is_empty()
-            && self.bbs.try_get(Bb::new(0)).is_some_and(|bb| {
-                bb.stmts
-                    == [Statement::Assignment(
-                        PValue::Local(LocalId::RET),
-                        RValue::Nothing,
-                    )]
-                    && *bb.term() == Terminator::Return
-            })
+            && self
+                .bbs
+                .try_get(Bb::new(0))
+                .is_some_and(|bb| bb.stmts.is_empty() && *bb.term() == Terminator::Return)
+    }
+
+    /// Create a [`SirBuilder`] for the basic-blocks.
+    ///
+    /// [`SirBuilder`]: crate::builder::SirBuilder
+    pub fn builder(&mut self) -> () {
+        todo!();
     }
 }
 
-impl CtBody for CtoBody {
-    fn ct_blocks(&self) -> &EntityDb<Bb> {
-        &self.bbs
-    }
-
-    fn ct_blocks_mut(&mut self) -> &mut EntityDb<Bb> {
-        &mut self.bbs
-    }
-
+impl LocalAble for CtoBody {
     fn locals(&self) -> &EntityDb<LocalId> {
         &self.locals
     }
@@ -292,6 +331,16 @@ impl CtBody for CtoBody {
 
     fn local_dbgs_mut(&mut self) -> &mut SparseMap<LocalId, LocalDbg> {
         &mut self.local_dbgs
+    }
+}
+
+impl CtBody for CtoBody {
+    fn ct_blocks(&self) -> &EntityDb<Bb> {
+        &self.bbs
+    }
+
+    fn ct_blocks_mut(&mut self) -> &mut EntityDb<Bb> {
+        &mut self.bbs
     }
 }
 
@@ -425,6 +474,21 @@ impl Fundef {
 
         self.sig_finished = true;
     }
+
+    /// Creates a builder for the run-time basic-blocks.
+    pub fn builder<'body>(&'body mut self) -> RtBuilder<'body> {
+        self.body.builder()
+    }
+
+    /// Creates a builder for the compile-time basic-blocks.
+    pub fn ct_builder<'body>(&'body mut self) -> CtBuilder<'body> {
+        self.body.ct_builder()
+    }
+
+    /// Get the function parameter at `idx`.
+    pub fn param(&self, idx: usize) -> &Param {
+        self.params.get(idx).expect("invalid parameter index")
+    }
 }
 
 /// Id of a [`Local`].
@@ -492,6 +556,13 @@ pub struct LocalDbg {
 pub struct Param {
     pub local: LocalId,
     pub typ: Type,
+}
+
+impl Param {
+    /// Create a [`PValue`] from this parameter.
+    pub fn pvalue(&self) -> PValue {
+        PValue::Local(self.local)
+    }
 }
 
 /// Id of a [`BasicBlock`].
@@ -632,8 +703,8 @@ pub enum RValue {
     ///
     /// Boolean immediate
     Bool(bool),
-    /// a string literal, (`.0`), and its tag (`.1`)
-    String(String, Option<String>),
+    /// a string literal
+    String(String),
     /// a type, because types in Lun are first-class citizens.
     Type(Type),
     /// `PVALUE as TYPE`
