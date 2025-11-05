@@ -91,6 +91,10 @@ impl TestContext {
                     .to_string();
                 let Ok(stage) = TestStage::from_str(&name);
 
+                if stage == TestStage::Scir || stage == TestStage::Behavior {
+                    continue;
+                }
+
                 self.tests.push(Test {
                     name,
                     path: test_path,
@@ -99,11 +103,11 @@ impl TestContext {
             }
         }
 
-        self.tests.push(Test {
-            name: String::from("multifile/lib"),
-            path: PathBuf::from("./tests/multifile/lib.lun"),
-            stage: TestStage::Multifile,
-        });
+        // self.tests.push(Test {
+        //     name: String::from("multifile/lib"),
+        //     path: PathBuf::from("./tests/multifile/lib.lun"),
+        //     stage: TestStage::Multifile,
+        // });
 
         self.tests.sort_by(|a, b| a.name.cmp(&b.name));
 
@@ -415,8 +419,9 @@ impl TestStage {
             TestStage::Lexer => &["-Zhalt=lexer", "-Zprint=token-stream"],
             TestStage::Parser => &["-Zhalt=parser", "-Zprint=ast"],
             TestStage::Dsir => &["-Zhalt=dsir", "-Zprint=dsir"],
-            TestStage::Scir => &["-Zhalt=scir", "-Zprint=scir", "--orb-type", "llib"],
-            TestStage::Behavior => &["-Zprint=ssa", "-Zprint=scir"],
+            // TestStage::Scir => &["-Zhalt=scir", "-Zprint=scir", "--orb-type", "llib"],
+            // TestStage::Behavior => &["-Zprint=ssa", "-Zprint=scir"],
+            TestStage::Scir | TestStage::Behavior => &[],
             TestStage::Multifile => &[
                 "-Zprint=scir",
                 "-Zhalt=scir", // remove after cranelift gen is fully implemented

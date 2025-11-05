@@ -861,7 +861,7 @@ dependencies = [
  "lunc_linkage",
  "lunc_llib_meta",
  "lunc_parser",
- "lunc_scir",
+ "lunc_seq",
  "lunc_token",
  "lunc_utils",
  "shadow-rs",
@@ -888,7 +888,6 @@ dependencies = [
  "cranelift-object",
  "lunc_ast",
  "lunc_llib_meta",
- "lunc_scir",
  "lunc_token",
  "lunc_utils",
 ]
@@ -899,6 +898,7 @@ version = "0.1.0"
 dependencies = [
  "lunc_ast",
  "lunc_diag",
+ "lunc_entity",
  "lunc_lexer",
  "lunc_llib_meta",
  "lunc_parser",
@@ -966,14 +966,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "lunc_scir"
+name = "lunc_seq"
 version = "0.1.0"
 dependencies = [
  "lunc_ast",
  "lunc_desugar",
  "lunc_diag",
- "lunc_llib_meta",
- "lunc_token",
+ "lunc_entity",
  "lunc_utils",
 ]
 
