@@ -546,7 +546,7 @@ impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
 /// assert!(some.is_some());
 /// assert_eq!(some.unwrap().index(), 1);
 /// ```
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Opt<E: Entity>(E);
 
 impl<E: Entity> Opt<E> {

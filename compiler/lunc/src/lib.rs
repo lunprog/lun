@@ -7,6 +7,7 @@
 //! - [lunc_parser], parses the [Tokens] into an [Ast]
 //! - [lunc_ast], AST types shared across compiler stages
 //! - [lunc_desugar], desugars the [Ast] to [Dsir] and resolve names
+//! - [lunc_untyped], untyped intermediate representation of Lun.
 //! - [lunc_seq], Sequential Intermediate Representation, lowered from [Dsir],
 //!   used to perform the type-checking and other semantic analysis.
 //! - [lunc_cranelift_codegen], generates the Cranelift IR from ..
