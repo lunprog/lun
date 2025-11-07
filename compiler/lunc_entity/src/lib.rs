@@ -44,11 +44,14 @@
 
 use std::{
     collections::HashMap,
-    fmt::{self, Debug},
+    fmt::{self, Debug, Display},
     hash::Hash,
+    io,
     marker::PhantomData,
     mem,
 };
+
+use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 /// An entity is a tiny, `Copy` identifier used across the compiler.
 ///
@@ -380,6 +383,11 @@ impl<E: Entity, V> SparseMap<E, V> {
     pub fn is_empty(&self) -> bool {
         self.elems.is_empty()
     }
+
+    /// Returns an iterator on the entity and its associated data.
+    pub fn iter(&self) -> impl Iterator<Item = (E, &V)> {
+        self.elems.iter().map(|(id, data)| (E::new(*id), data))
+    }
 }
 
 impl<E: Entity, V> Default for SparseMap<E, V> {
@@ -606,6 +614,22 @@ impl<E: Entity> Debug for Opt<E> {
         } else {
             f.debug_struct("None").finish()
         }
+    }
+}
+
+impl<E: Entity + Display> Display for Opt<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_some() {
+            Display::fmt(&self.0, f)
+        } else {
+            write!(f, "None")
+        }
+    }
+}
+
+impl<E: PrettyDump<Ex> + Entity, Ex> PrettyDump<Ex> for Opt<E> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &Ex) -> io::Result<()> {
+        self.expand().try_dump(ctx, extra)
     }
 }
 

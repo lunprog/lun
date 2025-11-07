@@ -1,12 +1,15 @@
 //! Pretty tree printer, used for printing the AST, the DSIR, and the HTIR
 
-use std::io::{self, Write};
+use std::{
+    fmt::Display,
+    io::{self, Write},
+};
 
 use crate::Span;
 
 #[macro_export]
 macro_rules! pretty_struct {
-    ($ctx:expr, $extra:expr, $name:tt, { $( $field:ident ),* $(,)? } $(,)? $( , $loc:expr )?) => {
+    ($ctx:expr, $extra:expr, $name:tt, { $( $field:ident: $field_e:expr ),* $(,)? } $(,)? $( , $loc:expr )?) => {
         $crate::pretty::is_pretty_ctxt($ctx);
 
         let name = $name;
@@ -23,7 +26,7 @@ macro_rules! pretty_struct {
             $ctx.write_indent()?;
 
             write!($ctx.out, "{}: ", std::stringify!($field))?;
-            PrettyDump::try_dump($field, $ctx, $extra)?;
+            PrettyDump::try_dump(&$field_e, $ctx, $extra)?;
             writeln!($ctx.out, ";")?;
         )*
 
@@ -34,6 +37,17 @@ macro_rules! pretty_struct {
         $(
             $ctx.print_loc($loc)?;
         )?
+    };
+    ($ctx:expr, $extra:expr, $name:tt, { $( $field:ident ),* $(,)? } $(,)? $( , $loc:expr )?) => {
+        $crate::pretty_struct! {
+            $ctx,
+            $extra,
+            $name,
+            {
+                $( $field: $field ),*
+            },
+            $( $loc )?
+        }
     };
 }
 
@@ -233,6 +247,35 @@ impl<'w> PrettyCtxt<'w> {
             write!(self.out, " @ none")
         }
     }
+
+    /// Pretty-print a map-like aggregate.
+    pub fn pretty_map<I, K, V, E>(&mut self, entries: I, extra: &E) -> io::Result<()>
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: Display,
+        V: PrettyDump<E>,
+        E: Clone,
+    {
+        let entries = entries.into_iter();
+
+        self.write_indent()?;
+        write!(self.out, "{{")?;
+        self.indent();
+
+        for (k, v) in entries {
+            writeln!(self.out)?;
+            self.write_indent()?;
+            write!(self.out, "{k}: ")?;
+            v.try_dump(self, extra)?;
+            writeln!(self.out, ",")?;
+        }
+
+        self.dedent();
+        write!(self.out, "}}")?;
+        writeln!(self.out)?;
+
+        Ok(())
+    }
 }
 
 impl<'w> Default for PrettyCtxt<'w> {
@@ -375,4 +418,10 @@ impl_pdump! {
     f32,
     f64,
     // f128,
+}
+
+impl<E> PrettyDump<E> for () {
+    fn try_dump(&self, _: &mut PrettyCtxt, _: &E) -> io::Result<()> {
+        Ok(())
+    }
 }

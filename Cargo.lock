@@ -919,6 +919,9 @@ dependencies = [
 [[package]]
 name = "lunc_entity"
 version = "0.1.0"
+dependencies = [
+ "lunc_utils",
+]
 
 [[package]]
 name = "lunc_lexer"

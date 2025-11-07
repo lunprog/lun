@@ -19,6 +19,12 @@ pub struct Orb {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ItemId(u32);
 
+impl Display for ItemId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "i{}", self.index())
+    }
+}
+
 entity!(ItemId, Item);
 
 /// Item.
@@ -39,8 +45,8 @@ pub struct Fundef {
     pub typ: Opt<ExprId>,
     pub params: Vec<Spanned<ExprId>>,
     pub ret_ty: Opt<ExprId>,
-    pub body: Body,
     pub entry: BlockId,
+    pub body: Body,
     pub loc: Span,
 }
 
@@ -229,6 +235,16 @@ impl ExtExpr {
     }
 }
 
+impl Display for ExtExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(item) = self.0.expand() {
+            write!(f, "ext({item}, {})", self.1)
+        } else {
+            Display::fmt(&self.1, f)
+        }
+    }
+}
+
 /// Local reference to an [`Stmt`] in something that can store it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct StmtId(u32);
@@ -278,6 +294,12 @@ pub struct Block {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct BindingId(u32);
 
+impl Display for BindingId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "binding({})", self.index())
+    }
+}
+
 entity!(BindingId, BindingDef);
 
 /// Binding def.
@@ -291,6 +313,12 @@ pub struct BindingDef {
 /// Local reference to a label.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct LabelId(u32);
+
+impl Display for LabelId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "label({})", self.index())
+    }
+}
 
 entity!(LabelId, Label);
 
@@ -317,6 +345,16 @@ pub enum LabelKind {
     PredicateLoop,
 }
 
+impl Display for LabelKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Block => write!(f, "block"),
+            Self::InfiniteLoop => write!(f, "loop"),
+            Self::PredicateLoop => write!(f, "while"),
+        }
+    }
+}
+
 /// A label.
 #[derive(Debug, Clone)]
 pub struct Label {
@@ -329,11 +367,11 @@ pub struct Label {
 /// Something that can hold, [`Expr`], [`Stmt`], [`Block`] and more.
 #[derive(Debug, Clone)]
 pub struct Body {
+    pub labels: EntityDb<LabelId>,
+    pub bindings: EntityDb<BindingId>,
     pub stmts: EntityDb<StmtId>,
     pub exprs: EntityDb<ExprId>,
     pub blocks: EntityDb<BlockId>,
-    pub labels: EntityDb<LabelId>,
-    pub bindings: EntityDb<BindingId>,
 
     pub expr_locs: SparseMap<ExprId, Span>,
     pub stmt_locs: SparseMap<StmtId, Span>,
