@@ -25,7 +25,6 @@ impl<E> PrettyDump<E> for Orb {
         let dumper = OrbDumper(());
 
         ctx.pretty_map(items.full_iter(), &dumper)?;
-        writeln!(ctx.out)?;
 
         Ok(())
     }

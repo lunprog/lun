@@ -250,7 +250,7 @@ impl UtirGen {
 
     /// Creates a `Expr::PrimType(ptype)` in the current body and returns it.
     fn ptype_expr(&mut self, ptype: PrimType) -> ExprId {
-        self.types_exprs.get(&ptype).map(|e| *e).unwrap_or_else(|| {
+        self.types_exprs.get(&ptype).copied().unwrap_or_else(|| {
             let ptype_e = self.body().exprs.create(Expr::PrimType(ptype));
 
             self.types_exprs.insert(ptype, ptype_e);
@@ -328,10 +328,7 @@ impl UtirGen {
         expr: impl Into<Option<&'dsir DsExpression>>,
         typ: impl Into<Option<ExtExpr>>,
     ) -> Opt<ExprId> {
-        expr.into()
-            .map(|e| self.gen_expr(e, typ))
-            .flatten()
-            .shorten()
+        expr.into().and_then(|e| self.gen_expr(e, typ)).shorten()
     }
 
     fn gen_expr(
@@ -476,11 +473,8 @@ impl UtirGen {
                 let mut args_e = Vec::with_capacity(args.len());
 
                 for arg in args {
-                    match self.gen_expr(arg, None) {
-                        Some(arg) => {
-                            args_e.push(arg);
-                        }
-                        None => {}
+                    if let Some(arg) = self.gen_expr(arg, None) {
+                        args_e.push(arg);
                     }
                 }
 
@@ -593,9 +587,8 @@ impl UtirGen {
 
                 let type_e = self.ptype_expr(PrimType::Type);
                 for arg in ds_args {
-                    match self.gen_expr(arg, ExtExpr::local(type_e)) {
-                        Some(arg) => args.push(arg),
-                        None => {}
+                    if let Some(arg) = self.gen_expr(arg, ExtExpr::local(type_e)) {
+                        args.push(arg)
                     }
                 }
 
@@ -707,9 +700,8 @@ impl UtirGen {
         let mut stmts_set = EntitySet::new();
 
         for stmt in stmts {
-            match self.gen_stmt(stmt) {
-                Some(s) => stmts_set.insert(s),
-                None => {}
+            if let Some(s) = self.gen_stmt(stmt) {
+                stmts_set.insert(s)
             }
         }
 

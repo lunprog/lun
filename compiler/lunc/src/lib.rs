@@ -30,6 +30,7 @@
 )]
 
 use clap::{ArgAction, Parser as ArgParser, ValueEnum};
+use lunc_untyped::UtirGen;
 // use lunc_linkage::Linker;
 use std::{
     backtrace::{Backtrace, BacktraceStatus},
@@ -292,6 +293,7 @@ Stages:
 * lexer
 * parser
 * dsir
+* utir
 * sir
 * ssa
 * linkage
@@ -433,6 +435,7 @@ pub enum CompStage {
     Lexer,
     Parser,
     Dsir,
+    Utir,
     Sir,
     Ssa,
     Codegen,
@@ -446,6 +449,7 @@ pub enum InterRes {
     TokenStream,
     Ast,
     Dsir,
+    Utir,
     Sir,
     Ssa,
     Asm,
@@ -464,6 +468,8 @@ pub struct Timings {
     parser: Duration,
     /// duration of dsir
     dsir: Duration,
+    /// duration of utir
+    utir: Duration,
     /// duration of sir
     sir: Duration,
     /// duration of the ssa generation
@@ -490,6 +496,7 @@ impl fmt::Display for Timings {
             lexer,
             parser,
             dsir,
+            utir,
             sir,
             ssa,
             lun_sum,
@@ -502,6 +509,7 @@ impl fmt::Display for Timings {
         writeln!(f, "      lexer: {}", humantime::format_duration(lexer))?;
         writeln!(f, "     parser: {}", humantime::format_duration(parser))?;
         writeln!(f, "       dsir: {}", humantime::format_duration(dsir))?;
+        writeln!(f, "       utir: {}", humantime::format_duration(utir))?;
         writeln!(f, "        sir: {}", humantime::format_duration(sir))?;
         writeln!(f, "        ssa: {}", humantime::format_duration(ssa))?;
         writeln!(f, "= Total Lun: {}\n", humantime::format_duration(lun_sum))?;
@@ -827,16 +835,34 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
         return Err(builderr());
     }
-    let orbtree = desugarrer.take_orb_tree();
 
     timings.dsir = dsir_instant.elapsed();
-    let sir_instant = Instant::now();
+    let utir_instant = Instant::now();
 
     _ = argv.output;
     _ = argv.codegen;
-    _ = orbtree;
-    _ = sir_instant;
 
-    // 6. type-checking and all the semantic analysis, DSIR => SCIR
+    // 6. type-annotation, DSIR => UTIR
+    let mut utirgen = UtirGen::new(symdb, sink.clone());
+    let utir = utirgen.produce(dsir);
+
+    //    maybe print the UTIR
+    if argv.debug.print(InterRes::Utir) {
+        eprint!("utir = ");
+        utir.dump(&());
+        eprintln!();
+    }
+    if sink.failed() {
+        return Err(builderr());
+    }
+    if argv.debug.halt(CompStage::Utir) {
+        if sink.is_empty() {
+            return Ok(());
+        }
+
+        return Err(builderr());
+    }
+    timings.utir = utir_instant.elapsed();
+
     todo!("IMPLEMENT SIR AND THE FOLLOWING")
 }
