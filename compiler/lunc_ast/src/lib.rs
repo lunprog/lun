@@ -571,7 +571,7 @@ pub enum ItemContainer {
 }
 
 /// Primitive types of Lun.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PrimType {
     /// Signed pointer-size integer
     Isz,

@@ -2,7 +2,7 @@
 //! explicit so that compile-time evaluation and type-evaluation (a special case
 //! of comptime eval) can easily work with types.
 
-use std::mem;
+use std::{collections::HashMap, mem};
 
 use lunc_ast::{PrimType, UnOp};
 use lunc_desugar::{
@@ -51,6 +51,16 @@ pub struct UtirGen {
     item: Opt<ItemId>,
 
     //
+    // BODY SPECIFIC
+    //
+    /// A mapping of the primitive type to the expr.
+    ///
+    /// The thing is that when we build `Expr::PrimType`s we quickly have
+    /// a bunch of them, this hash map is here so that we can re-use those
+    /// type-expression instead of having 10,000 of them.
+    types_exprs: HashMap<PrimType, ExprId>,
+
+    //
     // FUNDEF SPECIFIC
     //
     /// Return type of the current function.
@@ -66,6 +76,7 @@ impl UtirGen {
             sym_to_def: SparseMap::new(),
             sink,
             item: Opt::None,
+            types_exprs: HashMap::new(),
             fun_ret_ty: Opt::None,
         }
     }
@@ -91,6 +102,18 @@ impl UtirGen {
         for item in items {
             self.populate_item(item);
         }
+    }
+
+    fn clear_fundef_specific(&mut self) {
+        self.fun_ret_ty = Opt::None;
+    }
+
+    fn clear_item_specific(&mut self) {
+        self.item = Opt::None;
+    }
+
+    fn clear_body_specific(&mut self) {
+        self.types_exprs.clear();
     }
 
     /// Maps a symbol to a defid
@@ -227,19 +250,14 @@ impl UtirGen {
 
     /// Creates a `Expr::PrimType(ptype)` in the current body and returns it.
     fn ptype_expr(&mut self, ptype: PrimType) -> ExprId {
-        self.body().exprs.create(Expr::PrimType(ptype))
-    }
+        self.types_exprs.get(&ptype).map(|e| *e).unwrap_or_else(|| {
+            let ptype_e = self.body().exprs.create(Expr::PrimType(ptype));
 
-    // /// Evaluates `f` with the given type in `self.typ`.
-    // fn with_type<T, R>(
-    //     &mut self,
-    //     typ: impl Into<Option<ExtExpr>>,
-    //     arg1: T,
-    //     f: impl for<'a> FnOnce(&'a mut Self, T) -> R,
-    // ) -> R {
-    //     self.typ = typ.into();
-    //     f(self, arg1)
-    // }
+            self.types_exprs.insert(ptype, ptype_e);
+
+            ptype_e
+        })
+    }
 
     /// Generate the UTIR for a given module.
     pub fn gen_module(&mut self, module: &DsModule) {
@@ -249,7 +267,7 @@ impl UtirGen {
     }
 
     fn gen_item(&mut self, item: &DsItem) -> Option<ItemId> {
-        match item {
+        let item = match item {
             DsItem::GlobalDef {
                 name: _,
                 mutability,
@@ -292,10 +310,17 @@ impl UtirGen {
 
                 self.item = Opt::None;
 
+                self.clear_fundef_specific();
+
                 Some(id)
             }
             _ => todo!(),
-        }
+        };
+
+        self.clear_body_specific();
+        self.clear_item_specific();
+
+        item
     }
 
     fn gen_option_expr<'utir, 'dsir: 'utir>(
@@ -399,6 +424,8 @@ impl UtirGen {
                         ptype => panic!("unknown primitive type {ptype:?}"),
                     };
 
+                    // NOTE: here we don't use self.ptype_expr(..) because we
+                    // want to keep the location of this primitive type.
                     Expr::PrimType(ptype)
                 } else if let Some(defid) = self.sym_to_def.get(symref) {
                     match defid {
