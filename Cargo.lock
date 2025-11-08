@@ -994,6 +994,7 @@ version = "0.1.0"
 dependencies = [
  "lunc_ast",
  "lunc_desugar",
+ "lunc_diag",
  "lunc_entity",
  "lunc_token",
  "lunc_utils",

@@ -10,12 +10,14 @@ use lunc_desugar::{
     DsStmtKind,
     symbol::{Symbol, SymbolKind},
 };
+use lunc_diag::{DiagnosticSink, feature_todo};
 use lunc_entity::{EntityDb, EntitySet, Opt, OptionExt, SparseMap};
 use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::{default, opt_unreachable};
 
-use crate::utir::*;
+use crate::{diags::FunctionInGlobalMut, utir::*};
 
+pub mod diags;
 pub mod pretty;
 pub mod utir;
 
@@ -39,20 +41,30 @@ pub struct UtirGen {
     symdb: EntityDb<Symbol>,
     /// Symbol to AnyId mapping.
     sym_to_def: SparseMap<Symbol, DefId>,
+    /// Diagnostic sink
+    sink: DiagnosticSink,
+
+    //
+    // ITEM SPECIFIC
+    //
     /// Current item being lowered.
     item: Opt<ItemId>,
 
+    //
+    // FUNDEF SPECIFIC
+    //
     /// Return type of the current function.
     fun_ret_ty: Opt<ExprId>,
 }
 
 impl UtirGen {
     /// Create a new utir-generator
-    pub fn new(symdb: EntityDb<Symbol>) -> UtirGen {
+    pub fn new(symdb: EntityDb<Symbol>, sink: DiagnosticSink) -> UtirGen {
         UtirGen {
             orb: Orb::default(),
             symdb,
             sym_to_def: SparseMap::new(),
+            sink,
             item: Opt::None,
             fun_ret_ty: Opt::None,
         }
@@ -236,17 +248,22 @@ impl UtirGen {
         }
     }
 
-    fn gen_item(&mut self, item: &DsItem) -> ItemId {
+    fn gen_item(&mut self, item: &DsItem) -> Option<ItemId> {
         match item {
             DsItem::GlobalDef {
                 name: _,
                 mutability,
                 typeexpr,
                 value,
-                loc: _,
+                loc,
                 sym,
             } if value.is_fundef() => {
-                assert!(mutability.is_not(), "E040 DIAGNOSTIC");
+                if mutability.is_mut() {
+                    self.sink.emit(FunctionInGlobalMut {
+                        fun: FunctionInGlobalMut::FUNDEF,
+                        loc: loc.clone().unwrap(),
+                    });
+                }
 
                 let DsExprKind::FunDefinition {
                     params,
@@ -263,7 +280,7 @@ impl UtirGen {
 
                 self.fundef_mut().typ = self.gen_option_expr(typeexpr, None);
 
-                self.fundef_mut().params = self.gen_params(params);
+                self.fundef_mut().params = self.gen_params(params)?;
 
                 let type_e = self.ptype_expr(PrimType::Type);
                 let ret_ty = self.gen_option_expr(rettypeexpr.as_deref(), ExtExpr::local(type_e));
@@ -275,7 +292,7 @@ impl UtirGen {
 
                 self.item = Opt::None;
 
-                id
+                Some(id)
             }
             _ => todo!(),
         }
@@ -286,10 +303,17 @@ impl UtirGen {
         expr: impl Into<Option<&'dsir DsExpression>>,
         typ: impl Into<Option<ExtExpr>>,
     ) -> Opt<ExprId> {
-        expr.into().map(|e| self.gen_expr(e, typ)).shorten()
+        expr.into()
+            .map(|e| self.gen_expr(e, typ))
+            .flatten()
+            .shorten()
     }
 
-    fn gen_expr(&mut self, expression: &DsExpression, typ: impl Into<Option<ExtExpr>>) -> ExprId {
+    fn gen_expr(
+        &mut self,
+        expression: &DsExpression,
+        typ: impl Into<Option<ExtExpr>>,
+    ) -> Option<ExprId> {
         let expr = match &expression.expr {
             DsExprKind::Lit(Lit { kind, value, tag }) => match kind {
                 LitKind::Char => {
@@ -388,8 +412,8 @@ impl UtirGen {
                 }
             }
             DsExprKind::Binary { lhs, op, rhs } => {
-                let lhs = self.gen_expr(lhs, None);
-                let rhs = self.gen_expr(rhs, None);
+                let lhs = self.gen_expr(lhs, None)?;
+                let rhs = self.gen_expr(rhs, None)?;
 
                 let expr = Expr::Binary(lhs, op.clone(), rhs);
                 if op.is_relational() || op.is_logical() {
@@ -402,7 +426,7 @@ impl UtirGen {
                 }
             }
             DsExprKind::Unary { op, expr } => {
-                let expr = self.gen_expr(expr, None);
+                let expr = self.gen_expr(expr, None)?;
 
                 let expr = Expr::Unary(op.clone(), expr);
 
@@ -416,16 +440,21 @@ impl UtirGen {
                 }
             }
             DsExprKind::Borrow(mutability, expr) => {
-                let expr = self.gen_expr(expr, None);
+                let expr = self.gen_expr(expr, None)?;
 
                 Expr::Borrow(*mutability, expr)
             }
             DsExprKind::Call { callee, args } => {
-                let callee = self.gen_expr(callee, None);
+                let callee = self.gen_expr(callee, None)?;
                 let mut args_e = Vec::with_capacity(args.len());
 
                 for arg in args {
-                    args_e.push(self.gen_expr(arg, None));
+                    match self.gen_expr(arg, None) {
+                        Some(arg) => {
+                            args_e.push(arg);
+                        }
+                        None => {}
+                    }
                 }
 
                 Expr::Call {
@@ -438,7 +467,7 @@ impl UtirGen {
                 then_br,
                 else_br,
             } => {
-                let cond = self.gen_expr(cond, None);
+                let cond = self.gen_expr(cond, None)?;
 
                 let bool_e = self.ptype_expr(PrimType::Bool);
                 let typed_cond = self.body().exprs.create(Expr::Typed {
@@ -446,7 +475,7 @@ impl UtirGen {
                     val: cond,
                 });
 
-                let then_e = self.gen_expr(then_br, None);
+                let then_e = self.gen_expr(then_br, None)?;
                 let else_e = self.gen_option_expr(else_br.as_deref(), None);
 
                 Expr::If {
@@ -488,38 +517,47 @@ impl UtirGen {
                 Expr::Continue(Opt::None)
             }
             DsExprKind::Null => {
-                todo!("DIAGNOSTIC: UNIMPLEMENTED FEATURE `null-expr`")
+                self.sink.emit(feature_todo! {
+                    feature: "null expr",
+                    label: "field access and struct type definition",
+                    loc: expression.loc.clone().unwrap()
+                });
+
+                return None;
             }
             DsExprKind::Field { .. } => {
-                // self.sink.emit(feature_todo! {
-                //     feature: "field expr",
-                //     label: "field access and struct type definition",
-                //     loc: expr.loc.clone().unwrap()
-                // });
-                todo!("DIAGNOSTIC: UNIMPLEMENTED FEATURE `field-expr`")
+                self.sink.emit(feature_todo! {
+                    feature: "field expr",
+                    label: "field access and struct type definition",
+                    loc: expression.loc.clone().unwrap()
+                });
+
+                return None;
             }
             DsExprKind::Underscore => {
                 todo!("UNDERSCORE")
             }
             DsExprKind::FunDefinition { .. } => {
-                // self.sink.emit(feature_todo! {
-                //     feature: "local fundef",
-                //     label: "fundefs inside an expression isn't supported",
-                //     loc: node.loc.clone().unwrap(),
-                // });
-                todo!("DIAGNOSTIC: UNIMPLEMENTED FEATURE `local-fundef`")
+                self.sink.emit(feature_todo! {
+                    feature: "local fundef",
+                    label: "fundefs inside an expression isn't supported",
+                    loc: expression.loc.clone().unwrap(),
+                });
+
+                return None;
             }
             DsExprKind::FunDeclaration { .. } => {
-                // self.sink.emit(feature_todo! {
-                //     feature: "local fundecl",
-                //     label: "fundefs inside an expression isn't supported",
-                //     loc: node.loc.clone().unwrap(),
-                // });
-                todo!("DIAGNOSTIC: UNIMPLEMENTED FEATURE `local-fundecl`")
+                self.sink.emit(feature_todo! {
+                    feature: "local fundecl",
+                    label: "fundefs inside an expression isn't supported",
+                    loc: expression.loc.clone().unwrap(),
+                });
+
+                return None;
             }
             DsExprKind::PointerType(mutability, pointee) => {
                 let type_e = self.ptype_expr(PrimType::Type);
-                let pointee = self.gen_expr(pointee, ExtExpr::local(type_e));
+                let pointee = self.gen_expr(pointee, ExtExpr::local(type_e))?;
 
                 Expr::PtrType(*mutability, pointee)
             }
@@ -528,7 +566,10 @@ impl UtirGen {
 
                 let type_e = self.ptype_expr(PrimType::Type);
                 for arg in ds_args {
-                    args.push(self.gen_expr(arg, ExtExpr::local(type_e)));
+                    match self.gen_expr(arg, ExtExpr::local(type_e)) {
+                        Some(arg) => args.push(arg),
+                        None => {}
+                    }
                 }
 
                 let ret = self.gen_option_expr(ret.as_deref(), ExtExpr::local(type_e));
@@ -536,7 +577,9 @@ impl UtirGen {
                 Expr::FunptrType(args, ret)
             }
             DsExprKind::Poisoned { diag } => {
-                todo!("EMIT POISONED DIAGNOSTIC: {diag:?}")
+                debug_assert!(diag.is_none());
+
+                return None;
             }
         };
 
@@ -547,13 +590,13 @@ impl UtirGen {
         }
 
         if let Some(typ) = typ.into() {
-            self.body().exprs.create(Expr::Typed { typ, val: id })
+            Some(self.body().exprs.create(Expr::Typed { typ, val: id }))
         } else {
-            id
+            Some(id)
         }
     }
 
-    fn gen_stmt(&mut self, stmt: &DsStatement) -> StmtId {
+    fn gen_stmt(&mut self, stmt: &DsStatement) -> Option<StmtId> {
         let s = match &stmt.stmt {
             DsStmtKind::BindingDef {
                 name,
@@ -564,7 +607,7 @@ impl UtirGen {
             } => {
                 let type_e = self.ptype_expr(PrimType::Type);
                 let typ = self.gen_option_expr(typeexpr, Some(ExtExpr::local(type_e)));
-                let val = self.gen_expr(value, typ.expand().map(ExtExpr::local));
+                let val = self.gen_expr(value, typ.expand().map(ExtExpr::local))?;
 
                 let bind = self.body().bindings.create(BindingDef {
                     name: name.clone(),
@@ -578,10 +621,16 @@ impl UtirGen {
                 self.body().stmts.create(Stmt::BindingDef(bind))
             }
             DsStmtKind::Defer { expr: _ } => {
-                todo!("DIAGNOSTIC: UNIMPLEMENTED FEATURE `defer-stmt`")
+                self.sink.emit(feature_todo! {
+                    feature: "defer statement",
+                    label: "field access and struct type definition",
+                    loc: stmt.loc.clone().unwrap()
+                });
+
+                return None;
             }
             DsStmtKind::Expression(expr) => {
-                let e = self.gen_expr(expr, None);
+                let e = self.gen_expr(expr, None)?;
 
                 self.body().stmts.create(Stmt::Expression(e))
             }
@@ -591,10 +640,10 @@ impl UtirGen {
             self.body().stmt_locs.insert(s, loc.clone());
         }
 
-        s
+        Some(s)
     }
 
-    fn gen_params(&mut self, params: &[DsParam]) -> EntityDb<ParamId> {
+    fn gen_params(&mut self, params: &[DsParam]) -> Option<EntityDb<ParamId>> {
         let mut params_db = EntityDb::new();
 
         let type_e = self.ptype_expr(PrimType::Type);
@@ -608,14 +657,14 @@ impl UtirGen {
         {
             let param = params_db.create(Param {
                 name: name.clone(),
-                typ: self.gen_expr(typeexpr, ExtExpr::local(type_e)),
+                typ: self.gen_expr(typeexpr, ExtExpr::local(type_e))?,
                 loc: loc.clone().unwrap(),
             });
 
             self.map_sym_to_def(sym.unwrap_sym(), DefId::ParamId(param));
         }
 
-        params_db
+        Some(params_db)
     }
 
     /// Generate the UTIR for a DSIR block.
@@ -631,7 +680,10 @@ impl UtirGen {
         let mut stmts_set = EntitySet::new();
 
         for stmt in stmts {
-            stmts_set.insert(self.gen_stmt(stmt));
+            match self.gen_stmt(stmt) {
+                Some(s) => stmts_set.insert(s),
+                None => {}
+            }
         }
 
         let tail = self.gen_option_expr(last_expr.as_deref(), typ);
