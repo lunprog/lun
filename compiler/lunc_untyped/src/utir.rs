@@ -2,8 +2,8 @@
 
 use std::fmt::{self, Display};
 
-use lunc_ast::{Abi, BinOp, Mutability, Spanned, UnOp};
-use lunc_entity::{Entity, EntityDb, Opt, SparseMap, entity};
+use lunc_ast::{Abi, BinOp, Mutability, PrimType, Spanned, UnOp};
+use lunc_entity::{Entity, EntityDb, EntitySet, Opt, SparseMap, entity};
 use lunc_utils::Span;
 
 /// Orb.
@@ -13,6 +13,14 @@ use lunc_utils::Span;
 #[derive(Debug, Clone)]
 pub struct Orb {
     pub items: EntityDb<ItemId>,
+}
+
+impl Default for Orb {
+    fn default() -> Self {
+        Orb {
+            items: EntityDb::new(),
+        }
+    }
 }
 
 /// Id of an [`Item`].
@@ -38,15 +46,66 @@ pub enum Item {
     ExternBlock(ExternBlock),
 }
 
+impl Item {
+    pub fn body_mut(&mut self) -> &mut Body {
+        match self {
+            Item::Fundef(Fundef { body, .. })
+            | Item::Fundecl(Fundecl { body, .. })
+            | Item::GlobalDef(GlobalDef { body, .. })
+            | Item::GlobalUninit(GlobalUninit { body, .. }) => body,
+            Item::Module(..) => panic!("Item::Module doesn't have a body"),
+            Item::ExternBlock(..) => panic!("Item::ExternBlock doesn't have a body"),
+        }
+    }
+}
+
 /// Fundef -- Function definition.
 #[derive(Debug, Clone)]
 pub struct Fundef {
     pub name: Spanned<String>,
     pub typ: Opt<ExprId>,
-    pub params: Vec<Spanned<ExprId>>,
+    pub params: EntityDb<ParamId>,
     pub ret_ty: Opt<ExprId>,
     pub entry: BlockId,
     pub body: Body,
+    pub loc: Span,
+}
+
+impl Default for Fundef {
+    /// Create an empty fundef with dummy values.
+    fn default() -> Self {
+        Fundef {
+            name: Spanned {
+                node: String::new(),
+                loc: Span::ZERO,
+            },
+            typ: Opt::None,
+            params: EntityDb::new(),
+            ret_ty: Opt::None,
+            entry: BlockId::RESERVED,
+            body: Body::default(),
+            loc: Span::ZERO,
+        }
+    }
+}
+
+/// Id of a function definition parameter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ParamId(u32);
+
+impl Display for ParamId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "p{}", self.index())
+    }
+}
+
+entity!(ParamId, Param);
+
+/// A parameter
+#[derive(Debug, Clone)]
+pub struct Param {
+    pub name: Spanned<String>,
+    pub typ: ExprId,
     pub loc: Span,
 }
 
@@ -55,10 +114,26 @@ pub struct Fundef {
 pub struct Fundecl {
     pub name: Spanned<String>,
     pub typ: Opt<ExprId>,
-    pub params: Vec<Spanned<ExprId>>,
+    pub params: Vec<ExprId>,
     pub ret_ty: Opt<ExprId>,
     pub body: Body,
     pub loc: Span,
+}
+
+impl Default for Fundecl {
+    fn default() -> Self {
+        Fundecl {
+            name: Spanned {
+                node: String::new(),
+                loc: Span::ZERO,
+            },
+            typ: Opt::None,
+            params: Vec::new(),
+            ret_ty: Opt::None,
+            body: Body::default(),
+            loc: Span::ZERO,
+        }
+    }
 }
 
 /// GlobalDef -- Global definition.
@@ -72,6 +147,22 @@ pub struct GlobalDef {
     pub loc: Span,
 }
 
+impl Default for GlobalDef {
+    fn default() -> Self {
+        GlobalDef {
+            name: Spanned {
+                node: String::new(),
+                loc: Span::ZERO,
+            },
+            mutability: Mutability::Not,
+            typ: Opt::None,
+            value: ExprId::RESERVED,
+            body: Body::default(),
+            loc: Span::ZERO,
+        }
+    }
+}
+
 /// GlobalUninit -- Global definition.
 #[derive(Debug, Clone)]
 pub struct GlobalUninit {
@@ -81,20 +172,54 @@ pub struct GlobalUninit {
     pub loc: Span,
 }
 
+impl Default for GlobalUninit {
+    fn default() -> Self {
+        GlobalUninit {
+            name: Spanned {
+                node: String::new(),
+                loc: Span::ZERO,
+            },
+            typ: ExprId::RESERVED,
+            body: Body::default(),
+            loc: Span::ZERO,
+        }
+    }
+}
+
 /// Module.
 #[derive(Debug, Clone)]
 pub struct Module {
     pub name: String,
-    pub items: Vec<ItemId>,
+    pub items: EntitySet<ItemId>,
     pub loc: Span,
+}
+
+impl Default for Module {
+    fn default() -> Self {
+        Module {
+            name: String::new(),
+            items: EntitySet::new(),
+            loc: Span::ZERO,
+        }
+    }
 }
 
 /// ExternBlock -- Extern block.
 #[derive(Debug, Clone)]
 pub struct ExternBlock {
     pub abi: Abi,
-    pub items: Vec<ItemId>,
+    pub items: EntitySet<ItemId>,
     pub loc: Span,
+}
+
+impl Default for ExternBlock {
+    fn default() -> Self {
+        ExternBlock {
+            abi: Abi::default(),
+            items: EntitySet::new(),
+            loc: Span::ZERO,
+        }
+    }
 }
 
 /// Local reference to an [`Expr`] in something that can store it.
@@ -120,6 +245,10 @@ pub enum Expr {
     ///
     /// [`DsExprKind::Lit`]: lunc_desugar::DsExprKind::Lit
     Int(u128),
+    /// Character, see [`DsExprKind::Lit`].
+    ///
+    /// [`DsExprKind::Lit`]: lunc_desugar::DsExprKind::Lit
+    Char(char),
     /// Integer, see [`DsExprKind::Lit`].
     ///
     /// [`DsExprKind::Lit`]: lunc_desugar::DsExprKind::Lit
@@ -143,7 +272,7 @@ pub enum Expr {
     /// Reference to a function parameter, see [`DsExprKind::Path`].
     ///
     /// [`DsExprKind::Path`]: lunc_desugar::DsExprKind::Path
-    Param(u32),
+    Param(ParamId),
     /// Reference to a user-binding, see [`DsExprKind::Path`].
     ///
     /// [`DsExprKind::Path`]: lunc_desugar::DsExprKind::Path
@@ -208,14 +337,16 @@ pub enum Expr {
     ///
     /// [`DsExprKind::FunPtrType`]: lunc_desugar::DsExprKind::FunPtrType
     FunptrType(Vec<ExprId>, Opt<ExprId>),
+    /// Primitive type, it's a [`DsExprKind::Path`] in Dsir.
+    ///
+    /// [`DsExprKind::Path`]: lunc_desugar::DsExprKind::Path
+    PrimType(PrimType),
 
     //
     // UTIR SPECIFIC
     //
     /// Make the expr `val` have the type `typ`.
     Typed { typ: ExtExpr, val: ExprId },
-    /// The return type of the function
-    RetTy,
 }
 
 /// External reference to an expr ([ExprId]) in the local item or in the
@@ -263,7 +394,7 @@ pub enum Stmt {
     /// User binding, see [`DsStmtKind::BindingDef`].
     ///
     /// [`DsStmtKind::BindingDef`]: lunc_desugar::DsStmtKind::BindingDef
-    BindingDef { id: BindingId },
+    BindingDef(BindingId),
     /// Expression, see [`DsStmtKind::BindingDef`].
     ///
     /// [`DsStmtKind::BindingDef`]: lunc_desugar::DsStmtKind::BindingDef
@@ -285,7 +416,7 @@ entity!(BlockId, Block);
 /// A block.
 #[derive(Debug, Clone)]
 pub struct Block {
-    pub stmts: Vec<StmtId>,
+    pub stmts: EntitySet<StmtId>,
     pub tail: Opt<ExprId>,
     pub loc: Span,
 }
@@ -296,7 +427,7 @@ pub struct BindingId(u32);
 
 impl Display for BindingId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "binding({})", self.index())
+        write!(f, "bind{}", self.index())
     }
 }
 
@@ -305,6 +436,7 @@ entity!(BindingId, BindingDef);
 /// Binding def.
 #[derive(Debug, Clone)]
 pub struct BindingDef {
+    pub name: Spanned<String>,
     pub mutability: Mutability,
     pub typ: Opt<ExprId>,
     pub val: ExprId,
@@ -316,7 +448,7 @@ pub struct LabelId(u32);
 
 impl Display for LabelId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "label({})", self.index())
+        write!(f, "l{}", self.index())
     }
 }
 
@@ -375,4 +507,28 @@ pub struct Body {
 
     pub expr_locs: SparseMap<ExprId, Span>,
     pub stmt_locs: SparseMap<StmtId, Span>,
+}
+
+impl Default for Body {
+    fn default() -> Self {
+        Body {
+            labels: EntityDb::new(),
+            bindings: EntityDb::new(),
+            stmts: EntityDb::new(),
+            exprs: EntityDb::new(),
+            blocks: EntityDb::new(),
+
+            expr_locs: SparseMap::new(),
+            stmt_locs: SparseMap::new(),
+        }
+    }
+}
+
+/// Any id of the UTIR that represents a definition, primarily used to convert
+/// DSIR symbols to the correct id.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum DefId {
+    ParamId(ParamId),
+    BindingId(BindingId),
+    ItemId(ItemId),
 }

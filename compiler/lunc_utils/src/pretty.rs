@@ -72,6 +72,8 @@ pub struct ListDump<'ctx, 'w, E> {
     finished: bool,
     is_empty: bool,
     extra: E,
+    /// if `true` then it will not print a new line between elements
+    no_nl: bool,
 }
 
 impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
@@ -86,7 +88,10 @@ impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
                 writeln!(self.ctx.out)?;
                 self.ctx.write_indent()?;
                 item.try_dump(self.ctx, &self.extra)?;
-                writeln!(self.ctx.out, ",")?;
+                write!(self.ctx.out, ",")?;
+                if !self.no_nl {
+                    writeln!(self.ctx.out)?;
+                }
                 self.is_empty = false;
 
                 Ok(())
@@ -113,7 +118,10 @@ impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
                     writeln!(self.ctx.out)?;
                     self.ctx.write_indent()?;
                     item.try_dump(self.ctx, &self.extra)?;
-                    writeln!(self.ctx.out, ",")?;
+                    write!(self.ctx.out, ",")?;
+                    if !self.no_nl {
+                        writeln!(self.ctx.out)?;
+                    }
                     self.is_empty = false;
                 }
 
@@ -121,6 +129,12 @@ impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
             })();
         }
 
+        self
+    }
+
+    /// Disable the newline between elements, enabled by default.
+    pub fn disable_nl(mut self) -> Self {
+        self.no_nl = true;
         self
     }
 
@@ -134,6 +148,10 @@ impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
                 self.ctx.dedent();
 
                 if !self.is_empty {
+                    if self.no_nl {
+                        writeln!(self.ctx.out)?;
+                    }
+
                     self.ctx.write_indent()?;
                 }
                 write!(self.ctx.out, "]")
@@ -236,6 +254,7 @@ impl<'w> PrettyCtxt<'w> {
             finished: false,
             is_empty: true,
             extra: extra.clone(),
+            no_nl: false,
         }
     }
 
@@ -258,21 +277,28 @@ impl<'w> PrettyCtxt<'w> {
     {
         let entries = entries.into_iter();
 
-        self.write_indent()?;
         write!(self.out, "{{")?;
         self.indent();
+        let mut is_empty = true;
 
         for (k, v) in entries {
+            is_empty = false;
+
             writeln!(self.out)?;
             self.write_indent()?;
             write!(self.out, "{k}: ")?;
             v.try_dump(self, extra)?;
-            writeln!(self.out, ",")?;
+            write!(self.out, ",")?;
         }
 
         self.dedent();
+
+        if !is_empty {
+            writeln!(self.out)?;
+            self.write_indent()?;
+        }
+
         write!(self.out, "}}")?;
-        writeln!(self.out)?;
 
         Ok(())
     }

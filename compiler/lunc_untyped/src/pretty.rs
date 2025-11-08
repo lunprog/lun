@@ -25,6 +25,7 @@ impl<E> PrettyDump<E> for Orb {
         let dumper = OrbDumper(());
 
         ctx.pretty_map(items.full_iter(), &dumper)?;
+        writeln!(ctx.out)?;
 
         Ok(())
     }
@@ -60,12 +61,12 @@ impl PrettyDump<OrbDumper> for Fundef {
             extra,
             "Fundef",
             {
-                name,
-                typ,
-                params,
-                ret_ty,
-                entry,
-                body,
+                name: name,
+                typ: typ,
+                params: ctx.pretty_map(params.full_iter(), extra)?,
+                ret_ty: ret_ty,
+                entry: entry,
+                body: body,
             },
             loc
         );
@@ -202,8 +203,28 @@ impl_pdump! {
     ItemId,
     BlockId,
     LabelId,
+    ParamId,
     BindingId,
     LabelKind,
+}
+
+impl PrettyDump<OrbDumper> for Param {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        let Param { name, typ, loc } = self;
+
+        pretty_struct! (
+            ctx,
+            extra,
+            "Param",
+            {
+                name,
+                typ,
+            },
+            loc
+        );
+
+        Ok(())
+    }
 }
 
 impl PrettyDump<OrbDumper> for Body {
@@ -240,7 +261,7 @@ impl PrettyDump<OrbDumper> for Body {
 impl PrettyDump<OrbDumper> for Stmt {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         match self {
-            Self::BindingDef { id } => id.try_dump(ctx, extra),
+            Self::BindingDef(id) => id.try_dump(ctx, extra),
             Self::Expression(expr) => expr.try_dump(ctx, extra),
         }
     }
@@ -250,9 +271,10 @@ impl PrettyDump<OrbDumper> for Expr {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         match self {
             Self::Int(i) => write!(ctx.out, "int({i})"),
+            Self::Char(c) => write!(ctx.out, "char({c:?})"),
             Self::Float(f) => write!(ctx.out, "float({f})"),
-            Self::Str(s) => write!(ctx.out, "str({s})"),
-            Self::CStr(s) => write!(ctx.out, "cstr({s})"),
+            Self::Str(s) => write!(ctx.out, "str({s:?})"),
+            Self::CStr(s) => write!(ctx.out, "cstr({s:?})"),
             Self::Bool(b) => write!(ctx.out, "bool({b})"),
             Self::Item(id) => id.try_dump(ctx, extra),
             Self::Param(ord) => write!(ctx.out, "param({ord})"),
@@ -268,10 +290,10 @@ impl PrettyDump<OrbDumper> for Expr {
                 then_e,
                 else_e,
             } => {
-                write!(ctx.out, "if ({cond}) {then_e}")?;
+                write!(ctx.out, "if {cond} {{ {then_e} }}")?;
 
                 if let Some(else_e) = else_e.expand() {
-                    write!(ctx.out, " else {else_e}")?;
+                    write!(ctx.out, " else {{ {else_e} }}")?;
                 }
 
                 Ok(())
@@ -306,11 +328,9 @@ impl PrettyDump<OrbDumper> for Expr {
 
                 Ok(())
             }
+            Self::PrimType(ptype) => write!(ctx.out, "primitive_type({ptype})"),
             Self::Typed { typ, val } => {
                 write!(ctx.out, "typed({typ}, {val})")
-            }
-            Self::RetTy => {
-                write!(ctx.out, "return_type")
             }
         }
     }
@@ -362,6 +382,7 @@ impl PrettyDump<OrbDumper> for Label {
 impl PrettyDump<OrbDumper> for BindingDef {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         let BindingDef {
+            name,
             mutability,
             typ,
             val,
@@ -372,6 +393,7 @@ impl PrettyDump<OrbDumper> for BindingDef {
             extra,
             "BindingDef",
             {
+                name,
                 mutability,
                 typ,
                 val,

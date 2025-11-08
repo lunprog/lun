@@ -3,7 +3,7 @@
     html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
-use std::{collections::HashMap, fmt::Debug, fs, path::PathBuf};
+use std::{collections::HashMap, fmt::Debug, fs, mem, path::PathBuf};
 
 use diags::{
     ModuleFileDoesnotExist, NameDefinedMultipleTimes, NotFoundInScope, UnderscoreInExpression,
@@ -12,7 +12,7 @@ use diags::{
 
 use lunc_ast::{Abi, BinOp, Mutability, Path, PathSegment, Spanned, UnOp};
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
-use lunc_entity::EntityDb;
+use lunc_entity::{Entity, EntityDb};
 use lunc_lexer::Lexer;
 use lunc_parser::{
     Parser,
@@ -872,7 +872,7 @@ pub struct Desugarrer {
     /// current path of the module we are desugarring
     current_path: Path,
     /// symbol database
-    pub symdb: EntityDb<Symbol>,
+    symdb: EntityDb<Symbol>,
 }
 
 impl Desugarrer {
@@ -966,9 +966,17 @@ impl Desugarrer {
         Some(module)
     }
 
-    /// Returns the produced tree
-    pub fn module_tree(self) -> ModuleTree {
-        self.orb
+    /// Returns the produce Orb-tree, it replaces the module tree with a dummy one.
+    pub fn take_orb_tree(&mut self) -> ModuleTree {
+        mem::replace(
+            &mut self.orb,
+            ModuleTree::new(None, LazySymbol::Sym(Symbol::RESERVED)),
+        )
+    }
+
+    /// Returns the entity database of symbols, replaces it with a dummy one.
+    pub fn take_symdb(&mut self) -> EntityDb<Symbol> {
+        mem::replace(&mut self.symdb, EntityDb::new())
     }
 
     /// Takes a module and converts (recursively) the Mod directive to Item Mod.

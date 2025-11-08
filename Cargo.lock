@@ -920,6 +920,7 @@ dependencies = [
 name = "lunc_entity"
 version = "0.1.0"
 dependencies = [
+ "indexmap",
  "lunc_utils",
 ]
 
@@ -994,6 +995,7 @@ dependencies = [
  "lunc_ast",
  "lunc_desugar",
  "lunc_entity",
+ "lunc_token",
  "lunc_utils",
 ]
 

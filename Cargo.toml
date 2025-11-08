@@ -48,3 +48,4 @@ termcolor = "1.4.1"
 serde = { version = "1.0.228", features = ["derive"] }
 clap = { version = "4.5.49", features = ["derive"] }
 humantime = "2.3.0"
+indexmap = { version = "2.12.0", features = ["serde"] }

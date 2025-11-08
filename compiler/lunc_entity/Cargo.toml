@@ -9,4 +9,4 @@ edition = "2024"
 lunc_utils = { workspace = true }
 
 # other dependencies
-
+indexmap = { workspace = true }

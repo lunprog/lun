@@ -9,6 +9,7 @@ edition = "2024"
 lunc_ast = { workspace = true }
 lunc_desugar = { workspace = true }
 lunc_entity = { workspace = true }
+lunc_token = { workspace = true }
 lunc_utils = { workspace = true }
 
 # other dependencies

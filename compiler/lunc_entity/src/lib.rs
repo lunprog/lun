@@ -43,7 +43,6 @@
 //! ```
 
 use std::{
-    collections::HashMap,
     fmt::{self, Debug, Display},
     hash::Hash,
     io,
@@ -51,6 +50,7 @@ use std::{
     mem,
 };
 
+use indexmap::{IndexMap, IndexSet};
 use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
 
 /// An entity is a tiny, `Copy` identifier used across the compiler.
@@ -341,7 +341,7 @@ impl<E: Entity> Default for EntityDb<E> {
 /// ```
 #[derive(Debug, Clone)]
 pub struct SparseMap<E: Entity, V> {
-    elems: HashMap<usize, V>,
+    elems: IndexMap<usize, V>,
     _e: PhantomData<fn(E) -> V>,
 }
 
@@ -349,7 +349,7 @@ impl<E: Entity, V> SparseMap<E, V> {
     /// Create a new empty [`SparseMap`].
     pub fn new() -> SparseMap<E, V> {
         SparseMap {
-            elems: HashMap::new(),
+            elems: IndexMap::new(),
             _e: PhantomData,
         }
     }
@@ -527,6 +527,73 @@ impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
     }
 }
 
+/// A set of entities, used to store only one copy of an entity. It should be
+/// used instead of a `Vec<Entity>` when you know that you want only one entry by entity.
+#[derive(Debug, Clone)]
+pub struct EntitySet<E: Entity> {
+    elems: IndexSet<E>,
+}
+
+impl<E: Entity> EntitySet<E> {
+    /// Create a new empty entity set.
+    pub fn new() -> EntitySet<E> {
+        EntitySet {
+            elems: IndexSet::new(),
+        }
+    }
+
+    /// Insert a new entity in the set.
+    #[inline]
+    pub fn insert(&mut self, entity: E) {
+        self.elems.insert(entity);
+    }
+
+    /// Returns `true` if the entity is in the set.
+    #[inline]
+    pub fn exists(&self, entity: E) -> bool {
+        self.elems.contains(&entity)
+    }
+
+    /// Clear the set
+    #[inline]
+    pub fn clear(&mut self) {
+        self.elems.clear();
+    }
+
+    /// Count of how many entities are stored in the set.
+    #[inline]
+    pub fn len(&mut self) -> usize {
+        self.elems.len()
+    }
+
+    /// Returns `true` if the set is empty.
+    #[inline]
+    pub fn is_empty(&mut self) -> bool {
+        self.len() == 0
+    }
+
+    /// Get an iterator over the entries of the set, it is ensured to be in the
+    /// order of insertion.
+    pub fn iter(&self) -> impl Iterator<Item = &E> {
+        self.elems.iter()
+    }
+}
+
+impl<E: Entity> Default for EntitySet<E> {
+    fn default() -> Self {
+        EntitySet::new()
+    }
+}
+
+impl<Ex: Clone, E: Entity + PrettyDump<Ex>> PrettyDump<Ex> for EntitySet<E> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &Ex) -> io::Result<()> {
+        ctx.pretty_list(None, extra)
+            .disable_nl()
+            .items(self.iter())
+            .finish()
+    }
+}
+
 /// [`Opt<E>`] is an optimized [`Option<E>`]: it stores an [`Entity`] but reuses
 /// the [`Entity::RESERVED`] sentinel to represent `None`. This ensures `Opt<E>`
 /// is the same size as `E`.
@@ -630,6 +697,32 @@ impl<E: Entity + Display> Display for Opt<E> {
 impl<E: PrettyDump<Ex> + Entity, Ex> PrettyDump<Ex> for Opt<E> {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &Ex) -> io::Result<()> {
         self.expand().try_dump(ctx, extra)
+    }
+}
+
+impl<E: Entity> From<Option<E>> for Opt<E> {
+    fn from(value: Option<E>) -> Self {
+        match value {
+            Some(e) => Opt::Some(e),
+            None => Opt::None,
+        }
+    }
+}
+
+pub mod private {
+    pub trait Sealed {}
+
+    impl<E> Sealed for Option<E> {}
+}
+
+pub trait OptionExt<E: Entity>: private::Sealed {
+    /// Reduces the `Option<E>` to an `Opt<E>`, where `E` is an [Entity].
+    fn shorten(self) -> Opt<E>;
+}
+
+impl<E: Entity> OptionExt<E> for Option<E> {
+    fn shorten(self) -> Opt<E> {
+        Opt::from(self)
     }
 }
 
