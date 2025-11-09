@@ -15,7 +15,10 @@ use lunc_entity::{EntityDb, EntitySet, Opt, OptionExt, SparseMap};
 use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::{default, opt_unreachable};
 
-use crate::{diags::FunctionInGlobalMut, utir::*};
+use crate::{
+    diags::{FunctionInGlobalMut, UnknownLitTag},
+    utir::*,
+};
 
 pub mod diags;
 pub mod pretty;
@@ -339,7 +342,13 @@ impl UtirGen {
         let expr = match &expression.expr {
             DsExprKind::Lit(Lit { kind, value, tag }) => match kind {
                 LitKind::Char => {
-                    assert!(tag.is_none(), "Tag is not yet supported");
+                    if let Some(tag) = tag {
+                        self.sink.emit(UnknownLitTag {
+                            kind: kind.clone(),
+                            tag: tag.to_string(),
+                            loc: expression.loc.clone().unwrap(),
+                        });
+                    }
 
                     let LitVal::Char(char) = value else {
                         // SAFETY: guaranteed by Lit.
@@ -349,27 +358,91 @@ impl UtirGen {
                     Expr::Char(*char)
                 }
                 LitKind::Integer => {
-                    assert!(tag.is_none(), "Tag is not yet supported");
+                    let ptype = match tag.as_deref() {
+                        Some("isz") => Some(PrimType::Isz),
+                        Some("i128") => Some(PrimType::I128),
+                        Some("i64") => Some(PrimType::I64),
+                        Some("i32") => Some(PrimType::I32),
+                        Some("i16") => Some(PrimType::I16),
+                        Some("i8") => Some(PrimType::I8),
+                        Some("usz") => Some(PrimType::Usz),
+                        Some("u128") => Some(PrimType::U128),
+                        Some("u64") => Some(PrimType::U64),
+                        Some("u32") => Some(PrimType::U32),
+                        Some("u16") => Some(PrimType::U16),
+                        Some("u8") => Some(PrimType::U8),
+                        Some(tag) => {
+                            self.sink.emit(UnknownLitTag {
+                                kind: kind.clone(),
+                                tag: tag.to_string(),
+                                loc: expression.loc.clone().unwrap(),
+                            });
+
+                            None
+                        }
+                        None => None,
+                    };
 
                     let LitVal::Int(int) = value else {
                         // SAFETY: guaranteed by Lit.
                         opt_unreachable!()
                     };
 
-                    Expr::Int(*int)
+                    let expr = Expr::Int(*int);
+                    if let Some(ptype) = ptype {
+                        let val = self.body().exprs.create(expr);
+                        let type_e = self.ptype_expr(ptype);
+
+                        Expr::Typed {
+                            typ: ExtExpr::local(type_e),
+                            val,
+                        }
+                    } else {
+                        expr
+                    }
                 }
                 LitKind::Float => {
-                    assert!(tag.is_none(), "Tag is not yet supported");
+                    let ptype = match tag.as_deref() {
+                        Some("f64") => Some(PrimType::F64),
+                        Some("f32") => Some(PrimType::F32),
+                        Some(tag) => {
+                            self.sink.emit(UnknownLitTag {
+                                kind: kind.clone(),
+                                tag: tag.to_string(),
+                                loc: expression.loc.clone().unwrap(),
+                            });
+
+                            None
+                        }
+                        None => None,
+                    };
 
                     let LitVal::Float(float) = value else {
                         // SAFETY: guaranteed by Lit.
                         opt_unreachable!()
                     };
 
-                    Expr::Float(*float)
+                    let expr = Expr::Float(*float);
+                    if let Some(ptype) = ptype {
+                        let val = self.body().exprs.create(expr);
+                        let type_e = self.ptype_expr(ptype);
+
+                        Expr::Typed {
+                            typ: ExtExpr::local(type_e),
+                            val,
+                        }
+                    } else {
+                        expr
+                    }
                 }
                 LitKind::Str => {
-                    assert!(tag.is_none(), "Tag is not yet supported");
+                    if let Some(tag) = tag {
+                        self.sink.emit(UnknownLitTag {
+                            kind: kind.clone(),
+                            tag: tag.to_string(),
+                            loc: expression.loc.clone().unwrap(),
+                        });
+                    }
 
                     let LitVal::Str(str) = value else {
                         // SAFETY: guaranteed by Lit.
@@ -379,7 +452,7 @@ impl UtirGen {
                     Expr::Str(str.clone().into_boxed_str())
                 }
                 LitKind::CStr => {
-                    assert!(tag.is_none(), "Tag is not yet supported");
+                    debug_assert!(tag.is_none(), "cstr's tag is always none.");
 
                     let LitVal::Str(cstr) = value else {
                         // SAFETY: guaranteed by Lit.

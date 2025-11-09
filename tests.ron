@@ -15421,4 +15421,106 @@ warning: compilation of `never_block` succeeded but 2 warnings emitted.
         test_out: "",
         test_code: 0,
     ),
+    "utir/E017": (
+        compiler_out: r#"utir = {
+  i0: Fundef {
+    name: main @ 39..43 (fid = 0);
+    typ: none;
+    params: {};
+    ret_ty: none;
+    entry: b0;
+    body: Body {
+      labels: {};
+      bindings: {};
+      stmts: {
+        s0: e1,
+        s1: e2,
+        s2: e3,
+        s3: e4,
+      };
+      exprs: {
+        e0: primitive_type(type),
+        e1: int(1),
+        e2: float(2),
+        e3: char('c'),
+        e4: str("Hello"),
+      };
+      blocks: {
+        b0: Block {
+          stmts: [
+            s0,
+            s1,
+            s2,
+            s3,
+          ];
+          tail: none;
+        } @ 53..104 (fid = 0),
+      };
+      expr_locs: {
+        e1: 59..63 (fid = 0),
+        e2: 69..75 (fid = 0),
+        e3: 81..86 (fid = 0),
+        e4: 92..101 (fid = 0),
+      };
+      stmt_locs: {
+        s0: 59..63 (fid = 0),
+        s1: 69..75 (fid = 0),
+        s2: 81..86 (fid = 0),
+        s3: 92..101 (fid = 0),
+      };
+    };
+  } @ 39..104 (fid = 0),
+}
+error[E017]: unknown literal tag 'ab' for integer
+  ┌─ ./tests/utir/E017.lun:3:5
+  │
+3 │     1'ab;
+  │     ^^^^
+  │
+  = valid tags are integer types like, 'u8', 'u16', 'isz' etc.
+
+error[E017]: unknown literal tag 'cd' for float
+  ┌─ ./tests/utir/E017.lun:4:5
+  │
+4 │     2.0'cd;
+  │     ^^^^^^
+  │
+  = valid float tags are float types: 'f32', 'f64'.
+
+error[E017]: unknown literal tag 'ef' for char
+  ┌─ ./tests/utir/E017.lun:5:5
+  │
+5 │     ef'c';
+  │     ^^^^^
+  │
+  = currently character literals do not support tags.
+
+error[E017]: unknown literal tag 'gh' for string
+  ┌─ ./tests/utir/E017.lun:6:5
+  │
+6 │     gh"Hello";
+  │     ^^^^^^^^^
+  │
+  = valid string literal tag is 'c'.
+
+error: compilation of `E017` failed due to 4 errors and 0 warnings
+
+"#,
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
+    "utir/E040": (
+        compiler_out: "panicked at compiler/lunc_untyped/src/lib.rs:320:18:
+not yet implemented
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+BUG: internal compiler error: unexpected panic.
+  = note: we would appreciate a bug report on https://github.com/lunprog/lun/issues/new
+  = note: lunc 0.1.0 (0b08c8f5 2025-11-08)
+",
+        compiler_code: 101,
+        test_out: "",
+        test_code: 0,
+    ),
 }
