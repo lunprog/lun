@@ -208,6 +208,10 @@ impl DsExpression {
     pub fn is_fundecl(&self) -> bool {
         matches!(self.expr, DsExprKind::FunDeclaration { .. })
     }
+
+    pub fn is_underscore(&self) -> bool {
+        matches!(self.expr, DsExprKind::Underscore)
+    }
 }
 
 impl FromHigher for DsExpression {

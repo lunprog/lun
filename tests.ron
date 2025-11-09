@@ -15517,7 +15517,7 @@ not yet implemented
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 BUG: internal compiler error: unexpected panic.
   = note: we would appreciate a bug report on https://github.com/lunprog/lun/issues/new
-  = note: lunc 0.1.0 (0b08c8f5 2025-11-08)
+  = note: lunc 0.1.0 (5a163e99 2025-11-09)
 ",
         compiler_code: 101,
         test_out: "",

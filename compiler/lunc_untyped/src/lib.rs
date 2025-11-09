@@ -4,7 +4,7 @@
 
 use std::{collections::HashMap, mem};
 
-use lunc_ast::{PrimType, UnOp};
+use lunc_ast::{BinOp, PrimType, UnOp};
 use lunc_desugar::{
     DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsParam, DsStatement,
     DsStmtKind,
@@ -508,6 +508,11 @@ impl UtirGen {
                     opt_unreachable!("unknown symbol")
                 }
             }
+            DsExprKind::Binary {
+                lhs,
+                op: BinOp::Assignment,
+                rhs,
+            } if lhs.is_underscore() => return self.gen_expr(rhs, None),
             DsExprKind::Binary { lhs, op, rhs } => {
                 let lhs = self.gen_expr(lhs, None)?;
                 let rhs = self.gen_expr(rhs, None)?;
@@ -629,7 +634,9 @@ impl UtirGen {
                 return None;
             }
             DsExprKind::Underscore => {
-                todo!("UNDERSCORE")
+                // SAFETY: we never call `gen_expr` on an underscore, because we
+                // handle the case of a `_ = EXPR` before.
+                opt_unreachable!();
             }
             DsExprKind::FunDefinition { .. } => {
                 self.sink.emit(feature_todo! {
