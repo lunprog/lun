@@ -177,8 +177,7 @@ macro_rules! entity {
 pub struct EntityDb<E: Entity> {
     /// the data being stored
     elems: Vec<E::Data>,
-    /// last id given to an entity
-    last_id: usize,
+    /// phantom data so that E is actually used
     _e: PhantomData<fn(E) -> E::Data>,
 }
 
@@ -187,7 +186,6 @@ impl<E: Entity> EntityDb<E> {
     pub fn new() -> EntityDb<E> {
         EntityDb {
             elems: Vec::new(),
-            last_id: 0,
             _e: PhantomData,
         }
     }
@@ -203,8 +201,7 @@ impl<E: Entity> EntityDb<E> {
     /// Allocate a new entity and store `data` for it. The returned value is a
     /// fresh `E` whose index corresponds to the pushed slot.
     pub fn create(&mut self, data: E::Data) -> E {
-        let entity = E::new(self.last_id);
-        self.last_id += 1;
+        let entity = E::new(self.elems.len());
 
         self.elems.push(data);
 
@@ -215,7 +212,7 @@ impl<E: Entity> EntityDb<E> {
     /// returns the data to associate with the entity. This method returns the
     /// entity created.
     pub fn create_with(&mut self, ctor: impl FnOnce(E) -> E::Data) -> E {
-        let entity = E::new(self.last_id);
+        let entity = E::new(self.elems.len());
         self.create(ctor(entity));
 
         entity
@@ -237,7 +234,7 @@ impl<E: Entity> EntityDb<E> {
         let mut entities = Vec::with_capacity(count);
 
         for i in 0..count {
-            let entity = E::new(self.last_id);
+            let entity = E::new(self.elems.len());
             entities.push(entity);
             let data = ctor(entity, i);
             let res = self.create(data);
@@ -308,7 +305,7 @@ impl<E: Entity> EntityDb<E> {
 
     /// Get the last entity we created
     pub fn last(&self) -> E {
-        E::new(self.last_id - 1)
+        E::new(self.elems.len() - 1)
     }
 }
 
