@@ -15511,15 +15511,41 @@ error: compilation of `E017` failed due to 4 errors and 0 warnings
         test_code: 0,
     ),
     "utir/E040": (
-        compiler_out: "panicked at compiler/lunc_untyped/src/lib.rs:320:18:
-not yet implemented
+        compiler_out: "utir = {
+  i0: Fundef {
+    name: a @ 46..47 (fid = 0);
+    typ: none;
+    params: {};
+    ret_ty: none;
+    entry: b0;
+    body: Body {
+      labels: {};
+      bindings: {};
+      stmts: {};
+      exprs: {
+        e0: primitive_type(type),
+      };
+      blocks: {
+        b0: Block {
+          stmts: [];
+          tail: none;
+        } @ 57..59 (fid = 0),
+      };
+      expr_locs: {};
+      stmt_locs: {};
+    };
+  } @ 46..59 (fid = 0),
+}
+error[E040]: cannot define a function definition inside of a mutable global definition
+  ┌─ ./tests/utir/E040.lun:3:1
+  │
+3 │ a := fun() {}
+  │ ^^^^^^^^^^^^^
 
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
-BUG: internal compiler error: unexpected panic.
-  = note: we would appreciate a bug report on https://github.com/lunprog/lun/issues/new
-  = note: lunc 0.1.0 (5a163e99 2025-11-09)
+error: compilation of `E040` failed due to 1 error and 0 warnings
+
 ",
-        compiler_code: 101,
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),
