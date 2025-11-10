@@ -241,7 +241,7 @@ impl From<&str> for PathSegment {
 }
 
 /// Binary operation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BinOp {
     /// addition
     Add,

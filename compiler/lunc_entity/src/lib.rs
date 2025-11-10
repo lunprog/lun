@@ -208,6 +208,14 @@ impl<E: Entity> EntityDb<E> {
         entity
     }
 
+    /// Create a new entity with data the default value of `E::Data`.
+    pub fn create_default(&mut self) -> E
+    where
+        E::Data: Default,
+    {
+        self.create(E::Data::default())
+    }
+
     /// Create a new entity with `ctor` that takes the id as argument, and
     /// returns the data to associate with the entity. This method returns the
     /// entity created.
@@ -291,6 +299,13 @@ impl<E: Entity> EntityDb<E> {
     /// The iterator yields all the data in the order they were created.
     pub fn data_iter(&self) -> impl Iterator<Item = &E::Data> {
         self.elems.iter()
+    }
+
+    /// Returns an iterator over the stored entities handles.
+    ///
+    /// The iterator yields all the data in the order they were created.
+    pub fn entity_iter(&self) -> impl ExactSizeIterator<Item = E> {
+        (0..self.elems.len()).map(|i| E::new(i))
     }
 
     /// Returns an iterator on the entity and its associated data.
@@ -622,7 +637,7 @@ impl<Ex: Clone, E: Entity + PrettyDump<Ex>> PrettyDump<Ex> for EntitySet<E> {
 pub struct Opt<E: Entity>(E);
 
 impl<E: Entity> Opt<E> {
-    /// Construct a [`Some(entity)`]. Panics (in debug mode) if `entity` is the
+    /// Construct a `Some(entity)`. Panics (in debug mode) if `entity` is the
     /// reserved Entity.
     #[allow(non_snake_case)]
     pub fn Some(entity: E) -> Opt<E> {

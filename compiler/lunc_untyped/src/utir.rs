@@ -57,6 +57,17 @@ impl Item {
             Item::ExternBlock(..) => panic!("Item::ExternBlock doesn't have a body"),
         }
     }
+
+    pub fn body(&self) -> &Body {
+        match self {
+            Item::Fundef(Fundef { body, .. })
+            | Item::Fundecl(Fundecl { body, .. })
+            | Item::GlobalDef(GlobalDef { body, .. })
+            | Item::GlobalUninit(GlobalUninit { body, .. }) => body,
+            Item::Module(..) => panic!("Item::Module doesn't have a body"),
+            Item::ExternBlock(..) => panic!("Item::ExternBlock doesn't have a body"),
+        }
+    }
 }
 
 /// Fundef -- Function definition.
@@ -105,7 +116,7 @@ entity!(ParamId, Param);
 #[derive(Debug, Clone)]
 pub struct Param {
     pub name: Spanned<String>,
-    pub typ: ExprId,
+    pub typ: Uty,
     pub loc: Span,
 }
 
@@ -341,12 +352,6 @@ pub enum Expr {
     ///
     /// [`DsExprKind::Path`]: lunc_desugar::DsExprKind::Path
     PrimType(PrimType),
-
-    //
-    // UTIR SPECIFIC
-    //
-    /// Make the expr `val` have the type `typ`.
-    Typed { typ: ExtExpr, val: ExprId },
 }
 
 /// External reference to an expr ([ExprId]) in the local item or in the
@@ -418,6 +423,7 @@ entity!(BlockId, Block);
 pub struct Block {
     pub stmts: EntitySet<StmtId>,
     pub tail: Opt<ExprId>,
+    pub typ: Uty,
     pub loc: Span,
 }
 
@@ -438,7 +444,7 @@ entity!(BindingId, BindingDef);
 pub struct BindingDef {
     pub name: Spanned<String>,
     pub mutability: Mutability,
-    pub typ: Opt<ExprId>,
+    pub typ: Uty,
     pub val: ExprId,
 }
 
@@ -505,6 +511,12 @@ pub struct Body {
     pub exprs: EntityDb<ExprId>,
     pub blocks: EntityDb<BlockId>,
 
+    /// Expression type with constraints if any, in a "Hindley–Milner" Type
+    /// System fashion.
+    pub expr_t: SparseMap<ExprId, Uty>,
+    /// Type-variables in the HM type system
+    pub type_vars: EntityDb<TyVar>,
+
     pub expr_locs: SparseMap<ExprId, Span>,
     pub stmt_locs: SparseMap<StmtId, Span>,
 }
@@ -518,10 +530,69 @@ impl Default for Body {
             exprs: EntityDb::new(),
             blocks: EntityDb::new(),
 
+            expr_t: SparseMap::new(),
+            type_vars: EntityDb::new(),
+
             expr_locs: SparseMap::new(),
             stmt_locs: SparseMap::new(),
         }
     }
+}
+
+/// A type-variable.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TyVar(u32);
+
+entity!(TyVar, Constraints);
+
+impl Display for TyVar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "'T{}", self.index())
+    }
+}
+
+/// UTIR-type, either a reference to an expression or a typevar
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Uty {
+    Expr(ExprId),
+    TyVar(TyVar),
+}
+
+impl Display for Uty {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Expr(expr) => write!(f, "{expr}"),
+            Self::TyVar(tyvar) => write!(f, "{tyvar}"),
+        }
+    }
+}
+
+impl From<ExprId> for Uty {
+    fn from(value: ExprId) -> Self {
+        Uty::Expr(value)
+    }
+}
+
+impl From<TyVar> for Uty {
+    fn from(value: TyVar) -> Self {
+        Uty::TyVar(value)
+    }
+}
+
+/// A list of constraints
+#[derive(Debug, Clone, Default)]
+pub struct Constraints(pub Vec<Con>);
+
+/// Type constraint
+#[derive(Debug, Clone)]
+pub enum Con {
+    /// The type-var represents an integer-like expression (used for integer
+    /// literals without types).
+    Integer(TyVar),
+    /// Same as `Con::Integer` but for float-literals
+    Float(TyVar),
+    /// The type-variable must be of type `.1`
+    Uty(TyVar, Uty),
 }
 
 /// Any id of the UTIR that represents a definition, primarily used to convert

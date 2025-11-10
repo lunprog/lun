@@ -225,7 +225,7 @@ impl LazySymbol {
     ///
     /// # Panic
     ///
-    /// This functions panics if it is called on a [`LazySymbol::Name(..)`]
+    /// This functions panics if it is called on a `LazySymbol::Name(..)`
     /// variant.
     pub fn unwrap_sym(&self) -> Symbol {
         self.symbol()

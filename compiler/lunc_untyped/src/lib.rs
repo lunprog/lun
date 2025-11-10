@@ -4,7 +4,7 @@
 
 use std::{collections::HashMap, mem};
 
-use lunc_ast::{BinOp, PrimType, UnOp};
+use lunc_ast::{BinOp, Mutability, PrimType, UnOp};
 use lunc_desugar::{
     DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsParam, DsStatement,
     DsStmtKind,
@@ -35,6 +35,24 @@ pub mod utir;
 /// mapping of symbols defined inside of an item is mapped when the definition
 /// is encountered, it causes no problem to do it like that because, items
 /// defined inside need a forward definition.
+///
+/// ## Generation Stage
+///
+/// It's the stage where we actually lower the majority of the DSIR to UTIR,
+/// while lowering we try to add as much information on types as possible with
+/// the following rules:
+/// - *Is the type trivially known?* Like tagged integer literals (`12'u8` has
+///   type `u8`), so here we assign the expression a `Uty::Expr`.
+/// - *Is the type unknown? Or is it hard to infer?* Like untagged integer
+///   literals, `12` can have type `u8`, `i8`, `usz`, `i32` etc etc.. Or a
+///   user-binding that doesn't have an explicit type. Here we assign the
+///   expression to a new type-variable.
+/// - *Can the type be easily inferred?* Like binary expression, calls, etc..
+///   Here the type is really not that complex for the type-checker to guess so
+///   we don't assign a type to it *NOW*. **Why?** because it may make things
+///   harder than they really are.
+///
+/// So the rule is simple, we try not to use too much type-variables.
 #[derive(Debug, Clone)]
 pub struct UtirGen {
     /// The generated orb
@@ -236,10 +254,20 @@ impl UtirGen {
         self.orb.items.get_mut(id)
     }
 
+    fn item(&self) -> &Item {
+        let id = self.item.expand().expect("No current item");
+
+        self.orb.items.get(id)
+    }
+
     /// Returns a mutable ref to the body of the current item.
     #[inline(always)]
     fn body(&mut self) -> &mut Body {
         self.item_mut().body_mut()
+    }
+
+    fn body_ref(&self) -> &Body {
+        self.item().body()
     }
 
     /// Returns the current fundef.
@@ -258,8 +286,22 @@ impl UtirGen {
 
             self.types_exprs.insert(ptype, ptype_e);
 
+            let type_e = self.ptype_expr(PrimType::Type);
+            self.body().expr_t.insert(ptype_e, Uty::Expr(type_e));
+
             ptype_e
         })
+    }
+
+    /// Push a constraint (`Con`) on `ty` if it is a `Some(Uty::TyVar(..))`.
+    fn push_con(&mut self, ty: impl Into<Uty>, con: impl FnOnce(TyVar) -> Con) {
+        if let Uty::TyVar(tyvar) = ty.into() {
+            self.body().type_vars.get_mut(tyvar).0.push(con(tyvar));
+        }
+    }
+
+    fn expr_typ(&self, expr: impl Into<Option<ExprId>>) -> Option<Uty> {
+        self.body_ref().expr_t.get(expr.into()?).copied()
     }
 
     /// Generate the UTIR for a given module.
@@ -299,17 +341,24 @@ impl UtirGen {
                 let id = self.get_item(sym.unwrap_sym());
                 self.item = Opt::Some(id);
 
-                self.fundef_mut().typ = self.gen_option_expr(typeexpr, None);
+                self.fundef_mut().typ = self.gen_option_expr(typeexpr);
 
                 self.fundef_mut().params = self.gen_params(params)?;
 
-                let type_e = self.ptype_expr(PrimType::Type);
-                let ret_ty = self.gen_option_expr(rettypeexpr.as_deref(), ExtExpr::local(type_e));
+                let ret_ty = self.gen_option_expr(rettypeexpr.as_deref());
+
                 self.fundef_mut().ret_ty = ret_ty;
                 self.fun_ret_ty = ret_ty;
 
-                self.fundef_mut().entry =
-                    self.gen_block(body_b, self.fun_ret_ty.map(ExtExpr::local));
+                let entry = self.gen_block(body_b);
+
+                // add the type constraint on the block if it's a typevar.
+                let entry_t = self.body().blocks.get(entry).typ;
+                if let Some(ret_ty) = self.fun_ret_ty.expand() {
+                    self.push_con(entry_t, |tyvar| Con::Uty(tyvar, Uty::Expr(ret_ty)));
+                }
+
+                self.fundef_mut().entry = entry;
 
                 self.item = Opt::None;
 
@@ -329,16 +378,13 @@ impl UtirGen {
     fn gen_option_expr<'utir, 'dsir: 'utir>(
         &'utir mut self,
         expr: impl Into<Option<&'dsir DsExpression>>,
-        typ: impl Into<Option<ExtExpr>>,
     ) -> Opt<ExprId> {
-        expr.into().and_then(|e| self.gen_expr(e, typ)).shorten()
+        expr.into().and_then(|e| self.gen_expr(e)).shorten()
     }
 
-    fn gen_expr(
-        &mut self,
-        expression: &DsExpression,
-        typ: impl Into<Option<ExtExpr>>,
-    ) -> Option<ExprId> {
+    fn gen_expr(&mut self, expression: &DsExpression) -> Option<ExprId> {
+        let typ: Option<Uty>;
+
         let expr = match &expression.expr {
             DsExprKind::Lit(Lit { kind, value, tag }) => match kind {
                 LitKind::Char => {
@@ -354,6 +400,8 @@ impl UtirGen {
                         // SAFETY: guaranteed by Lit.
                         opt_unreachable!()
                     };
+
+                    typ = Some(Uty::Expr(self.ptype_expr(PrimType::Char)));
 
                     Expr::Char(*char)
                 }
@@ -389,17 +437,20 @@ impl UtirGen {
                     };
 
                     let expr = Expr::Int(*int);
-                    if let Some(ptype) = ptype {
-                        let val = self.body().exprs.create(expr);
-                        let type_e = self.ptype_expr(ptype);
 
-                        Expr::Typed {
-                            typ: ExtExpr::local(type_e),
-                            val,
-                        }
+                    if let Some(ptype) = ptype {
+                        let type_e = self.ptype_expr(ptype);
+                        typ = Some(Uty::Expr(type_e));
                     } else {
-                        expr
+                        let tyvar = self
+                            .body()
+                            .type_vars
+                            .create_with(|tyvar| Constraints(vec![Con::Integer(tyvar)]));
+
+                        typ = Some(Uty::TyVar(tyvar));
                     }
+
+                    expr
                 }
                 LitKind::Float => {
                     let ptype = match tag.as_deref() {
@@ -423,17 +474,21 @@ impl UtirGen {
                     };
 
                     let expr = Expr::Float(*float);
+
                     if let Some(ptype) = ptype {
-                        let val = self.body().exprs.create(expr);
                         let type_e = self.ptype_expr(ptype);
 
-                        Expr::Typed {
-                            typ: ExtExpr::local(type_e),
-                            val,
-                        }
+                        typ = Some(Uty::Expr(type_e));
                     } else {
-                        expr
+                        let tyvar = self
+                            .body()
+                            .type_vars
+                            .create_with(|tyvar| Constraints(vec![Con::Float(tyvar)]));
+
+                        typ = Some(Uty::TyVar(tyvar));
                     }
+
+                    expr
                 }
                 LitKind::Str => {
                     if let Some(tag) = tag {
@@ -449,6 +504,14 @@ impl UtirGen {
                         opt_unreachable!()
                     };
 
+                    let str_t = self.ptype_expr(PrimType::Str);
+
+                    typ = Some(Uty::Expr(
+                        self.body()
+                            .exprs
+                            .create(Expr::PtrType(Mutability::Not, str_t)),
+                    ));
+
                     Expr::Str(str.clone().into_boxed_str())
                 }
                 LitKind::CStr => {
@@ -459,10 +522,21 @@ impl UtirGen {
                         opt_unreachable!()
                     };
 
+                    let c_char_t = self.ptype_expr(PrimType::I8);
+
+                    typ = Some(Uty::Expr(
+                        self.body()
+                            .exprs
+                            .create(Expr::PtrType(Mutability::Not, c_char_t)),
+                    ));
+
                     Expr::CStr(cstr.clone().into_boxed_str())
                 }
             },
-            DsExprKind::BoolLit(b) => Expr::Bool(*b),
+            DsExprKind::BoolLit(b) => {
+                typ = Some(Uty::Expr(self.ptype_expr(PrimType::Bool)));
+                Expr::Bool(*b)
+            }
             DsExprKind::Path(lazy) => {
                 let symref = lazy.unwrap_sym();
                 let sym = self.symdb.get(symref);
@@ -494,67 +568,99 @@ impl UtirGen {
                         ptype => panic!("unknown primitive type {ptype:?}"),
                     };
 
+                    typ = Some(Uty::Expr(self.ptype_expr(PrimType::Type)));
+
                     // NOTE: here we don't use self.ptype_expr(..) because we
                     // want to keep the location of this primitive type.
                     Expr::PrimType(ptype)
-                } else if let Some(defid) = self.sym_to_def.get(symref) {
+                } else if let Some(defid) = self.sym_to_def.get(symref).copied() {
                     match defid {
-                        DefId::ParamId(param) => Expr::Param(*param),
-                        DefId::BindingId(binding) => Expr::Binding(*binding),
-                        DefId::ItemId(item) => Expr::Item(*item),
+                        DefId::ParamId(param) => {
+                            typ = Some(self.fundef_mut().params.get(param).typ);
+
+                            Expr::Param(param)
+                        }
+                        DefId::BindingId(binding) => {
+                            typ = Some(self.body().bindings.get(binding).typ);
+
+                            Expr::Binding(binding)
+                        }
+                        DefId::ItemId(item) => {
+                            // the type would require some sort of evaluation,
+                            // so we can't assign a type right now.
+                            typ = None;
+
+                            Expr::Item(item)
+                        }
                     }
                 } else {
                     // SAFETY: all symbols used in DSIR are mapped.
                     opt_unreachable!("unknown symbol")
                 }
             }
-            DsExprKind::Binary {
-                lhs,
-                op: BinOp::Assignment,
-                rhs,
-            } if lhs.is_underscore() => return self.gen_expr(rhs, None),
             DsExprKind::Binary { lhs, op, rhs } => {
-                let lhs = self.gen_expr(lhs, None)?;
-                let rhs = self.gen_expr(rhs, None)?;
+                let lhs = self.gen_expr(lhs)?;
+                let rhs = self.gen_expr(rhs)?;
 
                 let expr = Expr::Binary(lhs, op.clone(), rhs);
+
                 if op.is_relational() || op.is_logical() {
-                    Expr::Typed {
-                        typ: ExtExpr::local(self.ptype_expr(PrimType::Bool)),
-                        val: self.body().exprs.create(expr),
+                    typ = Some(Uty::Expr(self.ptype_expr(PrimType::Bool)));
+                } else if *op == BinOp::Assignment {
+                    if let Some(lhs_t) = self.expr_typ(lhs)
+                        && let Some(rhs_t) = self.expr_typ(rhs)
+                    {
+                        self.push_con(lhs_t, |tyvar| Con::Uty(tyvar, rhs_t));
                     }
+
+                    typ = Some(Uty::Expr(self.ptype_expr(PrimType::Void)));
                 } else {
-                    expr
+                    let tyvar = self.body().type_vars.create_default();
+
+                    if let Some(lhs_t) = self.expr_typ(lhs) {
+                        self.push_con(Uty::TyVar(tyvar), |_| Con::Uty(tyvar, lhs_t));
+                    }
+
+                    if let Some(rhs_t) = self.expr_typ(rhs) {
+                        self.push_con(Uty::TyVar(tyvar), |_| Con::Uty(tyvar, rhs_t));
+                    }
+
+                    typ = Some(Uty::TyVar(tyvar));
                 }
+
+                expr
             }
             DsExprKind::Unary { op, expr } => {
-                let expr = self.gen_expr(expr, None)?;
+                let expr = self.gen_expr(expr)?;
 
                 let expr = Expr::Unary(op.clone(), expr);
 
                 if *op == UnOp::Not {
-                    Expr::Typed {
-                        typ: ExtExpr::local(self.ptype_expr(PrimType::Bool)),
-                        val: self.body().exprs.create(expr),
-                    }
+                    typ = Some(Uty::Expr(self.ptype_expr(PrimType::Bool)));
                 } else {
-                    expr
+                    typ = None;
                 }
+
+                expr
             }
             DsExprKind::Borrow(mutability, expr) => {
-                let expr = self.gen_expr(expr, None)?;
+                let expr = self.gen_expr(expr)?;
+
+                typ = None;
 
                 Expr::Borrow(*mutability, expr)
             }
             DsExprKind::Call { callee, args } => {
-                let callee = self.gen_expr(callee, None)?;
+                let callee = self.gen_expr(callee)?;
                 let mut args_e = Vec::with_capacity(args.len());
 
                 for arg in args {
-                    if let Some(arg) = self.gen_expr(arg, None) {
+                    if let Some(arg) = self.gen_expr(arg) {
                         args_e.push(arg);
                     }
                 }
+
+                typ = None;
 
                 Expr::Call {
                     callee,
@@ -566,19 +672,34 @@ impl UtirGen {
                 then_br,
                 else_br,
             } => {
-                let cond = self.gen_expr(cond, None)?;
+                let cond = self.gen_expr(cond)?;
 
-                let bool_e = self.ptype_expr(PrimType::Bool);
-                let typed_cond = self.body().exprs.create(Expr::Typed {
-                    typ: ExtExpr::local(bool_e),
-                    val: cond,
-                });
+                if let Some(cond_t) = self.expr_typ(cond) {
+                    let bool_e = self.ptype_expr(PrimType::Bool);
+                    self.push_con(cond_t, |tyvar| Con::Uty(tyvar, Uty::Expr(bool_e)));
+                }
 
-                let then_e = self.gen_expr(then_br, None)?;
-                let else_e = self.gen_option_expr(else_br.as_deref(), None);
+                let then_e = self.gen_expr(then_br)?;
+                let else_e = self.gen_option_expr(else_br.as_deref());
+
+                if let Some(else_e) = else_e.expand() {
+                    let tyvar = self.body().type_vars.create_default();
+
+                    if let Some(then_t) = self.expr_typ(then_e) {
+                        self.push_con(tyvar, |_| Con::Uty(tyvar, then_t));
+                    }
+
+                    if let Some(else_t) = self.expr_typ(else_e) {
+                        self.push_con(tyvar, |_| Con::Uty(tyvar, else_t));
+                    }
+
+                    typ = Some(Uty::TyVar(tyvar));
+                } else {
+                    typ = Some(Uty::Expr(self.ptype_expr(PrimType::Void)));
+                }
 
                 Expr::If {
-                    cond: typed_cond,
+                    cond,
                     then_e,
                     else_e,
                 }
@@ -586,32 +707,53 @@ impl UtirGen {
             DsExprKind::Block { label, block } => {
                 assert!(label.is_none(), "LABELS NOT YET IMPLEMENTED");
 
-                let block = self.gen_block(block, None);
+                let block = self.gen_block(block);
+                typ = Some(self.body_ref().blocks.get(block).typ);
 
                 Expr::Block(Opt::None, block)
             }
             DsExprKind::Loop { label, body } => {
                 assert!(label.is_none(), "LABELS NOT YET IMPLEMENTED");
                 let void_e = self.ptype_expr(PrimType::Void);
-                let body = self.gen_block(body, ExtExpr::local(void_e));
+                let body = self.gen_block(body);
+                let body_t = self.body().blocks.get(body).typ;
+
+                self.push_con(body_t, |tyvar| Con::Uty(tyvar, Uty::Expr(void_e)));
+
+                // here we don't set a type because it's too complex right now,
+                // we need to know if the loop `break`s (so it has type never),
+                // what is the type of the break's value.
+                typ = None;
 
                 Expr::Loop(Opt::None, body)
             }
             DsExprKind::Return { expr } => {
-                let expr =
-                    self.gen_option_expr(expr.as_deref(), self.fun_ret_ty.map(ExtExpr::local));
+                let expr = self.gen_option_expr(expr.as_deref());
+
+                if let Some(ret_ty) = self.fun_ret_ty.expand()
+                    && let Some(expr) = expr.expand()
+                    && let Some(expr_t) = self.expr_typ(expr)
+                {
+                    self.push_con(expr_t, |tyvar| Con::Uty(tyvar, Uty::Expr(ret_ty)));
+                }
+
+                typ = Some(Uty::Expr(self.ptype_expr(PrimType::Never)));
 
                 Expr::Return(expr)
             }
             DsExprKind::Break { label, expr } => {
                 assert!(label.is_none(), "LABELS NOT YET IMPLEMENTED");
 
-                let expr = self.gen_option_expr(expr.as_deref(), None);
+                let expr = self.gen_option_expr(expr.as_deref());
+
+                typ = Some(Uty::Expr(self.ptype_expr(PrimType::Never)));
 
                 Expr::Break(Opt::None, expr)
             }
             DsExprKind::Continue { label } => {
                 assert!(label.is_none(), "LABELS NOT YET IMPLEMENTED");
+
+                typ = Some(Uty::Expr(self.ptype_expr(PrimType::Never)));
 
                 Expr::Continue(Opt::None)
             }
@@ -634,9 +776,11 @@ impl UtirGen {
                 return None;
             }
             DsExprKind::Underscore => {
-                // SAFETY: we never call `gen_expr` on an underscore, because we
-                // handle the case of a `_ = EXPR` before.
-                opt_unreachable!();
+                // we don't assign a type it can be anything in the case of a
+                // `_ = expr`, it will be checked later
+                typ = None;
+
+                Expr::Underscore
             }
             DsExprKind::FunDefinition { .. } => {
                 self.sink.emit(feature_todo! {
@@ -658,7 +802,15 @@ impl UtirGen {
             }
             DsExprKind::PointerType(mutability, pointee) => {
                 let type_e = self.ptype_expr(PrimType::Type);
-                let pointee = self.gen_expr(pointee, ExtExpr::local(type_e))?;
+                let pointee = self.gen_expr(pointee)?;
+
+                if let Some(pointee_t) = self.expr_typ(pointee) {
+                    self.push_con(pointee_t, |tyvar| Con::Uty(tyvar, Uty::Expr(type_e)));
+                }
+
+                // this type would require evaluation of pointee, and is fairly
+                // trivial so we don't assign a type yet.
+                typ = None;
 
                 Expr::PtrType(*mutability, pointee)
             }
@@ -667,12 +819,27 @@ impl UtirGen {
 
                 let type_e = self.ptype_expr(PrimType::Type);
                 for arg in ds_args {
-                    if let Some(arg) = self.gen_expr(arg, ExtExpr::local(type_e)) {
-                        args.push(arg)
+                    if let Some(arg) = self.gen_expr(arg) {
+                        args.push(arg);
+
+                        if let Some(arg_t) = self.expr_typ(arg) {
+                            self.push_con(arg_t, |tyvar| Con::Uty(tyvar, Uty::Expr(type_e)));
+                        }
                     }
                 }
 
-                let ret = self.gen_option_expr(ret.as_deref(), ExtExpr::local(type_e));
+                let ret = self.gen_option_expr(ret.as_deref());
+
+                if let Some(ret) = ret.expand()
+                    && let Some(ret_t) = self.expr_typ(ret)
+                {
+                    self.push_con(ret_t, |tyvar| Con::Uty(tyvar, Uty::Expr(type_e)));
+                }
+
+                // this type would require evaluation of the params types and
+                // the return type, and is fairly trivial so we don't assign a
+                // type yet.
+                typ = None;
 
                 Expr::FunptrType(args, ret)
             }
@@ -689,11 +856,11 @@ impl UtirGen {
             self.body().expr_locs.insert(id, loc.clone());
         }
 
-        if let Some(typ) = typ.into() {
-            Some(self.body().exprs.create(Expr::Typed { typ, val: id }))
-        } else {
-            Some(id)
+        if let Some(typ) = typ {
+            self.body().expr_t.insert(id, typ);
         }
+
+        Some(id)
     }
 
     fn gen_stmt(&mut self, stmt: &DsStatement) -> Option<StmtId> {
@@ -705,9 +872,21 @@ impl UtirGen {
                 value,
                 sym,
             } => {
-                let type_e = self.ptype_expr(PrimType::Type);
-                let typ = self.gen_option_expr(typeexpr, Some(ExtExpr::local(type_e)));
-                let val = self.gen_expr(value, typ.expand().map(ExtExpr::local))?;
+                let typ = self
+                    .gen_option_expr(typeexpr)
+                    .expand()
+                    .map(Uty::Expr)
+                    .unwrap_or_else(|| {
+                        let tyvar = self.body().type_vars.create_default();
+
+                        Uty::TyVar(tyvar)
+                    });
+
+                let val = self.gen_expr(value)?;
+
+                if let Some(val_ty) = self.expr_typ(val) {
+                    self.push_con(val_ty, |tyvar| Con::Uty(tyvar, typ));
+                }
 
                 let bind = self.body().bindings.create(BindingDef {
                     name: name.clone(),
@@ -730,7 +909,7 @@ impl UtirGen {
                 return None;
             }
             DsStmtKind::Expression(expr) => {
-                let e = self.gen_expr(expr, None)?;
+                let e = self.gen_expr(expr)?;
 
                 self.body().stmts.create(Stmt::Expression(e))
             }
@@ -746,8 +925,6 @@ impl UtirGen {
     fn gen_params(&mut self, params: &[DsParam]) -> Option<EntityDb<ParamId>> {
         let mut params_db = EntityDb::new();
 
-        let type_e = self.ptype_expr(PrimType::Type);
-
         for DsParam {
             name,
             typeexpr,
@@ -757,7 +934,7 @@ impl UtirGen {
         {
             let param = params_db.create(Param {
                 name: name.clone(),
-                typ: self.gen_expr(typeexpr, ExtExpr::local(type_e))?,
+                typ: Uty::Expr(self.gen_expr(typeexpr)?),
                 loc: loc.clone().unwrap(),
             });
 
@@ -768,9 +945,7 @@ impl UtirGen {
     }
 
     /// Generate the UTIR for a DSIR block.
-    ///
-    /// It will make the tail be `typed(typ, tail)` if a `typ` is provided.
-    fn gen_block(&mut self, block: &DsBlock, typ: impl Into<Option<ExtExpr>>) -> BlockId {
+    fn gen_block(&mut self, block: &DsBlock) -> BlockId {
         let DsBlock {
             stmts,
             last_expr,
@@ -785,11 +960,18 @@ impl UtirGen {
             }
         }
 
-        let tail = self.gen_option_expr(last_expr.as_deref(), typ);
+        let tail = self.gen_option_expr(last_expr.as_deref());
+
+        let tail_t = self.expr_typ(tail.expand()).unwrap_or_else(|| {
+            let tyvar = self.body().type_vars.create_default();
+
+            Uty::TyVar(tyvar)
+        });
 
         self.body().blocks.create(Block {
             stmts: stmts_set,
             tail,
+            typ: tail_t,
             loc: loc.clone().unwrap(),
         })
     }

@@ -3,7 +3,7 @@
 use std::io::{self, Write};
 
 use lunc_utils::{
-    impl_pdump, join_display,
+    impl_pdump, join_display, join_pretty,
     pretty::{PrettyCtxt, PrettyDump},
     pretty_struct,
 };
@@ -205,6 +205,8 @@ impl_pdump! {
     ParamId,
     BindingId,
     LabelKind,
+    TyVar,
+    Uty,
 }
 
 impl PrettyDump<OrbDumper> for Param {
@@ -234,6 +236,8 @@ impl PrettyDump<OrbDumper> for Body {
             stmts,
             exprs,
             blocks,
+            expr_t,
+            type_vars,
             expr_locs,
             stmt_locs,
         } = self;
@@ -248,6 +252,8 @@ impl PrettyDump<OrbDumper> for Body {
                 stmts: ctx.pretty_map(stmts.full_iter(), extra)?,
                 exprs: ctx.pretty_map(exprs.full_iter(), extra)?,
                 blocks: ctx.pretty_map(blocks.full_iter(), extra)?,
+                expr_t: ctx.pretty_map(expr_t.iter(), extra)?,
+                type_vars: ctx.pretty_map(type_vars.full_iter(), extra)?,
                 expr_locs: ctx.pretty_map(expr_locs.iter(), extra)?,
                 stmt_locs: ctx.pretty_map(stmt_locs.iter(), extra)?,
             },
@@ -328,16 +334,18 @@ impl PrettyDump<OrbDumper> for Expr {
                 Ok(())
             }
             Self::PrimType(ptype) => write!(ctx.out, "primitive_type({ptype})"),
-            Self::Typed { typ, val } => {
-                write!(ctx.out, "typed({typ}, {val})")
-            }
         }
     }
 }
 
 impl PrettyDump<OrbDumper> for Block {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
-        let Block { stmts, tail, loc } = self;
+        let Block {
+            stmts,
+            tail,
+            typ,
+            loc,
+        } = self;
 
         pretty_struct! (
             ctx,
@@ -346,6 +354,7 @@ impl PrettyDump<OrbDumper> for Block {
             {
                 stmts,
                 tail,
+                typ,
             },
             loc
         );
@@ -400,5 +409,23 @@ impl PrettyDump<OrbDumper> for BindingDef {
         );
 
         Ok(())
+    }
+}
+
+impl PrettyDump<OrbDumper> for Con {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &OrbDumper) -> io::Result<()> {
+        match self {
+            Con::Integer(tyvar) => write!(ctx.out, "{tyvar} = integer"),
+            Con::Float(tyvar) => write!(ctx.out, "{tyvar} = float"),
+            Con::Uty(tyvar, ty) => write!(ctx.out, "{tyvar} = {ty}"),
+        }
+    }
+}
+
+impl PrettyDump<OrbDumper> for Constraints {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        let Constraints(cons) = self;
+
+        write!(ctx.out, "{{{}}}", join_pretty(cons, extra))
     }
 }
