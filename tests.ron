@@ -15469,11 +15469,11 @@ warning: compilation of `never_block` succeeded but 2 warnings emitted.
         e5: e3,
         e7: e6,
       };
-      type_vars: {
-        'T0: {'T0 = integer},
-        'T1: {'T1 = float},
-        'T2: {},
-      };
+      type_vars: ['T0, 'T1, 'T2];
+      constraints: [
+        'T0 = integer,
+        'T1 = float,
+      ];
       expr_locs: {
         e0: 59..63 (fid = 0),
         e1: 69..75 (fid = 0),
@@ -15549,9 +15549,8 @@ error: compilation of `E017` failed due to 4 errors and 0 warnings
         } @ 57..59 (fid = 0),
       };
       expr_t: {};
-      type_vars: {
-        'T0: {},
-      };
+      type_vars: ['T0];
+      constraints: [];
       expr_locs: {};
       stmt_locs: {};
     };

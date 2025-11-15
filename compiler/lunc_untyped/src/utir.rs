@@ -528,6 +528,8 @@ pub struct Body {
     pub expr_t: SparseMap<ExprId, Uty>,
     /// Type-variables in the HM type system
     pub type_vars: EntityDb<TyVar>,
+    /// Constraints on the type-variables.
+    pub constraints: Constraints,
 
     pub expr_locs: SparseMap<ExprId, Span>,
     pub stmt_locs: SparseMap<StmtId, Span>,
@@ -544,6 +546,7 @@ impl Default for Body {
 
             expr_t: SparseMap::new(),
             type_vars: EntityDb::new(),
+            constraints: Constraints(Vec::new()),
 
             expr_locs: SparseMap::new(),
             stmt_locs: SparseMap::new(),
@@ -555,7 +558,7 @@ impl Default for Body {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TyVar(u32);
 
-entity!(TyVar, Constraints);
+entity!(TyVar, ());
 
 impl Display for TyVar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -600,10 +603,16 @@ pub struct Constraints(pub Vec<Con>);
 pub enum Con {
     /// The type-var represents an integer-like expression (used for integer
     /// literals without types).
+    ///
+    /// `tyvar = integer`
     Integer(TyVar),
     /// Same as `Con::Integer` but for float-literals
+    ///
+    /// `tyvar = float`
     Float(TyVar),
     /// The type-variable must be of type `.1`
+    ///
+    /// `tyvar = uty`
     Uty(TyVar, Uty),
 }
 

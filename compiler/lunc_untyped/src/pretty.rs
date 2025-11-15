@@ -238,6 +238,7 @@ impl PrettyDump<OrbDumper> for Body {
             blocks,
             expr_t,
             type_vars,
+            constraints,
             expr_locs,
             stmt_locs,
         } = self;
@@ -253,7 +254,8 @@ impl PrettyDump<OrbDumper> for Body {
                 exprs: ctx.pretty_map(exprs.full_iter(), extra)?,
                 blocks: ctx.pretty_map(blocks.full_iter(), extra)?,
                 expr_t: ctx.pretty_map(expr_t.iter(), extra)?,
-                type_vars: ctx.pretty_map(type_vars.full_iter(), extra)?,
+                type_vars: format!("[{}]", join_pretty(type_vars.entity_iter(), extra)),
+                constraints: ctx.pretty_list(None, extra).disable_nl().items(constraints.0.iter()).finish()?,
                 expr_locs: ctx.pretty_map(expr_locs.iter(), extra)?,
                 stmt_locs: ctx.pretty_map(stmt_locs.iter(), extra)?,
             },

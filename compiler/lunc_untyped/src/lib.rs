@@ -383,7 +383,7 @@ impl UtirGen {
     /// Push a constraint (`Con`) on `ty` if it is a `Some(Uty::TyVar(..))`.
     fn push_con(&mut self, ty: impl Into<Uty>, con: impl FnOnce(TyVar) -> Con) {
         if let Uty::TyVar(tyvar) = ty.into() {
-            self.body().type_vars.get_mut(tyvar).0.push(con(tyvar));
+            self.body().constraints.0.push(con(tyvar))
         }
     }
 
@@ -784,10 +784,8 @@ impl UtirGen {
                         let type_e = self.ptype_expr(ptype);
                         typ = Some(Uty::Expr(type_e));
                     } else {
-                        let tyvar = self
-                            .body()
-                            .type_vars
-                            .create_with(|tyvar| Constraints(vec![Con::Integer(tyvar)]));
+                        let tyvar = self.body().type_vars.create_default();
+                        self.push_con(tyvar, |_| Con::Integer(tyvar));
 
                         typ = Some(Uty::TyVar(tyvar));
                     }
@@ -822,10 +820,8 @@ impl UtirGen {
 
                         typ = Some(Uty::Expr(type_e));
                     } else {
-                        let tyvar = self
-                            .body()
-                            .type_vars
-                            .create_with(|tyvar| Constraints(vec![Con::Float(tyvar)]));
+                        let tyvar = self.body().type_vars.create_default();
+                        self.push_con(tyvar, |_| Con::Float(tyvar));
 
                         typ = Some(Uty::TyVar(tyvar));
                     }
