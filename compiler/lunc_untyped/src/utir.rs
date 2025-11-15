@@ -320,7 +320,7 @@ pub enum Expr {
     /// `loop`-expression with label (`.0`) and body (`.1`), see [`DsExprKind::Loop`].
     ///
     /// [`DsExprKind::Loop`]: lunc_desugar::DsExprKind::Loop
-    Loop(Opt<LabelId>, BlockId),
+    Loop(LabelId, BlockId),
     /// Return expression, returns the function with value `.0`, see
     /// [`DsExprKind::Return`].
     ///
@@ -330,11 +330,11 @@ pub enum Expr {
     /// [`DsExprKind::Break`].
     ///
     /// [`DsExprKind::Break`]: lunc_desugar::DsExprKind::Break
-    Break(Opt<LabelId>, Opt<ExprId>),
+    Break(LabelId, Opt<ExprId>),
     /// Continue expression, with label `.0`, see [`DsExprKind::Continue`].
     ///
     /// [`DsExprKind::Continue`]: lunc_desugar::DsExprKind::Continue
-    Continue(Opt<LabelId>),
+    Continue(LabelId),
     /// Underscore, used to discard the result of an expression in an assignment
     /// see [`DsExprKind::Underscore`].
     ///
@@ -483,6 +483,16 @@ pub enum LabelKind {
     PredicateLoop,
 }
 
+impl LabelKind {
+    pub fn can_have_val(&self) -> bool {
+        matches!(self, LabelKind::InfiniteLoop | LabelKind::Block)
+    }
+
+    pub fn is_loop(&self) -> bool {
+        matches!(self, LabelKind::InfiniteLoop | LabelKind::PredicateLoop)
+    }
+}
+
 impl Display for LabelKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -498,8 +508,10 @@ impl Display for LabelKind {
 pub struct Label {
     pub id: LabelId,
     pub name: Option<Spanned<String>>,
-    pub typ: ExprId,
+    pub typ: Option<Uty>,
     pub kind: LabelKind,
+    /// Did we `break` out of this label?
+    pub break_out: bool,
 }
 
 /// Something that can hold, [`Expr`], [`Stmt`], [`Block`] and more.

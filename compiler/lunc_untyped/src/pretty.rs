@@ -370,6 +370,7 @@ impl PrettyDump<OrbDumper> for Label {
             name,
             typ,
             kind,
+            break_out,
         } = self;
 
         pretty_struct! (
@@ -380,6 +381,7 @@ impl PrettyDump<OrbDumper> for Label {
                 name,
                 typ,
                 kind,
+                break_out
             }
         );
 

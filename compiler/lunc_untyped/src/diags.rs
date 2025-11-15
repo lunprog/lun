@@ -4,6 +4,7 @@ use lunc_diag::{Diagnostic, ErrorCode, Label, ToDiagnostic};
 use lunc_token::LitKind;
 use lunc_utils::Span;
 
+// Items
 pub const FUNDEF: &str = "function definition";
 pub const FUNDECL: &str = "function declaration";
 pub const GLOBAL_UNINIT: &str = "global uninit";
@@ -11,6 +12,10 @@ pub const GLOBAL_DEF: &str = "global definition";
 pub const MODULE: &str = "module";
 pub const EXTERN_BLOCK: &str = "extern block";
 pub const DIRECTIVE: &str = "directive";
+
+// Expressions
+pub const BREAK: &str = "break";
+pub const CONTINUE: &str = "continue";
 
 #[derive(Debug, Clone)]
 pub struct FunctionInGlobalMut {
@@ -108,5 +113,85 @@ impl ToDiagnostic for ItemNotAllowedInExternBlock {
                     .with_message("inside this extern block"),
             )
             .with_notes_iter(self.note.map(|s| s.to_string()))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BreakWithValueUnsupported {
+    pub loc: Span,
+}
+
+impl ToDiagnostic for BreakWithValueUnsupported {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::BreakWithValueUnsupported)
+            .with_message("'break' from a predicate or iterator loop with a value")
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message(
+                "can only 'break' with a value from a labeled block or an infinite loop",
+            ))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct UseOfUndefinedLabel {
+    pub name: String,
+    pub loc: Span,
+}
+
+impl ToDiagnostic for UseOfUndefinedLabel {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::UseOfUndefinedLabel)
+            .with_message(format!("use of undeclared label '{}'", self.name))
+            .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct LabelKwOutsideLoopOrBlock<'a> {
+    pub kw: &'a str,
+    pub loc: Span,
+}
+
+impl<'a> ToDiagnostic for LabelKwOutsideLoopOrBlock<'a> {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::LabelKwOutsideLoopOrBlock)
+            .with_message(format!(
+                "`{}` outside of a loop or a labeled block",
+                self.kw,
+            ))
+            .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BreakUseAnImplicitLabelInBlock {
+    pub loc: Span,
+}
+
+impl ToDiagnostic for BreakUseAnImplicitLabelInBlock {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::BreakUseAnImplicitLabelInBlock)
+            .with_message("implicit label `break` inside of a labeled block")
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message(
+                "'break' statement referring to a labeled block need to have a label",
+            ))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CantContinueABlock {
+    pub loc: Span,
+}
+
+impl ToDiagnostic for CantContinueABlock {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::CantContinueABlock)
+            .with_message("a block cannot be 'continue'd")
+            .with_label(Label::primary(self.loc.fid, self.loc))
+            .with_note("you might want to use a loop instead like 'while', 'for' or 'loop'.")
     }
 }

@@ -4,7 +4,7 @@
 
 use std::{collections::HashMap, mem};
 
-use lunc_ast::{BinOp, ItemContainer, ItemKind, Mutability, PrimType, UnOp};
+use lunc_ast::{BinOp, ItemContainer, ItemKind, Mutability, PrimType, Spanned, UnOp};
 use lunc_desugar::{
     DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsParam, DsStatement,
     DsStmtKind,
@@ -16,7 +16,11 @@ use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::{Span, default, opt_unreachable};
 
 use crate::{
-    diags::{FunctionInGlobalMut, ItemNotAllowedInExternBlock, OutsideExternBlock, UnknownLitTag},
+    diags::{
+        BreakUseAnImplicitLabelInBlock, BreakWithValueUnsupported, CantContinueABlock,
+        FunctionInGlobalMut, ItemNotAllowedInExternBlock, LabelKwOutsideLoopOrBlock,
+        OutsideExternBlock, UnknownLitTag, UseOfUndefinedLabel,
+    },
     utir::*,
 };
 
@@ -87,6 +91,8 @@ pub struct UtirGen {
     /// a bunch of them, this hash map is here so that we can re-use those
     /// type-expression instead of having 10,000 of them.
     types_exprs: HashMap<PrimType, ExprId>,
+    /// A stack of the current labels
+    label_stack: Vec<LabelId>,
 
     //
     // FUNDEF SPECIFIC
@@ -108,6 +114,7 @@ impl UtirGen {
             container: ItemContainer::Module,
             extern_block_loc: None,
             types_exprs: HashMap::new(),
+            label_stack: Vec::new(),
             fun_ret_ty: Opt::None,
         }
     }
@@ -146,6 +153,7 @@ impl UtirGen {
 
     fn clear_body_specific(&mut self) {
         self.types_exprs.clear();
+        self.label_stack.clear();
     }
 
     /// Maps a symbol to a defid
@@ -653,6 +661,62 @@ impl UtirGen {
         item
     }
 
+    fn labels_mut(&mut self) -> &mut EntityDb<LabelId> {
+        &mut self.item_mut().body_mut().labels
+    }
+
+    /// Define a new label and put it on top of the stack
+    fn define_label(&mut self, name: Option<Spanned<String>>, kind: LabelKind) -> LabelId {
+        let lab = self.labels_mut().create_with(|id| Label {
+            id,
+            name,
+            typ: None,
+            kind,
+            break_out: false,
+        });
+
+        self.label_stack.push(lab);
+
+        lab
+    }
+
+    fn get_label_by_id(&self, label: LabelId) -> &Label {
+        if !self.label_stack.contains(&label) {
+            panic!("try to access a label that is not in the current label stack")
+        }
+
+        self.body_ref().labels.get(label)
+    }
+
+    fn mut_label_by_id(&mut self, label: LabelId) -> &mut Label {
+        if !self.label_stack.contains(&label) {
+            panic!("try to access a label that is not in the current label stack")
+        }
+
+        self.body().labels.get_mut(label)
+    }
+
+    fn get_label_by_name(&self, needle: &str) -> Option<&Label> {
+        for lab in self.label_stack.iter().rev() {
+            let label = self.get_label_by_id(*lab);
+
+            if let Some(Spanned {
+                node: ref name,
+                loc: _,
+            }) = label.name
+                && name == needle
+            {
+                return Some(label);
+            }
+        }
+
+        None
+    }
+
+    fn label_breaked(&mut self, id: LabelId) {
+        self.mut_label_by_id(id).break_out = true;
+    }
+
     fn gen_option_expr<'utir, 'dsir: 'utir>(
         &'utir mut self,
         expr: impl Into<Option<&'dsir DsExpression>>,
@@ -983,27 +1047,63 @@ impl UtirGen {
                 }
             }
             DsExprKind::Block { label, block } => {
-                assert!(label.is_none(), "LABELS NOT YET IMPLEMENTED");
-
                 let block = self.gen_block(block);
-                typ = Some(self.body_ref().blocks.get(block).typ);
 
-                Expr::Block(Opt::None, block)
+                if let Some(label) = label.clone() {
+                    let lab = self.define_label(Some(label), LabelKind::Block);
+
+                    typ = Some(
+                        self.get_label_by_id(lab)
+                            .typ
+                            .unwrap_or_else(|| self.body_ref().blocks.get(block).typ),
+                    );
+
+                    Expr::Block(Opt::Some(lab), block)
+                } else {
+                    typ = Some(self.body_ref().blocks.get(block).typ);
+
+                    Expr::Block(Opt::None, block)
+                }
             }
             DsExprKind::Loop { label, body } => {
-                assert!(label.is_none(), "LABELS NOT YET IMPLEMENTED");
+                let is_while = matches!(
+                    body.stmts.first(),
+                    Some(DsStatement {
+                        stmt: DsStmtKind::Expression(DsExpression {
+                            expr: DsExprKind::If { .. },
+                            loc: None
+                        }),
+                        loc: None
+                    })
+                );
+
+                let kind = if is_while {
+                    LabelKind::PredicateLoop
+                } else {
+                    LabelKind::InfiniteLoop
+                };
+
+                let lab = self.define_label(label.clone(), kind);
+
                 let void_e = self.ptype_expr(PrimType::Void);
                 let body = self.gen_block(body);
                 let body_t = self.body().blocks.get(body).typ;
 
                 self.push_con(body_t, |tyvar| Con::Uty(tyvar, Uty::Expr(void_e)));
 
-                // here we don't set a type because it's too complex right now,
-                // we need to know if the loop `break`s (so it has type never),
-                // what is the type of the break's value.
-                typ = None;
+                let info = self.get_label_by_id(lab);
 
-                Expr::Loop(Opt::None, body)
+                typ = if !info.break_out {
+                    Some(Uty::Expr(self.ptype_expr(PrimType::Never)))
+                } else if let Some(typ) = info.typ {
+                    Some(typ)
+                } else {
+                    Some(Uty::Expr(self.ptype_expr(PrimType::Void)))
+                };
+
+                self.label_stack.pop();
+
+                Expr::Loop(lab, body)
             }
             DsExprKind::Return { expr } => {
                 let expr = self.gen_option_expr(expr.as_deref());
@@ -1020,20 +1120,111 @@ impl UtirGen {
                 Expr::Return(expr)
             }
             DsExprKind::Break { label, expr } => {
-                assert!(label.is_none(), "LABELS NOT YET IMPLEMENTED");
+                let (label_typ, label_kind, id) = if let Some(label) = label {
+                    let Some(Label { id, typ, kind, .. }) = self.get_label_by_name(label) else {
+                        self.sink.emit(UseOfUndefinedLabel {
+                            name: label.clone(),
+                            // TODO: add location of the label name
+                            loc: expression.loc.clone().unwrap(),
+                        });
 
-                let expr = self.gen_option_expr(expr.as_deref());
+                        return None;
+                    };
+
+                    (*typ, kind.clone(), *id)
+                } else {
+                    let Some(id) = self.label_stack.last() else {
+                        self.sink.emit(LabelKwOutsideLoopOrBlock {
+                            kw: diags::BREAK,
+                            loc: expression.loc.clone().unwrap(),
+                        });
+
+                        return None;
+                    };
+
+                    let Label { typ, kind, .. } = self.get_label_by_id(*id).clone();
+
+                    if !kind.is_loop() {
+                        self.sink.emit(BreakUseAnImplicitLabelInBlock {
+                            loc: expression.loc.clone().unwrap(),
+                        });
+                    }
+
+                    (typ, kind, *id)
+                };
+
+                let expr = if let Some(expr) = expr {
+                    let expr = self.gen_expr(expr)?;
+
+                    if !label_kind.can_have_val() {
+                        self.sink.emit(BreakWithValueUnsupported {
+                            loc: expression.loc.clone().unwrap(),
+                        });
+                    } else if label_typ.is_none() {
+                        self.mut_label_by_id(id).typ = if let Some(typ) = self.expr_typ(expr) {
+                            Some(typ)
+                        } else {
+                            let tyvar = self.body().type_vars.create_default();
+
+                            self.body().expr_t.insert(expr, Uty::TyVar(tyvar));
+
+                            Some(Uty::TyVar(tyvar))
+                        };
+                    }
+
+                    Opt::Some(expr)
+                } else {
+                    if label_typ.is_none() {
+                        self.mut_label_by_id(id).typ =
+                            Some(Uty::Expr(self.ptype_expr(PrimType::Void)));
+                    }
+
+                    Opt::None
+                };
+
+                self.label_breaked(id);
 
                 typ = Some(Uty::Expr(self.ptype_expr(PrimType::Never)));
 
-                Expr::Break(Opt::None, expr)
+                Expr::Break(id, expr)
             }
             DsExprKind::Continue { label } => {
-                assert!(label.is_none(), "LABELS NOT YET IMPLEMENTED");
+                let (lab, kind) = if let Some(label) = label {
+                    let Some(Label { id, kind, .. }) = self.get_label_by_name(label) else {
+                        self.sink.emit(UseOfUndefinedLabel {
+                            name: label.clone(),
+                            // TODO: add location of the label name
+                            loc: expression.loc.clone().unwrap(),
+                        });
+
+                        return None;
+                    };
+
+                    (*id, kind.clone())
+                } else {
+                    let Some(&id) = self.label_stack.last() else {
+                        self.sink.emit(LabelKwOutsideLoopOrBlock {
+                            kw: diags::CONTINUE,
+                            loc: expression.loc.clone().unwrap(),
+                        });
+
+                        return None;
+                    };
+
+                    let kind = self.get_label_by_id(id).kind.clone();
+
+                    (id, kind)
+                };
+
+                if !kind.is_loop() {
+                    self.sink.emit(CantContinueABlock {
+                        loc: expression.loc.clone().unwrap(),
+                    });
+                }
 
                 typ = Some(Uty::Expr(self.ptype_expr(PrimType::Never)));
 
-                Expr::Continue(Opt::None)
+                Expr::Continue(lab)
             }
             DsExprKind::Null => {
                 self.sink.emit(feature_todo! {

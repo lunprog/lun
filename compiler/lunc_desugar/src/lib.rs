@@ -321,7 +321,7 @@ impl FromHigher for DsExpression {
             //
             // NOTE: if you modify the desugaring of while expression, this
             // might break the detection of while expression in the SCIR in
-            // file `lunc_scir/src/checking.rs` in the function `ck_expr`
+            // file `lunc_untyped/src/lib.rs` in the function `gen_expr`
             ExprKind::PredicateLoop { label, cond, body } => DsExprKind::Loop {
                 label: label.clone(),
                 body: block(
