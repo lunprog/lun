@@ -292,35 +292,6 @@ impl PrettyDump<OrbDumper> for Type {
     }
 }
 
-impl Display for PrimType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PrimType::Isz => write!(f, "isz"),
-            PrimType::I128 => write!(f, "i128"),
-            PrimType::I64 => write!(f, "i64"),
-            PrimType::I32 => write!(f, "i32"),
-            PrimType::I16 => write!(f, "i16"),
-            PrimType::I8 => write!(f, "i8"),
-            PrimType::Usz => write!(f, "usz"),
-            PrimType::U128 => write!(f, "u128"),
-            PrimType::U64 => write!(f, "u64"),
-            PrimType::U32 => write!(f, "u32"),
-            PrimType::U16 => write!(f, "u16"),
-            PrimType::U8 => write!(f, "u8"),
-            PrimType::F128 => write!(f, "f128"),
-            PrimType::F64 => write!(f, "f64"),
-            PrimType::F32 => write!(f, "f32"),
-            PrimType::F16 => write!(f, "f16"),
-            PrimType::Bool => write!(f, "bool"),
-            PrimType::Str => write!(f, "str"),
-            PrimType::Char => write!(f, "char"),
-            PrimType::Never => write!(f, "never"),
-            PrimType::Void => write!(f, "void"),
-            PrimType::Type => write!(f, "type"),
-        }
-    }
-}
-
 impl PrettyDump<OrbDumper> for Local {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         let Local {

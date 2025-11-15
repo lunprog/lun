@@ -214,7 +214,13 @@ pub fn join_display<T: Display>(items: &[T]) -> String {
 }
 
 /// Formats a list with commas between
-pub fn join_pretty<T: PrettyDump<E>, E>(items: &[T], extra: &E) -> String {
+pub fn join_pretty<I, T: PrettyDump<E>, E>(items: I, extra: &E) -> String
+where
+    I: IntoIterator<Item = T>,
+    I::IntoIter: ExactSizeIterator,
+{
+    let items = items.into_iter();
+
     let mut res: Vec<u8> = Vec::new();
 
     let mut items_str = Vec::with_capacity(items.len());

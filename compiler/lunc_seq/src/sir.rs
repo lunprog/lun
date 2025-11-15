@@ -5,7 +5,7 @@ use std::{
     io::{self, Write},
 };
 
-use lunc_ast::{Abi, Comptime, Mutability, Path};
+use lunc_ast::{Abi, Comptime, Mutability, Path, PrimType};
 use lunc_desugar::DsParam;
 use lunc_entity::{Entity, EntityDb, SparseMap, entity};
 use lunc_utils::Span;
@@ -1130,58 +1130,4 @@ impl Type {
     pub fn is_dummy(&self) -> bool {
         *self == Type::dummy()
     }
-}
-
-/// Primitive types of SIR.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PrimType {
-    /// Signed pointer-size integer
-    Isz,
-    /// Signed 128-bit integer
-    I128,
-    /// Signed 64-bit integer
-    I64,
-    /// Signed 32-bit integer
-    I32,
-    /// Signed 16-bit integer
-    I16,
-    /// Signed 8-bit integer
-    I8,
-    /// Unsigned pointer-size integer
-    Usz,
-    /// Unsigned 128-bit integer
-    U128,
-    /// Unsigned 64-bit integer
-    U64,
-    /// Unsigned 32-bit integer
-    U32,
-    /// Unsigned 16-bit integer
-    U16,
-    /// Unsigned 8-bit integer
-    U8,
-    /// 128-bit IEEE 754-2008, float
-    F128,
-    /// 64-bit IEEE 754-2008, float
-    F64,
-    /// 32-bit IEEE 754-2008, float
-    F32,
-    /// 16-bit IEEE 754-2008, float
-    F16,
-    /// Boolean, `true`/`false`
-    Bool,
-    /// String slice DST type
-    ///
-    /// # Note
-    ///
-    /// DSTs are not yet implemented so this type is not working for now.
-    Str,
-    /// 32-bit integer representing a Unicode Codepoint.
-    Char,
-    /// ZST, this type indicates that the control flow is stopped after the
-    /// evaluation of an expression of this type.
-    Never,
-    /// ZST, nothing to return
-    Void,
-    /// Types in Lun are first-class citizen, so here's the "type" of types.
-    Type,
 }

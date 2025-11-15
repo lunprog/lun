@@ -320,7 +320,7 @@ impl ToDiagnostic for Diagnostic {
 /// |`E014`| `tests/lexer/E014.lun`                            |
 /// |`E015`| n/a[^5]                                           |
 /// |`E016`| `tests/scir/E016.lun`                             |
-/// |`E017`| deprecated, **CAN BE REPLACED BY A NEW CODE**     |
+/// |`E017`| `tests/utir/E017.lun`                             |
 /// |`E018`| deprecated, **CAN BE REPLACED BY A NEW CODE**     |
 /// |`E019`| `tests/lexer/E019.lun`                            |
 /// |`E020`| `tests/lexer/E020.lun`                            |
@@ -345,7 +345,7 @@ impl ToDiagnostic for Diagnostic {
 /// |`E037`| `tests/scir/E037.lun`                             |
 /// |`E038`| `tests/parser/E038.lun`                           |
 /// |`E039`| `tests/scir/E039.lun`                             |
-/// |`E040`| `tests/scir/E040.lun`                             |
+/// |`E040`| `tests/utir/E040.lun`                             |
 /// |`E041`| `tests/behavior/E041.lun`                         |
 /// |`E042`| `tests/behavior/E042.lun`                         |
 ///
@@ -514,9 +514,8 @@ pub enum ErrorCode {
     FeatureNotImplemented = 15,
     /// label keywords (`break` or `continue`) outside of a loop or block.
     LabelKwOutsideLoopOrBlock = 16,
-    /// unknown type
-    #[deprecated(note = "pls replace me")]
-    UnknownType = 17,
+    /// unknown tag of a literal
+    UnknownLitTag = 17,
     /// mutation of immutable
     #[deprecated(note = "pls replace me")]
     MutationOfImmutable = 18,

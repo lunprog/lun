@@ -86,7 +86,12 @@ impl PrettyDump<EntityDb<Symbol>> for DsItem {
 
                 Ok(())
             }
-            DsItem::ExternBlock { abi, items, loc } => {
+            DsItem::ExternBlock {
+                abi,
+                items,
+                loc,
+                id,
+            } => {
                 pretty_struct! (
                     ctx,
                     extra,
@@ -94,6 +99,7 @@ impl PrettyDump<EntityDb<Symbol>> for DsItem {
                     {
                         abi,
                         items,
+                        id,
                     },
                     loc
                 );
