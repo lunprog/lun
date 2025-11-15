@@ -51,7 +51,10 @@ use std::{
 };
 
 use indexmap::{IndexMap, IndexSet};
-use lunc_utils::pretty::{PrettyCtxt, PrettyDump};
+use lunc_utils::{
+    impl_pdump,
+    pretty::{PrettyCtxt, PrettyDump},
+};
 
 /// An entity is a tiny, `Copy` identifier used across the compiler.
 ///
@@ -107,6 +110,11 @@ pub trait Entity: Debug + Copy + PartialEq + Eq + Hash {
     #[inline(always)]
     fn is_reserved(self) -> bool {
         self == Entity::RESERVED
+    }
+
+    /// Converts this entity to an [`AnyId`].
+    fn to_any(self) -> AnyId {
+        AnyId(self.index() as u32)
     }
 }
 
@@ -604,6 +612,36 @@ impl<Ex: Clone, E: Entity + PrettyDump<Ex>> PrettyDump<Ex> for EntitySet<E> {
             .items(self.iter())
             .finish()
     }
+}
+
+/// Any entity, can be downcast to anything that implements [`Entity`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct AnyId(u32);
+
+impl AnyId {
+    /// Create a new any id from the entity, ensured to be a valid any id.
+    pub fn upcast<E: Entity>(entity: E) -> AnyId {
+        entity.to_any()
+    }
+
+    /// Downcast this any id to `E`.
+    ///
+    /// # Safety
+    ///
+    /// You should only downcast when you are 100% that it will be a valid entity.
+    pub fn downcast<E: Entity>(self) -> E {
+        E::new(self.0 as usize)
+    }
+}
+
+impl Display for AnyId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "AnyId({})", self.0)
+    }
+}
+
+impl_pdump! {
+    AnyId,
 }
 
 /// [`Opt<E>`] is an optimized [`Option<E>`]: it stores an [`Entity`] but reuses

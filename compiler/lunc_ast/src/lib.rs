@@ -570,6 +570,18 @@ pub enum ItemContainer {
     ExternBlock,
 }
 
+/// Kind of Item
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ItemKind {
+    Fundef,
+    Fundecl,
+    GlobalDef,
+    GlobalUninit,
+    Module,
+    ExternBlock,
+    Directive,
+}
+
 /// Primitive types of Lun.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PrimType {

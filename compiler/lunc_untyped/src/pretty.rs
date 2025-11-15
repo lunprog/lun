@@ -117,7 +117,7 @@ impl PrettyDump<OrbDumper> for GlobalDef {
         pretty_struct! (
             ctx,
             extra,
-            "Fundecl",
+            "GlobalDef",
             {
                 name,
                 mutability,
@@ -144,7 +144,7 @@ impl PrettyDump<OrbDumper> for GlobalUninit {
         pretty_struct! (
             ctx,
             extra,
-            "Fundecl",
+            "GlobalUninit",
             {
                 name,
                 typ,

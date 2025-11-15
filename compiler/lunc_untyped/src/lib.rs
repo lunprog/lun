@@ -4,19 +4,19 @@
 
 use std::{collections::HashMap, mem};
 
-use lunc_ast::{BinOp, Mutability, PrimType, UnOp};
+use lunc_ast::{BinOp, ItemContainer, ItemKind, Mutability, PrimType, UnOp};
 use lunc_desugar::{
     DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsParam, DsStatement,
     DsStmtKind,
     symbol::{Symbol, SymbolKind},
 };
 use lunc_diag::{DiagnosticSink, feature_todo};
-use lunc_entity::{EntityDb, EntitySet, Opt, OptionExt, SparseMap};
+use lunc_entity::{Entity, EntityDb, EntitySet, Opt, OptionExt, SparseMap};
 use lunc_token::{Lit, LitKind, LitVal};
-use lunc_utils::{default, opt_unreachable};
+use lunc_utils::{Span, default, opt_unreachable};
 
 use crate::{
-    diags::{FunctionInGlobalMut, UnknownLitTag},
+    diags::{FunctionInGlobalMut, ItemNotAllowedInExternBlock, OutsideExternBlock, UnknownLitTag},
     utir::*,
 };
 
@@ -70,6 +70,13 @@ pub struct UtirGen {
     //
     /// Current item being lowered.
     item: Opt<ItemId>,
+    item_kind: ItemKind,
+
+    //
+    // ITEM CONTAINER SPECIFIC
+    //
+    container: ItemContainer,
+    extern_block_loc: Option<Span>,
 
     //
     // BODY SPECIFIC
@@ -97,16 +104,19 @@ impl UtirGen {
             sym_to_def: SparseMap::new(),
             sink,
             item: Opt::None,
+            item_kind: ItemKind::Fundef,
+            container: ItemContainer::Module,
+            extern_block_loc: None,
             types_exprs: HashMap::new(),
             fun_ret_ty: Opt::None,
         }
     }
 
     /// Produce the [Orb] for the given DSIR.
-    pub fn produce(&mut self, dsir: DsModule) -> Orb {
+    pub fn produce(&mut self, mut dsir: DsModule) -> Orb {
         assert!(dsir.fid.is_root(), "expected the root module.");
 
-        self.populate_mod(&dsir);
+        self.populate_mod(&mut dsir);
         self.gen_module(&dsir);
 
         mem::take(&mut self.orb)
@@ -115,11 +125,11 @@ impl UtirGen {
     /// Populate a module, see [population stage] for more details.
     ///
     /// [population stage]: UtirGen#population-stage
-    pub fn populate_mod(&mut self, module: &DsModule) {
-        self.populate_items(&module.items);
+    pub fn populate_mod(&mut self, module: &mut DsModule) {
+        self.populate_items(&mut module.items);
     }
 
-    fn populate_items(&mut self, items: &[DsItem]) {
+    fn populate_items(&mut self, items: &mut [DsItem]) {
         for item in items {
             self.populate_item(item);
         }
@@ -131,6 +141,7 @@ impl UtirGen {
 
     fn clear_item_specific(&mut self) {
         self.item = Opt::None;
+        self.extern_block_loc = None;
     }
 
     fn clear_body_specific(&mut self) {
@@ -154,7 +165,7 @@ impl UtirGen {
     /// Populate an item, see [population stage] for more details.
     ///
     /// [population stage]: UtirGen#population-stage
-    pub fn populate_item(&mut self, item: &DsItem) {
+    pub fn populate_item(&mut self, item: &mut DsItem) {
         match item {
             DsItem::GlobalDef {
                 name,
@@ -190,7 +201,7 @@ impl UtirGen {
             }
             DsItem::GlobalDef {
                 name,
-                mutability: _,
+                mutability,
                 typeexpr: _,
                 value: _,
                 loc,
@@ -198,6 +209,7 @@ impl UtirGen {
             } => {
                 let id = self.orb.items.create(Item::GlobalDef(GlobalDef {
                     name: name.clone(),
+                    mutability: *mutability,
                     loc: loc.clone().unwrap(),
                     ..default()
                 }));
@@ -234,8 +246,21 @@ impl UtirGen {
 
                 self.populate_mod(module);
             }
-            DsItem::ExternBlock { items, .. } => {
+            DsItem::ExternBlock {
+                abi,
+                items,
+                loc,
+                id,
+            } => {
                 self.populate_items(items);
+
+                let item_id = self.orb.items.create(Item::ExternBlock(ExternBlock {
+                    abi: *abi,
+                    items: EntitySet::new(),
+                    loc: loc.clone().unwrap(),
+                }));
+
+                *id = Some(item_id.to_any());
             }
             DsItem::Directive(DsDirective::Import { .. }) => {
                 // we do nothing import is removed after DSIR => UTIR conversion
@@ -248,6 +273,7 @@ impl UtirGen {
     }
 
     /// Returns the content of the current item.
+    #[track_caller]
     fn item_mut(&mut self) -> &mut Item {
         let id = self.item.expand().expect("No current item");
 
@@ -270,12 +296,65 @@ impl UtirGen {
         self.item().body()
     }
 
+    fn extern_block_loc(&self) -> Span {
+        self.extern_block_loc.clone().unwrap()
+    }
+
     /// Returns the current fundef.
     fn fundef_mut(&mut self) -> &mut Fundef {
         if let Item::Fundef(fundef) = self.item_mut() {
             fundef
         } else {
-            panic!("the current item isn't a fundef")
+            opt_unreachable!("the current item isn't a fundef")
+        }
+    }
+
+    /// Returns the current fundecl.
+    fn fundecl_mut(&mut self) -> &mut Fundecl {
+        if let Item::Fundecl(fundecl) = self.item_mut() {
+            fundecl
+        } else {
+            opt_unreachable!("the current item isn't a fundecl")
+        }
+    }
+
+    /// Returns the current globaldef.
+    fn globaldef_mut(&mut self) -> &mut GlobalDef {
+        if let Item::GlobalDef(globaldef) = self.item_mut() {
+            globaldef
+        } else {
+            // SAFETY: upheld by caller
+            opt_unreachable!("the current item isn't a globaldef")
+        }
+    }
+
+    /// Returns the current global_uninit.
+    fn global_uninit_mut(&mut self) -> &mut GlobalUninit {
+        if let Item::GlobalUninit(global_uninit) = self.item_mut() {
+            global_uninit
+        } else {
+            // SAFETY: upheld by caller
+            opt_unreachable!("the current item isn't a global_uninit")
+        }
+    }
+
+    /// Returns the current module.
+    fn module_mut(&mut self) -> &mut Module {
+        if let Item::Module(module) = self.item_mut() {
+            module
+        } else {
+            // SAFETY: upheld by caller
+            opt_unreachable!("the current item isn't a module")
+        }
+    }
+
+    /// Returns the current extern_block.
+    fn extern_block_mut(&mut self) -> &mut ExternBlock {
+        if let Item::ExternBlock(extern_block) = self.item_mut() {
+            extern_block
+        } else {
+            // SAFETY: upheld by caller
+            opt_unreachable!("the current item isn't a extern_block")
         }
     }
 
@@ -305,13 +384,106 @@ impl UtirGen {
     }
 
     /// Generate the UTIR for a given module.
-    pub fn gen_module(&mut self, module: &DsModule) {
-        for item in &module.items {
-            self.gen_item(item);
+    pub fn gen_module(&mut self, module: &DsModule) -> EntitySet<ItemId> {
+        self.gen_items_in(&module.items, ItemContainer::Module)
+    }
+
+    /// Generate the UTIR for a given list of items and the item container.
+    pub fn gen_items_in(
+        &mut self,
+        items: &[DsItem],
+        container: ItemContainer,
+    ) -> EntitySet<ItemId> {
+        let old = self.container.clone();
+        self.container = container;
+
+        let mut itemset = EntitySet::new();
+
+        for item in items {
+            if let Some(id) = self.gen_item(item) {
+                itemset.insert(id);
+            }
+        }
+
+        self.container = old;
+
+        itemset
+    }
+
+    /// Checks that the item kind is compatible inside of the item container
+    fn check_item_container(&mut self, loc: Span) {
+        match self.container {
+            ItemContainer::Module => match self.item_kind {
+                ItemKind::Fundef
+                | ItemKind::GlobalDef
+                | ItemKind::Module
+                | ItemKind::ExternBlock
+                | ItemKind::Directive => {}
+                ItemKind::Fundecl => {
+                    self.sink.emit(OutsideExternBlock {
+                        item_name: diags::FUNDECL,
+                        loc,
+                    });
+                }
+                ItemKind::GlobalUninit => {
+                    self.sink.emit(OutsideExternBlock {
+                        item_name: diags::GLOBAL_UNINIT,
+                        loc,
+                    });
+                }
+            },
+            ItemContainer::ExternBlock => match self.item_kind {
+                ItemKind::Fundecl | ItemKind::GlobalUninit => {}
+                ItemKind::Fundef => {
+                    self.sink.emit(ItemNotAllowedInExternBlock {
+                        item: diags::FUNDEF,
+                        note: None,
+                        loc,
+                        extern_block_loc: self.extern_block_loc(),
+                    });
+                }
+                ItemKind::GlobalDef => {
+                    self.sink.emit(ItemNotAllowedInExternBlock {
+                        item: diags::GLOBAL_DEF,
+                        note: None,
+                        loc,
+                        extern_block_loc: self.extern_block_loc(),
+                    });
+                }
+                ItemKind::Module => {
+                    self.sink.emit(ItemNotAllowedInExternBlock {
+                        item: diags::MODULE,
+                        note: None,
+                        loc,
+                        extern_block_loc: self.extern_block_loc(),
+                    });
+                }
+                ItemKind::ExternBlock => {
+                    self.sink.emit(ItemNotAllowedInExternBlock {
+                        item: diags::EXTERN_BLOCK,
+                        note: Some("you probably want to un nest the extern block"),
+                        loc,
+                        extern_block_loc: self.extern_block_loc(),
+                    });
+                }
+                ItemKind::Directive => {
+                    self.sink.emit(ItemNotAllowedInExternBlock {
+                        item: diags::DIRECTIVE,
+                        note: None,
+                        loc,
+                        extern_block_loc: self.extern_block_loc(),
+                    });
+                }
+            },
         }
     }
 
     fn gen_item(&mut self, item: &DsItem) -> Option<ItemId> {
+        let loc = item.loc();
+        self.item_kind = item.kind();
+
+        self.check_item_container(loc);
+
         let item = match item {
             DsItem::GlobalDef {
                 name: _,
@@ -323,7 +495,7 @@ impl UtirGen {
             } if value.is_fundef() => {
                 if mutability.is_mut() {
                     self.sink.emit(FunctionInGlobalMut {
-                        fun: FunctionInGlobalMut::FUNDEF,
+                        fun: diags::FUNDEF,
                         loc: loc.clone().unwrap(),
                     });
                 }
@@ -366,7 +538,113 @@ impl UtirGen {
 
                 Some(id)
             }
-            _ => todo!(),
+            DsItem::GlobalDef {
+                name: _,
+                mutability,
+                typeexpr,
+                value,
+                loc,
+                sym,
+            } if value.is_fundecl() => {
+                if mutability.is_mut() {
+                    self.sink.emit(FunctionInGlobalMut {
+                        fun: diags::FUNDECL,
+                        loc: loc.clone().unwrap(),
+                    });
+                }
+
+                let DsExprKind::FunDeclaration { args, rettypeexpr } = &value.expr else {
+                    // SAFETY: already checked
+                    opt_unreachable!()
+                };
+
+                let id = self.get_item(sym.unwrap_sym());
+                self.item = Opt::Some(id);
+
+                self.fundecl_mut().typ = self.gen_option_expr(typeexpr);
+
+                for arg in args {
+                    if let Some(expr) = self.gen_expr(arg) {
+                        self.fundecl_mut().params.push(expr)
+                    }
+                }
+
+                let ret_ty = self.gen_option_expr(rettypeexpr.as_deref());
+
+                self.fundecl_mut().ret_ty = ret_ty;
+
+                self.item = Opt::None;
+
+                Some(id)
+            }
+            DsItem::GlobalDef {
+                name: _,
+                mutability: _,
+                typeexpr,
+                value,
+                loc: _,
+                sym,
+            } => {
+                let id = self.get_item(sym.unwrap_sym());
+                self.item = Opt::Some(id);
+
+                self.globaldef_mut().typ = self.gen_option_expr(typeexpr);
+
+                self.globaldef_mut().value = self.gen_expr(value)?;
+
+                Some(id)
+            }
+            DsItem::GlobalUninit {
+                name: _,
+                typeexpr,
+                loc: _,
+                sym,
+            } => {
+                let id = self.get_item(sym.unwrap_sym());
+                self.item = Opt::Some(id);
+
+                self.global_uninit_mut().typ = self.gen_expr(typeexpr)?;
+
+                Some(id)
+            }
+            DsItem::Module {
+                name: _,
+                module,
+                loc: _,
+                sym,
+            } => {
+                let id = self.get_item(sym.unwrap_sym());
+                self.item = Opt::Some(id);
+
+                self.module_mut().items = self.gen_module(module);
+
+                Some(id)
+            }
+            DsItem::ExternBlock {
+                abi: _,
+                items,
+                loc,
+                id,
+            } => {
+                let id = id.unwrap().downcast::<ItemId>();
+
+                self.extern_block_loc = loc.clone();
+
+                let items = self.gen_items_in(items, ItemContainer::ExternBlock);
+
+                self.item = Opt::Some(id);
+                self.extern_block_mut().items = items;
+
+                Some(id)
+            }
+            DsItem::Directive(DsDirective::Import { .. }) => {
+                // we do nothing import is removed after DSIR => UTIR conversion
+                None
+            }
+            DsItem::Directive(DsDirective::Mod { .. }) => {
+                // SAFETY: it was removed by the desugarrer
+                opt_unreachable!("should've been removed by the desugarrer")
+            }
         };
 
         self.clear_body_specific();

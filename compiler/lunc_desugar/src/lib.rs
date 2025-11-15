@@ -10,9 +10,9 @@ use diags::{
     UnderscoreReservedIdent,
 };
 
-use lunc_ast::{Abi, BinOp, Mutability, Path, PathSegment, Spanned, UnOp};
+use lunc_ast::{Abi, BinOp, ItemKind, Mutability, Path, PathSegment, Spanned, UnOp};
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
-use lunc_entity::{Entity, EntityDb};
+use lunc_entity::{AnyId, Entity, EntityDb};
 use lunc_lexer::Lexer;
 use lunc_parser::{
     Parser,
@@ -111,11 +111,39 @@ pub enum DsItem {
         abi: Abi,
         items: Vec<DsItem>,
         loc: OSpan,
+        /// it will hold the ItemId of the UTIR later, we use this because
+        /// ExternBlock doesn't have an item id.
+        id: Option<AnyId>,
     },
     /// See [`Item::Directive`]
     ///
     /// [`Item::Directive`]: lunc_parser::item::Item::Directive
     Directive(DsDirective),
+}
+
+impl DsItem {
+    /// Unwarps the location of the item
+    pub fn loc(&self) -> Span {
+        match self {
+            DsItem::GlobalDef { loc, .. }
+            | DsItem::GlobalUninit { loc, .. }
+            | DsItem::Module { loc, .. }
+            | DsItem::ExternBlock { loc, .. } => loc.clone().unwrap(),
+            DsItem::Directive(directive) => directive.loc(),
+        }
+    }
+
+    pub fn kind(&self) -> ItemKind {
+        match self {
+            DsItem::GlobalDef { value, .. } if value.is_fundef() => ItemKind::Fundef,
+            DsItem::GlobalDef { value, .. } if value.is_fundecl() => ItemKind::Fundecl,
+            DsItem::GlobalDef { .. } => ItemKind::GlobalDef,
+            DsItem::GlobalUninit { .. } => ItemKind::GlobalUninit,
+            DsItem::Module { .. } => ItemKind::Module,
+            DsItem::ExternBlock { .. } => ItemKind::ExternBlock,
+            DsItem::Directive(_) => ItemKind::Directive,
+        }
+    }
 }
 
 /// See [`ItemDirective`]
@@ -130,6 +158,14 @@ pub enum DsDirective {
     },
     /// NOTE: This directive will not be here after we pass the lowered DSIR to the desugarrer
     Mod { name: String, loc: OSpan },
+}
+
+impl DsDirective {
+    pub fn loc(&self) -> Span {
+        match self {
+            DsDirective::Import { loc, .. } | DsDirective::Mod { loc, .. } => loc.clone().unwrap(),
+        }
+    }
 }
 
 impl FromHigher for DsDirective {
@@ -183,6 +219,7 @@ impl FromHigher for DsItem {
                 abi,
                 items: lower(items),
                 loc: Some(loc),
+                id: None,
             },
             Item::Directive(directive) => DsItem::Directive(lower(directive)),
         }
@@ -1148,6 +1185,7 @@ impl Desugarrer {
                 abi: _,
                 items,
                 loc: _,
+                id: _,
             } => {
                 for item in items {
                     match self.resolve_item(item) {
@@ -1619,6 +1657,7 @@ impl Desugarrer {
                 abi: _,
                 items,
                 loc: _,
+                id: _,
             } => {
                 // NOTE: we check, its optional in theory but it should speed up
                 // a little bit

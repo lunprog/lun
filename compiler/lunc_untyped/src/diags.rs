@@ -4,17 +4,20 @@ use lunc_diag::{Diagnostic, ErrorCode, Label, ToDiagnostic};
 use lunc_token::LitKind;
 use lunc_utils::Span;
 
+pub const FUNDEF: &str = "function definition";
+pub const FUNDECL: &str = "function declaration";
+pub const GLOBAL_UNINIT: &str = "global uninit";
+pub const GLOBAL_DEF: &str = "global definition";
+pub const MODULE: &str = "module";
+pub const EXTERN_BLOCK: &str = "extern block";
+pub const DIRECTIVE: &str = "directive";
+
 #[derive(Debug, Clone)]
 pub struct FunctionInGlobalMut {
     /// either 'function definition' or 'function declaration'
     pub fun: &'static str,
     /// loc of the global def
     pub loc: Span,
-}
-
-impl FunctionInGlobalMut {
-    pub const FUNDEF: &str = "function definition";
-    pub const FUNDECL: &str = "function declaration";
 }
 
 impl ToDiagnostic for FunctionInGlobalMut {
@@ -58,5 +61,52 @@ impl ToDiagnostic for UnknownLitTag {
             ))
             .with_notes_iter(self.note().map(|s| s.to_string()))
             .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct OutsideExternBlock {
+    /// name of the item either `function declaration` or `global uninit`
+    pub item_name: &'static str,
+    /// location of the fundecl
+    pub loc: Span,
+}
+
+impl ToDiagnostic for OutsideExternBlock {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::OutsideExternBlock)
+            .with_message(format!("{} must be inside of an extern block.", self.item_name))
+            .with_label(Label::primary(self.loc.fid, self.loc))
+            .with_note("consider moving the function declaration into an extern block like 'extern \"C\" { .. }'.")
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ItemNotAllowedInExternBlock {
+    /// name of the item
+    pub item: &'static str,
+    /// optional note
+    pub note: Option<&'static str>,
+    /// location of the item
+    pub loc: Span,
+    /// location of the external block
+    pub extern_block_loc: Span,
+}
+
+impl ToDiagnostic for ItemNotAllowedInExternBlock {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::ItemNotAllowedInExternBlock)
+            .with_message(format!(
+                "a {} isn't allowed inside of an extern block.",
+                self.item
+            ))
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message("defined here."))
+            .with_label(
+                Label::secondary(self.extern_block_loc.fid, self.extern_block_loc)
+                    .with_message("inside this extern block"),
+            )
+            .with_notes_iter(self.note.map(|s| s.to_string()))
     }
 }
