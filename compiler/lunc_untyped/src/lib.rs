@@ -1,10 +1,13 @@
 //! Untyped Intermediate Representation of Lun, used to make type information
 //! explicit so that compile-time evaluation and type-evaluation (a special case
 //! of comptime eval) can easily work with types.
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
+)]
 
 use std::{collections::HashMap, mem};
 
-use lunc_ast::{BinOp, ItemContainer, ItemKind, Mutability, PrimType, Spanned, UnOp};
+use lunc_ast::{BinOp, ItemContainer, ItemKind, Mutability, Spanned, UnOp};
 use lunc_desugar::{
     DsBlock, DsDirective, DsExprKind, DsExpression, DsItem, DsModule, DsParam, DsStatement,
     DsStmtKind,
@@ -12,6 +15,7 @@ use lunc_desugar::{
 };
 use lunc_diag::{DiagnosticSink, feature_todo};
 use lunc_entity::{Entity, EntityDb, EntitySet, Opt, OptionExt, SparseMap};
+use lunc_seq::sir::PrimType;
 use lunc_token::{Lit, LitKind, LitVal};
 use lunc_utils::{Span, default, opt_unreachable};
 
@@ -25,6 +29,7 @@ use crate::{
 };
 
 pub mod diags;
+pub mod eval;
 pub mod pretty;
 pub mod utir;
 

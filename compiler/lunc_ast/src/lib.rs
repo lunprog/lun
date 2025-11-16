@@ -4,7 +4,7 @@
 )]
 
 use std::{
-    fmt::{self, Display},
+    fmt::Display,
     io::{self, Write},
     str::FromStr,
 };
@@ -435,7 +435,7 @@ impl<T: PrettyDump<E>, E> PrettyDump<E> for Spanned<T> {
 }
 
 /// Mutability of something.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Mutability {
     Not,
     Mut,
@@ -580,87 +580,4 @@ pub enum ItemKind {
     Module,
     ExternBlock,
     Directive,
-}
-
-/// Primitive types of Lun.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PrimType {
-    /// Signed pointer-size integer
-    Isz,
-    /// Signed 128-bit integer
-    I128,
-    /// Signed 64-bit integer
-    I64,
-    /// Signed 32-bit integer
-    I32,
-    /// Signed 16-bit integer
-    I16,
-    /// Signed 8-bit integer
-    I8,
-    /// Unsigned pointer-size integer
-    Usz,
-    /// Unsigned 128-bit integer
-    U128,
-    /// Unsigned 64-bit integer
-    U64,
-    /// Unsigned 32-bit integer
-    U32,
-    /// Unsigned 16-bit integer
-    U16,
-    /// Unsigned 8-bit integer
-    U8,
-    /// 128-bit IEEE 754-2008, float
-    F128,
-    /// 64-bit IEEE 754-2008, float
-    F64,
-    /// 32-bit IEEE 754-2008, float
-    F32,
-    /// 16-bit IEEE 754-2008, float
-    F16,
-    /// Boolean, `true`/`false`
-    Bool,
-    /// String slice DST type
-    ///
-    /// # Note
-    ///
-    /// DSTs are not yet implemented so this type is not working for now.
-    Str,
-    /// 32-bit integer representing a Unicode Codepoint.
-    Char,
-    /// ZST, this type indicates that the control flow is stopped after the
-    /// evaluation of an expression of this type.
-    Never,
-    /// ZST, nothing to return
-    Void,
-    /// Types in Lun are first-class citizen, so here's the "type" of types.
-    Type,
-}
-
-impl Display for PrimType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PrimType::Isz => write!(f, "isz"),
-            PrimType::I128 => write!(f, "i128"),
-            PrimType::I64 => write!(f, "i64"),
-            PrimType::I32 => write!(f, "i32"),
-            PrimType::I16 => write!(f, "i16"),
-            PrimType::I8 => write!(f, "i8"),
-            PrimType::Usz => write!(f, "usz"),
-            PrimType::U128 => write!(f, "u128"),
-            PrimType::U64 => write!(f, "u64"),
-            PrimType::U32 => write!(f, "u32"),
-            PrimType::U16 => write!(f, "u16"),
-            PrimType::U8 => write!(f, "u8"),
-            PrimType::F128 => write!(f, "f128"),
-            PrimType::F64 => write!(f, "f64"),
-            PrimType::F32 => write!(f, "f32"),
-            PrimType::F16 => write!(f, "f16"),
-            PrimType::Bool => write!(f, "bool"),
-            PrimType::Str => write!(f, "str"),
-            PrimType::Char => write!(f, "char"),
-            PrimType::Never => write!(f, "never"),
-            PrimType::Void => write!(f, "void"),
-            PrimType::Type => write!(f, "type"),
-        }
-    }
 }

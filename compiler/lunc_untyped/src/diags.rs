@@ -195,3 +195,27 @@ impl ToDiagnostic for CantContinueABlock {
             .with_note("you might want to use a loop instead like 'while', 'for' or 'loop'.")
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct CantEvaluateAtComptime {
+    /// optional note
+    pub note: Option<String>,
+    /// location of the entire expression trying to be evaluated at compile-time
+    pub loc_expr: Span,
+    /// location of the (maybe?) inner expression that fails to evaluate at comptime
+    pub loc: Span,
+}
+
+impl ToDiagnostic for CantEvaluateAtComptime {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::CantEvaluateAtComptime)
+            .with_message("unable to evaluate expression at compile-time")
+            .with_label(Label::primary(self.loc.fid, self.loc))
+            .with_label(
+                Label::secondary(self.loc_expr.fid, self.loc_expr)
+                    .with_message("due to this expression"),
+            )
+            .with_notes_iter(self.note)
+    }
+}

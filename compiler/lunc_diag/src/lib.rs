@@ -121,7 +121,7 @@ impl DiagnosticSink {
     ///
     /// Diagnostics are ensured to be emit in the order of execution.
     #[track_caller]
-    pub fn emit(&mut self, diag: impl ToDiagnostic) -> DiagGuaranteed {
+    pub fn emit(&self, diag: impl ToDiagnostic) -> DiagGuaranteed {
         let mut inner = self.0.write().unwrap();
         inner.emit(diag);
 
@@ -547,7 +547,7 @@ pub enum ErrorCode {
     /// amount the function was defined with.
     ArityDoesntMatch = 28,
     /// cannot resolve the provided expression at compile time.
-    CantResolveComptimeValue = 29,
+    CantEvaluateAtComptime = 29,
     /// use of an undefined label.
     UseOfUndefinedLabel = 30,
     /// a break inside of a labeled block without a label.

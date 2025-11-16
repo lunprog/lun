@@ -1,11 +1,8 @@
 //! Sequential Intermediate Representation of Lun.
 
-use std::{
-    fmt,
-    io::{self, Write},
-};
+use std::fmt::{self, Display};
 
-use lunc_ast::{Abi, Comptime, Mutability, Path, PrimType};
+use lunc_ast::{Abi, Comptime, Mutability, Path};
 use lunc_desugar::DsParam;
 use lunc_entity::{Entity, EntityDb, SparseMap, entity};
 use lunc_utils::Span;
@@ -678,62 +675,68 @@ pub enum PValue {
     Deref(Box<PValue>),
 }
 
-/// Right value -- a computation that outputs a result. This result must be
-/// stored in a memory location, so inside of a `PVALUE`.
-///
-/// The SIR is sequential so it doesn't contain nested expressions: everything
-/// is flattened out, that's why we need temporaries.
+/// Comptime Value -- representation of the value of an expression known at
+/// compile-time.
 #[derive(Debug, Clone, PartialEq)]
-pub enum RValue {
-    /// `use(PVALUE)`
-    ///
-    /// reads a `PVALUE`
-    Use(PValue),
-    /// `& mut? PVALUE`
-    ///
-    /// Takes a pointer to `PVALUE`
-    Borrow(Mutability, PValue),
-    /// `12`, `57`, `69`
-    ///
-    /// Unsigned integer immediate.
-    Uint(Int),
-    /// `-12`, `34`, `-69`
-    ///
-    /// Signed integer immediate.
-    Sint(Int),
-    /// `6.9`, `-1.602e-19`..
-    ///
-    /// Float immediate
-    Float(Float),
+pub enum CValue {
     /// `true` / `false`
     ///
-    /// Boolean immediate
+    /// A boolean value of type `bool`.
     Bool(bool),
-    /// a string literal
-    String(String),
-    /// a type, because types in Lun are first-class citizens.
+    /// A type, in Lun types are first-class citizens.
+    ///
+    /// As type `type`.
     Type(Type),
-    /// `PVALUE as TYPE`
+    /// 8 bit signed integer.
+    I8(i8),
+    /// 16 bit signed integer.
+    I16(i16),
+    /// 32 bit signed integer.
+    I32(i32),
+    /// 64 bit signed integer.
+    I64(i64),
+    /// 128 bit signed integer.
+    I128(i128),
+    /// Pointer-sized signed integer.
     ///
-    /// a primitive cast of `PVALUE` to type `TYPE`.
-    Cast(PValue, Type),
-    /// `PVALUE0 <binop> PVALUE1` *where `PVALUE0` is `.0`, and `PVALUE1` is
-    /// `.2`*
+    /// Create it with the `Value::isz16`, `Value::isz32` and `Value::isz64`
+    /// functions.
+    Isz(i64),
+    /// 8 bit unsigned integer.
+    U8(u8),
+    /// 16 bit unsigned integer.
+    U16(u16),
+    /// 32 bit unsigned integer.
+    U32(u32),
+    /// 64 bit unsigned integer.
+    U64(u64),
+    /// 128 bit unsigned integer.
+    U128(u128),
+    /// Pointer-sized unsigned integer.
     ///
-    /// binary operation between the two `PVALUE`s, evaluates `PVALUE0` first,
-    /// then `PVALUE1`.
-    Binary(PValue, BinOp, PValue),
-    /// `<unop> PVALUE`
+    /// Create it with the `Value::usz16`, `Value::usz32` and `Value::usz64`
+    /// functions.
+    Usz(u64),
+    /// IEEE-754 32 bit floating point number
+    F32(f32),
+    /// IEEE-754 64 bit floating point number
+    F64(f64),
+    /// a string literal
     ///
-    /// unary operation on `PVALUE`.
-    Unary(UnOp, PValue),
-    /// `call(PVALUE0, (PVALUE1..))`
+    /// A value of type `*str`.
+    Str(Box<str>),
+    /// a c-string literal
     ///
-    /// Calls the function `PVALUE0` with `PVALUE1..` as arguments
-    Call { callee: PValue, args: Vec<PValue> },
+    /// A value of type `*i8`
+    CStr(Box<str>),
+    /// a unicode codepoint
+    ///
+    /// Internally equivalent to a `u32`.
+    Char(char),
     /// `nothing`
     ///
-    /// A value of type `void`, used to initialize the `%RET` before returning.
+    /// A value of type every type that is a Zero Sized Type, used to initialize
+    /// the `%RET` before returning.
     ///
     /// # Note
     ///
@@ -742,139 +745,158 @@ pub enum RValue {
     Nothing,
 }
 
-/// An immediate integer value, doesn't have a signedness associated to it.
+impl CValue {
+    /// Create a new [`CValue::Usz`] from a 16-bit integer.
+    pub fn usz16(u: u16) -> CValue {
+        CValue::Usz(u as u64)
+    }
+
+    /// Create a new [`CValue::Usz`] from a 32-bit integer.
+    pub fn usz32(u: u32) -> CValue {
+        CValue::Usz(u as u64)
+    }
+
+    /// Create a new [`CValue::Usz`] from a 64-bit integer.
+    pub fn usz64(u: u64) -> CValue {
+        CValue::Usz(u)
+    }
+    /// Create a new [`CValue::Isz`] from a 16-bit integer.
+    pub fn isz16(i: i16) -> CValue {
+        CValue::Isz(i as i64)
+    }
+
+    /// Create a new [`CValue::Isz`] from a 32-bit integer.
+    pub fn isz32(i: i32) -> CValue {
+        CValue::Isz(i as i64)
+    }
+
+    /// Create a new [`CValue::Isz`] from a 64-bit integer.
+    pub fn isz64(i: i64) -> CValue {
+        CValue::Isz(i)
+    }
+}
+
+impl From<bool> for CValue {
+    fn from(value: bool) -> Self {
+        CValue::Bool(value)
+    }
+}
+
+impl From<u8> for CValue {
+    fn from(value: u8) -> Self {
+        CValue::U8(value)
+    }
+}
+
+impl From<u16> for CValue {
+    fn from(value: u16) -> Self {
+        CValue::U16(value)
+    }
+}
+
+impl From<u32> for CValue {
+    fn from(value: u32) -> Self {
+        CValue::U32(value)
+    }
+}
+
+impl From<u64> for CValue {
+    fn from(value: u64) -> Self {
+        CValue::U64(value)
+    }
+}
+
+impl From<u128> for CValue {
+    fn from(value: u128) -> Self {
+        CValue::U128(value)
+    }
+}
+
+impl From<i8> for CValue {
+    fn from(value: i8) -> Self {
+        CValue::I8(value)
+    }
+}
+
+impl From<i16> for CValue {
+    fn from(value: i16) -> Self {
+        CValue::I16(value)
+    }
+}
+
+impl From<i32> for CValue {
+    fn from(value: i32) -> Self {
+        CValue::I32(value)
+    }
+}
+
+impl From<i64> for CValue {
+    fn from(value: i64) -> Self {
+        CValue::I64(value)
+    }
+}
+
+impl From<i128> for CValue {
+    fn from(value: i128) -> Self {
+        CValue::I128(value)
+    }
+}
+
+impl From<f32> for CValue {
+    fn from(value: f32) -> Self {
+        CValue::F32(value)
+    }
+}
+
+impl From<f64> for CValue {
+    fn from(value: f64) -> Self {
+        CValue::F64(value)
+    }
+}
+
+impl From<char> for CValue {
+    fn from(value: char) -> Self {
+        CValue::Char(value)
+    }
+}
+
+/// Right value -- a computation that outputs a result. This result must be
+/// stored in a memory location, so inside of a `PVALUE`.
+///
+/// The SIR is sequential so it doesn't contain nested expressions: everything
+/// is flattened out, that's why we need temporaries.
 #[derive(Debug, Clone, PartialEq)]
-pub enum Int {
-    /// 8-bit
-    Int8(u8),
-    /// 16-bit
-    Int16(u16),
-    /// 32-bit
-    Int32(u32),
-    /// 64-bit
-    Int64(u64),
-    /// 128-bit
-    Int128(u128),
-    /// *pointer-size*-bit
-    IntSz(u128),
-}
-
-impl Int {
-    /// Write the [`Int`] like if it was unsigned.
-    pub fn write_as_string_unsigned(&self, w: &mut dyn Write) -> io::Result<()> {
-        match self {
-            Self::Int8(u) => write!(w, "{u}"),
-            Self::Int16(u) => write!(w, "{u}"),
-            Self::Int32(u) => write!(w, "{u}"),
-            Self::Int64(u) => write!(w, "{u}"),
-            Self::Int128(u) => write!(w, "{u}"),
-            Self::IntSz(u) => write!(w, "{u}"),
-        }
-    }
-
-    /// Write the [`Int`] like if it was signed.
-    pub fn write_as_string_signed(&self, w: &mut dyn Write) -> io::Result<()> {
-        match self {
-            Self::Int8(u) => {
-                let i = u.cast_signed();
-                write!(w, "{i}")
-            }
-            Self::Int16(u) => {
-                let i = u.cast_signed();
-                write!(w, "{i}")
-            }
-            Self::Int32(u) => {
-                let i = u.cast_signed();
-                write!(w, "{i}")
-            }
-            Self::Int64(u) => {
-                let i = u.cast_signed();
-                write!(w, "{i}")
-            }
-            Self::Int128(u) => {
-                let i = u.cast_signed();
-                write!(w, "{i}")
-            }
-            Self::IntSz(u) => {
-                let i = u.cast_signed();
-                write!(w, "{i}")
-            }
-        }
-    }
-
-    /// Returns a string representing the size of the integer
-    pub fn size_str(&self) -> &'static str {
-        match self {
-            Self::Int8(_) => "8",
-            Self::Int16(_) => "16",
-            Self::Int32(_) => "32",
-            Self::Int64(_) => "64",
-            Self::Int128(_) => "128",
-            Self::IntSz(_) => "sz",
-        }
-    }
-
-    /// Create a new `IntSz` with `i` as a signed integer.
-    pub fn from_isz(i: i128) -> Int {
-        Int::IntSz(i.cast_unsigned())
-    }
-
-    /// Create a new `Int128` with `i` as a signed integer.
-    pub fn from_i128(i: i128) -> Int {
-        Int::Int128(i.cast_unsigned())
-    }
-
-    /// Create a new `Int64` with `i` as a signed integer.
-    pub fn from_i64(i: i64) -> Int {
-        Int::Int64(i.cast_unsigned())
-    }
-
-    /// Create a new `Int32` with `i` as a signed integer.
-    pub fn from_i32(i: i32) -> Int {
-        Int::Int32(i.cast_unsigned())
-    }
-
-    /// Create a new `Int16` with `i` as a signed integer.
-    pub fn from_i16(i: i16) -> Int {
-        Int::Int16(i.cast_unsigned())
-    }
-
-    /// Create a new `Int8` with `i` as a signed integer.
-    pub fn from_i8(i: i8) -> Int {
-        Int::Int8(i.cast_unsigned())
-    }
-}
-
-/// An immediate float value, IEEE 754-2008 compliant.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Float {
-    // FIXME: add support for f16 and f128
-    // F16(u16),
-    F32(f32),
-    F64(f64),
-    // F128(u128),
-}
-
-impl Float {
-    /// Write the [`Float`].
-    pub fn write(&self, w: &mut dyn Write) -> io::Result<()> {
-        match self {
-            // Self::F16(f) => write!(w, "{f:e}"),
-            Self::F32(f) => write!(w, "{f:e}"),
-            Self::F64(f) => write!(w, "{f:e}"),
-            // Self::F128(f) => write!(w, "{f:e}"),
-        }
-    }
-
-    /// Returns a string representing the size of the integer
-    pub fn size_str(&self) -> &'static str {
-        match self {
-            // Self::F16(_) => "16",
-            Self::F32(_) => "32",
-            Self::F64(_) => "64",
-            // Self::F128(_) => "128",
-        }
-    }
+pub enum RValue {
+    /// `CVALUE`
+    ///
+    /// A constant value.
+    CValue(CValue),
+    /// `use(PVALUE)`
+    ///
+    /// Reads a `PVALUE`
+    Use(PValue),
+    /// `& mut? PVALUE`
+    ///
+    /// Takes a pointer to `PVALUE`
+    Borrow(Mutability, PValue),
+    /// `PVALUE as TYPE`
+    ///
+    /// A primitive cast of `PVALUE` to type `TYPE`.
+    Cast(PValue, Type),
+    /// `PVALUE0 <binop> PVALUE1` *where `PVALUE0` is `.0`, and `PVALUE1` is
+    /// `.2`*
+    ///
+    /// Binary operation between the two `PVALUE`s, evaluates `PVALUE0` first,
+    /// then `PVALUE1`.
+    Binary(PValue, BinOp, PValue),
+    /// `<unop> PVALUE`
+    ///
+    /// Unary operation on `PVALUE`.
+    Unary(UnOp, PValue),
+    /// `call(PVALUE0, (PVALUE1..))`
+    ///
+    /// Calls the function `PVALUE0` with `PVALUE1..` as arguments
+    Call { callee: PValue, args: Vec<PValue> },
 }
 
 /// Binary operation, subset of [`lunc_ast::BinOp`].
@@ -1129,5 +1151,88 @@ impl Type {
     #[inline(always)]
     pub fn is_dummy(&self) -> bool {
         *self == Type::dummy()
+    }
+}
+
+/// Primitive types of Lun.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum PrimType {
+    /// Signed pointer-size integer
+    Isz,
+    /// Signed 128-bit integer
+    I128,
+    /// Signed 64-bit integer
+    I64,
+    /// Signed 32-bit integer
+    I32,
+    /// Signed 16-bit integer
+    I16,
+    /// Signed 8-bit integer
+    I8,
+    /// Unsigned pointer-size integer
+    Usz,
+    /// Unsigned 128-bit integer
+    U128,
+    /// Unsigned 64-bit integer
+    U64,
+    /// Unsigned 32-bit integer
+    U32,
+    /// Unsigned 16-bit integer
+    U16,
+    /// Unsigned 8-bit integer
+    U8,
+    /// 128-bit IEEE 754-2008, float
+    F128,
+    /// 64-bit IEEE 754-2008, float
+    F64,
+    /// 32-bit IEEE 754-2008, float
+    F32,
+    /// 16-bit IEEE 754-2008, float
+    F16,
+    /// Boolean, `true`/`false`
+    Bool,
+    /// String slice DST type
+    ///
+    /// # Note
+    ///
+    /// DSTs are not yet implemented so this type is not working for now.
+    Str,
+    /// 32-bit integer representing a Unicode Codepoint.
+    Char,
+    /// ZST, this type indicates that the control flow is stopped after the
+    /// evaluation of an expression of this type.
+    Never,
+    /// ZST, nothing to return
+    Void,
+    /// Types in Lun are first-class citizen, so here's the "type" of types.
+    Type,
+}
+
+impl Display for PrimType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PrimType::Isz => write!(f, "isz"),
+            PrimType::I128 => write!(f, "i128"),
+            PrimType::I64 => write!(f, "i64"),
+            PrimType::I32 => write!(f, "i32"),
+            PrimType::I16 => write!(f, "i16"),
+            PrimType::I8 => write!(f, "i8"),
+            PrimType::Usz => write!(f, "usz"),
+            PrimType::U128 => write!(f, "u128"),
+            PrimType::U64 => write!(f, "u64"),
+            PrimType::U32 => write!(f, "u32"),
+            PrimType::U16 => write!(f, "u16"),
+            PrimType::U8 => write!(f, "u8"),
+            PrimType::F128 => write!(f, "f128"),
+            PrimType::F64 => write!(f, "f64"),
+            PrimType::F32 => write!(f, "f32"),
+            PrimType::F16 => write!(f, "f16"),
+            PrimType::Bool => write!(f, "bool"),
+            PrimType::Str => write!(f, "str"),
+            PrimType::Char => write!(f, "char"),
+            PrimType::Never => write!(f, "never"),
+            PrimType::Void => write!(f, "void"),
+            PrimType::Type => write!(f, "type"),
+        }
     }
 }

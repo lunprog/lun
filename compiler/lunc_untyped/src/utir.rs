@@ -2,8 +2,9 @@
 
 use std::fmt::{self, Display};
 
-use lunc_ast::{Abi, BinOp, Mutability, PrimType, Spanned, UnOp};
+use lunc_ast::{Abi, BinOp, Mutability, Spanned, UnOp};
 use lunc_entity::{Entity, EntityDb, EntitySet, Opt, SparseMap, entity};
+use lunc_seq::sir::PrimType;
 use lunc_utils::Span;
 
 /// Orb.

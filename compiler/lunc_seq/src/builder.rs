@@ -232,64 +232,14 @@ pub trait SirBuilder: BuilderBase {
         self.append_stmt(place, RValue::Borrow(mutability, pvalue))
     }
 
-    /// Append a new `UINT` statement to the current basic block.
+    /// Append a new `CValue` statement to the current basic block.
     ///
     /// Where:
     /// - `place` is a constructor of a statement, that will hold the
     ///   [RValue::Uint].
     /// - `imm`, the immediate value.
-    fn uint<P: Place>(&mut self, place: P, imm: impl Into<Int>) -> P::Res {
-        self.append_stmt(place, RValue::Uint(imm.into()))
-    }
-
-    /// Append a new `SINT` statement to the current basic block.
-    ///
-    /// Where:
-    /// - `place` is a constructor of a statement, that will hold the
-    ///   [RValue::Sint].
-    /// - `imm`, the immediate value.
-    fn sint<P: Place>(&mut self, place: P, imm: impl Into<Int>) -> P::Res {
-        self.append_stmt(place, RValue::Sint(imm.into()))
-    }
-
-    /// Append a new `FLOAT` statement to the current basic block.
-    ///
-    /// Where:
-    /// - `place` is a constructor of a statement, that will hold the
-    ///   [RValue::Float].
-    /// - `imm`, the immediate value.
-    fn float<P: Place>(&mut self, place: P, imm: impl Into<Float>) -> P::Res {
-        self.append_stmt(place, RValue::Float(imm.into()))
-    }
-
-    /// Append a new `BOOL` statement to the current basic block.
-    ///
-    /// Where:
-    /// - `place` is a constructor of a statement, that will hold the
-    ///   [RValue::Bool].
-    /// - `imm`, the immediate value.
-    fn bool<P: Place>(&mut self, place: P, imm: bool) -> P::Res {
-        self.append_stmt(place, RValue::Bool(imm))
-    }
-
-    /// Append a new `STRING` statement to the current basic block.
-    ///
-    /// Where:
-    /// - `place` is a constructor of a statement, that will hold the
-    ///   [RValue::String].
-    /// - `imm`, the immediate value.
-    fn string<P: Place>(&mut self, place: P, imm: impl ToString) -> P::Res {
-        self.append_stmt(place, RValue::String(imm.to_string()))
-    }
-
-    /// Append a new `TYPE` statement to the current basic block.
-    ///
-    /// Where:
-    /// - `place` is a constructor of a statement, that will hold the
-    ///   [RValue::Type].
-    /// - `typ`, the type.
-    fn type_<P: Place>(&mut self, place: P, typ: Type) -> P::Res {
-        self.append_stmt(place, RValue::Type(typ))
+    fn cvalue<P: Place>(&mut self, place: P, imm: impl Into<CValue>) -> P::Res {
+        self.append_stmt(place, RValue::CValue(imm.into()))
     }
 
     /// Append a new `PVALUE as TYPE` statement to the current basic block.
@@ -362,7 +312,7 @@ pub trait SirBuilder: BuilderBase {
     /// - `place` is a constructor of a statement, that will hold the
     ///   [RValue::Nothing].
     fn nothing<P: Place>(&mut self, place: P) -> P::Res {
-        self.append_stmt(place, RValue::Nothing)
+        self.append_stmt(place, RValue::CValue(CValue::Nothing))
     }
 
     /// Set the terminator of the current basic-block to <code>[goto]\(bb\)</code>.
