@@ -241,7 +241,7 @@ impl From<&str> for PathSegment {
 }
 
 /// Binary operation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BinOp {
     /// addition
     Add,
@@ -298,8 +298,8 @@ impl Display for BinOp {
             Self::CompEq => "==",
             Self::CompNe => "!=",
             Self::Assignment => "=",
-            Self::LogicalAnd => "and",
-            Self::LogicalOr => "or",
+            Self::LogicalAnd => "&&",
+            Self::LogicalOr => "||",
             Self::BitwiseAnd => "&",
             Self::BitwiseXor => "^",
             Self::BitwiseOr => "|",
@@ -435,7 +435,7 @@ impl<T: PrettyDump<E>, E> PrettyDump<E> for Spanned<T> {
 }
 
 /// Mutability of something.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Mutability {
     Not,
     Mut,
@@ -528,7 +528,7 @@ pub struct CtNo;
 impl CompileTime for CtNo {}
 
 /// ABI names usable in an extern block
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum Abi {
     /// `C`
     #[default]
@@ -568,4 +568,16 @@ impl<E> PrettyDump<E> for Abi {
 pub enum ItemContainer {
     Module,
     ExternBlock,
+}
+
+/// Kind of Item
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ItemKind {
+    Fundef,
+    Fundecl,
+    GlobalDef,
+    GlobalUninit,
+    Module,
+    ExternBlock,
+    Directive,
 }

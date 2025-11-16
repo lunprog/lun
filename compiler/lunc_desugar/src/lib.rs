@@ -3,16 +3,16 @@
     html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
-use std::{collections::HashMap, fmt::Debug, fs, path::PathBuf};
+use std::{collections::HashMap, fmt::Debug, fs, mem, path::PathBuf};
 
 use diags::{
     ModuleFileDoesnotExist, NameDefinedMultipleTimes, NotFoundInScope, UnderscoreInExpression,
     UnderscoreReservedIdent,
 };
 
-use lunc_ast::{Abi, BinOp, Mutability, Path, PathSegment, Spanned, UnOp};
+use lunc_ast::{Abi, BinOp, ItemKind, Mutability, Path, PathSegment, Spanned, UnOp};
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
-use lunc_entity::EntityDb;
+use lunc_entity::{AnyId, Entity, EntityDb};
 use lunc_lexer::Lexer;
 use lunc_parser::{
     Parser,
@@ -111,11 +111,39 @@ pub enum DsItem {
         abi: Abi,
         items: Vec<DsItem>,
         loc: OSpan,
+        /// it will hold the ItemId of the UTIR later, we use this because
+        /// ExternBlock doesn't have an item id.
+        id: Option<AnyId>,
     },
     /// See [`Item::Directive`]
     ///
     /// [`Item::Directive`]: lunc_parser::item::Item::Directive
     Directive(DsDirective),
+}
+
+impl DsItem {
+    /// Unwarps the location of the item
+    pub fn loc(&self) -> Span {
+        match self {
+            DsItem::GlobalDef { loc, .. }
+            | DsItem::GlobalUninit { loc, .. }
+            | DsItem::Module { loc, .. }
+            | DsItem::ExternBlock { loc, .. } => loc.clone().unwrap(),
+            DsItem::Directive(directive) => directive.loc(),
+        }
+    }
+
+    pub fn kind(&self) -> ItemKind {
+        match self {
+            DsItem::GlobalDef { value, .. } if value.is_fundef() => ItemKind::Fundef,
+            DsItem::GlobalDef { value, .. } if value.is_fundecl() => ItemKind::Fundecl,
+            DsItem::GlobalDef { .. } => ItemKind::GlobalDef,
+            DsItem::GlobalUninit { .. } => ItemKind::GlobalUninit,
+            DsItem::Module { .. } => ItemKind::Module,
+            DsItem::ExternBlock { .. } => ItemKind::ExternBlock,
+            DsItem::Directive(_) => ItemKind::Directive,
+        }
+    }
 }
 
 /// See [`ItemDirective`]
@@ -130,6 +158,14 @@ pub enum DsDirective {
     },
     /// NOTE: This directive will not be here after we pass the lowered DSIR to the desugarrer
     Mod { name: String, loc: OSpan },
+}
+
+impl DsDirective {
+    pub fn loc(&self) -> Span {
+        match self {
+            DsDirective::Import { loc, .. } | DsDirective::Mod { loc, .. } => loc.clone().unwrap(),
+        }
+    }
 }
 
 impl FromHigher for DsDirective {
@@ -183,6 +219,7 @@ impl FromHigher for DsItem {
                 abi,
                 items: lower(items),
                 loc: Some(loc),
+                id: None,
             },
             Item::Directive(directive) => DsItem::Directive(lower(directive)),
         }
@@ -207,6 +244,10 @@ impl DsExpression {
     /// Is the expression a function declaration?
     pub fn is_fundecl(&self) -> bool {
         matches!(self.expr, DsExprKind::FunDeclaration { .. })
+    }
+
+    pub fn is_underscore(&self) -> bool {
+        matches!(self.expr, DsExprKind::Underscore)
     }
 }
 
@@ -280,7 +321,7 @@ impl FromHigher for DsExpression {
             //
             // NOTE: if you modify the desugaring of while expression, this
             // might break the detection of while expression in the SCIR in
-            // file `lunc_scir/src/checking.rs` in the function `ck_expr`
+            // file `lunc_untyped/src/lib.rs` in the function `gen_expr`
             ExprKind::PredicateLoop { label, cond, body } => DsExprKind::Loop {
                 label: label.clone(),
                 body: block(
@@ -872,7 +913,7 @@ pub struct Desugarrer {
     /// current path of the module we are desugarring
     current_path: Path,
     /// symbol database
-    pub symdb: EntityDb<Symbol>,
+    symdb: EntityDb<Symbol>,
 }
 
 impl Desugarrer {
@@ -966,9 +1007,17 @@ impl Desugarrer {
         Some(module)
     }
 
-    /// Returns the produced tree
-    pub fn module_tree(self) -> ModuleTree {
-        self.orb
+    /// Returns the produce Orb-tree, it replaces the module tree with a dummy one.
+    pub fn take_orb_tree(&mut self) -> ModuleTree {
+        mem::replace(
+            &mut self.orb,
+            ModuleTree::new(None, LazySymbol::Sym(Symbol::RESERVED)),
+        )
+    }
+
+    /// Returns the entity database of symbols, replaces it with a dummy one.
+    pub fn take_symdb(&mut self) -> EntityDb<Symbol> {
+        mem::replace(&mut self.symdb, EntityDb::new())
     }
 
     /// Takes a module and converts (recursively) the Mod directive to Item Mod.
@@ -1136,6 +1185,7 @@ impl Desugarrer {
                 abi: _,
                 items,
                 loc: _,
+                id: _,
             } => {
                 for item in items {
                     match self.resolve_item(item) {
@@ -1607,6 +1657,7 @@ impl Desugarrer {
                 abi: _,
                 items,
                 loc: _,
+                id: _,
             } => {
                 // NOTE: we check, its optional in theory but it should speed up
                 // a little bit
