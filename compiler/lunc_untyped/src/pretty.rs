@@ -279,7 +279,7 @@ impl PrettyDump<OrbDumper> for Expr {
         match self {
             Self::Int(i) => write!(ctx.out, "int({i})"),
             Self::Char(c) => write!(ctx.out, "char({c:?})"),
-            Self::Float(f) => write!(ctx.out, "float({f})"),
+            Self::Float(f) => write!(ctx.out, "float({})", f.into_f64()),
             Self::Str(s) => write!(ctx.out, "str({s:?})"),
             Self::CStr(s) => write!(ctx.out, "cstr({s:?})"),
             Self::Bool(b) => write!(ctx.out, "bool({b})"),
@@ -419,9 +419,24 @@ impl PrettyDump<OrbDumper> for BindingDef {
 impl PrettyDump<OrbDumper> for Con {
     fn try_dump(&self, ctx: &mut PrettyCtxt, _: &OrbDumper) -> io::Result<()> {
         match self {
-            Con::Integer(tyvar) => write!(ctx.out, "{tyvar} = integer"),
-            Con::Float(tyvar) => write!(ctx.out, "{tyvar} = float"),
-            Con::Uty(tyvar, ty) => write!(ctx.out, "{tyvar} = {ty}"),
+            Con::Integer(tyvar, pre) => {
+                write!(ctx.out, "{tyvar} = integer")?;
+                ctx.print_loc(&pre.loc())?;
+
+                Ok(())
+            }
+            Con::Float(tyvar, pre) => {
+                write!(ctx.out, "{tyvar} = float")?;
+                ctx.print_loc(&pre.loc())?;
+
+                Ok(())
+            }
+            Con::Uty(tyvar, ty, pre) => {
+                write!(ctx.out, "{tyvar} = {ty}")?;
+                ctx.print_loc(&pre.loc())?;
+
+                Ok(())
+            }
         }
     }
 }

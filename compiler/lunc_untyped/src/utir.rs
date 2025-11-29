@@ -7,11 +7,13 @@ use lunc_entity::{Entity, EntityDb, EntitySet, Opt, SparseMap, entity};
 use lunc_seq::sir::PrimType;
 use lunc_utils::Span;
 
+use crate::diags::PreMt;
+
 /// Orb.
 ///
 /// Contains every item in the orb being build, even the items in sub-modules /
 /// extern block.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct Orb {
     pub items: EntityDb<ItemId>,
 }
@@ -37,7 +39,7 @@ impl Display for ItemId {
 entity!(ItemId, Item);
 
 /// Item.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub enum Item {
     Fundef(Fundef),
     Fundecl(Fundecl),
@@ -72,7 +74,7 @@ impl Item {
 }
 
 /// Fundef -- Function definition.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct Fundef {
     pub name: Spanned<String>,
     pub typ: Opt<ExprId>,
@@ -114,7 +116,7 @@ impl Display for ParamId {
 entity!(ParamId, Param);
 
 /// A parameter
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct Param {
     pub name: Spanned<String>,
     pub typ: Uty,
@@ -122,7 +124,7 @@ pub struct Param {
 }
 
 /// Fundecl -- Function declaration.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct Fundecl {
     pub name: Spanned<String>,
     pub typ: Opt<ExprId>,
@@ -149,7 +151,7 @@ impl Default for Fundecl {
 }
 
 /// GlobalDef -- Global definition.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct GlobalDef {
     pub name: Spanned<String>,
     pub mutability: Mutability,
@@ -176,7 +178,7 @@ impl Default for GlobalDef {
 }
 
 /// GlobalUninit -- Global definition.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct GlobalUninit {
     pub name: Spanned<String>,
     pub typ: ExprId,
@@ -199,7 +201,7 @@ impl Default for GlobalUninit {
 }
 
 /// Module.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct Module {
     pub name: String,
     pub items: EntitySet<ItemId>,
@@ -217,7 +219,7 @@ impl Default for Module {
 }
 
 /// ExternBlock -- Extern block.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct ExternBlock {
     pub abi: Abi,
     pub items: EntitySet<ItemId>,
@@ -246,12 +248,28 @@ impl Display for ExprId {
 
 entity!(ExprId, Expr);
 
+/// IEEE-754 floating point number
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Ieee754(u64);
+
+impl Ieee754 {
+    /// Converts a f64 to a Ieee754
+    pub fn from_f64(f: f64) -> Ieee754 {
+        Ieee754(f.to_bits())
+    }
+
+    pub fn into_f64(self) -> f64 {
+        f64::from_bits(self.0)
+    }
+}
+
 /// An expression.
 ///
 /// By default an expression is *untyped* unless an expression is `typed(type,
 /// val)`, which tells the later stages that `val` must be able to be a `typ`.
 /// Note that it doesn't perform type conversion by default.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub enum Expr {
     /// Integer, see [`DsExprKind::Lit`].
     ///
@@ -261,10 +279,10 @@ pub enum Expr {
     ///
     /// [`DsExprKind::Lit`]: lunc_desugar::DsExprKind::Lit
     Char(char),
-    /// Integer, see [`DsExprKind::Lit`].
+    /// Float, see [`DsExprKind::Lit`].
     ///
     /// [`DsExprKind::Lit`]: lunc_desugar::DsExprKind::Lit
-    Float(f64),
+    Float(Ieee754),
     /// Integer, see [`DsExprKind::Lit`].
     ///
     /// [`DsExprKind::Lit`]: lunc_desugar::DsExprKind::Lit
@@ -395,7 +413,7 @@ impl Display for StmtId {
 entity!(StmtId, Stmt);
 
 /// Statement.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub enum Stmt {
     /// User binding, see [`DsStmtKind::BindingDef`].
     ///
@@ -420,7 +438,7 @@ impl Display for BlockId {
 entity!(BlockId, Block);
 
 /// A block.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct Block {
     pub stmts: EntitySet<StmtId>,
     pub tail: Opt<ExprId>,
@@ -441,7 +459,7 @@ impl Display for BindingId {
 entity!(BindingId, BindingDef);
 
 /// Binding def.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct BindingDef {
     pub name: Spanned<String>,
     pub mutability: Mutability,
@@ -462,7 +480,7 @@ impl Display for LabelId {
 entity!(LabelId, Label);
 
 /// Kind of label
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub enum LabelKind {
     /// the label is on a block, like
     ///
@@ -505,7 +523,7 @@ impl Display for LabelKind {
 }
 
 /// A label.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct Label {
     pub id: LabelId,
     pub name: Option<Spanned<String>>,
@@ -516,7 +534,7 @@ pub struct Label {
 }
 
 /// Something that can hold, [`Expr`], [`Stmt`], [`Block`] and more.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct Body {
     pub labels: EntityDb<LabelId>,
     pub bindings: EntityDb<BindingId>,
@@ -596,25 +614,25 @@ impl From<TyVar> for Uty {
 }
 
 /// A list of constraints
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Hash)]
 pub struct Constraints(pub Vec<Con>);
 
 /// Type constraint
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub enum Con {
     /// The type-var represents an integer-like expression (used for integer
     /// literals without types).
     ///
-    /// `tyvar = integer`
-    Integer(TyVar),
+    /// `uty = integer`
+    Integer(Uty, PreMt),
     /// Same as `Con::Integer` but for float-literals
     ///
-    /// `tyvar = float`
-    Float(TyVar),
+    /// `uty = float`
+    Float(Uty, PreMt),
     /// The type-variable must be of type `.1`
     ///
-    /// `tyvar = uty`
-    Uty(TyVar, Uty),
+    /// `uty = uty`
+    Uty(Uty, Uty, PreMt),
 }
 
 /// Any id of the UTIR that represents a definition, primarily used to convert

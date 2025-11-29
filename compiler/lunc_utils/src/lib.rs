@@ -40,7 +40,7 @@ use crate::pretty::PrettyDump;
 ///
 /// the `lo` and `hi` field expect and byte index into the underlying string,
 /// not the nth character. They are byte indices to be more efficient
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Span {
     pub lo: usize,
     pub hi: usize,
@@ -72,7 +72,7 @@ impl Span {
     }
 
     pub fn slice_str<'str>(&self, s: &'str str) -> &'str str {
-        &s[Range::<usize>::from(self.clone())]
+        &s[Range::<usize>::from(*self)]
     }
 }
 

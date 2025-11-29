@@ -128,7 +128,7 @@ impl DsItem {
             DsItem::GlobalDef { loc, .. }
             | DsItem::GlobalUninit { loc, .. }
             | DsItem::Module { loc, .. }
-            | DsItem::ExternBlock { loc, .. } => loc.clone().unwrap(),
+            | DsItem::ExternBlock { loc, .. } => (*loc).unwrap(),
             DsItem::Directive(directive) => directive.loc(),
         }
     }
@@ -163,7 +163,7 @@ pub enum DsDirective {
 impl DsDirective {
     pub fn loc(&self) -> Span {
         match self {
-            DsDirective::Import { loc, .. } | DsDirective::Mod { loc, .. } => loc.clone().unwrap(),
+            DsDirective::Import { loc, .. } | DsDirective::Mod { loc, .. } => (*loc).unwrap(),
         }
     }
 }
@@ -325,7 +325,7 @@ impl FromHigher for DsExpression {
             ExprKind::PredicateLoop { label, cond, body } => DsExprKind::Loop {
                 label: label.clone(),
                 body: block(
-                    body.loc.clone(),
+                    body.loc,
                     vec![
                         stmt_expr(expr_if(
                             expr_unary(UnOp::Not, lower(*cond)),
@@ -396,15 +396,15 @@ pub fn lower_if_expression(ifexpr: IfExpression) -> DsExprKind {
         cond: lower(ifexpr.cond),
         then_br: Box::new(DsExpression {
             expr: expr_block(lower(*ifexpr.body)).expr,
-            loc: Some(ifexpr.loc.clone()),
+            loc: Some(ifexpr.loc),
         }),
         else_br: match ifexpr.else_br.map(|e| *e) {
             Some(Else::IfExpr(ifexp)) => Some(Box::new(DsExpression {
-                loc: Some(ifexp.loc.clone()),
+                loc: Some(ifexp.loc),
                 expr: lower_if_expression(ifexp),
             })),
             Some(Else::Block(block)) => Some(Box::new(DsExpression {
-                loc: Some(block.loc.clone()),
+                loc: Some(block.loc),
                 expr: expr_block(lower(block)).expr,
             })),
             None => None,
@@ -951,8 +951,8 @@ impl Desugarrer {
         {
             return Err(NameDefinedMultipleTimes {
                 name: &name,
-                loc_previous: previous_sym.loc.clone(),
-                loc: symdata.loc.clone(),
+                loc_previous: previous_sym.loc,
+                loc: symdata.loc,
             }
             .into_diag());
         }
@@ -976,10 +976,7 @@ impl Desugarrer {
         }
 
         if name.as_str() == "_" {
-            return Err(UnderscoreReservedIdent {
-                loc: symdata.loc.clone(),
-            }
-            .into_diag());
+            return Err(UnderscoreReservedIdent { loc: symdata.loc }.into_diag());
         }
 
         self.table.last_map_mut().map.insert(name, sym);
@@ -1068,7 +1065,7 @@ impl Desugarrer {
                         self.sink.emit(ModuleFileDoesnotExist {
                             name: name.clone(),
                             expected_path: submodule_path,
-                            loc: loc.clone().unwrap(),
+                            loc: (*loc).unwrap(),
                         });
                         continue;
                     }
@@ -1106,7 +1103,7 @@ impl Desugarrer {
                     *item = DsItem::Module {
                         name: name.clone(),
                         module: submodule_dsir,
-                        loc: loc.clone(),
+                        loc: *loc,
                         sym: LazySymbol::Path(Path::with_root(name.clone())),
                     };
                 }
@@ -1255,7 +1252,7 @@ impl Desugarrer {
                     *mutability,
                     name.node.clone(),
                     self.table.usr_binding_count(),
-                    name.loc.clone(),
+                    name.loc,
                 );
 
                 *sym = LazySymbol::Sym(symref);
@@ -1343,7 +1340,7 @@ impl Desugarrer {
             DsExprKind::Path(LazySymbol::Path(path)) => {
                 if path.is_underscore() {
                     return Err(UnderscoreInExpression {
-                        loc: expr.loc.clone().unwrap(),
+                        loc: expr.loc.unwrap(),
                     }
                     .into_diag());
                 }
@@ -1403,7 +1400,7 @@ impl Desugarrer {
                     // path not found.
                     Err(NotFoundInScope {
                         name: path.to_string(),
-                        loc: expr.loc.clone().unwrap(),
+                        loc: expr.loc.unwrap(),
                     }
                     .into_diag())
                 }
@@ -1446,7 +1443,7 @@ impl Desugarrer {
                     let symref = self.symdb.create_param(
                         name.node.clone(),
                         self.table.param_count(),
-                        name.loc.clone(),
+                        name.loc,
                     );
 
                     *sym = LazySymbol::Sym(symref);
@@ -1517,7 +1514,7 @@ impl Desugarrer {
 
                 let symref = sym.symbol().unwrap_or_else(|| {
                     self.symdb
-                        .create_function(name.node.clone(), path, name.loc.clone())
+                        .create_function(name.node.clone(), path, name.loc)
                 });
 
                 self.orb
@@ -1550,12 +1547,8 @@ impl Desugarrer {
                 path.push(name.node.clone());
 
                 let symref = sym.symbol().unwrap_or_else(|| {
-                    self.symdb.create_global_def(
-                        *mutability,
-                        name.node.clone(),
-                        path,
-                        name.loc.clone(),
-                    )
+                    self.symdb
+                        .create_global_def(*mutability, name.node.clone(), path, name.loc)
                 });
 
                 self.orb
@@ -1586,12 +1579,8 @@ impl Desugarrer {
                 path.push(name.node.clone());
 
                 let symref = sym.symbol().unwrap_or_else(|| {
-                    self.symdb.create_global_def(
-                        Mutability::Mut,
-                        name.node.clone(),
-                        path,
-                        name.loc.clone(),
-                    )
+                    self.symdb
+                        .create_global_def(Mutability::Mut, name.node.clone(), path, name.loc)
                 });
 
                 self.orb
@@ -1623,7 +1612,7 @@ impl Desugarrer {
 
                 let symref = sym.symbol().unwrap_or_else(|| {
                     self.symdb
-                        .create_module(name.clone(), path, loc.clone().unwrap())
+                        .create_module(name.clone(), path, (*loc).unwrap())
                 });
 
                 *sym = LazySymbol::Sym(symref);
@@ -1686,7 +1675,7 @@ impl Desugarrer {
                 } else {
                     Err(NotFoundInScope {
                         name: path.node.to_string(),
-                        loc: path.loc.clone(),
+                        loc: path.loc,
                     }
                     .into_diag())
                 }

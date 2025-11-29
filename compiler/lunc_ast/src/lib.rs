@@ -241,7 +241,7 @@ impl From<&str> for PathSegment {
 }
 
 /// Binary operation.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BinOp {
     /// addition
     Add,
@@ -419,7 +419,7 @@ impl<E> PrettyDump<E> for UnOp {
 }
 
 /// An ast node with a span.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Hash)]
 pub struct Spanned<T> {
     pub node: T,
     pub loc: Span,
@@ -528,7 +528,7 @@ pub struct CtNo;
 impl CompileTime for CtNo {}
 
 /// ABI names usable in an extern block
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub enum Abi {
     /// `C`
     #[default]

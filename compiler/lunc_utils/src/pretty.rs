@@ -1,7 +1,7 @@
 //! Pretty tree printer, used for printing the AST, the DSIR, and the HTIR
 
 use std::{
-    fmt::Display,
+    fmt::{self, Display},
     io::{self, Write},
 };
 
@@ -167,6 +167,7 @@ impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
 pub enum Writer<'w> {
     Owned(Box<dyn Write>),
     Borrowed(&'w mut dyn Write),
+    BorrowedFmt(&'w mut dyn fmt::Write),
 }
 
 impl<'w> Writer<'w> {
@@ -180,6 +181,12 @@ impl<'w> Write for Writer<'w> {
         match self {
             Writer::Owned(w) => w.write(buf),
             Writer::Borrowed(w) => w.write(buf),
+            Writer::BorrowedFmt(w) => {
+                let str = String::from_utf8_lossy(buf);
+                w.write_str(&str).unwrap();
+
+                Ok(buf.len())
+            }
         }
     }
 
@@ -187,6 +194,7 @@ impl<'w> Write for Writer<'w> {
         match self {
             Writer::Owned(w) => w.flush(),
             Writer::Borrowed(w) => w.flush(),
+            Writer::BorrowedFmt(_) => Ok(()),
         }
     }
 }

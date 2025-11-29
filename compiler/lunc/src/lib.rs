@@ -846,6 +846,14 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     let mut utirgen = UtirGen::new(symdb, sink.clone());
     let utir = utirgen.produce(dsir);
 
+    use lunc_untyped::unifier::Unifier;
+
+    let mut unifier = Unifier::new(utir, sink.clone());
+    unifier.unify();
+    dbg!(unifier.substitutions());
+
+    let utir = unifier.take_orb();
+
     //    maybe print the UTIR
     if argv.debug.print(InterRes::Utir) {
         eprint!("utir = ");

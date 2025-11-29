@@ -44,7 +44,7 @@
 
 use std::{
     fmt::{self, Debug, Display},
-    hash::Hash,
+    hash::{Hash, Hasher},
     io,
     marker::PhantomData,
     mem,
@@ -181,7 +181,7 @@ macro_rules! entity {
 /// assert!(db.is_valid(id));
 /// assert_eq!(db.get(id), &"value".to_string());
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct EntityDb<E: Entity> {
     /// the data being stored
     elems: Vec<E::Data>,
@@ -312,7 +312,7 @@ impl<E: Entity> EntityDb<E> {
     /// Returns an iterator over the stored entities handles.
     ///
     /// The iterator yields all the data in the order they were created.
-    pub fn entity_iter(&self) -> impl ExactSizeIterator<Item = E> {
+    pub fn entity_iter(&self) -> impl ExactSizeIterator<Item = E> + use<E> {
         (0..self.elems.len()).map(|i| E::new(i))
     }
 
@@ -413,6 +413,16 @@ impl<E: Entity, V> SparseMap<E, V> {
 impl<E: Entity, V> Default for SparseMap<E, V> {
     fn default() -> Self {
         SparseMap::new()
+    }
+}
+
+impl<E: Entity, V: Hash> Hash for SparseMap<E, V> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.elems.len().hash(state);
+
+        for pair in self.iter() {
+            pair.hash(state);
+        }
     }
 }
 
@@ -611,6 +621,14 @@ impl<Ex: Clone, E: Entity + PrettyDump<Ex>> PrettyDump<Ex> for EntitySet<E> {
             .disable_nl()
             .items(self.iter())
             .finish()
+    }
+}
+
+impl<E: Entity> Hash for EntitySet<E> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        for entity in self.iter() {
+            entity.hash(state);
+        }
     }
 }
 

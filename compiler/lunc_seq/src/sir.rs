@@ -406,7 +406,7 @@ impl Fundef {
                         id,
                         name: params[i].name.node.clone(),
                         kind: LocalKind::Param,
-                        loc: params[i].loc.clone().unwrap(),
+                        loc: params[i].loc.unwrap(),
                     },
                 );
 

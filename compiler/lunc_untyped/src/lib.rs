@@ -23,7 +23,7 @@ use crate::{
     diags::{
         BreakUseAnImplicitLabelInBlock, BreakWithValueUnsupported, CantContinueABlock,
         FunctionInGlobalMut, ItemNotAllowedInExternBlock, LabelKwOutsideLoopOrBlock,
-        OutsideExternBlock, UnknownLitTag, UseOfUndefinedLabel,
+        OutsideExternBlock, PreMt, UnknownLitTag, UseOfUndefinedLabel,
     },
     utir::*,
 };
@@ -31,6 +31,7 @@ use crate::{
 pub mod diags;
 pub mod eval;
 pub mod pretty;
+pub mod unifier;
 pub mod utir;
 
 /// Constructs the [UTIR](utir) from [DSIR](lunc_desugar)
@@ -104,6 +105,7 @@ pub struct UtirGen {
     //
     /// Return type of the current function.
     fun_ret_ty: Opt<ExprId>,
+    fun_ret_loc: Option<Span>,
 }
 
 impl UtirGen {
@@ -121,6 +123,7 @@ impl UtirGen {
             types_exprs: HashMap::new(),
             label_stack: Vec::new(),
             fun_ret_ty: Opt::None,
+            fun_ret_loc: None,
         }
     }
 
@@ -149,6 +152,7 @@ impl UtirGen {
 
     fn clear_fundef_specific(&mut self) {
         self.fun_ret_ty = Opt::None;
+        self.fun_ret_loc = None;
     }
 
     fn clear_item_specific(&mut self) {
@@ -190,7 +194,7 @@ impl UtirGen {
             } if value.is_fundef() => {
                 let id = self.orb.items.create(Item::Fundef(Fundef {
                     name: name.clone(),
-                    loc: loc.clone().unwrap(),
+                    loc: (*loc).unwrap(),
                     ..default()
                 }));
 
@@ -206,7 +210,7 @@ impl UtirGen {
             } if value.is_fundecl() => {
                 let id = self.orb.items.create(Item::Fundecl(Fundecl {
                     name: name.clone(),
-                    loc: loc.clone().unwrap(),
+                    loc: (*loc).unwrap(),
                     ..default()
                 }));
 
@@ -223,7 +227,7 @@ impl UtirGen {
                 let id = self.orb.items.create(Item::GlobalDef(GlobalDef {
                     name: name.clone(),
                     mutability: *mutability,
-                    loc: loc.clone().unwrap(),
+                    loc: (*loc).unwrap(),
                     ..default()
                 }));
 
@@ -237,7 +241,7 @@ impl UtirGen {
             } => {
                 let id = self.orb.items.create(Item::GlobalUninit(GlobalUninit {
                     name: name.clone(),
-                    loc: loc.clone().unwrap(),
+                    loc: (*loc).unwrap(),
                     ..default()
                 }));
 
@@ -251,7 +255,7 @@ impl UtirGen {
             } => {
                 let id = self.orb.items.create(Item::Module(Module {
                     name: name.clone(),
-                    loc: loc.clone().unwrap(),
+                    loc: (*loc).unwrap(),
                     ..default()
                 }));
 
@@ -270,7 +274,7 @@ impl UtirGen {
                 let item_id = self.orb.items.create(Item::ExternBlock(ExternBlock {
                     abi: *abi,
                     items: EntitySet::new(),
-                    loc: loc.clone().unwrap(),
+                    loc: (*loc).unwrap(),
                 }));
 
                 *id = Some(item_id.to_any());
@@ -310,7 +314,7 @@ impl UtirGen {
     }
 
     fn extern_block_loc(&self) -> Span {
-        self.extern_block_loc.clone().unwrap()
+        self.extern_block_loc.unwrap()
     }
 
     /// Returns the current fundef.
@@ -385,15 +389,17 @@ impl UtirGen {
         })
     }
 
-    /// Push a constraint (`Con`) on `ty` if it is a `Some(Uty::TyVar(..))`.
-    fn push_con(&mut self, ty: impl Into<Uty>, con: impl FnOnce(TyVar) -> Con) {
-        if let Uty::TyVar(tyvar) = ty.into() {
-            self.body().constraints.0.push(con(tyvar))
-        }
+    /// Push a constraint (`con`) in the current body.
+    fn push_con(&mut self, con: Con) {
+        self.body().constraints.0.push(con)
     }
 
     fn expr_typ(&self, expr: impl Into<Option<ExprId>>) -> Option<Uty> {
         self.body_ref().expr_t.get(expr.into()?).copied()
+    }
+
+    fn expr_loc(&self, expr: impl Into<Option<ExprId>>) -> Option<Span> {
+        self.body_ref().expr_locs.get(expr.into()?).copied()
     }
 
     /// Generate the UTIR for a given module.
@@ -509,7 +515,7 @@ impl UtirGen {
                 if mutability.is_mut() {
                     self.sink.emit(FunctionInGlobalMut {
                         fun: diags::FUNDEF,
-                        loc: loc.clone().unwrap(),
+                        loc: (*loc).unwrap(),
                     });
                 }
 
@@ -534,13 +540,24 @@ impl UtirGen {
 
                 self.fundef_mut().ret_ty = ret_ty;
                 self.fun_ret_ty = ret_ty;
+                if let Some(ret_e) = ret_ty.expand() {
+                    self.fun_ret_loc = self.expr_loc(ret_e);
+                }
 
                 let entry = self.gen_block(body_b);
 
                 // add the type constraint on the block if it's a typevar.
                 let entry_t = self.body().blocks.get(entry).typ;
-                if let Some(ret_ty) = self.fun_ret_ty.expand() {
-                    self.push_con(entry_t, |tyvar| Con::Uty(tyvar, Uty::Expr(ret_ty)));
+                if let Some(ret_ty) = self.fun_ret_ty.expand()
+                    && let Some(tail_e) = self.body().blocks.get(entry).tail.expand()
+                {
+                    let tail_loc = self.body().expr_locs.get(tail_e).cloned();
+
+                    self.push_con(Con::Uty(
+                        entry_t,
+                        Uty::Expr(ret_ty),
+                        PreMt::new(tail_loc.unwrap_or_default(), self.fun_ret_loc, None),
+                    ));
                 }
 
                 self.fundef_mut().entry = entry;
@@ -562,7 +579,7 @@ impl UtirGen {
                 if mutability.is_mut() {
                     self.sink.emit(FunctionInGlobalMut {
                         fun: diags::FUNDECL,
-                        loc: loc.clone().unwrap(),
+                        loc: (*loc).unwrap(),
                     });
                 }
 
@@ -641,7 +658,7 @@ impl UtirGen {
             } => {
                 let id = id.unwrap().downcast::<ItemId>();
 
-                self.extern_block_loc = loc.clone();
+                self.extern_block_loc = *loc;
 
                 let items = self.gen_items_in(items, ItemContainer::ExternBlock);
 
@@ -739,7 +756,7 @@ impl UtirGen {
                         self.sink.emit(UnknownLitTag {
                             kind: kind.clone(),
                             tag: tag.to_string(),
-                            loc: expression.loc.clone().unwrap(),
+                            loc: expression.loc.unwrap(),
                         });
                     }
 
@@ -770,7 +787,7 @@ impl UtirGen {
                             self.sink.emit(UnknownLitTag {
                                 kind: kind.clone(),
                                 tag: tag.to_string(),
-                                loc: expression.loc.clone().unwrap(),
+                                loc: expression.loc.unwrap(),
                             });
 
                             None
@@ -790,7 +807,10 @@ impl UtirGen {
                         typ = Some(Uty::Expr(type_e));
                     } else {
                         let tyvar = self.body().type_vars.create_default();
-                        self.push_con(tyvar, |_| Con::Integer(tyvar));
+                        self.push_con(Con::Integer(
+                            Uty::TyVar(tyvar),
+                            expression.loc.unwrap().into(),
+                        ));
 
                         typ = Some(Uty::TyVar(tyvar));
                     }
@@ -805,7 +825,7 @@ impl UtirGen {
                             self.sink.emit(UnknownLitTag {
                                 kind: kind.clone(),
                                 tag: tag.to_string(),
-                                loc: expression.loc.clone().unwrap(),
+                                loc: expression.loc.unwrap(),
                             });
 
                             None
@@ -818,7 +838,7 @@ impl UtirGen {
                         opt_unreachable!()
                     };
 
-                    let expr = Expr::Float(*float);
+                    let expr = Expr::Float(Ieee754::from_f64(*float));
 
                     if let Some(ptype) = ptype {
                         let type_e = self.ptype_expr(ptype);
@@ -826,7 +846,10 @@ impl UtirGen {
                         typ = Some(Uty::Expr(type_e));
                     } else {
                         let tyvar = self.body().type_vars.create_default();
-                        self.push_con(tyvar, |_| Con::Float(tyvar));
+                        self.push_con(Con::Float(
+                            Uty::TyVar(tyvar),
+                            expression.loc.unwrap().into(),
+                        ));
 
                         typ = Some(Uty::TyVar(tyvar));
                     }
@@ -838,7 +861,7 @@ impl UtirGen {
                         self.sink.emit(UnknownLitTag {
                             kind: kind.clone(),
                             tag: tag.to_string(),
-                            loc: expression.loc.clone().unwrap(),
+                            loc: expression.loc.unwrap(),
                         });
                     }
 
@@ -948,12 +971,18 @@ impl UtirGen {
                 let expr = Expr::Binary(lhs, op.clone(), rhs);
 
                 if op.is_relational() || op.is_logical() {
+                    if let Some(lhs_t) = self.expr_typ(lhs)
+                        && let Some(rhs_t) = self.expr_typ(rhs)
+                    {
+                        self.push_con(Con::Uty(lhs_t, rhs_t, expression.loc.unwrap().into()));
+                    }
+
                     typ = Some(Uty::Expr(self.ptype_expr(PrimType::Bool)));
                 } else if *op == BinOp::Assignment {
                     if let Some(lhs_t) = self.expr_typ(lhs)
                         && let Some(rhs_t) = self.expr_typ(rhs)
                     {
-                        self.push_con(lhs_t, |tyvar| Con::Uty(tyvar, rhs_t));
+                        self.push_con(Con::Uty(lhs_t, rhs_t, expression.loc.unwrap().into()));
                     }
 
                     typ = Some(Uty::Expr(self.ptype_expr(PrimType::Void)));
@@ -961,11 +990,19 @@ impl UtirGen {
                     let tyvar = self.body().type_vars.create_default();
 
                     if let Some(lhs_t) = self.expr_typ(lhs) {
-                        self.push_con(Uty::TyVar(tyvar), |_| Con::Uty(tyvar, lhs_t));
+                        self.push_con(Con::Uty(
+                            Uty::TyVar(tyvar),
+                            lhs_t,
+                            expression.loc.unwrap().into(),
+                        ));
                     }
 
                     if let Some(rhs_t) = self.expr_typ(rhs) {
-                        self.push_con(Uty::TyVar(tyvar), |_| Con::Uty(tyvar, rhs_t));
+                        self.push_con(Con::Uty(
+                            Uty::TyVar(tyvar),
+                            rhs_t,
+                            expression.loc.unwrap().into(),
+                        ));
                     }
 
                     typ = Some(Uty::TyVar(tyvar));
@@ -1019,7 +1056,11 @@ impl UtirGen {
 
                 if let Some(cond_t) = self.expr_typ(cond) {
                     let bool_e = self.ptype_expr(PrimType::Bool);
-                    self.push_con(cond_t, |tyvar| Con::Uty(tyvar, Uty::Expr(bool_e)));
+                    self.push_con(Con::Uty(
+                        cond_t,
+                        Uty::Expr(bool_e),
+                        expression.loc.unwrap().into(),
+                    ));
                 }
 
                 let then_e = self.gen_expr(then_br)?;
@@ -1029,11 +1070,19 @@ impl UtirGen {
                     let tyvar = self.body().type_vars.create_default();
 
                     if let Some(then_t) = self.expr_typ(then_e) {
-                        self.push_con(tyvar, |_| Con::Uty(tyvar, then_t));
+                        self.push_con(Con::Uty(
+                            Uty::TyVar(tyvar),
+                            then_t,
+                            expression.loc.unwrap().into(),
+                        ));
                     }
 
                     if let Some(else_t) = self.expr_typ(else_e) {
-                        self.push_con(tyvar, |_| Con::Uty(tyvar, else_t));
+                        self.push_con(Con::Uty(
+                            Uty::TyVar(tyvar),
+                            else_t,
+                            expression.loc.unwrap().into(),
+                        ));
                     }
 
                     typ = Some(Uty::TyVar(tyvar));
@@ -1090,7 +1139,11 @@ impl UtirGen {
                 let body = self.gen_block(body);
                 let body_t = self.body().blocks.get(body).typ;
 
-                self.push_con(body_t, |tyvar| Con::Uty(tyvar, Uty::Expr(void_e)));
+                self.push_con(Con::Uty(
+                    body_t,
+                    Uty::Expr(void_e),
+                    expression.loc.unwrap().into(),
+                ));
 
                 let info = self.get_label_by_id(lab);
 
@@ -1113,7 +1166,11 @@ impl UtirGen {
                     && let Some(expr) = expr.expand()
                     && let Some(expr_t) = self.expr_typ(expr)
                 {
-                    self.push_con(expr_t, |tyvar| Con::Uty(tyvar, Uty::Expr(ret_ty)));
+                    self.push_con(Con::Uty(
+                        expr_t,
+                        Uty::Expr(ret_ty),
+                        expression.loc.unwrap().into(),
+                    ));
                 }
 
                 typ = Some(Uty::Expr(self.ptype_expr(PrimType::Never)));
@@ -1126,7 +1183,7 @@ impl UtirGen {
                         self.sink.emit(UseOfUndefinedLabel {
                             name: label.clone(),
                             // TODO: add location of the label name
-                            loc: expression.loc.clone().unwrap(),
+                            loc: expression.loc.unwrap(),
                         });
 
                         return None;
@@ -1137,7 +1194,7 @@ impl UtirGen {
                     let Some(id) = self.label_stack.last() else {
                         self.sink.emit(LabelKwOutsideLoopOrBlock {
                             kw: diags::BREAK,
-                            loc: expression.loc.clone().unwrap(),
+                            loc: expression.loc.unwrap(),
                         });
 
                         return None;
@@ -1147,7 +1204,7 @@ impl UtirGen {
 
                     if !kind.is_loop() {
                         self.sink.emit(BreakUseAnImplicitLabelInBlock {
-                            loc: expression.loc.clone().unwrap(),
+                            loc: expression.loc.unwrap(),
                         });
                     }
 
@@ -1159,7 +1216,7 @@ impl UtirGen {
 
                     if !label_kind.can_have_val() {
                         self.sink.emit(BreakWithValueUnsupported {
-                            loc: expression.loc.clone().unwrap(),
+                            loc: expression.loc.unwrap(),
                         });
                     } else if label_typ.is_none() {
                         self.mut_label_by_id(id).typ = if let Some(typ) = self.expr_typ(expr) {
@@ -1195,7 +1252,7 @@ impl UtirGen {
                         self.sink.emit(UseOfUndefinedLabel {
                             name: label.clone(),
                             // TODO: add location of the label name
-                            loc: expression.loc.clone().unwrap(),
+                            loc: expression.loc.unwrap(),
                         });
 
                         return None;
@@ -1206,7 +1263,7 @@ impl UtirGen {
                     let Some(&id) = self.label_stack.last() else {
                         self.sink.emit(LabelKwOutsideLoopOrBlock {
                             kw: diags::CONTINUE,
-                            loc: expression.loc.clone().unwrap(),
+                            loc: expression.loc.unwrap(),
                         });
 
                         return None;
@@ -1219,7 +1276,7 @@ impl UtirGen {
 
                 if !kind.is_loop() {
                     self.sink.emit(CantContinueABlock {
-                        loc: expression.loc.clone().unwrap(),
+                        loc: expression.loc.unwrap(),
                     });
                 }
 
@@ -1231,7 +1288,7 @@ impl UtirGen {
                 self.sink.emit(feature_todo! {
                     feature: "null expr",
                     label: "field access and struct type definition",
-                    loc: expression.loc.clone().unwrap()
+                    loc: expression.loc.unwrap()
                 });
 
                 return None;
@@ -1240,7 +1297,7 @@ impl UtirGen {
                 self.sink.emit(feature_todo! {
                     feature: "field expr",
                     label: "field access and struct type definition",
-                    loc: expression.loc.clone().unwrap()
+                    loc: expression.loc.unwrap()
                 });
 
                 return None;
@@ -1256,7 +1313,7 @@ impl UtirGen {
                 self.sink.emit(feature_todo! {
                     feature: "local fundef",
                     label: "fundefs inside an expression isn't supported",
-                    loc: expression.loc.clone().unwrap(),
+                    loc: expression.loc.unwrap(),
                 });
 
                 return None;
@@ -1265,7 +1322,7 @@ impl UtirGen {
                 self.sink.emit(feature_todo! {
                     feature: "local fundecl",
                     label: "fundefs inside an expression isn't supported",
-                    loc: expression.loc.clone().unwrap(),
+                    loc: expression.loc.unwrap(),
                 });
 
                 return None;
@@ -1275,7 +1332,11 @@ impl UtirGen {
                 let pointee = self.gen_expr(pointee)?;
 
                 if let Some(pointee_t) = self.expr_typ(pointee) {
-                    self.push_con(pointee_t, |tyvar| Con::Uty(tyvar, Uty::Expr(type_e)));
+                    self.push_con(Con::Uty(
+                        pointee_t,
+                        Uty::Expr(type_e),
+                        expression.loc.unwrap().into(),
+                    ));
                 }
 
                 // this type would require evaluation of pointee, and is fairly
@@ -1293,7 +1354,11 @@ impl UtirGen {
                         args.push(arg);
 
                         if let Some(arg_t) = self.expr_typ(arg) {
-                            self.push_con(arg_t, |tyvar| Con::Uty(tyvar, Uty::Expr(type_e)));
+                            self.push_con(Con::Uty(
+                                arg_t,
+                                Uty::Expr(type_e),
+                                expression.loc.unwrap().into(),
+                            ));
                         }
                     }
                 }
@@ -1303,7 +1368,11 @@ impl UtirGen {
                 if let Some(ret) = ret.expand()
                     && let Some(ret_t) = self.expr_typ(ret)
                 {
-                    self.push_con(ret_t, |tyvar| Con::Uty(tyvar, Uty::Expr(type_e)));
+                    self.push_con(Con::Uty(
+                        ret_t,
+                        Uty::Expr(type_e),
+                        expression.loc.unwrap().into(),
+                    ));
                 }
 
                 // this type would require evaluation of the params types and
@@ -1323,7 +1392,7 @@ impl UtirGen {
         let id = self.body().exprs.create(expr);
 
         if let Some(ref loc) = expression.loc {
-            self.body().expr_locs.insert(id, loc.clone());
+            self.body().expr_locs.insert(id, *loc);
         }
 
         if let Some(typ) = typ {
@@ -1354,8 +1423,8 @@ impl UtirGen {
 
                 let val = self.gen_expr(value)?;
 
-                if let Some(val_ty) = self.expr_typ(val) {
-                    self.push_con(val_ty, |tyvar| Con::Uty(tyvar, typ));
+                if let Some(val_t) = self.expr_typ(val) {
+                    self.push_con(Con::Uty(val_t, typ, stmt.loc.unwrap().into()));
                 }
 
                 let bind = self.body().bindings.create(BindingDef {
@@ -1373,7 +1442,7 @@ impl UtirGen {
                 self.sink.emit(feature_todo! {
                     feature: "defer statement",
                     label: "field access and struct type definition",
-                    loc: stmt.loc.clone().unwrap()
+                    loc: stmt.loc.unwrap()
                 });
 
                 return None;
@@ -1386,7 +1455,7 @@ impl UtirGen {
         };
 
         if let Some(ref loc) = stmt.loc {
-            self.body().stmt_locs.insert(s, loc.clone());
+            self.body().stmt_locs.insert(s, *loc);
         }
 
         Some(s)
@@ -1405,7 +1474,7 @@ impl UtirGen {
             let param = params_db.create(Param {
                 name: name.clone(),
                 typ: Uty::Expr(self.gen_expr(typeexpr)?),
-                loc: loc.clone().unwrap(),
+                loc: (*loc).unwrap(),
             });
 
             self.map_sym_to_def(sym.unwrap_sym(), DefId::ParamId(param));
@@ -1442,7 +1511,7 @@ impl UtirGen {
             stmts: stmts_set,
             tail,
             typ: tail_t,
-            loc: loc.clone().unwrap(),
+            loc: (*loc).unwrap(),
         })
     }
 }

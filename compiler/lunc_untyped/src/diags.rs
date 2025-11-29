@@ -1,8 +1,10 @@
 //! Diagnostics of the UTIR stage
 
+use std::sync::Arc;
+
 use lunc_diag::{Diagnostic, ErrorCode, Label, ToDiagnostic};
 use lunc_token::LitKind;
-use lunc_utils::Span;
+use lunc_utils::{Span, list_fmt};
 
 // Items
 pub const FUNDEF: &str = "function definition";
@@ -217,5 +219,115 @@ impl ToDiagnostic for CantEvaluateAtComptime {
                     .with_message("due to this expression"),
             )
             .with_notes_iter(self.note)
+    }
+}
+
+#[derive(Debug, Clone, Hash)]
+pub struct MtComplex {
+    pub due_to: Option<Span>,
+    pub loc: Span,
+    pub notes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Hash)]
+pub enum PreMt {
+    Simple(Span),
+    Complex(Arc<MtComplex>),
+}
+
+impl PreMt {
+    pub fn new(
+        loc: Span,
+        due_to: impl Into<Option<Span>>,
+        notes: impl IntoIterator<Item = String>,
+    ) -> PreMt {
+        let due_to = due_to.into();
+        let notes: Vec<_> = notes.into_iter().collect();
+
+        if due_to.is_none() && notes.is_empty() {
+            PreMt::Simple(loc)
+        } else {
+            PreMt::Complex(Arc::new(MtComplex { due_to, loc, notes }))
+        }
+    }
+}
+
+impl PreMt {
+    pub fn loc(&self) -> Span {
+        match self {
+            PreMt::Simple(loc) => *loc,
+            PreMt::Complex(complex) => complex.loc,
+        }
+    }
+
+    pub fn due_to(&self) -> Option<Span> {
+        match self {
+            PreMt::Simple(_) => None,
+            PreMt::Complex(complex) => complex.due_to,
+        }
+    }
+
+    pub fn notes(&self) -> Vec<String> {
+        match self {
+            PreMt::Simple(_) => Vec::new(),
+            PreMt::Complex(complex) => complex.notes.clone(),
+        }
+    }
+}
+
+impl From<Span> for PreMt {
+    fn from(value: Span) -> Self {
+        PreMt::Simple(value)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct MismatchedTypes {
+    pub expected: Vec<String>,
+    pub found: String,
+    /// location of something that was written and tells why we expect this
+    /// type, but MUST be an expr-type written, not just an expression.
+    ///
+    /// eg:
+    ///
+    /// ```lun
+    /// a :: fun() {
+    ///     let a: u64 = true;
+    ///     //     ^^^ in this case this would be the `due_to` of the mismatched
+    ///     //         types diagnostic
+    /// }
+    /// ```
+    pub due_to: Option<Span>,
+    pub notes: Vec<String>,
+    pub loc: Span,
+}
+
+impl MismatchedTypes {
+    pub fn new(pre: PreMt, expected: Vec<String>, found: String) -> MismatchedTypes {
+        MismatchedTypes {
+            expected,
+            found,
+            due_to: pre.due_to(),
+            notes: pre.notes(),
+            loc: pre.loc(),
+        }
+    }
+}
+
+impl ToDiagnostic for MismatchedTypes {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::MismatchedTypes)
+            .with_message("mismatched types")
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message(format!(
+                "expected `{}`, found `{}`",
+                list_fmt(&self.expected),
+                self.found
+            )))
+            .with_labels_iter(
+                self.due_to
+                    .map(|loc| Label::secondary(loc.fid, loc).with_message("expected due to this")),
+            )
+            .with_notes(self.notes)
     }
 }
