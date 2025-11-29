@@ -36,8 +36,9 @@ impl OrbDumper {
         unsafe {
             match (*inner.orb).items.get(inner.item?) {
                 Item::Fundef(fundef) => Some(&fundef.body),
+                Item::Fundecl(fundecl) => Some(&fundecl.body),
+                Item::GlobalUninit(globaluninit) => Some(&globaluninit.body),
                 Item::GlobalDef(globdef) => Some(&globdef.body),
-                _ => None,
             }
         }
     }

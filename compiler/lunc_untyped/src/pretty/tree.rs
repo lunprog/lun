@@ -1,4 +1,4 @@
-//! Pretty-printing for [UTIR](crate::utir).
+//! Pretty-printing for [UTIR](crate::utir) in tree-flavor.
 
 use std::io::{self, Write};
 
@@ -8,18 +8,18 @@ use lunc_utils::{
     pretty_struct,
 };
 
-use crate::utir::*;
+use crate::{pretty::TreeFlavor, utir::*};
 
-/// Struct used to [`PrettyDump`] SIR.
+/// Struct used to [`PrettyDump`] SIR with the Tree-Flavor.
 ///
 /// # Note
 ///
-/// It can only be created by `PrettyDump` implementation of `Orb`.
+/// It can only be created by `PrettyDump<TreeFlavor>` implementation of `Orb`.
 #[derive(Debug, Clone)]
 pub struct OrbDumper(());
 
-impl<E> PrettyDump<E> for Orb {
-    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
+impl PrettyDump<TreeFlavor> for Orb {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &TreeFlavor) -> io::Result<()> {
         let Orb { items } = self;
 
         let dumper = OrbDumper(());
@@ -206,7 +206,12 @@ impl_pdump! {
     BindingId,
     LabelKind,
     TyVar,
-    Uty,
+}
+
+impl PrettyDump<OrbDumper> for Uty {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &OrbDumper) -> io::Result<()> {
+        write!(ctx.out, "{self}")
+    }
 }
 
 impl PrettyDump<OrbDumper> for Param {

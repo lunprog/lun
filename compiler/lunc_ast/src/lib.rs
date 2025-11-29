@@ -410,6 +410,14 @@ impl UnOp {
             _ => None,
         }
     }
+
+    pub fn is_right(&self) -> bool {
+        matches!(self, UnOp::Dereference)
+    }
+
+    pub fn is_left(&self) -> bool {
+        !self.is_right()
+    }
 }
 
 impl<E> PrettyDump<E> for UnOp {

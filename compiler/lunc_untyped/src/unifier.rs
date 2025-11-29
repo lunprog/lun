@@ -1,6 +1,10 @@
 //! Type variable unifier -- Hindley–Milner type system
 
-use crate::{diags::MismatchedTypes, eval::CtemBuilder};
+use crate::{
+    diags::{ExpectedTypeFoundExpr, MismatchedTypes},
+    eval::CtemBuilder,
+    pretty::lun,
+};
 
 use super::*;
 
@@ -50,6 +54,21 @@ impl Unifier {
         }
     }
 
+    fn expr_to_string(&self, expr: ExprId) -> String {
+        lun::expr_to_string(expr, self.item.unwrap(), &self.orb)
+    }
+
+    fn expr_loc(&self, expr: ExprId) -> Span {
+        self.orb
+            .items
+            .get(self.item.unwrap())
+            .body()
+            .expr_locs
+            .get(expr)
+            .cloned()
+            .unwrap()
+    }
+
     pub fn unify_con(&mut self, con: Con) {
         match con {
             Con::Uty(Uty::Expr(expr_l), Uty::Expr(expr_r), pre) => {
@@ -58,23 +77,27 @@ impl Unifier {
                 let mut ctem = ctem_builder.build(&self.orb);
 
                 let Some(typ_l) = ctem.evaluate_type(self.item.unwrap(), expr_l) else {
-                    todo!("DIAGNOSTIC: EXPECTED TYPE GOT EXPRESSION")
-                    // return;
+                    let loc = self.expr_loc(expr_l);
+                    self.sink().emit(ExpectedTypeFoundExpr { loc });
+
+                    return;
                 };
 
                 let Some(typ_r) = ctem.evaluate_type(self.item.unwrap(), expr_r) else {
-                    todo!("DIAGNOSTIC: EXPECTED TYPE GOT EXPRESSION")
-                    // return;
+                    let loc = self.expr_loc(expr_r);
+                    self.sink().emit(ExpectedTypeFoundExpr { loc });
+
+                    return;
                 };
 
                 self.ctem_builder = ctem.builder();
 
                 if typ_l != typ_r {
+                    let expected_str = self.expr_to_string(expr_r);
+                    let found_str = self.expr_to_string(expr_l);
+
                     self.sink()
-                        .emit(MismatchedTypes::new(pre, Vec::new(), String::new()));
-                    todo!(
-                        "IMPLEMENT EXPRESSION PRETTY PRINT IN LUN SYNTAX FOR THE MISMATCHED TYPES ERROR"
-                    )
+                        .emit(MismatchedTypes::new(pre, vec![expected_str], found_str));
                 }
             }
             Con::Uty(Uty::TyVar(tyv_l), Uty::TyVar(tyv_r), _)

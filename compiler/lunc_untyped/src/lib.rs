@@ -540,6 +540,7 @@ impl UtirGen {
 
                 self.fundef_mut().ret_ty = ret_ty;
                 self.fun_ret_ty = ret_ty;
+
                 if let Some(ret_e) = ret_ty.expand() {
                     self.fun_ret_loc = self.expr_loc(ret_e);
                 }

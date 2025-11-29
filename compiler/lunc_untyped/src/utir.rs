@@ -264,6 +264,12 @@ impl Ieee754 {
     }
 }
 
+impl Display for Ieee754 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.into_f64())
+    }
+}
+
 /// An expression.
 ///
 /// By default an expression is *untyped* unless an expression is `typed(type,

@@ -30,7 +30,7 @@
 )]
 
 use clap::{ArgAction, Parser as ArgParser, ValueEnum};
-use lunc_untyped::UtirGen;
+use lunc_untyped::{UtirGen, pretty};
 // use lunc_linkage::Linker;
 use std::{
     backtrace::{Backtrace, BacktraceStatus},
@@ -857,7 +857,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     //    maybe print the UTIR
     if argv.debug.print(InterRes::Utir) {
         eprint!("utir = ");
-        utir.dump(&());
+        utir.dump(&pretty::TreeFlavor);
         eprintln!();
     }
     if sink.failed() {

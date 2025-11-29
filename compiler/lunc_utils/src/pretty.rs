@@ -459,3 +459,13 @@ impl<E> PrettyDump<E> for () {
         Ok(())
     }
 }
+
+pub fn pretty_to_string<T: PrettyDump<E>, E>(val: T, extra: &E) -> String {
+    let mut res = String::new();
+
+    let mut ctx = PrettyCtxt::new(4, Writer::BorrowedFmt(&mut res));
+
+    val.try_dump(&mut ctx, extra).unwrap();
+
+    res
+}

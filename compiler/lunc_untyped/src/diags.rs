@@ -331,3 +331,17 @@ impl ToDiagnostic for MismatchedTypes {
             .with_notes(self.notes)
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct ExpectedTypeFoundExpr {
+    pub loc: Span,
+}
+
+impl ToDiagnostic for ExpectedTypeFoundExpr {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::ExpectedTypeFoundExpr)
+            .with_message("expected type found an expression")
+            .with_label(Label::primary(self.loc.fid, self.loc))
+    }
+}
