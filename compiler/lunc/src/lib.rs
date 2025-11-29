@@ -7,6 +7,7 @@
 //! - [lunc_parser], parses the [Tokens] into an [Ast]
 //! - [lunc_ast], AST types shared across compiler stages
 //! - [lunc_desugar], desugars the [Ast] to [Dsir] and resolve names
+//! - [lunc_untyped], untyped intermediate representation of Lun.
 //! - [lunc_seq], Sequential Intermediate Representation, lowered from [Dsir],
 //!   used to perform the type-checking and other semantic analysis.
 //! - [lunc_cranelift_codegen], generates the Cranelift IR from ..
@@ -29,6 +30,7 @@
 )]
 
 use clap::{ArgAction, Parser as ArgParser, ValueEnum};
+use lunc_untyped::{UtirGen, pretty};
 // use lunc_linkage::Linker;
 use std::{
     backtrace::{Backtrace, BacktraceStatus},
@@ -291,6 +293,7 @@ Stages:
 * lexer
 * parser
 * dsir
+* utir
 * sir
 * ssa
 * linkage
@@ -432,6 +435,7 @@ pub enum CompStage {
     Lexer,
     Parser,
     Dsir,
+    Utir,
     Sir,
     Ssa,
     Codegen,
@@ -445,6 +449,7 @@ pub enum InterRes {
     TokenStream,
     Ast,
     Dsir,
+    Utir,
     Sir,
     Ssa,
     Asm,
@@ -463,6 +468,8 @@ pub struct Timings {
     parser: Duration,
     /// duration of dsir
     dsir: Duration,
+    /// duration of utir
+    utir: Duration,
     /// duration of sir
     sir: Duration,
     /// duration of the ssa generation
@@ -489,6 +496,7 @@ impl fmt::Display for Timings {
             lexer,
             parser,
             dsir,
+            utir,
             sir,
             ssa,
             lun_sum,
@@ -501,6 +509,7 @@ impl fmt::Display for Timings {
         writeln!(f, "      lexer: {}", humantime::format_duration(lexer))?;
         writeln!(f, "     parser: {}", humantime::format_duration(parser))?;
         writeln!(f, "       dsir: {}", humantime::format_duration(dsir))?;
+        writeln!(f, "       utir: {}", humantime::format_duration(utir))?;
         writeln!(f, "        sir: {}", humantime::format_duration(sir))?;
         writeln!(f, "        ssa: {}", humantime::format_duration(ssa))?;
         writeln!(f, "= Total Lun: {}\n", humantime::format_duration(lun_sum))?;
@@ -808,11 +817,12 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     // 5. desugarring, AST => DSIR
     let mut desugarrer = Desugarrer::new(sink.clone(), opts.orb_name());
     let dsir = desugarrer.produce(ast).ok_or_else(builderr)?;
+    let symdb = desugarrer.take_symdb();
 
     //    maybe print the DSIR
     if argv.debug.print(InterRes::Dsir) {
         eprint!("dsir = ");
-        dsir.dump(&desugarrer.symdb);
+        dsir.dump(&symdb);
         eprintln!();
     }
     if sink.failed() {
@@ -825,16 +835,42 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
 
         return Err(builderr());
     }
-    let orbtree = desugarrer.module_tree();
 
     timings.dsir = dsir_instant.elapsed();
-    let sir_instant = Instant::now();
+    let utir_instant = Instant::now();
 
     _ = argv.output;
     _ = argv.codegen;
-    _ = orbtree;
-    _ = sir_instant;
 
-    // 6. type-checking and all the semantic analysis, DSIR => SCIR
+    // 6. type-annotation, DSIR => UTIR
+    let mut utirgen = UtirGen::new(symdb, sink.clone());
+    let utir = utirgen.produce(dsir);
+
+    use lunc_untyped::unifier::Unifier;
+
+    let mut unifier = Unifier::new(utir, sink.clone());
+    unifier.unify();
+    dbg!(unifier.substitutions());
+
+    let utir = unifier.take_orb();
+
+    //    maybe print the UTIR
+    if argv.debug.print(InterRes::Utir) {
+        eprint!("utir = ");
+        utir.dump(&pretty::TreeFlavor);
+        eprintln!();
+    }
+    if sink.failed() {
+        return Err(builderr());
+    }
+    if argv.debug.halt(CompStage::Utir) {
+        if sink.is_empty() {
+            return Ok(());
+        }
+
+        return Err(builderr());
+    }
+    timings.utir = utir_instant.elapsed();
+
     todo!("IMPLEMENT SIR AND THE FOLLOWING")
 }

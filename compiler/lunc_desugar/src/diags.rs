@@ -44,7 +44,7 @@ impl<'a> ToDiagnostic for NameDefinedMultipleTimes<'a> {
                 self.name
             ))
             .with_label(
-                Label::primary(self.loc.fid, self.loc.clone())
+                Label::primary(self.loc.fid, self.loc)
                     .with_message(format!("defined `{}` a second time here", self.name)),
             )
             .with_label(

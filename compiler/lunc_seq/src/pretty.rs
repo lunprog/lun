@@ -36,8 +36,9 @@ impl OrbDumper {
         unsafe {
             match (*inner.orb).items.get(inner.item?) {
                 Item::Fundef(fundef) => Some(&fundef.body),
+                Item::Fundecl(fundecl) => Some(&fundecl.body),
+                Item::GlobalUninit(globaluninit) => Some(&globaluninit.body),
                 Item::GlobalDef(globdef) => Some(&globdef.body),
-                _ => None,
             }
         }
     }
@@ -292,35 +293,6 @@ impl PrettyDump<OrbDumper> for Type {
     }
 }
 
-impl Display for PrimType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PrimType::Isz => write!(f, "isz"),
-            PrimType::I128 => write!(f, "i128"),
-            PrimType::I64 => write!(f, "i64"),
-            PrimType::I32 => write!(f, "i32"),
-            PrimType::I16 => write!(f, "i16"),
-            PrimType::I8 => write!(f, "i8"),
-            PrimType::Usz => write!(f, "usz"),
-            PrimType::U128 => write!(f, "u128"),
-            PrimType::U64 => write!(f, "u64"),
-            PrimType::U32 => write!(f, "u32"),
-            PrimType::U16 => write!(f, "u16"),
-            PrimType::U8 => write!(f, "u8"),
-            PrimType::F128 => write!(f, "f128"),
-            PrimType::F64 => write!(f, "f64"),
-            PrimType::F32 => write!(f, "f32"),
-            PrimType::F16 => write!(f, "f16"),
-            PrimType::Bool => write!(f, "bool"),
-            PrimType::Str => write!(f, "str"),
-            PrimType::Char => write!(f, "char"),
-            PrimType::Never => write!(f, "never"),
-            PrimType::Void => write!(f, "void"),
-            PrimType::Type => write!(f, "type"),
-        }
-    }
-}
-
 impl PrettyDump<OrbDumper> for Local {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         let Local {
@@ -455,9 +427,37 @@ impl PrettyDump<OrbDumper> for PValue {
     }
 }
 
+impl PrettyDump<OrbDumper> for CValue {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        match self {
+            CValue::Bool(b) => write!(ctx.out, "{b}"),
+            CValue::Type(t) => t.try_dump(ctx, extra),
+            CValue::I8(i) => write!(ctx.out, "i8({i})"),
+            CValue::I16(i) => write!(ctx.out, "i16({i})"),
+            CValue::I32(i) => write!(ctx.out, "i32({i})"),
+            CValue::I64(i) => write!(ctx.out, "i64({i})"),
+            CValue::I128(i) => write!(ctx.out, "i128({i})"),
+            CValue::Isz(u) => write!(ctx.out, "isz({u})"),
+            CValue::U8(u) => write!(ctx.out, "u8({u})"),
+            CValue::U16(u) => write!(ctx.out, "u16({u})"),
+            CValue::U32(u) => write!(ctx.out, "u32({u})"),
+            CValue::U64(u) => write!(ctx.out, "u64({u})"),
+            CValue::U128(u) => write!(ctx.out, "u128({u})"),
+            CValue::Usz(u) => write!(ctx.out, "usz({u})"),
+            CValue::F32(f) => write!(ctx.out, "f32({f})"),
+            CValue::F64(f) => write!(ctx.out, "f64({f})"),
+            CValue::Str(s) => write!(ctx.out, "str({s})"),
+            CValue::CStr(s) => write!(ctx.out, "cstr({s})"),
+            CValue::Char(c) => write!(ctx.out, "char({c})"),
+            CValue::Nothing => write!(ctx.out, "nothing"),
+        }
+    }
+}
+
 impl PrettyDump<OrbDumper> for RValue {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         match self {
+            RValue::CValue(cvalue) => cvalue.try_dump(ctx, extra),
             RValue::Use(pvalue) => {
                 write!(ctx.out, "use(")?;
                 pvalue.try_dump(ctx, extra)?;
@@ -469,32 +469,6 @@ impl PrettyDump<OrbDumper> for RValue {
                 write!(ctx.out, "&{}", mutability.prefix_str())?;
                 pvalue.try_dump(ctx, extra)
             }
-            RValue::Uint(int) => {
-                write!(ctx.out, "u{}(", int.size_str())?;
-                int.write_as_string_unsigned(&mut ctx.out)?;
-                write!(ctx.out, ")")?;
-
-                Ok(())
-            }
-            RValue::Sint(int) => {
-                write!(ctx.out, "s{}(", int.size_str())?;
-                int.write_as_string_signed(&mut ctx.out)?;
-                write!(ctx.out, ")")?;
-
-                Ok(())
-            }
-            RValue::Float(float) => {
-                write!(ctx.out, "f{}(", float.size_str())?;
-                float.write(&mut ctx.out)?;
-                write!(ctx.out, ")")?;
-
-                Ok(())
-            }
-            RValue::Bool(bool) => write!(ctx.out, "{bool}"),
-            RValue::String(str) => {
-                write!(ctx.out, "{str:?}")
-            }
-            RValue::Type(typ) => typ.try_dump(ctx, extra),
             RValue::Cast(pvalue, typ) => {
                 pvalue.try_dump(ctx, extra)?;
                 write!(ctx.out, " as ")?;
@@ -519,9 +493,6 @@ impl PrettyDump<OrbDumper> for RValue {
                 write!(ctx.out, ", ({}))", join_pretty(args, extra))?;
 
                 Ok(())
-            }
-            RValue::Nothing => {
-                write!(ctx.out, "nothing")
             }
         }
     }

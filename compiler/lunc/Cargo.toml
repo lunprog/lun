@@ -16,6 +16,7 @@ lunc_llib_meta = { workspace = true }
 lunc_parser = { workspace = true }
 lunc_seq = { workspace = true }
 lunc_token = { workspace = true }
+lunc_untyped = { workspace = true }
 lunc_utils = { workspace = true }
 
 # other dependencies

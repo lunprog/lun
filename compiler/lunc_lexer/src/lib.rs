@@ -1085,7 +1085,7 @@ impl Lexer {
                         self.sink.emit(InvalidDigitInNumber {
                             c,
                             loc_c: span(pos, pos + 1, self.fid),
-                            loc_i: options.int_loc.clone().unwrap_or_else(|| self.loc()),
+                            loc_i: options.int_loc.unwrap_or_else(|| self.loc()),
                         });
                     }
 
@@ -1100,7 +1100,7 @@ impl Lexer {
                 self.sink.emit(InvalidDigitInNumber {
                     c,
                     loc_c: span(pos, pos + 1, self.fid),
-                    loc_i: options.int_loc.clone().unwrap_or_else(|| self.loc()),
+                    loc_i: options.int_loc.unwrap_or_else(|| self.loc()),
                 });
             } else {
                 digit_count += 1

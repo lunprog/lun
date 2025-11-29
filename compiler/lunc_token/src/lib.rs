@@ -963,8 +963,8 @@ pub fn is_identifier(id: &str) -> bool {
 ///
 /// # Note
 ///
-/// The `kind` and `value` must match, a literal with kind [`LitKind::Float`] and
-/// value [`LitVal::Int(12)`] is invalid, and **can lead to UB**.
+/// The `kind` and `value` must match, a literal with kind [`LitKind::Float`]
+/// and value `LitVal::Int(12)` is invalid, and **can lead to UB**.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Lit {
     pub kind: LitKind,

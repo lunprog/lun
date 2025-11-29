@@ -279,7 +279,7 @@ impl Parser {
             .add_expects(self.expected_token_exps);
 
         if self.expected_token_exps.contains(ExpToken::Semi) {
-            res.add_semi(self.prev_token.loc.clone());
+            res.add_semi(self.prev_token.loc);
         }
 
         self.expected_token_exps.clear();
@@ -392,7 +392,7 @@ impl Parser {
     /// Clones the location of the previous token, [`Parser::prev_token`].
     #[inline(always)]
     pub fn token_loc(&self) -> Span {
-        self.prev_token.loc.clone()
+        self.prev_token.loc
     }
 
     /// Returns the current expected token diagnostic and then bump the parser.
