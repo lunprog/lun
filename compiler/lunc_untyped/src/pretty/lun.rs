@@ -126,7 +126,8 @@ impl PrettyDump<OrbDumper> for Item {
 impl PrettyDump<OrbDumper> for Fundef {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         let Fundef {
-            name,
+            name: _, // we print the path it's faster.
+            path,
             typ: _, // we don't care printing the type for a fundef...
             params,
             ret_ty,
@@ -135,7 +136,7 @@ impl PrettyDump<OrbDumper> for Fundef {
             loc,
         } = self;
 
-        write!(ctx.out, "{} :: fun(", name.node)?;
+        write!(ctx.out, "{} :: fun(", path)?;
 
         let mut first = true;
 

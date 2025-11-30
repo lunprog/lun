@@ -47,6 +47,7 @@ impl PrettyDump<OrbDumper> for Fundef {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         let Fundef {
             name,
+            path,
             typ,
             params,
             ret_ty,
@@ -61,6 +62,7 @@ impl PrettyDump<OrbDumper> for Fundef {
             "Fundef",
             {
                 name: name,
+                path: path,
                 typ: typ,
                 params: ctx.pretty_map(params.full_iter(), extra)?,
                 ret_ty: ret_ty,
@@ -78,6 +80,7 @@ impl PrettyDump<OrbDumper> for Fundecl {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         let Fundecl {
             name,
+            path,
             typ,
             params,
             ret_ty,
@@ -91,6 +94,7 @@ impl PrettyDump<OrbDumper> for Fundecl {
             "Fundecl",
             {
                 name,
+                path,
                 typ,
                 params,
                 ret_ty,
@@ -107,6 +111,7 @@ impl PrettyDump<OrbDumper> for GlobalDef {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         let GlobalDef {
             name,
+            path,
             mutability,
             typ,
             value,
@@ -120,6 +125,7 @@ impl PrettyDump<OrbDumper> for GlobalDef {
             "GlobalDef",
             {
                 name,
+                path,
                 mutability,
                 typ,
                 value,
@@ -136,6 +142,7 @@ impl PrettyDump<OrbDumper> for GlobalUninit {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         let GlobalUninit {
             name,
+            path,
             typ,
             body,
             loc,
@@ -147,6 +154,7 @@ impl PrettyDump<OrbDumper> for GlobalUninit {
             "GlobalUninit",
             {
                 name,
+                path,
                 typ,
                 body,
             },
@@ -159,7 +167,12 @@ impl PrettyDump<OrbDumper> for GlobalUninit {
 
 impl PrettyDump<OrbDumper> for Module {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
-        let Module { name, items, loc } = self;
+        let Module {
+            name,
+            path,
+            items,
+            loc,
+        } = self;
 
         pretty_struct! (
             ctx,
@@ -167,6 +180,7 @@ impl PrettyDump<OrbDumper> for Module {
             "Module",
             {
                 name,
+                path,
                 items,
             },
             loc

@@ -15429,6 +15429,7 @@ warning: compilation of `never_block` succeeded but 2 warnings emitted.
 utir = {
   i0: Fundef {
     name: main @ 39..43 (fid = 0);
+    path: orb::main;
     typ: none;
     params: {};
     ret_ty: none;
@@ -15540,6 +15541,7 @@ error: compilation of `E017` failed due to 4 errors and 0 warnings
 utir = {
   i0: Fundef {
     name: a @ 46..47 (fid = 0);
+    path: orb::a;
     typ: none;
     params: {};
     ret_ty: none;

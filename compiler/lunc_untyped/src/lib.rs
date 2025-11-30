@@ -194,6 +194,7 @@ impl UtirGen {
             } if value.is_fundef() => {
                 let id = self.orb.items.create(Item::Fundef(Fundef {
                     name: name.clone(),
+                    path: self.symdb.get(sym.unwrap_sym()).path.clone(),
                     loc: (*loc).unwrap(),
                     ..default()
                 }));
@@ -210,6 +211,7 @@ impl UtirGen {
             } if value.is_fundecl() => {
                 let id = self.orb.items.create(Item::Fundecl(Fundecl {
                     name: name.clone(),
+                    path: self.symdb.get(sym.unwrap_sym()).path.clone(),
                     loc: (*loc).unwrap(),
                     ..default()
                 }));
@@ -226,6 +228,7 @@ impl UtirGen {
             } => {
                 let id = self.orb.items.create(Item::GlobalDef(GlobalDef {
                     name: name.clone(),
+                    path: self.symdb.get(sym.unwrap_sym()).path.clone(),
                     mutability: *mutability,
                     loc: (*loc).unwrap(),
                     ..default()
@@ -241,6 +244,7 @@ impl UtirGen {
             } => {
                 let id = self.orb.items.create(Item::GlobalUninit(GlobalUninit {
                     name: name.clone(),
+                    path: self.symdb.get(sym.unwrap_sym()).path.clone(),
                     loc: (*loc).unwrap(),
                     ..default()
                 }));
@@ -255,6 +259,7 @@ impl UtirGen {
             } => {
                 let id = self.orb.items.create(Item::Module(Module {
                     name: name.clone(),
+                    path: self.symdb.get(sym.unwrap_sym()).path.clone(),
                     loc: (*loc).unwrap(),
                     ..default()
                 }));

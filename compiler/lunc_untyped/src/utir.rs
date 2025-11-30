@@ -2,7 +2,7 @@
 
 use std::fmt::{self, Display};
 
-use lunc_ast::{Abi, BinOp, Mutability, Spanned, UnOp};
+use lunc_ast::{Abi, BinOp, Mutability, Path, Spanned, UnOp};
 use lunc_entity::{Entity, EntityDb, EntitySet, Opt, SparseMap, entity};
 use lunc_seq::sir::PrimType;
 use lunc_utils::Span;
@@ -77,6 +77,7 @@ impl Item {
 #[derive(Debug, Clone, Hash)]
 pub struct Fundef {
     pub name: Spanned<String>,
+    pub path: Path,
     pub typ: Opt<ExprId>,
     pub params: EntityDb<ParamId>,
     pub ret_ty: Opt<ExprId>,
@@ -93,6 +94,7 @@ impl Default for Fundef {
                 node: String::new(),
                 loc: Span::ZERO,
             },
+            path: Path::new(),
             typ: Opt::None,
             params: EntityDb::new(),
             ret_ty: Opt::None,
@@ -127,6 +129,7 @@ pub struct Param {
 #[derive(Debug, Clone, Hash)]
 pub struct Fundecl {
     pub name: Spanned<String>,
+    pub path: Path,
     pub typ: Opt<ExprId>,
     pub params: Vec<ExprId>,
     pub ret_ty: Opt<ExprId>,
@@ -141,6 +144,7 @@ impl Default for Fundecl {
                 node: String::new(),
                 loc: Span::ZERO,
             },
+            path: Path::new(),
             typ: Opt::None,
             params: Vec::new(),
             ret_ty: Opt::None,
@@ -154,6 +158,7 @@ impl Default for Fundecl {
 #[derive(Debug, Clone, Hash)]
 pub struct GlobalDef {
     pub name: Spanned<String>,
+    pub path: Path,
     pub mutability: Mutability,
     pub typ: Opt<ExprId>,
     pub value: ExprId,
@@ -168,6 +173,7 @@ impl Default for GlobalDef {
                 node: String::new(),
                 loc: Span::ZERO,
             },
+            path: Path::new(),
             mutability: Mutability::Not,
             typ: Opt::None,
             value: ExprId::RESERVED,
@@ -181,6 +187,7 @@ impl Default for GlobalDef {
 #[derive(Debug, Clone, Hash)]
 pub struct GlobalUninit {
     pub name: Spanned<String>,
+    pub path: Path,
     pub typ: ExprId,
     pub body: Body,
     pub loc: Span,
@@ -193,6 +200,7 @@ impl Default for GlobalUninit {
                 node: String::new(),
                 loc: Span::ZERO,
             },
+            path: Path::new(),
             typ: ExprId::RESERVED,
             body: Body::default(),
             loc: Span::ZERO,
@@ -204,6 +212,7 @@ impl Default for GlobalUninit {
 #[derive(Debug, Clone, Hash)]
 pub struct Module {
     pub name: String,
+    pub path: Path,
     pub items: EntitySet<ItemId>,
     pub loc: Span,
 }
@@ -212,6 +221,7 @@ impl Default for Module {
     fn default() -> Self {
         Module {
             name: String::new(),
+            path: Path::new(),
             items: EntitySet::new(),
             loc: Span::ZERO,
         }
