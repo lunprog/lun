@@ -1,7 +1,5 @@
 //! Type variable unifier -- Hindley–Milner type system
 
-use bitflags::bitflags;
-
 use crate::{
     diags::{ExpectedTypeFoundExpr, MismatchedTypes},
     eval::CtemBuilder,
@@ -10,26 +8,11 @@ use crate::{
 
 use super::*;
 
-bitflags! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    pub struct TyVarPropFlags: u8 {
-        const Integer = 1 << 0;
-        const Float = 1 << 1;
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TyVarProp {
-    pre: PreMt,
-    flags: TyVarPropFlags,
-}
-
 /// Type unifier of UTIR.
 #[derive(Debug, Clone)]
 pub struct Unifier {
     orb: Orb,
     substitutions: SparseMap<TyVar, Uty>,
-    properties: SparseMap<TyVar, TyVarProp>,
     ctem_builder: CtemBuilder,
     /// current item that we unify, used for evaluation of types.
     item: Opt<ItemId>,
@@ -41,7 +24,6 @@ impl Unifier {
         Unifier {
             orb,
             substitutions: SparseMap::new(),
-            properties: SparseMap::new(),
             ctem_builder: CtemBuilder::new(sink),
             item: Opt::None,
         }
@@ -79,17 +61,13 @@ impl Unifier {
             .unwrap_or_default()
     }
 
-    pub fn set_prop(&mut self, tyvar: TyVar, pre: PreMt, flags: TyVarPropFlags) {
-        if let Some(prop) = self.properties.get_mut(tyvar) {
-            prop.flags |= flags;
-        } else {
-            self.properties.insert(tyvar, TyVarProp { pre, flags });
-        }
-    }
-
     pub fn unify_con(&mut self, con: Con) {
         match con {
-            Con::Uty(Uty::Expr(expr_l), Uty::Expr(expr_r), pre) => {
+            Con {
+                lhs: Uty::Expr(expr_l),
+                rhs: Uty::Expr(expr_r),
+                pre,
+            } => {
                 let ctem_builder = self.take_ctem();
 
                 let mut ctem = ctem_builder.build(&self.orb);
@@ -118,36 +96,88 @@ impl Unifier {
                         .emit(MismatchedTypes::new(pre, vec![expected_str], found_str));
                 }
             }
-            Con::Uty(Uty::TyVar(tyv_l), Uty::TyVar(tyv_r), _)
-                if tyv_l == tyv_r && self.properties.get(tyv_l) == self.properties.get(tyv_r) => {}
-            Con::Uty(Uty::TyVar(tyvar), ty, loc) => {
+            Con {
+                lhs: Uty::Expr(expr),
+                rhs: ability_uty @ (Uty::Integer | Uty::Float),
+                pre,
+            }
+            | Con {
+                lhs: ability_uty @ (Uty::Integer | Uty::Float),
+                rhs: Uty::Expr(expr),
+                pre,
+            } => {
+                let ctem_builder = self.take_ctem();
+
+                let mut ctem = ctem_builder.build(&self.orb);
+
+                let Some(type_expr) = ctem.evaluate_type(self.item.unwrap(), expr) else {
+                    let loc = self.expr_loc(expr);
+                    self.sink().emit(ExpectedTypeFoundExpr { loc });
+
+                    return;
+                };
+
+                self.ctem_builder = ctem.builder();
+
+                let ability = TypeAbility::from_uty(ability_uty);
+
+                if !type_expr.has_ability(ability) {
+                    let expr_str = self.expr_to_string(expr);
+                    let ability_str = ability.to_string();
+
+                    self.sink()
+                        .emit(MismatchedTypes::new(pre, vec![ability_str], expr_str));
+                }
+            }
+            Con {
+                lhs: Uty::TyVar(tyv_l),
+                rhs: Uty::TyVar(tyv_r),
+                pre: _,
+            } if tyv_l == tyv_r => {}
+            Con {
+                lhs: Uty::TyVar(tyvar),
+                rhs: ty,
+                pre,
+            } => {
                 if let Some(substitution) = self.substitutions.get(tyvar) {
-                    self.unify_con(Con::Uty(*substitution, ty, loc));
+                    self.unify_con(Con {
+                        lhs: *substitution,
+                        rhs: ty,
+                        pre,
+                    });
                     return;
                 }
 
                 assert!(!self.occurs_in(tyvar, ty));
                 self.substitutions.insert(tyvar, ty);
             }
-            Con::Uty(ty, Uty::TyVar(tyvar), loc) => {
+            Con {
+                lhs: ty,
+                rhs: Uty::TyVar(tyvar),
+                pre,
+            } => {
                 if let Some(substitution) = self.substitutions.get(tyvar) {
-                    self.unify_con(Con::Uty(*substitution, ty, loc));
+                    self.unify_con(Con {
+                        lhs: ty,
+                        rhs: *substitution,
+                        pre,
+                    });
                     return;
                 }
 
                 assert!(!self.occurs_in(tyvar, ty));
                 self.substitutions.insert(tyvar, ty);
             }
-            // NOTE: we check after substitution that the types can hold the
-            // properties
-            Con::Integer(uty, pre) => {
-                if let Uty::TyVar(tyvar) = uty {
-                    self.set_prop(tyvar, pre, TyVarPropFlags::Integer);
-                }
-            }
-            Con::Float(uty, pre) => {
-                if let Uty::TyVar(tyvar) = uty {
-                    self.set_prop(tyvar, pre, TyVarPropFlags::Integer);
+            Con {
+                lhs: lhs_uty @ (Uty::Integer | Uty::Float),
+                rhs: rhs_uty @ (Uty::Integer | Uty::Float),
+                pre,
+            } => {
+                if lhs_uty != rhs_uty {
+                    let lhs = lhs_uty.to_string();
+                    let rhs = rhs_uty.to_string();
+
+                    self.sink().emit(MismatchedTypes::new(pre, vec![rhs], lhs));
                 }
             }
         }
@@ -164,16 +194,12 @@ impl Unifier {
 
                 tyvar == v
             }
-            Uty::Expr(_) => false,
+            Uty::Integer | Uty::Float | Uty::Expr(_) => false,
         }
     }
 
     pub fn substitutions(&self) -> &SparseMap<TyVar, Uty> {
         &self.substitutions
-    }
-
-    pub fn properties(&self) -> &SparseMap<TyVar, TyVarProp> {
-        &self.properties
     }
 
     fn sink(&mut self) -> &mut DiagnosticSink {

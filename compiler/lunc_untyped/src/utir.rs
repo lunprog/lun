@@ -5,7 +5,7 @@ use std::fmt::{self, Display};
 use lunc_ast::{Abi, BinOp, Mutability, Path, Spanned, UnOp};
 use lunc_entity::{Entity, EntityDb, EntitySet, Opt, SparseMap, entity};
 use lunc_seq::sir::PrimType;
-use lunc_utils::Span;
+use lunc_utils::{Span, opt_unreachable};
 
 use crate::diags::PreMt;
 
@@ -88,7 +88,7 @@ impl Item {
             Item::Fundef(Fundef { typ, .. })
             | Item::Fundecl(Fundecl { typ, .. })
             | Item::GlobalUninit(GlobalUninit { typ, .. }) => Uty::Expr(*typ),
-            Item::GlobalDef(GlobalDef { typ, .. }) => typ.clone(),
+            Item::GlobalDef(GlobalDef { typ, .. }) => *typ,
             Item::Module(..) => panic!("Item::Module doesn't have a type"),
             Item::ExternBlock(..) => panic!("Item::ExternBlock doesn't have a type"),
         }
@@ -409,7 +409,7 @@ pub enum Expr {
     ///
     /// [`DsExprKind::Path`]: lunc_desugar::DsExprKind::Path
     PrimType(PrimType),
-    /// Annonymous function definition/declaration type, it's a unique type per
+    /// Anonymous function definition/declaration type, it's a unique type per
     /// item, it doesn't have a textual representation in the lun syntax, it's
     /// here so that we can assign a type to functions when they don't have
     /// a type.
@@ -648,6 +648,10 @@ impl Display for TyVar {
 pub enum Uty {
     Expr(ExprId),
     TyVar(TyVar),
+    /// Integer-able type
+    Integer,
+    /// Float-able type
+    Float,
 }
 
 impl Display for Uty {
@@ -655,6 +659,8 @@ impl Display for Uty {
         match self {
             Self::Expr(expr) => write!(f, "{expr}"),
             Self::TyVar(tyvar) => write!(f, "{tyvar}"),
+            Self::Integer => write!(f, "{{integer}}"),
+            Self::Float => write!(f, "{{float}}"),
         }
     }
 }
@@ -676,26 +682,18 @@ impl From<TyVar> for Uty {
 pub struct Constraints(pub Vec<Con>);
 
 /// Type constraint
+///
+/// `uty = uty`
+///
+/// # Direction of this constraint.
+///
+/// You want to have the right uty to be the expected type and the left one
+/// the "found" one, like that: `found = expected`.
 #[derive(Debug, Clone, Hash)]
-pub enum Con {
-    /// The type-var represents an integer-like expression (used for integer
-    /// literals without types).
-    ///
-    /// `uty = integer`
-    Integer(Uty, PreMt),
-    /// Same as `Con::Integer` but for float-literals
-    ///
-    /// `uty = float`
-    Float(Uty, PreMt),
-    /// The type-variable must be of type `.1`
-    ///
-    /// # Direction of this constraint.
-    ///
-    /// You want to have the right uty to be the expected type and the left one
-    /// the "found" one, like that: `found = expected`.
-    ///
-    /// `uty = uty`
-    Uty(Uty, Uty, PreMt),
+pub struct Con {
+    pub lhs: Uty,
+    pub rhs: Uty,
+    pub pre: PreMt,
 }
 
 /// Any id of the UTIR that represents a definition, primarily used to convert
@@ -733,4 +731,50 @@ pub enum Type {
     },
     /// A reference to an item with "type" `Type`.
     Item(ItemId),
+}
+
+impl Type {
+    /// Returns true if a type has the specified ability, false otherwise.
+    pub fn has_ability(&self, ability: TypeAbility) -> bool {
+        match self {
+            Type::PrimType(ptype) if ptype.is_integer() && ability == TypeAbility::Integer => true,
+            Type::PrimType(ptype) if ptype.is_float() && ability == TypeAbility::Float => true,
+            _ => false,
+        }
+    }
+}
+
+/// Ability of a type to store some sort of data
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TypeAbility {
+    /// A type able to store integer like values
+    Integer,
+    /// A type able to store float like values
+    Float,
+}
+
+impl TypeAbility {
+    /// # Safety
+    ///
+    /// Calling this function with a `Uty` different than
+    /// Uty::Float/Uty::Integer can cause UB.
+    pub fn from_uty(uty: Uty) -> TypeAbility {
+        match uty {
+            Uty::Integer => TypeAbility::Integer,
+            Uty::Float => TypeAbility::Float,
+            _ => {
+                // SAFETY: the caller guarantees it is never reached
+                opt_unreachable!()
+            }
+        }
+    }
+}
+
+impl Display for TypeAbility {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Integer => write!(f, "{{integer}}"),
+            Self::Float => write!(f, "{{float}}"),
+        }
+    }
 }

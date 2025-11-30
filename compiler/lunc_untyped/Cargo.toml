@@ -15,4 +15,3 @@ lunc_token = { workspace = true }
 lunc_utils = { workspace = true }
 
 # other dependencies
-bitflags = { version = "2.10.0" }

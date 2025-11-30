@@ -457,26 +457,12 @@ impl PrettyDump<OrbDumper> for BindingDef {
 
 impl PrettyDump<OrbDumper> for Con {
     fn try_dump(&self, ctx: &mut PrettyCtxt, _: &OrbDumper) -> io::Result<()> {
-        match self {
-            Con::Integer(tyvar, pre) => {
-                write!(ctx.out, "{tyvar} = integer")?;
-                ctx.print_loc(&pre.loc())?;
+        let Con { lhs, rhs, pre } = self;
 
-                Ok(())
-            }
-            Con::Float(tyvar, pre) => {
-                write!(ctx.out, "{tyvar} = float")?;
-                ctx.print_loc(&pre.loc())?;
+        write!(ctx.out, "{lhs} = {rhs}")?;
+        ctx.print_loc(&pre.loc())?;
 
-                Ok(())
-            }
-            Con::Uty(tyvar, ty, pre) => {
-                write!(ctx.out, "{tyvar} = {ty}")?;
-                ctx.print_loc(&pre.loc())?;
-
-                Ok(())
-            }
-        }
+        Ok(())
     }
 }
 

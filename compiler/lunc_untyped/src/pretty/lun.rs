@@ -163,8 +163,10 @@ impl PrettyDump<OrbDumper> for Fundef {
 impl PrettyDump<OrbDumper> for Uty {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         match *self {
-            Uty::TyVar(_) => write!(ctx.out, "{{type-variable}}"),
+            Uty::TyVar(t) => write!(ctx.out, "{t}"),
             Uty::Expr(e) => extra.dump_e(ctx, e),
+            Uty::Integer => write!(ctx.out, "{{integer}}"),
+            Uty::Float => write!(ctx.out, "{{float}}"),
         }
     }
 }

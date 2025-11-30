@@ -15423,14 +15423,17 @@ warning: compilation of `never_block` succeeded but 2 warnings emitted.
     ),
     "utir/E017": (
         compiler_out: r#"[compiler/lunc/src/lib.rs:853:5] unifier.substitutions() = SparseMap {
-    elems: {},
+    elems: {
+        0: Integer,
+        1: Float,
+    },
     _e: PhantomData<fn(lunc_untyped::utir::TyVar) -> lunc_untyped::utir::Uty>,
 }
 utir = {
   i0: Fundef {
     name: main @ 39..43 (fid = 0);
     path: orb::main;
-    typ: none;
+    typ: e2;
     params: {};
     ret_ty: none;
     entry: b0;
@@ -15438,20 +15441,22 @@ utir = {
       labels: {};
       bindings: {};
       stmts: {
-        s0: e0,
-        s1: e1,
-        s2: e4,
-        s3: e7,
+        s0: e3,
+        s1: e4,
+        s2: e6,
+        s3: e9,
       };
       exprs: {
-        e0: int(1),
-        e1: float(2),
-        e2: primitive_type(char),
-        e3: primitive_type(type),
-        e4: char('c'),
-        e5: primitive_type(str),
-        e6: *e5,
-        e7: str("Hello"),
+        e0: primitive_type(void),
+        e1: primitive_type(type),
+        e2: fun() -> e0 { i0 },
+        e3: int(1),
+        e4: float(2),
+        e5: primitive_type(char),
+        e6: char('c'),
+        e7: primitive_type(str),
+        e8: *e7,
+        e9: str("Hello"),
       };
       blocks: {
         b0: Block {
@@ -15466,24 +15471,25 @@ utir = {
         } @ 53..104 (fid = 0),
       };
       expr_t: {
-        e0: 'T0,
-        e1: 'T1,
-        e3: e3,
-        e2: e3,
-        e4: e2,
-        e5: e3,
-        e7: e6,
+        e1: e1,
+        e0: e1,
+        e3: 'T0,
+        e4: 'T1,
+        e5: e1,
+        e6: e5,
+        e7: e1,
+        e9: e8,
       };
       type_vars: ['T0, 'T1, 'T2];
       constraints: [
-        'T0 = integer @ 59..63 (fid = 0),
-        'T1 = float @ 69..75 (fid = 0),
+        'T0 = {integer} @ 59..63 (fid = 0),
+        'T1 = {float} @ 69..75 (fid = 0),
       ];
       expr_locs: {
-        e0: 59..63 (fid = 0),
-        e1: 69..75 (fid = 0),
-        e4: 81..86 (fid = 0),
-        e7: 92..101 (fid = 0),
+        e3: 59..63 (fid = 0),
+        e4: 69..75 (fid = 0),
+        e6: 81..86 (fid = 0),
+        e9: 92..101 (fid = 0),
       };
       stmt_locs: {
         s0: 59..63 (fid = 0),
@@ -15542,7 +15548,7 @@ utir = {
   i0: Fundef {
     name: a @ 46..47 (fid = 0);
     path: orb::a;
-    typ: none;
+    typ: e2;
     params: {};
     ret_ty: none;
     entry: b0;
@@ -15550,7 +15556,11 @@ utir = {
       labels: {};
       bindings: {};
       stmts: {};
-      exprs: {};
+      exprs: {
+        e0: primitive_type(void),
+        e1: primitive_type(type),
+        e2: fun() -> e0 { i0 },
+      };
       blocks: {
         b0: Block {
           stmts: [];
@@ -15558,7 +15568,10 @@ utir = {
           typ: 'T0;
         } @ 57..59 (fid = 0),
       };
-      expr_t: {};
+      expr_t: {
+        e1: e1,
+        e0: e1,
+      };
       type_vars: ['T0];
       constraints: [];
       expr_locs: {};

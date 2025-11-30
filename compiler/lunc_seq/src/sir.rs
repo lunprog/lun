@@ -1208,6 +1208,32 @@ pub enum PrimType {
     Type,
 }
 
+impl PrimType {
+    /// Returns true if it is an integer type.
+    pub fn is_integer(&self) -> bool {
+        matches!(
+            self,
+            Self::Usz
+                | Self::U128
+                | Self::U64
+                | Self::U32
+                | Self::U16
+                | Self::U8
+                | Self::Isz
+                | Self::I128
+                | Self::I64
+                | Self::I32
+                | Self::I16
+                | Self::I8
+        )
+    }
+
+    /// Returns true if it is a float type.
+    pub fn is_float(&self) -> bool {
+        matches!(self, Self::F16 | Self::F32 | Self::F64 | Self::F128)
+    }
+}
+
 impl Display for PrimType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
