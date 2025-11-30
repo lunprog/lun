@@ -143,7 +143,7 @@ impl<'utir> UtirCtem<'utir> {
 
         self.item = Opt::Some(item);
 
-        let expr_loc = self.get_expr_loc(expr).unwrap();
+        let expr_loc = self.get_expr_loc(expr).unwrap_or_default();
 
         let res = match self._eval_expr(expr) {
             Ok(v) => Some(v),

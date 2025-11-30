@@ -1,5 +1,7 @@
 //! Type variable unifier -- Hindley–Milner type system
 
+use bitflags::bitflags;
+
 use crate::{
     diags::{ExpectedTypeFoundExpr, MismatchedTypes},
     eval::CtemBuilder,
@@ -8,10 +10,18 @@ use crate::{
 
 use super::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TyVarProp {
-    Integer,
-    Float,
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct TyVarPropFlags: u8 {
+        const Integer = 1 << 0;
+        const Float = 1 << 1;
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TyVarProp {
+    pre: PreMt,
+    flags: TyVarPropFlags,
 }
 
 /// Type unifier of UTIR.
@@ -69,6 +79,14 @@ impl Unifier {
             .unwrap()
     }
 
+    pub fn set_prop(&mut self, tyvar: TyVar, pre: PreMt, flags: TyVarPropFlags) {
+        if let Some(prop) = self.properties.get_mut(tyvar) {
+            prop.flags |= flags;
+        } else {
+            self.properties.insert(tyvar, TyVarProp { pre, flags });
+        }
+    }
+
     pub fn unify_con(&mut self, con: Con) {
         match con {
             Con::Uty(Uty::Expr(expr_l), Uty::Expr(expr_r), pre) => {
@@ -102,15 +120,6 @@ impl Unifier {
             }
             Con::Uty(Uty::TyVar(tyv_l), Uty::TyVar(tyv_r), _)
                 if tyv_l == tyv_r && self.properties.get(tyv_l) == self.properties.get(tyv_r) => {}
-            Con::Uty(ty, Uty::TyVar(tyvar), loc) => {
-                if let Some(substitution) = self.substitutions.get(tyvar) {
-                    self.unify_con(Con::Uty(ty, *substitution, loc));
-                    return;
-                }
-
-                assert!(!self.occurs_in(tyvar, ty));
-                self.substitutions.insert(tyvar, ty);
-            }
             Con::Uty(Uty::TyVar(tyvar), ty, loc) => {
                 if let Some(substitution) = self.substitutions.get(tyvar) {
                     self.unify_con(Con::Uty(ty, *substitution, loc));
@@ -120,20 +129,25 @@ impl Unifier {
                 assert!(!self.occurs_in(tyvar, ty));
                 self.substitutions.insert(tyvar, ty);
             }
+            Con::Uty(ty, Uty::TyVar(tyvar), loc) => {
+                if let Some(substitution) = self.substitutions.get(tyvar) {
+                    self.unify_con(Con::Uty(ty, *substitution, loc));
+                    return;
+                }
+
+                assert!(!self.occurs_in(tyvar, ty));
+                self.substitutions.insert(tyvar, ty);
+            }
+            // NOTE: we check after substitution that the types can hold the
+            // properties
             Con::Integer(uty, pre) => {
                 if let Uty::TyVar(tyvar) = uty {
-                    self.properties.insert(tyvar, TyVarProp::Integer);
-                } else {
-                    _ = pre;
-                    todo!("CHECK TYPE IS ABLE TO BE AN INTEGER {uty:?}")
+                    self.set_prop(tyvar, pre, TyVarPropFlags::Integer);
                 }
             }
             Con::Float(uty, pre) => {
                 if let Uty::TyVar(tyvar) = uty {
-                    self.properties.insert(tyvar, TyVarProp::Float);
-                } else {
-                    _ = pre;
-                    todo!("CHECK TYPE IS ABLE TO BE AN INTEGER {uty:?}")
+                    self.set_prop(tyvar, pre, TyVarPropFlags::Integer);
                 }
             }
         }
@@ -156,6 +170,10 @@ impl Unifier {
 
     pub fn substitutions(&self) -> &SparseMap<TyVar, Uty> {
         &self.substitutions
+    }
+
+    pub fn properties(&self) -> &SparseMap<TyVar, TyVarProp> {
+        &self.properties
     }
 
     fn sink(&mut self) -> &mut DiagnosticSink {

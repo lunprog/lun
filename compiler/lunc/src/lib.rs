@@ -851,6 +851,7 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     let mut unifier = Unifier::new(utir, sink.clone());
     unifier.unify();
     dbg!(unifier.substitutions());
+    dbg!(unifier.properties());
 
     let utir = unifier.take_orb();
 

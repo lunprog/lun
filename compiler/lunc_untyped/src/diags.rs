@@ -222,14 +222,14 @@ impl ToDiagnostic for CantEvaluateAtComptime {
     }
 }
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct MtComplex {
     pub due_to: Option<Span>,
     pub loc: Span,
     pub notes: Vec<String>,
 }
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum PreMt {
     Simple(Span),
     Complex(Arc<MtComplex>),
