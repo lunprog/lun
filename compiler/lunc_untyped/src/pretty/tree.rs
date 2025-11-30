@@ -355,6 +355,26 @@ impl PrettyDump<OrbDumper> for Expr {
                 Ok(())
             }
             Self::PrimType(ptype) => write!(ctx.out, "primitive_type({ptype})"),
+            Self::FundefType {
+                fundef,
+                params,
+                ret,
+            } => {
+                write!(ctx.out, "fun({}) -> ", join_pretty(params, extra))?;
+
+                ret.try_dump(ctx, extra)?;
+
+                write!(ctx.out, " {{ {} }}", fundef)?;
+
+                Ok(())
+            }
+            Self::ExtType(item, uty) => {
+                if let Some(item) = item.expand() {
+                    write!(ctx.out, "{uty}@{item}")
+                } else {
+                    write!(ctx.out, "{uty}")
+                }
+            }
         }
     }
 }

@@ -537,8 +537,6 @@ impl UtirGen {
                 let id = self.get_item(sym.unwrap_sym());
                 self.item = Opt::Some(id);
 
-                self.fundef_mut().typ = self.gen_option_expr(typeexpr);
-
                 self.fundef_mut().params = self.gen_params(params)?;
 
                 let ret_ty = self.gen_option_expr(rettypeexpr.as_deref());
@@ -549,6 +547,32 @@ impl UtirGen {
                 if let Some(ret_e) = ret_ty.expand() {
                     self.fun_ret_loc = self.expr_loc(ret_e);
                 }
+
+                self.fundef_mut().typ =
+                    self.gen_option_expr(typeexpr).expand().unwrap_or_else(|| {
+                        let fundef = self.fundef_mut();
+                        let mut params = Vec::with_capacity(fundef.params.count());
+
+                        for Param { typ, .. } in fundef.params.data_iter() {
+                            let Uty::Expr(typ) = typ else {
+                                // SAFETY: gen_params is guaranteed to produce Uty::Expr(..).
+                                opt_unreachable!()
+                            };
+
+                            params.push(*typ);
+                        }
+
+                        let ret = fundef
+                            .ret_ty
+                            .expand()
+                            .unwrap_or_else(|| self.ptype_expr(PrimType::Void));
+
+                        self.body().exprs.create(Expr::FundefType {
+                            fundef: id,
+                            params,
+                            ret,
+                        })
+                    });
 
                 let entry = self.gen_block(body_b);
 
@@ -597,8 +621,6 @@ impl UtirGen {
                 let id = self.get_item(sym.unwrap_sym());
                 self.item = Opt::Some(id);
 
-                self.fundecl_mut().typ = self.gen_option_expr(typeexpr);
-
                 for arg in args {
                     if let Some(expr) = self.gen_expr(arg) {
                         self.fundecl_mut().params.push(expr)
@@ -606,6 +628,27 @@ impl UtirGen {
                 }
 
                 let ret_ty = self.gen_option_expr(rettypeexpr.as_deref());
+
+                self.fundecl_mut().typ =
+                    self.gen_option_expr(typeexpr).expand().unwrap_or_else(|| {
+                        let fundecl = self.fundecl_mut();
+                        let mut params = Vec::with_capacity(fundecl.params.len());
+
+                        for typ in &fundecl.params {
+                            params.push(*typ);
+                        }
+
+                        let ret = fundecl
+                            .ret_ty
+                            .expand()
+                            .unwrap_or_else(|| self.ptype_expr(PrimType::Void));
+
+                        self.body().exprs.create(Expr::FundefType {
+                            fundef: id,
+                            params,
+                            ret,
+                        })
+                    });
 
                 self.fundecl_mut().ret_ty = ret_ty;
 
@@ -624,9 +667,17 @@ impl UtirGen {
                 let id = self.get_item(sym.unwrap_sym());
                 self.item = Opt::Some(id);
 
-                self.globaldef_mut().typ = self.gen_option_expr(typeexpr);
+                let value = self.gen_expr(value)?;
+                self.globaldef_mut().value = value;
 
-                self.globaldef_mut().value = self.gen_expr(value)?;
+                self.globaldef_mut().typ = self
+                    .gen_option_expr(typeexpr)
+                    .map(Uty::Expr)
+                    .unwrap_or_else(|| {
+                        let val = self.body_ref().expr_t.get(value).cloned().unwrap();
+
+                        val
+                    });
 
                 Some(id)
             }
@@ -958,9 +1009,19 @@ impl UtirGen {
                             Expr::Binding(binding)
                         }
                         DefId::ItemId(item) => {
-                            // the type would require some sort of evaluation,
-                            // so we can't assign a type right now.
-                            typ = None;
+                            let item_t = self.orb.items.get(item).typ();
+
+                            if let Some(cur_item) = self.item.expand()
+                                && cur_item == item
+                            {
+                                typ = Some(item_t);
+                            } else {
+                                let ext_t = self
+                                    .body()
+                                    .exprs
+                                    .create(Expr::ExtType(Opt::Some(item), item_t));
+                                typ = Some(Uty::Expr(ext_t));
+                            }
 
                             Expr::Item(item)
                         }

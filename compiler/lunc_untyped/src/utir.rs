@@ -71,6 +71,28 @@ impl Item {
             Item::ExternBlock(..) => panic!("Item::ExternBlock doesn't have a body"),
         }
     }
+
+    pub fn path(&self) -> &Path {
+        match self {
+            Item::Fundef(Fundef { path, .. })
+            | Item::Fundecl(Fundecl { path, .. })
+            | Item::GlobalDef(GlobalDef { path, .. })
+            | Item::GlobalUninit(GlobalUninit { path, .. }) => path,
+            Item::Module(..) => panic!("Item::Module doesn't have a path"),
+            Item::ExternBlock(..) => panic!("Item::ExternBlock doesn't have a path"),
+        }
+    }
+
+    pub fn typ(&self) -> Uty {
+        match self {
+            Item::Fundef(Fundef { typ, .. })
+            | Item::Fundecl(Fundecl { typ, .. })
+            | Item::GlobalUninit(GlobalUninit { typ, .. }) => Uty::Expr(*typ),
+            Item::GlobalDef(GlobalDef { typ, .. }) => typ.clone(),
+            Item::Module(..) => panic!("Item::Module doesn't have a type"),
+            Item::ExternBlock(..) => panic!("Item::ExternBlock doesn't have a type"),
+        }
+    }
 }
 
 /// Fundef -- Function definition.
@@ -78,7 +100,7 @@ impl Item {
 pub struct Fundef {
     pub name: Spanned<String>,
     pub path: Path,
-    pub typ: Opt<ExprId>,
+    pub typ: ExprId,
     pub params: EntityDb<ParamId>,
     pub ret_ty: Opt<ExprId>,
     pub entry: BlockId,
@@ -95,7 +117,7 @@ impl Default for Fundef {
                 loc: Span::ZERO,
             },
             path: Path::new(),
-            typ: Opt::None,
+            typ: ExprId::RESERVED,
             params: EntityDb::new(),
             ret_ty: Opt::None,
             entry: BlockId::RESERVED,
@@ -130,7 +152,7 @@ pub struct Param {
 pub struct Fundecl {
     pub name: Spanned<String>,
     pub path: Path,
-    pub typ: Opt<ExprId>,
+    pub typ: ExprId,
     pub params: Vec<ExprId>,
     pub ret_ty: Opt<ExprId>,
     pub body: Body,
@@ -145,7 +167,7 @@ impl Default for Fundecl {
                 loc: Span::ZERO,
             },
             path: Path::new(),
-            typ: Opt::None,
+            typ: ExprId::RESERVED,
             params: Vec::new(),
             ret_ty: Opt::None,
             body: Body::default(),
@@ -160,7 +182,7 @@ pub struct GlobalDef {
     pub name: Spanned<String>,
     pub path: Path,
     pub mutability: Mutability,
-    pub typ: Opt<ExprId>,
+    pub typ: Uty,
     pub value: ExprId,
     pub body: Body,
     pub loc: Span,
@@ -175,7 +197,7 @@ impl Default for GlobalDef {
             },
             path: Path::new(),
             mutability: Mutability::Not,
-            typ: Opt::None,
+            typ: Uty::Expr(ExprId::RESERVED),
             value: ExprId::RESERVED,
             body: Body::default(),
             loc: Span::ZERO,
@@ -387,6 +409,26 @@ pub enum Expr {
     ///
     /// [`DsExprKind::Path`]: lunc_desugar::DsExprKind::Path
     PrimType(PrimType),
+    /// Annonymous function definition/declaration type, it's a unique type per
+    /// item, it doesn't have a textual representation in the lun syntax, it's
+    /// here so that we can assign a type to functions when they don't have
+    /// a type.
+    ///
+    /// e.g:
+    /// ```lun
+    /// foo :: fun(a: u8, b: u8) -> u8 {
+    ///     a + b
+    /// }
+    /// // this function would have type `fun(u8, u8) -> u8 { example::foo }`
+    /// ```
+    FundefType {
+        fundef: ItemId,
+        params: Vec<ExprId>,
+        ret: ExprId,
+    },
+    /// External type, this expression refers to the type local to the item
+    /// given (`.0`) if any or the current body.
+    ExtType(Opt<ItemId>, Uty),
 }
 
 /// External reference to an expr ([ExprId]) in the local item or in the

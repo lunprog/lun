@@ -178,11 +178,7 @@ impl PrettyDump<OrbDumper> for Expr {
             Expr::Str(str) => write!(ctx.out, "{str:?}"),
             Expr::CStr(cstr) => write!(ctx.out, "cstr{cstr:?}"),
             Expr::Bool(b) => write!(ctx.out, "{b}"),
-            Expr::Item(item) => {
-                _ = item;
-
-                todo!("ADD PATH TO ITEMS")
-            }
+            Expr::Item(item) => extra.access(*item, |item| write!(ctx.out, "{}", item.path())),
             Expr::Param(param) => {
                 write!(ctx.out, "{}", extra.param_name(*param))
             }

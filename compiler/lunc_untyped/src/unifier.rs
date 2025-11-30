@@ -76,7 +76,7 @@ impl Unifier {
             .expr_locs
             .get(expr)
             .cloned()
-            .unwrap()
+            .unwrap_or_default()
     }
 
     pub fn set_prop(&mut self, tyvar: TyVar, pre: PreMt, flags: TyVarPropFlags) {
