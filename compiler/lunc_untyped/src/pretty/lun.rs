@@ -261,6 +261,33 @@ impl PrettyDump<OrbDumper> for Expr {
             Expr::PrimType(ptype) => {
                 write!(ctx.out, "{ptype}")
             }
+            Expr::FundefType {
+                fundef,
+                params,
+                ret,
+            } => {
+                write!(ctx.out, "fun(")?;
+
+                let mut first = true;
+
+                for param in params {
+                    if first {
+                        first = false;
+                    } else {
+                        write!(ctx.out, ", ")?;
+                    }
+
+                    extra.dump_e(ctx, *param)?;
+                }
+                write!(ctx.out, ")")?;
+
+                write!(ctx.out, "-> ")?;
+                extra.dump_e(ctx, *ret)?;
+
+                extra.access(*fundef, |item| write!(ctx.out, " {{ {} }}", item.path()))?;
+
+                Ok(())
+            }
             e => todo!("{e:?}"),
         }
     }

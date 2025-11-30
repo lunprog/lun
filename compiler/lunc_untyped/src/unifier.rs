@@ -122,7 +122,7 @@ impl Unifier {
                 if tyv_l == tyv_r && self.properties.get(tyv_l) == self.properties.get(tyv_r) => {}
             Con::Uty(Uty::TyVar(tyvar), ty, loc) => {
                 if let Some(substitution) = self.substitutions.get(tyvar) {
-                    self.unify_con(Con::Uty(ty, *substitution, loc));
+                    self.unify_con(Con::Uty(*substitution, ty, loc));
                     return;
                 }
 
@@ -131,7 +131,7 @@ impl Unifier {
             }
             Con::Uty(ty, Uty::TyVar(tyvar), loc) => {
                 if let Some(substitution) = self.substitutions.get(tyvar) {
-                    self.unify_con(Con::Uty(ty, *substitution, loc));
+                    self.unify_con(Con::Uty(*substitution, ty, loc));
                     return;
                 }
 

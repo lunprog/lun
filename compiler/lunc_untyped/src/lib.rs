@@ -57,12 +57,9 @@ pub mod utir;
 ///   literals, `12` can have type `u8`, `i8`, `usz`, `i32` etc etc.. Or a
 ///   user-binding that doesn't have an explicit type. Here we assign the
 ///   expression to a new type-variable.
-/// - *Can the type be easily inferred?* Like binary expression, calls, etc..
-///   Here the type is really not that complex for the type-checker to guess so
-///   we don't assign a type to it *NOW*. **Why?** because it may make things
-///   harder than they really are.
 ///
-/// So the rule is simple, we try not to use too much type-variables.
+/// So the rule is simple, we try to use as much TypeExpressions as possible,
+/// but when we cannot, we use type-variables.
 #[derive(Debug, Clone)]
 pub struct UtirGen {
     /// The generated orb
@@ -1041,7 +1038,7 @@ impl UtirGen {
                     if let Some(lhs_t) = self.expr_typ(lhs)
                         && let Some(rhs_t) = self.expr_typ(rhs)
                     {
-                        self.push_con(Con::Uty(lhs_t, rhs_t, expression.loc.unwrap().into()));
+                        self.push_con(Con::Uty(rhs_t, lhs_t, expression.loc.unwrap().into()));
                     }
 
                     typ = Some(Uty::Expr(self.ptype_expr(PrimType::Bool)));
@@ -1049,7 +1046,7 @@ impl UtirGen {
                     if let Some(lhs_t) = self.expr_typ(lhs)
                         && let Some(rhs_t) = self.expr_typ(rhs)
                     {
-                        self.push_con(Con::Uty(lhs_t, rhs_t, expression.loc.unwrap().into()));
+                        self.push_con(Con::Uty(rhs_t, lhs_t, expression.loc.unwrap().into()));
                     }
 
                     typ = Some(Uty::Expr(self.ptype_expr(PrimType::Void)));

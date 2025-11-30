@@ -8,18 +8,18 @@ use std::{
 
 use lunc_diag::DiagnosticSink;
 use lunc_entity::Opt;
-use lunc_seq::sir::{CValue, PrimType, Type};
+use lunc_seq::sir::{self, PrimType};
 use lunc_utils::Span;
 
 use crate::diags::CantEvaluateAtComptime;
 
-use super::utir::*;
+use super::utir;
 
 /// Builder of [`UtirCtem`] keeps track of the modifications of the Orb, it will
 /// clear the memoized evaluation if the new Orb is different from the old one.
 #[derive(Debug, Clone)]
 pub struct CtemBuilder {
-    memo: HashMap<(ItemId, ExprId), UntypedValue>,
+    memo: HashMap<(utir::ItemId, utir::ExprId), UtirValue>,
     pub(crate) sink: DiagnosticSink,
     old_hash: Option<u64>,
     hash_builder: RandomState,
@@ -37,7 +37,7 @@ impl CtemBuilder {
     }
 
     /// Build a [UtirCtem].
-    pub fn build<'utir>(self, orb: &'utir Orb) -> UtirCtem<'utir> {
+    pub fn build<'utir>(self, orb: &'utir utir::Orb) -> UtirCtem<'utir> {
         // hash of the provided orb.
         let this_hash = self.hash_builder.hash_one(orb);
 
@@ -62,23 +62,25 @@ impl CtemBuilder {
 }
 
 /// Maybe untyped value, used to represent untyped integer and float literals.
+///
+/// # Types
+///
+/// Because UtirValue is working with UTIR, we cannot use the
+/// `CValue::Type(Type)` yet because we don't know the id's of the SIR items, so
+/// an UtirValue can never have `UtirValue::CVal(CValue::Type(...))` value.
+///
+/// Instead at this stage we used `UtirValue::Type(utir::Type...)`.
 #[derive(Debug, Clone, PartialEq)]
-pub enum UntypedValue {
-    Typed(CValue),
+pub enum UtirValue {
+    CVal(sir::CValue),
+    Type(utir::Type),
     Int(u128),
     Float(f64),
 }
 
-impl UntypedValue {
-    /// Create a new `CValue::Type(..)`.
-    pub fn typ(type_: Type) -> UntypedValue {
-        UntypedValue::Typed(CValue::Type(type_))
-    }
-}
-
-impl From<CValue> for UntypedValue {
-    fn from(value: CValue) -> Self {
-        UntypedValue::Typed(value)
+impl From<sir::CValue> for UtirValue {
+    fn from(value: sir::CValue) -> Self {
+        UtirValue::CVal(value)
     }
 }
 
@@ -91,20 +93,20 @@ impl From<CValue> for UntypedValue {
 /// later and the errors will be emitted later.
 #[derive(Debug, Clone)]
 pub struct UtirCtem<'utir> {
-    orb: &'utir Orb,
+    orb: &'utir utir::Orb,
     sink: DiagnosticSink,
     /// current item that we evaluate in.
-    item: Opt<ItemId>,
+    item: Opt<utir::ItemId>,
     emit_diag: bool,
     /// location of the top most thing we try to evaluate
     loc: Span,
     /// Memoized results
-    memo: HashMap<(ItemId, ExprId), UntypedValue>,
+    memo: HashMap<(utir::ItemId, utir::ExprId), UtirValue>,
 }
 
 impl<'utir> UtirCtem<'utir> {
     /// Create a new UtirCtem with the orb and the sink.
-    pub fn new(orb: &'utir Orb, sink: DiagnosticSink) -> UtirCtem<'utir> {
+    pub fn new(orb: &'utir utir::Orb, sink: DiagnosticSink) -> UtirCtem<'utir> {
         UtirCtem {
             orb,
             sink,
@@ -115,19 +117,19 @@ impl<'utir> UtirCtem<'utir> {
         }
     }
 
-    fn current_item(&self) -> &Item {
+    fn current_item(&self) -> &utir::Item {
         self.orb.items.get(self.item.unwrap())
     }
 
-    fn get_expr(&mut self, expr: ExprId) -> Expr {
+    fn get_expr(&mut self, expr: utir::ExprId) -> utir::Expr {
         self.current_item().body().exprs.get(expr).clone()
     }
 
-    fn get_expr_loc(&self, expr: ExprId) -> Option<Span> {
+    fn get_expr_loc(&self, expr: utir::ExprId) -> Option<Span> {
         self.current_item().body().expr_locs.get(expr).cloned()
     }
 
-    fn get_expr_type(&self, expr: ExprId) -> Option<Uty> {
+    fn get_expr_type(&self, expr: utir::ExprId) -> Option<utir::Uty> {
         self.current_item().body().expr_t.get(expr).copied()
     }
 
@@ -137,7 +139,7 @@ impl<'utir> UtirCtem<'utir> {
     ///
     /// If this function in unable to evaluate the expression at compile-time it
     /// will return `None` and maybe emit a diagnostic.
-    pub fn evaluate_expr(&mut self, item: ItemId, expr: ExprId) -> Option<UntypedValue> {
+    pub fn evaluate_expr(&mut self, item: utir::ItemId, expr: utir::ExprId) -> Option<UtirValue> {
         let old_item = self.item;
         let old_loc = mem::replace(&mut self.loc, Span::ZERO);
 
@@ -173,12 +175,12 @@ impl<'utir> UtirCtem<'utir> {
     /// diagnostic (unable to evaluate at compile-time) this is so that you
     /// can emit in type-checking the "expected type but got an expression"
     /// diagnostic.
-    pub fn evaluate_type(&mut self, item: ItemId, typ: ExprId) -> Option<Type> {
+    pub fn evaluate_type(&mut self, item: utir::ItemId, typ: utir::ExprId) -> Option<utir::Type> {
         let old_emit = self.emit_diag;
         self.emit_diag = false;
 
         let res = match self.evaluate_expr(item, typ) {
-            Some(UntypedValue::Typed(CValue::Type(typ))) => Some(typ),
+            Some(UtirValue::Type(t)) => Some(t),
             Some(_) | None => None,
         };
 
@@ -189,16 +191,16 @@ impl<'utir> UtirCtem<'utir> {
 
     /// Tries to evaluate the expression, return `None` if it can't evaluate at
     /// compile-time and NEVER emits a diagnostic.
-    fn try_eval_expr(&mut self, expr: ExprId) -> Result<UntypedValue, (Span, Option<String>)> {
+    fn try_eval_expr(&mut self, expr: utir::ExprId) -> Result<UtirValue, (Span, Option<String>)> {
         self._eval_expr(expr)
     }
 
     /// Tries to evaluate the expression as a type, it it fails it returns the
     /// `void` type.
-    fn try_eval_type(&mut self, expr: ExprId) -> Type {
+    fn try_eval_type(&mut self, expr: utir::ExprId) -> utir::Type {
         match self.try_eval_expr(expr) {
-            Ok(UntypedValue::Typed(CValue::Type(typ))) => typ,
-            Ok(_) => Type::PrimType(PrimType::Void),
+            Ok(UtirValue::Type(typ)) => typ,
+            Ok(_) => utir::Type::PrimType(PrimType::Void),
             // NOTE: we don't emit a diag here because we will emit one in the
             // type-checking
             Err((loc, note)) => {
@@ -208,12 +210,12 @@ impl<'utir> UtirCtem<'utir> {
                     loc,
                 });
 
-                Type::PrimType(PrimType::Void)
+                utir::Type::PrimType(PrimType::Void)
             }
         }
     }
 
-    fn _eval_expr(&mut self, id: ExprId) -> Result<UntypedValue, (Span, Option<String>)> {
+    fn _eval_expr(&mut self, id: utir::ExprId) -> Result<UtirValue, (Span, Option<String>)> {
         if let Some(res) = self.memo.get(&(self.item.unwrap(), id)) {
             return Ok(res.clone());
         }
@@ -221,7 +223,7 @@ impl<'utir> UtirCtem<'utir> {
         let expr_loc = self.get_expr_loc(id).unwrap_or_default();
         let expr_t = self.get_expr_type(id);
 
-        let expr_t = if let Some(Uty::Expr(expr)) = expr_t
+        let expr_t = if let Some(utir::Uty::Expr(expr)) = expr_t
             && id != expr
         // TODO: this prevents a stack overflow when we try to evaluate the type
         // of type, because it's self-referential (in expr_t, eN: eN),
@@ -236,69 +238,101 @@ impl<'utir> UtirCtem<'utir> {
         let expr = self.get_expr(id);
 
         let res = match expr {
-            Expr::Int(i) => match expr_t {
-                Some(Type::PrimType(ptype)) => match ptype {
-                    PrimType::I8 => Ok(CValue::I8(i as i8).into()),
-                    PrimType::I16 => Ok(CValue::I16(i as i16).into()),
-                    PrimType::I32 => Ok(CValue::I32(i as i32).into()),
-                    PrimType::I64 => Ok(CValue::I64(i as i64).into()),
-                    PrimType::I128 => Ok(CValue::I128(i as i128).into()),
-                    PrimType::Isz => Ok(CValue::isz64(i as i64).into()),
-                    PrimType::U8 => Ok(CValue::U8(i as u8).into()),
-                    PrimType::U16 => Ok(CValue::U16(i as u16).into()),
-                    PrimType::U32 => Ok(CValue::U32(i as u32).into()),
-                    PrimType::U64 => Ok(CValue::U64(i as u64).into()),
-                    PrimType::U128 => Ok(CValue::U128(i).into()),
-                    PrimType::Usz => Ok(CValue::usz64(i as u64).into()),
-                    _ => Ok(UntypedValue::Int(i)),
+            utir::Expr::Int(i) => match expr_t {
+                Some(utir::Type::PrimType(ptype)) => match ptype {
+                    PrimType::I8 => Ok(sir::CValue::I8(i as i8).into()),
+                    PrimType::I16 => Ok(sir::CValue::I16(i as i16).into()),
+                    PrimType::I32 => Ok(sir::CValue::I32(i as i32).into()),
+                    PrimType::I64 => Ok(sir::CValue::I64(i as i64).into()),
+                    PrimType::I128 => Ok(sir::CValue::I128(i as i128).into()),
+                    PrimType::Isz => Ok(sir::CValue::isz64(i as i64).into()),
+                    PrimType::U8 => Ok(sir::CValue::U8(i as u8).into()),
+                    PrimType::U16 => Ok(sir::CValue::U16(i as u16).into()),
+                    PrimType::U32 => Ok(sir::CValue::U32(i as u32).into()),
+                    PrimType::U64 => Ok(sir::CValue::U64(i as u64).into()),
+                    PrimType::U128 => Ok(sir::CValue::U128(i).into()),
+                    PrimType::Usz => Ok(sir::CValue::usz64(i as u64).into()),
+                    _ => Ok(UtirValue::Int(i)),
                 },
-                _ => Ok(UntypedValue::Int(i)),
+                _ => Ok(UtirValue::Int(i)),
             },
-            Expr::Char(c) => Ok(CValue::Char(c).into()),
-            Expr::Float(f) => match expr_t {
-                Some(Type::PrimType(ptype)) => match ptype {
-                    PrimType::F32 => Ok(CValue::F32(f.into_f64() as f32).into()),
-                    PrimType::F64 => Ok(CValue::F64(f.into_f64()).into()),
-                    _ => Ok(UntypedValue::Float(f.into_f64())),
+            utir::Expr::Char(c) => Ok(sir::CValue::Char(c).into()),
+            utir::Expr::Float(f) => match expr_t {
+                Some(utir::Type::PrimType(ptype)) => match ptype {
+                    PrimType::F32 => Ok(sir::CValue::F32(f.into_f64() as f32).into()),
+                    PrimType::F64 => Ok(sir::CValue::F64(f.into_f64()).into()),
+                    _ => Ok(UtirValue::Float(f.into_f64())),
                 },
-                _ => Ok(UntypedValue::Float(f.into_f64())),
+                _ => Ok(UtirValue::Float(f.into_f64())),
             },
-            Expr::Str(s) => Ok(CValue::Str(s.clone()).into()),
-            Expr::CStr(s) => Ok(CValue::CStr(s.clone()).into()),
-            Expr::Bool(b) => Ok(CValue::Bool(b).into()),
-            Expr::PtrType(mutability, pointee) => {
+            utir::Expr::Str(s) => Ok(sir::CValue::Str(s.clone()).into()),
+            utir::Expr::CStr(s) => Ok(sir::CValue::CStr(s.clone()).into()),
+            utir::Expr::Bool(b) => Ok(sir::CValue::Bool(b).into()),
+            utir::Expr::PtrType(mutability, pointee) => {
                 let pointee_t = self.try_eval_type(pointee);
 
-                Ok(UntypedValue::typ(Type::Ptr(
+                Ok(UtirValue::Type(utir::Type::Ptr(
                     mutability,
                     Box::new(pointee_t),
                 )))
             }
-            Expr::FunptrType(args, ret) => {
-                let mut args_t = Vec::with_capacity(args.len());
-
-                for arg in args {
-                    args_t.push(self.try_eval_type(arg));
-                }
-
-                let ret_t = if let Some(ret) = ret.expand() {
-                    self.try_eval_type(ret)
-                } else {
-                    Type::PrimType(PrimType::Void)
-                };
-
+            utir::Expr::FunptrType(params, ret) => {
                 // NOTE: again no diag emitted, we will emit one in
                 // type-checking.
 
-                Ok(UntypedValue::typ(Type::FunPtr(args_t, Box::new(ret_t))))
+                let (params_t, ret_t) = self.eval_funlike_type(params, ret);
+
+                Ok(UtirValue::Type(utir::Type::FunPtr(
+                    params_t,
+                    Box::new(ret_t),
+                )))
             }
-            Expr::PrimType(ptype) => Ok(UntypedValue::typ(Type::PrimType(ptype))),
-            _ => Err((expr_loc, None)),
+            utir::Expr::PrimType(ptype) => Ok(UtirValue::Type(utir::Type::PrimType(ptype))),
+            utir::Expr::FundefType {
+                fundef,
+                params,
+                ret,
+            } => {
+                let (params, ret_t) = self.eval_funlike_type(params, Opt::Some(ret));
+
+                Ok(UtirValue::Type(utir::Type::FunDef {
+                    fundef,
+                    params,
+                    ret: Box::new(ret_t),
+                }))
+            }
+            e => {
+                if cfg!(debug_assertions) {
+                    Err((expr_loc, Some(format!("DEBUG: {e:?} isn't able to eval."))))
+                } else {
+                    Err((expr_loc, None))
+                }
+            }
         }?;
 
         self.memo.insert((self.item.unwrap(), id), res.clone());
 
         Ok(res)
+    }
+
+    fn eval_funlike_type(
+        &mut self,
+        params: Vec<utir::ExprId>,
+        ret: Opt<utir::ExprId>,
+    ) -> (Vec<utir::Type>, utir::Type) {
+        let mut args_t = Vec::with_capacity(params.len());
+
+        for arg in params {
+            args_t.push(self.try_eval_type(arg));
+        }
+
+        let ret_t = if let Some(ret) = ret.expand() {
+            self.try_eval_type(ret)
+        } else {
+            utir::Type::PrimType(PrimType::Void)
+        };
+
+        (args_t, ret_t)
     }
 
     /// Convert this evaluation machine to a builder.

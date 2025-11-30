@@ -689,6 +689,11 @@ pub enum Con {
     Float(Uty, PreMt),
     /// The type-variable must be of type `.1`
     ///
+    /// # Direction of this constraint.
+    ///
+    /// You want to have the right uty to be the expected type and the left one
+    /// the "found" one, like that: `found = expected`.
+    ///
     /// `uty = uty`
     Uty(Uty, Uty, PreMt),
 }
@@ -700,4 +705,32 @@ pub enum DefId {
     ParamId(ParamId),
     BindingId(BindingId),
     ItemId(ItemId),
+}
+
+/// UTIR type, it is very much similar with [SIR types](lunc_seq::sir::Type),
+/// because it represents the same thing but at different stages.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Type {
+    /// Primitive type
+    PrimType(PrimType),
+    /// A pointer
+    Ptr(Mutability, Box<Type>),
+    /// A function pointer
+    FunPtr(Vec<Type>, Box<Type>),
+    /// Anonymous type of a function definition/declaration. Each function has a unique type.
+    ///
+    /// e.g:
+    /// ```lun
+    /// foo :: fun(a: u8, b: u8) -> u8 {
+    ///     a + b
+    /// }
+    /// // this function would have type `fun(u8, u8) -> u8 { example::foo }`
+    /// ```
+    FunDef {
+        fundef: ItemId,
+        params: Vec<Type>,
+        ret: Box<Type>,
+    },
+    /// A reference to an item with "type" `Type`.
+    Item(ItemId),
 }
