@@ -5,7 +5,7 @@
     html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
-use std::{collections::HashMap, mem};
+use std::{collections::HashMap, iter::zip, mem};
 
 use lunc_ast::{BinOp, ItemContainer, ItemKind, Mutability, Spanned, UnOp};
 use lunc_desugar::{
@@ -392,6 +392,7 @@ impl UtirGen {
     }
 
     /// Push a constraint (`con`) in the current body.
+    #[track_caller]
     fn push_con(&mut self, con: Con) {
         self.body().constraints.0.push(con)
     }
@@ -1004,17 +1005,13 @@ impl UtirGen {
                             Expr::Binding(binding)
                         }
                         DefId::ItemId(item) => {
-                            let item_t = self.orb.items.get(item).typ();
-
                             if let Some(cur_item) = self.item.expand()
                                 && cur_item == item
                             {
+                                let item_t = self.orb.items.get(item).typ();
                                 typ = Some(item_t);
                             } else {
-                                let ext_t = self
-                                    .body()
-                                    .exprs
-                                    .create(Expr::ExtType(Opt::Some(item), item_t));
+                                let ext_t = self.body().exprs.create(Expr::TypeofItem(item));
                                 typ = Some(Uty::Expr(ext_t));
                             }
 
@@ -1033,20 +1030,14 @@ impl UtirGen {
                 let expr = Expr::Binary(lhs, op.clone(), rhs);
 
                 if op.is_relational() || op.is_logical() {
-                    if let Some(lhs_t) = self.expr_typ(lhs)
-                        && let Some(rhs_t) = self.expr_typ(rhs)
-                    {
-                        self.push_con(Con {
-                            lhs: rhs_t,
-                            rhs: lhs_t,
-                            pre: expression.loc.unwrap().into(),
-                        });
+                    if let Some(lhs_t) = self.expr_typ(lhs) {
+                        self.constraint_expr_t(rhs, lhs_t, expression.loc.unwrap().into());
                     }
 
                     typ = Some(Uty::Expr(self.ptype_expr(PrimType::Bool)));
                 } else if *op == BinOp::Assignment {
                     if let Some(lhs_t) = self.expr_typ(lhs)
-                        && let Some(rhs_t) = self.expr_typ(rhs)
+                    // && let Some(rhs_t) = self.expr_typ(rhs)
                     {
                         let loc = self
                             .body()
@@ -1074,32 +1065,15 @@ impl UtirGen {
                             loc.into()
                         };
 
-                        self.push_con(Con {
-                            lhs: rhs_t,
-                            rhs: lhs_t,
-                            pre,
-                        });
+                        self.constraint_expr_t(rhs, lhs_t, pre);
                     }
 
                     typ = Some(Uty::Expr(self.ptype_expr(PrimType::Void)));
                 } else {
                     let tyvar = self.body().type_vars.create_default();
 
-                    if let Some(lhs_t) = self.expr_typ(lhs) {
-                        self.push_con(Con {
-                            lhs: Uty::TyVar(tyvar),
-                            rhs: lhs_t,
-                            pre: expression.loc.unwrap().into(),
-                        });
-                    }
-
-                    if let Some(rhs_t) = self.expr_typ(rhs) {
-                        self.push_con(Con {
-                            lhs: Uty::TyVar(tyvar),
-                            rhs: rhs_t,
-                            pre: expression.loc.unwrap().into(),
-                        });
-                    }
+                    self.constraint_expr_t(lhs, Uty::TyVar(tyvar), expression.loc.unwrap().into());
+                    self.constraint_expr_t(rhs, Uty::TyVar(tyvar), expression.loc.unwrap().into());
 
                     typ = Some(Uty::TyVar(tyvar));
                 }
@@ -1107,22 +1081,45 @@ impl UtirGen {
                 expr
             }
             DsExprKind::Unary { op, expr } => {
-                let expr = self.gen_expr(expr)?;
+                let inner = self.gen_expr(expr)?;
+                let inner_t = self.expr_typ(inner);
 
-                let expr = Expr::Unary(op.clone(), expr);
+                let expr = Expr::Unary(op.clone(), inner);
 
-                if *op == UnOp::Not {
-                    typ = Some(Uty::Expr(self.ptype_expr(PrimType::Bool)));
-                } else {
-                    typ = None;
+                match op {
+                    UnOp::Not => {
+                        typ = Some(Uty::Expr(self.ptype_expr(PrimType::Bool)));
+                    }
+                    UnOp::Negation => {
+                        typ = inner_t;
+                    }
+                    UnOp::Dereference => {
+                        typ = if let Some(Uty::Expr(inner_t)) = inner_t
+                            && let Expr::PtrType(_, pointee_t) = self.body_ref().exprs.get(inner_t)
+                        {
+                            Some(Uty::Expr(*pointee_t))
+                        } else {
+                            None
+                        };
+                    }
                 }
 
                 expr
             }
             DsExprKind::Borrow(mutability, expr) => {
                 let expr = self.gen_expr(expr)?;
+                let expr_t = self.expr_typ(expr);
 
-                typ = None;
+                typ = match expr_t {
+                    Some(Uty::Expr(expr_t)) => {
+                        let typ = self.body().exprs.create(Expr::PtrType(*mutability, expr_t));
+                        let type_t = self.ptype_expr(PrimType::Type);
+                        self.body().expr_t.insert(typ, Uty::Expr(type_t));
+
+                        Some(Uty::Expr(typ))
+                    }
+                    Some(_) | None => None,
+                };
 
                 Expr::Borrow(*mutability, expr)
             }
@@ -1136,12 +1133,41 @@ impl UtirGen {
                     }
                 }
 
-                typ = None;
-
-                Expr::Call {
+                let expr = Expr::Call {
                     callee,
                     args: args_e,
+                };
+
+                let id = self.body().exprs.create(expr);
+
+                if let Some(ref loc) = expression.loc {
+                    self.body().expr_locs.insert(id, *loc);
                 }
+
+                typ = if let Some(Uty::Expr(callee_t)) = self.expr_typ(callee) {
+                    self.constraint_expr_t(
+                        id,
+                        Uty::Expr(callee_t),
+                        PreMt::new(self.expr_loc(id).unwrap_or_default(), None, None),
+                    );
+
+                    match self.body_ref().exprs.get(callee_t) {
+                        Expr::FunptrType(_, ret) => Some(Uty::Expr(
+                            ret.expand()
+                                .unwrap_or_else(|| self.ptype_expr(PrimType::Void)),
+                        )),
+                        Expr::FundefType { ret, .. } => Some(Uty::Expr(*ret)),
+                        _ => None,
+                    }
+                } else {
+                    None
+                };
+
+                if let Some(typ) = typ {
+                    self.body().expr_t.insert(id, typ);
+                }
+
+                return Some(id);
             }
             DsExprKind::If {
                 cond,
@@ -1150,14 +1176,14 @@ impl UtirGen {
             } => {
                 let cond = self.gen_expr(cond)?;
 
-                if let Some(cond_t) = self.expr_typ(cond) {
-                    let bool_e = self.ptype_expr(PrimType::Bool);
-                    self.push_con(Con {
-                        lhs: cond_t,
-                        rhs: Uty::Expr(bool_e),
-                        pre: expression.loc.unwrap().into(),
-                    });
-                }
+                let bool_e = self.ptype_expr(PrimType::Bool);
+                self.constraint_expr_t(
+                    cond,
+                    Uty::Expr(bool_e),
+                    self.expr_loc(cond)
+                        .unwrap_or_else(|| expression.loc.unwrap_or_default())
+                        .into(),
+                );
 
                 let then_e = self.gen_expr(then_br)?;
                 let else_e = self.gen_option_expr(else_br.as_deref());
@@ -1165,24 +1191,43 @@ impl UtirGen {
                 if let Some(else_e) = else_e.expand() {
                     let tyvar = self.body().type_vars.create_default();
 
-                    if let Some(then_t) = self.expr_typ(then_e) {
-                        self.push_con(Con {
-                            lhs: Uty::TyVar(tyvar),
-                            rhs: then_t,
-                            pre: expression.loc.unwrap().into(),
-                        });
-                    }
+                    let then_loc = self
+                        .expr_loc(then_e)
+                        .unwrap_or_else(|| expression.loc.unwrap());
+                    let else_loc = self
+                        .expr_loc(else_e)
+                        .unwrap_or_else(|| expression.loc.unwrap());
 
-                    if let Some(else_t) = self.expr_typ(else_e) {
-                        self.push_con(Con {
-                            lhs: Uty::TyVar(tyvar),
-                            rhs: else_t,
-                            pre: expression.loc.unwrap().into(),
-                        });
-                    }
+                    self.constraint_expr_t(
+                        then_e,
+                        Uty::TyVar(tyvar),
+                        PreMt::new(then_loc, else_loc, None),
+                    );
+
+                    self.constraint_expr_t(
+                        else_e,
+                        Uty::TyVar(tyvar),
+                        PreMt::new(else_loc, then_loc, None),
+                    );
 
                     typ = Some(Uty::TyVar(tyvar));
                 } else {
+                    let void_e = self.ptype_expr(PrimType::Void);
+
+                    self.constraint_expr_t(
+                        then_e,
+                        Uty::Expr(void_e),
+                        PreMt::new(
+                            self.expr_loc(then_e)
+                                .unwrap_or_else(|| expression.loc.unwrap_or_default()),
+                            None,
+                            Some(
+                                "an if-expression without an else block must have type void."
+                                    .to_string(),
+                            ),
+                        ),
+                    );
+
                     typ = Some(Uty::Expr(self.ptype_expr(PrimType::Void)));
                 }
 
@@ -1193,10 +1238,10 @@ impl UtirGen {
                 }
             }
             DsExprKind::Block { label, block } => {
-                let block = self.gen_block(block);
-
                 if let Some(label) = label.clone() {
                     let lab = self.define_label(Some(label), LabelKind::Block);
+
+                    let block = self.gen_block(block);
 
                     typ = Some(
                         self.get_label_by_id(lab)
@@ -1204,13 +1249,18 @@ impl UtirGen {
                             .unwrap_or_else(|| self.body_ref().blocks.get(block).typ),
                     );
 
+                    self.label_stack.pop();
+
                     Expr::Block(Opt::Some(lab), block)
                 } else {
+                    let block = self.gen_block(block);
+
                     typ = Some(self.body_ref().blocks.get(block).typ);
 
                     Expr::Block(Opt::None, block)
                 }
             }
+
             DsExprKind::Loop { label, body } => {
                 let is_while = matches!(
                     body.stmts.first(),
@@ -1233,13 +1283,18 @@ impl UtirGen {
 
                 let void_e = self.ptype_expr(PrimType::Void);
                 let body = self.gen_block(body);
-                let body_t = self.body().blocks.get(body).typ;
 
-                self.push_con(Con {
-                    lhs: body_t,
-                    rhs: Uty::Expr(void_e),
-                    pre: expression.loc.unwrap().into(),
-                });
+                if is_while {
+                    self.constraint_block_t(
+                        body,
+                        Uty::Expr(void_e),
+                        PreMt::new(
+                            self.body_ref().blocks.get(body).loc,
+                            expression.loc,
+                            Some("cannot break with a value out of a while loop".to_string()),
+                        ),
+                    );
+                }
 
                 let info = self.get_label_by_id(lab);
 
@@ -1260,13 +1315,17 @@ impl UtirGen {
 
                 if let Some(ret_ty) = self.fun_ret_ty.expand()
                     && let Some(expr) = expr.expand()
-                    && let Some(expr_t) = self.expr_typ(expr)
                 {
-                    self.push_con(Con {
-                        lhs: expr_t,
-                        rhs: Uty::Expr(ret_ty),
-                        pre: expression.loc.unwrap().into(),
-                    });
+                    self.constraint_expr_t(
+                        expr,
+                        Uty::Expr(ret_ty),
+                        PreMt::new(
+                            self.expr_loc(expr)
+                                .unwrap_or_else(|| expression.loc.unwrap()),
+                            self.fun_ret_loc,
+                            None,
+                        ),
+                    );
                 }
 
                 typ = Some(Uty::Expr(self.ptype_expr(PrimType::Never)));
@@ -1290,7 +1349,7 @@ impl UtirGen {
                     let Some(id) = self.label_stack.last() else {
                         self.sink.emit(LabelKwOutsideLoopOrBlock {
                             kw: diags::BREAK,
-                            loc: expression.loc.unwrap(),
+                            loc: expression.loc.unwrap_or_default(),
                         });
 
                         return None;
@@ -1300,7 +1359,7 @@ impl UtirGen {
 
                     if !kind.is_loop() {
                         self.sink.emit(BreakUseAnImplicitLabelInBlock {
-                            loc: expression.loc.unwrap(),
+                            loc: expression.loc.unwrap_or_default(),
                         });
                     }
 
@@ -1312,7 +1371,7 @@ impl UtirGen {
 
                     if !label_kind.can_have_val() {
                         self.sink.emit(BreakWithValueUnsupported {
-                            loc: expression.loc.unwrap(),
+                            loc: expression.loc.unwrap_or_default(),
                         });
                     } else if label_typ.is_none() {
                         self.mut_label_by_id(id).typ = if let Some(typ) = self.expr_typ(expr) {
@@ -1348,7 +1407,7 @@ impl UtirGen {
                         self.sink.emit(UseOfUndefinedLabel {
                             name: label.clone(),
                             // TODO: add location of the label name
-                            loc: expression.loc.unwrap(),
+                            loc: expression.loc.unwrap_or_default(),
                         });
 
                         return None;
@@ -1359,7 +1418,7 @@ impl UtirGen {
                     let Some(&id) = self.label_stack.last() else {
                         self.sink.emit(LabelKwOutsideLoopOrBlock {
                             kw: diags::CONTINUE,
-                            loc: expression.loc.unwrap(),
+                            loc: expression.loc.unwrap_or_default(),
                         });
 
                         return None;
@@ -1372,7 +1431,7 @@ impl UtirGen {
 
                 if !kind.is_loop() {
                     self.sink.emit(CantContinueABlock {
-                        loc: expression.loc.unwrap(),
+                        loc: expression.loc.unwrap_or_default(),
                     });
                 }
 
@@ -1384,7 +1443,7 @@ impl UtirGen {
                 self.sink.emit(feature_todo! {
                     feature: "null expr",
                     label: "field access and struct type definition",
-                    loc: expression.loc.unwrap()
+                    loc: expression.loc.unwrap_or_default()
                 });
 
                 return None;
@@ -1393,7 +1452,7 @@ impl UtirGen {
                 self.sink.emit(feature_todo! {
                     feature: "field expr",
                     label: "field access and struct type definition",
-                    loc: expression.loc.unwrap()
+                    loc: expression.loc.unwrap_or_default()
                 });
 
                 return None;
@@ -1409,7 +1468,7 @@ impl UtirGen {
                 self.sink.emit(feature_todo! {
                     feature: "local fundef",
                     label: "fundefs inside an expression isn't supported",
-                    loc: expression.loc.unwrap(),
+                    loc: expression.loc.unwrap_or_default(),
                 });
 
                 return None;
@@ -1418,7 +1477,7 @@ impl UtirGen {
                 self.sink.emit(feature_todo! {
                     feature: "local fundecl",
                     label: "fundefs inside an expression isn't supported",
-                    loc: expression.loc.unwrap(),
+                    loc: expression.loc.unwrap_or_default(),
                 });
 
                 return None;
@@ -1427,17 +1486,18 @@ impl UtirGen {
                 let type_e = self.ptype_expr(PrimType::Type);
                 let pointee = self.gen_expr(pointee)?;
 
-                if let Some(pointee_t) = self.expr_typ(pointee) {
-                    self.push_con(Con {
-                        lhs: pointee_t,
-                        rhs: Uty::Expr(type_e),
-                        pre: expression.loc.unwrap().into(),
-                    });
-                }
+                self.constraint_expr_t(
+                    pointee,
+                    Uty::Expr(type_e),
+                    PreMt::new(
+                        self.expr_loc(pointee)
+                            .unwrap_or_else(|| expression.loc.unwrap_or_default()),
+                        None,
+                        None,
+                    ),
+                );
 
-                // this type would require evaluation of pointee, and is fairly
-                // trivial so we don't assign a type yet.
-                typ = None;
+                typ = Some(Uty::Expr(self.ptype_expr(PrimType::Type)));
 
                 Expr::PtrType(*mutability, pointee)
             }
@@ -1449,32 +1509,25 @@ impl UtirGen {
                     if let Some(arg) = self.gen_expr(arg) {
                         args.push(arg);
 
-                        if let Some(arg_t) = self.expr_typ(arg) {
-                            self.push_con(Con {
-                                lhs: arg_t,
-                                rhs: Uty::Expr(type_e),
-                                pre: expression.loc.unwrap().into(),
-                            });
-                        }
+                        self.constraint_expr_t(
+                            arg,
+                            Uty::Expr(type_e),
+                            expression.loc.unwrap_or_default().into(),
+                        );
                     }
                 }
 
                 let ret = self.gen_option_expr(ret.as_deref());
 
-                if let Some(ret) = ret.expand()
-                    && let Some(ret_t) = self.expr_typ(ret)
-                {
-                    self.push_con(Con {
-                        lhs: ret_t,
-                        rhs: Uty::Expr(type_e),
-                        pre: expression.loc.unwrap().into(),
-                    });
+                if let Some(ret) = ret.expand() {
+                    self.constraint_expr_t(
+                        ret,
+                        Uty::Expr(type_e),
+                        expression.loc.unwrap_or_default().into(),
+                    );
                 }
 
-                // this type would require evaluation of the params types and
-                // the return type, and is fairly trivial so we don't assign a
-                // type yet.
-                typ = None;
+                typ = Some(Uty::Expr(self.ptype_expr(PrimType::Type)));
 
                 Expr::FunptrType(args, ret)
             }
@@ -1498,6 +1551,86 @@ impl UtirGen {
         Some(id)
     }
 
+    fn constraint_expr_t(&mut self, expr: ExprId, typ: Uty, pre: PreMt) {
+        let e = self.body_ref().exprs.get(expr);
+
+        match e {
+            Expr::Int(_)
+            | Expr::Char(_)
+            | Expr::Float(_)
+            | Expr::Str(_)
+            | Expr::CStr(_)
+            | Expr::Bool(_)
+            | Expr::Item(_)
+            | Expr::Param(_)
+            | Expr::Binding(_)
+            | Expr::Binary(..)
+            | Expr::Unary(..)
+            | Expr::If { .. }
+            | Expr::Block(_, _)
+            | Expr::Loop(_, _)
+            | Expr::Return(_)
+            | Expr::Break(_, _)
+            | Expr::Continue(_)
+            | Expr::Underscore
+            | Expr::PtrType(_, _)
+            | Expr::FunptrType(_, _)
+            | Expr::PrimType(_)
+            | Expr::FundefType { .. }
+            | Expr::TypeofItem(_) => {}
+            Expr::Borrow(_, borrowed) => {
+                if let Uty::Expr(typ_e) = typ
+                    && let typ_e = self.body_ref().exprs.get(typ_e)
+                    && let Expr::PtrType(_, pointee_e) = typ_e
+                {
+                    self.constraint_expr_t(
+                        *borrowed,
+                        Uty::Expr(*pointee_e),
+                        PreMt::new(
+                            self.expr_loc(*borrowed).unwrap_or_default(),
+                            self.expr_loc(*pointee_e),
+                            None,
+                        ),
+                    );
+                }
+            }
+            Expr::Call { callee: _, args } => 'out: {
+                if let Uty::Expr(typ_e) = typ {
+                    let params_t = match self.body_ref().exprs.get(typ_e) {
+                        Expr::FunptrType(params, _)
+                        | Expr::FundefType {
+                            fundef: _,
+                            params,
+                            ret: _,
+                        } => params.clone(),
+                        _ => break 'out,
+                    };
+
+                    for (param_t, arg) in zip(params_t, args.clone()) {
+                        self.constraint_expr_t(arg, Uty::Expr(param_t), pre.clone());
+                    }
+                }
+            }
+        }
+        let Some(expr_t) = self.expr_typ(expr) else {
+            return;
+        };
+
+        self.push_con(Con {
+            lhs: expr_t,
+            rhs: typ,
+            pre,
+        });
+    }
+
+    fn constraint_block_t(&mut self, block: BlockId, typ: Uty, pre: PreMt) {
+        let b = self.body_ref().blocks.get(block);
+
+        if let Some(tail) = b.tail.expand() {
+            self.constraint_expr_t(tail, typ, pre);
+        }
+    }
+
     fn gen_stmt(&mut self, stmt: &DsStatement) -> Option<StmtId> {
         let s = match &stmt.stmt {
             DsStmtKind::BindingDef {
@@ -1519,13 +1652,19 @@ impl UtirGen {
 
                 let val = self.gen_expr(value)?;
 
-                if let Some(val_t) = self.expr_typ(val) {
-                    self.push_con(Con {
-                        lhs: val_t,
-                        rhs: typ,
-                        pre: stmt.loc.unwrap().into(),
-                    });
-                }
+                let val_loc = self
+                    .expr_loc(val)
+                    .unwrap_or_else(|| stmt.loc.unwrap_or_default());
+
+                let typ_loc = if let Uty::Expr(typ) = typ
+                    && let Some(loc) = self.expr_loc(typ)
+                {
+                    Some(loc)
+                } else {
+                    None
+                };
+
+                self.constraint_expr_t(val, typ, PreMt::new(val_loc, typ_loc, None));
 
                 let bind = self.body().bindings.create(BindingDef {
                     name: name.clone(),
@@ -1542,7 +1681,7 @@ impl UtirGen {
                 self.sink.emit(feature_todo! {
                     feature: "defer statement",
                     label: "field access and struct type definition",
-                    loc: stmt.loc.unwrap()
+                    loc: stmt.loc.unwrap_or_default()
                 });
 
                 return None;
@@ -1574,7 +1713,7 @@ impl UtirGen {
             let param = params_db.create(Param {
                 name: name.clone(),
                 typ: Uty::Expr(self.gen_expr(typeexpr)?),
-                loc: (*loc).unwrap(),
+                loc: loc.unwrap_or_default(),
             });
 
             self.map_sym_to_def(sym.unwrap_sym(), DefId::ParamId(param));
@@ -1601,17 +1740,15 @@ impl UtirGen {
 
         let tail = self.gen_option_expr(last_expr.as_deref());
 
-        let tail_t = self.expr_typ(tail.expand()).unwrap_or_else(|| {
-            let tyvar = self.body().type_vars.create_default();
-
-            Uty::TyVar(tyvar)
-        });
+        let tail_t = self
+            .expr_typ(tail.expand())
+            .unwrap_or_else(|| Uty::Expr(self.ptype_expr(PrimType::Void)));
 
         self.body().blocks.create(Block {
             stmts: stmts_set,
             tail,
             typ: tail_t,
-            loc: (*loc).unwrap(),
+            loc: loc.unwrap_or_default(),
         })
     }
 }

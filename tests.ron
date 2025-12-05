@@ -1723,7 +1723,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
               @last_expr: none,
             ] @ 544..567 (fid = 0);
-          } @ 536..596 (fid = 0);
+          } @ 544..567 (fid = 0);
           else_br: Block {
             label: none;
             block: Block [
@@ -2209,31 +2209,24 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
               else_br: none;
             } @ none @ none,
 
-            Block {
-              label: none;
-              block: Block [
-                Call {
-                  callee: Symbol {
-                    kind: function;
-                    name: println;
-                    ordinal: 0;
-                    path: orb::println;
-                  } @ 138..145 (fid = 0) @ 219..226 (fid = 0);
-                  args: [
-                    string "i = {}" @ 227..235 (fid = 0),
+            Call {
+              callee: Symbol {
+                kind: function;
+                name: println;
+                ordinal: 0;
+                path: orb::println;
+              } @ 138..145 (fid = 0) @ 219..226 (fid = 0);
+              args: [
+                string "i = {}" @ 227..235 (fid = 0),
 
-                    Symbol {
-                      kind: mutable user-binding;
-                      name: i;
-                      ordinal: 0;
-                      path: i;
-                    } @ 179..182 (fid = 0) @ 237..238 (fid = 0),
-                  ];
-                } @ 219..239 (fid = 0) @ 219..239 (fid = 0),
-
-                @last_expr: none,
-              ] @ 209..246 (fid = 0);
-            } @ none @ none,
+                Symbol {
+                  kind: mutable user-binding;
+                  name: i;
+                  ordinal: 0;
+                  path: i;
+                } @ 179..182 (fid = 0) @ 237..238 (fid = 0),
+              ];
+            } @ 219..239 (fid = 0) @ 219..239 (fid = 0),
 
             @last_expr: none,
           ] @ 209..246 (fid = 0);
@@ -2289,31 +2282,24 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
               else_br: none;
             } @ none @ none,
 
-            Block {
-              label: none;
-              block: Block [
-                Call {
-                  callee: Symbol {
-                    kind: function;
-                    name: println;
-                    ordinal: 0;
-                    path: orb::println;
-                  } @ 138..145 (fid = 0) @ 308..315 (fid = 0);
-                  args: [
-                    string "j = {}" @ 316..324 (fid = 0),
+            Call {
+              callee: Symbol {
+                kind: function;
+                name: println;
+                ordinal: 0;
+                path: orb::println;
+              } @ 138..145 (fid = 0) @ 308..315 (fid = 0);
+              args: [
+                string "j = {}" @ 316..324 (fid = 0),
 
-                    Symbol {
-                      kind: mutable user-binding;
-                      name: j;
-                      ordinal: 1;
-                      path: j;
-                    } @ 252..255 (fid = 0) @ 326..327 (fid = 0),
-                  ];
-                } @ 308..328 (fid = 0) @ 308..328 (fid = 0),
-
-                @last_expr: none,
-              ] @ 298..335 (fid = 0);
-            } @ none @ none,
+                Symbol {
+                  kind: mutable user-binding;
+                  name: j;
+                  ordinal: 1;
+                  path: j;
+                } @ 252..255 (fid = 0) @ 326..327 (fid = 0),
+              ];
+            } @ 308..328 (fid = 0) @ 308..328 (fid = 0),
 
             @last_expr: none,
           ] @ 298..335 (fid = 0);
@@ -15467,7 +15453,7 @@ utir = {
             s3,
           ];
           tail: none;
-          typ: 'T2;
+          typ: e0;
         } @ 53..104 (fid = 0),
       };
       expr_t: {
@@ -15480,7 +15466,7 @@ utir = {
         e7: e1,
         e9: e8,
       };
-      type_vars: ['T0, 'T1, 'T2];
+      type_vars: ['T0, 'T1];
       constraints: [
         'T0 = {integer} @ 59..63 (fid = 0),
         'T1 = {float} @ 69..75 (fid = 0),
@@ -15565,14 +15551,14 @@ utir = {
         b0: Block {
           stmts: [];
           tail: none;
-          typ: 'T0;
+          typ: e0;
         } @ 57..59 (fid = 0),
       };
       expr_t: {
         e1: e1,
         e0: e1,
       };
-      type_vars: ['T0];
+      type_vars: [];
       constraints: [];
       expr_locs: {};
       stmt_locs: {};

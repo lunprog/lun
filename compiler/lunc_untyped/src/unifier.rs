@@ -88,7 +88,12 @@ impl Unifier {
 
                 self.ctem_builder = ctem.builder();
 
-                if typ_l != typ_r {
+                if typ_l != typ_r
+                    // TODO: this is kinda hackish maybe we should have a
+                    // prettier way of handling `never` types.
+                    && typ_l != Type::PrimType(PrimType::Never)
+                    && typ_r != Type::PrimType(PrimType::Never)
+                {
                     let expected_str = self.expr_to_string(expr_r);
                     let found_str = self.expr_to_string(expr_l);
 
@@ -126,7 +131,7 @@ impl Unifier {
                     let ability_str = ability.to_string();
 
                     self.sink()
-                        .emit(MismatchedTypes::new(pre, vec![ability_str], expr_str));
+                        .emit(MismatchedTypes::new(pre, vec![expr_str], ability_str));
                 }
             }
             Con {
@@ -139,13 +144,16 @@ impl Unifier {
                 rhs: ty,
                 pre,
             } => {
-                if let Some(substitution) = self.substitutions.get(tyvar) {
+                if let Some(substitution) = self.substitutions.get(tyvar).copied() {
                     self.unify_con(Con {
-                        lhs: *substitution,
+                        lhs: substitution,
                         rhs: ty,
                         pre,
                     });
-                    return;
+
+                    if substitution.is_strong() {
+                        return;
+                    }
                 }
 
                 assert!(!self.occurs_in(tyvar, ty));
@@ -156,13 +164,16 @@ impl Unifier {
                 rhs: Uty::TyVar(tyvar),
                 pre,
             } => {
-                if let Some(substitution) = self.substitutions.get(tyvar) {
+                if let Some(substitution) = self.substitutions.get(tyvar).copied() {
                     self.unify_con(Con {
                         lhs: ty,
-                        rhs: *substitution,
+                        rhs: substitution,
                         pre,
                     });
-                    return;
+
+                    if substitution.is_strong() {
+                        return;
+                    }
                 }
 
                 assert!(!self.occurs_in(tyvar, ty));

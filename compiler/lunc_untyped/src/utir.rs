@@ -426,9 +426,21 @@ pub enum Expr {
         params: Vec<ExprId>,
         ret: ExprId,
     },
-    /// External type, this expression refers to the type local to the item
-    /// given (`.0`) if any or the current body.
-    ExtType(Opt<ItemId>, Uty),
+    /// Type of the specified item, should not be used if the item id is the
+    /// same of the item containing the expression.
+    TypeofItem(ItemId),
+}
+
+impl Expr {
+    /// Returns the return type expression if it is a fundef-type or funptr-type
+    /// expression.
+    pub fn fun_ret(&self) -> Option<ExprId> {
+        match self {
+            Expr::FunptrType(_, ret) => ret.expand(),
+            Expr::FundefType { ret, .. } => Some(*ret),
+            _ => None,
+        }
+    }
 }
 
 /// External reference to an expr ([ExprId]) in the local item or in the
@@ -652,6 +664,21 @@ pub enum Uty {
     Integer,
     /// Float-able type
     Float,
+}
+
+impl Uty {
+    /// A weak-uty is Integer or Float.
+    ///
+    /// They are "weak" because in the substitution they can be replaced.
+    pub fn is_weak(&self) -> bool {
+        matches!(self, Uty::Integer | Uty::Float)
+    }
+
+    /// Opposite of `is_weak`.
+    #[inline]
+    pub fn is_strong(&self) -> bool {
+        !self.is_weak()
+    }
 }
 
 impl Display for Uty {

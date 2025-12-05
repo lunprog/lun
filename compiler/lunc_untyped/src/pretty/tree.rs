@@ -306,7 +306,13 @@ impl PrettyDump<OrbDumper> for Expr {
             Self::Param(ord) => write!(ctx.out, "param({ord})"),
             Self::Binding(id) => id.try_dump(ctx, extra),
             Self::Binary(lhs, op, rhs) => write!(ctx.out, "{lhs} {op} {rhs}"),
-            Self::Unary(op, expr) => write!(ctx.out, "{op} {expr}"),
+            Self::Unary(op, expr) => {
+                if op.is_left() {
+                    write!(ctx.out, "{op}{expr}")
+                } else {
+                    write!(ctx.out, "{expr}{op}")
+                }
+            }
             Self::Borrow(mutability, expr) => write!(ctx.out, "&{}{expr}", mutability.prefix_str()),
             Self::Call { callee, args } => {
                 write!(ctx.out, "call({callee}, ({}))", join_display(args))
@@ -368,13 +374,7 @@ impl PrettyDump<OrbDumper> for Expr {
 
                 Ok(())
             }
-            Self::ExtType(item, uty) => {
-                if let Some(item) = item.expand() {
-                    write!(ctx.out, "{uty}@{item}")
-                } else {
-                    write!(ctx.out, "{uty}")
-                }
-            }
+            Self::TypeofItem(item) => write!(ctx.out, "typeof_item({item})"),
         }
     }
 }

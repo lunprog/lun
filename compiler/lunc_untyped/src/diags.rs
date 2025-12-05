@@ -1,6 +1,6 @@
 //! Diagnostics of the UTIR stage
 
-use std::sync::Arc;
+use std::{panic::Location, sync::Arc};
 
 use lunc_diag::{Diagnostic, ErrorCode, Label, ToDiagnostic};
 use lunc_token::LitKind;
@@ -231,11 +231,18 @@ pub struct MtComplex {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum PreMt {
-    Simple(Span),
-    Complex(Arc<MtComplex>),
+    Simple {
+        loc: Span,
+        emit_loc: &'static Location<'static>,
+    },
+    Complex {
+        complex: Arc<MtComplex>,
+        emit_loc: &'static Location<'static>,
+    },
 }
 
 impl PreMt {
+    #[track_caller]
     pub fn new(
         loc: Span,
         due_to: impl Into<Option<Span>>,
@@ -245,9 +252,15 @@ impl PreMt {
         let notes: Vec<_> = notes.into_iter().collect();
 
         if due_to.is_none() && notes.is_empty() {
-            PreMt::Simple(loc)
+            PreMt::Simple {
+                loc,
+                emit_loc: Location::caller(),
+            }
         } else {
-            PreMt::Complex(Arc::new(MtComplex { due_to, loc, notes }))
+            PreMt::Complex {
+                complex: Arc::new(MtComplex { due_to, loc, notes }),
+                emit_loc: Location::caller(),
+            }
         }
     }
 }
@@ -255,29 +268,39 @@ impl PreMt {
 impl PreMt {
     pub fn loc(&self) -> Span {
         match self {
-            PreMt::Simple(loc) => *loc,
-            PreMt::Complex(complex) => complex.loc,
+            PreMt::Simple { loc, .. } => *loc,
+            PreMt::Complex { complex, .. } => complex.loc,
         }
     }
 
     pub fn due_to(&self) -> Option<Span> {
         match self {
-            PreMt::Simple(_) => None,
-            PreMt::Complex(complex) => complex.due_to,
+            PreMt::Simple { .. } => None,
+            PreMt::Complex { complex, .. } => complex.due_to,
         }
     }
 
     pub fn notes(&self) -> Vec<String> {
         match self {
-            PreMt::Simple(_) => Vec::new(),
-            PreMt::Complex(complex) => complex.notes.clone(),
+            PreMt::Simple { .. } => Vec::new(),
+            PreMt::Complex { complex, .. } => complex.notes.clone(),
         }
+    }
+
+    pub fn emit_loc(&self) -> &'static Location<'static> {
+        let (PreMt::Simple { emit_loc, .. } | PreMt::Complex { emit_loc, .. }) = self;
+
+        emit_loc
     }
 }
 
 impl From<Span> for PreMt {
+    #[track_caller]
     fn from(value: Span) -> Self {
-        PreMt::Simple(value)
+        PreMt::Simple {
+            loc: value,
+            emit_loc: Location::caller(),
+        }
     }
 }
 
@@ -300,6 +323,7 @@ pub struct MismatchedTypes {
     pub due_to: Option<Span>,
     pub notes: Vec<String>,
     pub loc: Span,
+    pub emit_loc: &'static Location<'static>,
 }
 
 impl MismatchedTypes {
@@ -310,6 +334,7 @@ impl MismatchedTypes {
             due_to: pre.due_to(),
             notes: pre.notes(),
             loc: pre.loc(),
+            emit_loc: pre.emit_loc(),
         }
     }
 }
@@ -329,6 +354,16 @@ impl ToDiagnostic for MismatchedTypes {
                     .map(|loc| Label::secondary(loc.fid, loc).with_message("expected due to this")),
             )
             .with_notes(self.notes)
+            .with_notes_iter(if cfg!(debug_assertions) {
+                Some(format!(
+                    "DEBUG: PreMt created in {}, at {}:{}",
+                    self.emit_loc.file(),
+                    self.emit_loc.line(),
+                    self.emit_loc.column()
+                ))
+            } else {
+                None
+            })
     }
 }
 

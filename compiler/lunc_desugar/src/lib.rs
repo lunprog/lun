@@ -313,30 +313,34 @@ impl FromHigher for DsExpression {
             //         break :label;
             //     }
             //
-            //     {
-            //         // body
-            //     };
+            //     // body
             // }
             // ```
             //
             // NOTE: if you modify the desugaring of while expression, this
             // might break the detection of while expression in the SCIR in
             // file `lunc_untyped/src/lib.rs` in the function `gen_expr`
-            ExprKind::PredicateLoop { label, cond, body } => DsExprKind::Loop {
-                label: label.clone(),
-                body: block(
-                    body.loc,
-                    vec![
-                        stmt_expr(expr_if(
-                            expr_unary(UnOp::Not, lower(*cond)),
-                            expr_break(label.map(|Spanned { node: name, loc: _ }| name), None),
-                            None,
-                        )),
-                        stmt_expr(expr_block(lower(body))),
-                    ],
+            ExprKind::PredicateLoop { label, cond, body } => {
+                let mut stmts = Vec::with_capacity(body.stmts.len() + 1);
+
+                stmts.push(stmt_expr(expr_if(
+                    expr_unary(UnOp::Not, lower(*cond)),
+                    expr_break(
+                        label.clone().map(|Spanned { node: name, loc: _ }| name),
+                        None,
+                    ),
                     None,
-                ),
-            },
+                )));
+
+                for stmt in body.stmts {
+                    stmts.push(lower(stmt));
+                }
+
+                DsExprKind::Loop {
+                    label: label.clone(),
+                    body: block(body.loc, stmts, lower(body.last_expr)),
+                }
+            }
             ExprKind::IteratorLoop { loc, .. } => DsExprKind::Poisoned {
                 diag: Some(feature_todo! {
                     feature: "iterator loop",
@@ -392,11 +396,13 @@ impl FromHigher for DsExpression {
 }
 
 pub fn lower_if_expression(ifexpr: IfExpression) -> DsExprKind {
+    let then_b: DsBlock = lower(*ifexpr.body);
+
     DsExprKind::If {
         cond: lower(ifexpr.cond),
         then_br: Box::new(DsExpression {
-            expr: expr_block(lower(*ifexpr.body)).expr,
-            loc: Some(ifexpr.loc),
+            loc: then_b.loc,
+            expr: expr_block(then_b.loc, then_b).expr,
         }),
         else_br: match ifexpr.else_br.map(|e| *e) {
             Some(Else::IfExpr(ifexp)) => Some(Box::new(DsExpression {
@@ -405,7 +411,7 @@ pub fn lower_if_expression(ifexpr: IfExpression) -> DsExprKind {
             })),
             Some(Else::Block(block)) => Some(Box::new(DsExpression {
                 loc: Some(block.loc),
-                expr: expr_block(lower(block)).expr,
+                expr: expr_block(block.loc, lower(block)).expr,
             })),
             None => None,
         },
@@ -662,10 +668,10 @@ pub fn expr_if(
 }
 
 /// Creates a block expression without location.
-pub fn expr_block(block: DsBlock) -> DsExpression {
+pub fn expr_block(loc: impl Into<OSpan>, block: DsBlock) -> DsExpression {
     DsExpression {
         expr: DsExprKind::Block { label: None, block },
-        loc: None,
+        loc: loc.into(),
     }
 }
 
