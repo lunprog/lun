@@ -863,6 +863,7 @@ dependencies = [
  "lunc_parser",
  "lunc_seq",
  "lunc_token",
+ "lunc_untyped",
  "lunc_utils",
  "shadow-rs",
  "termcolor",
@@ -918,6 +919,10 @@ dependencies = [
 [[package]]
 name = "lunc_entity"
 version = "0.1.0"
+dependencies = [
+ "indexmap",
+ "lunc_utils",
+]
 
 [[package]]
 name = "lunc_lexer"
@@ -980,6 +985,19 @@ dependencies = [
 name = "lunc_token"
 version = "0.1.0"
 dependencies = [
+ "lunc_utils",
+]
+
+[[package]]
+name = "lunc_untyped"
+version = "0.1.0"
+dependencies = [
+ "lunc_ast",
+ "lunc_desugar",
+ "lunc_diag",
+ "lunc_entity",
+ "lunc_seq",
+ "lunc_token",
  "lunc_utils",
 ]
 

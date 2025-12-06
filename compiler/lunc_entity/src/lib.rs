@@ -43,11 +43,17 @@
 //! ```
 
 use std::{
-    collections::HashMap,
-    fmt::{self, Debug},
-    hash::Hash,
+    fmt::{self, Debug, Display},
+    hash::{Hash, Hasher},
+    io,
     marker::PhantomData,
     mem,
+};
+
+use indexmap::{IndexMap, IndexSet};
+use lunc_utils::{
+    impl_pdump,
+    pretty::{PrettyCtxt, PrettyDump},
 };
 
 /// An entity is a tiny, `Copy` identifier used across the compiler.
@@ -104,6 +110,11 @@ pub trait Entity: Debug + Copy + PartialEq + Eq + Hash {
     #[inline(always)]
     fn is_reserved(self) -> bool {
         self == Entity::RESERVED
+    }
+
+    /// Converts this entity to an [`AnyId`].
+    fn to_any(self) -> AnyId {
+        AnyId(self.index() as u32)
     }
 }
 
@@ -170,12 +181,11 @@ macro_rules! entity {
 /// assert!(db.is_valid(id));
 /// assert_eq!(db.get(id), &"value".to_string());
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct EntityDb<E: Entity> {
     /// the data being stored
     elems: Vec<E::Data>,
-    /// last id given to an entity
-    last_id: usize,
+    /// phantom data so that E is actually used
     _e: PhantomData<fn(E) -> E::Data>,
 }
 
@@ -184,7 +194,6 @@ impl<E: Entity> EntityDb<E> {
     pub fn new() -> EntityDb<E> {
         EntityDb {
             elems: Vec::new(),
-            last_id: 0,
             _e: PhantomData,
         }
     }
@@ -200,19 +209,26 @@ impl<E: Entity> EntityDb<E> {
     /// Allocate a new entity and store `data` for it. The returned value is a
     /// fresh `E` whose index corresponds to the pushed slot.
     pub fn create(&mut self, data: E::Data) -> E {
-        let entity = E::new(self.last_id);
-        self.last_id += 1;
+        let entity = E::new(self.elems.len());
 
         self.elems.push(data);
 
         entity
     }
 
+    /// Create a new entity with data the default value of `E::Data`.
+    pub fn create_default(&mut self) -> E
+    where
+        E::Data: Default,
+    {
+        self.create(E::Data::default())
+    }
+
     /// Create a new entity with `ctor` that takes the id as argument, and
     /// returns the data to associate with the entity. This method returns the
     /// entity created.
     pub fn create_with(&mut self, ctor: impl FnOnce(E) -> E::Data) -> E {
-        let entity = E::new(self.last_id);
+        let entity = E::new(self.elems.len());
         self.create(ctor(entity));
 
         entity
@@ -234,7 +250,7 @@ impl<E: Entity> EntityDb<E> {
         let mut entities = Vec::with_capacity(count);
 
         for i in 0..count {
-            let entity = E::new(self.last_id);
+            let entity = E::new(self.elems.len());
             entities.push(entity);
             let data = ctor(entity, i);
             let res = self.create(data);
@@ -293,6 +309,13 @@ impl<E: Entity> EntityDb<E> {
         self.elems.iter()
     }
 
+    /// Returns an iterator over the stored entities handles.
+    ///
+    /// The iterator yields all the data in the order they were created.
+    pub fn entity_iter(&self) -> impl ExactSizeIterator<Item = E> + use<E> {
+        (0..self.elems.len()).map(|i| E::new(i))
+    }
+
     /// Returns an iterator on the entity and its associated data.
     ///
     /// The iterator yields all the data in the order they were created.
@@ -305,7 +328,7 @@ impl<E: Entity> EntityDb<E> {
 
     /// Get the last entity we created
     pub fn last(&self) -> E {
-        E::new(self.last_id - 1)
+        E::new(self.elems.len() - 1)
     }
 }
 
@@ -338,7 +361,7 @@ impl<E: Entity> Default for EntityDb<E> {
 /// ```
 #[derive(Debug, Clone)]
 pub struct SparseMap<E: Entity, V> {
-    elems: HashMap<usize, V>,
+    elems: IndexMap<usize, V>,
     _e: PhantomData<fn(E) -> V>,
 }
 
@@ -346,7 +369,7 @@ impl<E: Entity, V> SparseMap<E, V> {
     /// Create a new empty [`SparseMap`].
     pub fn new() -> SparseMap<E, V> {
         SparseMap {
-            elems: HashMap::new(),
+            elems: IndexMap::new(),
             _e: PhantomData,
         }
     }
@@ -380,11 +403,26 @@ impl<E: Entity, V> SparseMap<E, V> {
     pub fn is_empty(&self) -> bool {
         self.elems.is_empty()
     }
+
+    /// Returns an iterator on the entity and its associated data.
+    pub fn iter(&self) -> impl Iterator<Item = (E, &V)> {
+        self.elems.iter().map(|(id, data)| (E::new(*id), data))
+    }
 }
 
 impl<E: Entity, V> Default for SparseMap<E, V> {
     fn default() -> Self {
         SparseMap::new()
+    }
+}
+
+impl<E: Entity, V: Hash> Hash for SparseMap<E, V> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.elems.len().hash(state);
+
+        for pair in self.iter() {
+            pair.hash(state);
+        }
     }
 }
 
@@ -519,6 +557,111 @@ impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
     }
 }
 
+/// A set of entities, used to store only one copy of an entity. It should be
+/// used instead of a `Vec<Entity>` when you know that you want only one entry by entity.
+#[derive(Debug, Clone)]
+pub struct EntitySet<E: Entity> {
+    elems: IndexSet<E>,
+}
+
+impl<E: Entity> EntitySet<E> {
+    /// Create a new empty entity set.
+    pub fn new() -> EntitySet<E> {
+        EntitySet {
+            elems: IndexSet::new(),
+        }
+    }
+
+    /// Insert a new entity in the set.
+    #[inline]
+    pub fn insert(&mut self, entity: E) {
+        self.elems.insert(entity);
+    }
+
+    /// Returns `true` if the entity is in the set.
+    #[inline]
+    pub fn exists(&self, entity: E) -> bool {
+        self.elems.contains(&entity)
+    }
+
+    /// Clear the set
+    #[inline]
+    pub fn clear(&mut self) {
+        self.elems.clear();
+    }
+
+    /// Count of how many entities are stored in the set.
+    #[inline]
+    pub fn len(&mut self) -> usize {
+        self.elems.len()
+    }
+
+    /// Returns `true` if the set is empty.
+    #[inline]
+    pub fn is_empty(&mut self) -> bool {
+        self.len() == 0
+    }
+
+    /// Get an iterator over the entries of the set, it is ensured to be in the
+    /// order of insertion.
+    pub fn iter(&self) -> impl Iterator<Item = &E> {
+        self.elems.iter()
+    }
+}
+
+impl<E: Entity> Default for EntitySet<E> {
+    fn default() -> Self {
+        EntitySet::new()
+    }
+}
+
+impl<Ex: Clone, E: Entity + PrettyDump<Ex>> PrettyDump<Ex> for EntitySet<E> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &Ex) -> io::Result<()> {
+        ctx.pretty_list(None, extra)
+            .disable_nl()
+            .items(self.iter())
+            .finish()
+    }
+}
+
+impl<E: Entity> Hash for EntitySet<E> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        for entity in self.iter() {
+            entity.hash(state);
+        }
+    }
+}
+
+/// Any entity, can be downcast to anything that implements [`Entity`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct AnyId(u32);
+
+impl AnyId {
+    /// Create a new any id from the entity, ensured to be a valid any id.
+    pub fn upcast<E: Entity>(entity: E) -> AnyId {
+        entity.to_any()
+    }
+
+    /// Downcast this any id to `E`.
+    ///
+    /// # Safety
+    ///
+    /// You should only downcast when you are 100% that it will be a valid entity.
+    pub fn downcast<E: Entity>(self) -> E {
+        E::new(self.0 as usize)
+    }
+}
+
+impl Display for AnyId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "AnyId({})", self.0)
+    }
+}
+
+impl_pdump! {
+    AnyId,
+}
+
 /// [`Opt<E>`] is an optimized [`Option<E>`]: it stores an [`Entity`] but reuses
 /// the [`Entity::RESERVED`] sentinel to represent `None`. This ensures `Opt<E>`
 /// is the same size as `E`.
@@ -546,11 +689,11 @@ impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
 /// assert!(some.is_some());
 /// assert_eq!(some.unwrap().index(), 1);
 /// ```
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Opt<E: Entity>(E);
 
 impl<E: Entity> Opt<E> {
-    /// Construct a [`Some(entity)`]. Panics (in debug mode) if `entity` is the
+    /// Construct a `Some(entity)`. Panics (in debug mode) if `entity` is the
     /// reserved Entity.
     #[allow(non_snake_case)]
     pub fn Some(entity: E) -> Opt<E> {
@@ -606,6 +749,48 @@ impl<E: Entity> Debug for Opt<E> {
         } else {
             f.debug_struct("None").finish()
         }
+    }
+}
+
+impl<E: Entity + Display> Display for Opt<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_some() {
+            Display::fmt(&self.0, f)
+        } else {
+            write!(f, "None")
+        }
+    }
+}
+
+impl<E: PrettyDump<Ex> + Entity, Ex> PrettyDump<Ex> for Opt<E> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &Ex) -> io::Result<()> {
+        self.expand().try_dump(ctx, extra)
+    }
+}
+
+impl<E: Entity> From<Option<E>> for Opt<E> {
+    fn from(value: Option<E>) -> Self {
+        match value {
+            Some(e) => Opt::Some(e),
+            None => Opt::None,
+        }
+    }
+}
+
+pub mod private {
+    pub trait Sealed {}
+
+    impl<E> Sealed for Option<E> {}
+}
+
+pub trait OptionExt<E: Entity>: private::Sealed {
+    /// Reduces the `Option<E>` to an `Opt<E>`, where `E` is an [Entity].
+    fn shorten(self) -> Opt<E>;
+}
+
+impl<E: Entity> OptionExt<E> for Option<E> {
+    fn shorten(self) -> Opt<E> {
+        Opt::from(self)
     }
 }
 

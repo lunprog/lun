@@ -1,12 +1,15 @@
 //! Pretty tree printer, used for printing the AST, the DSIR, and the HTIR
 
-use std::io::{self, Write};
+use std::{
+    fmt::{self, Display},
+    io::{self, Write},
+};
 
 use crate::Span;
 
 #[macro_export]
 macro_rules! pretty_struct {
-    ($ctx:expr, $extra:expr, $name:tt, { $( $field:ident ),* $(,)? } $(,)? $( , $loc:expr )?) => {
+    ($ctx:expr, $extra:expr, $name:tt, { $( $field:ident: $field_e:expr ),* $(,)? } $(,)? $( , $loc:expr )?) => {
         $crate::pretty::is_pretty_ctxt($ctx);
 
         let name = $name;
@@ -23,7 +26,7 @@ macro_rules! pretty_struct {
             $ctx.write_indent()?;
 
             write!($ctx.out, "{}: ", std::stringify!($field))?;
-            PrettyDump::try_dump($field, $ctx, $extra)?;
+            PrettyDump::try_dump(&$field_e, $ctx, $extra)?;
             writeln!($ctx.out, ";")?;
         )*
 
@@ -34,6 +37,17 @@ macro_rules! pretty_struct {
         $(
             $ctx.print_loc($loc)?;
         )?
+    };
+    ($ctx:expr, $extra:expr, $name:tt, { $( $field:ident ),* $(,)? } $(,)? $( , $loc:expr )?) => {
+        $crate::pretty_struct! {
+            $ctx,
+            $extra,
+            $name,
+            {
+                $( $field: $field ),*
+            },
+            $( $loc )?
+        }
     };
 }
 
@@ -58,6 +72,8 @@ pub struct ListDump<'ctx, 'w, E> {
     finished: bool,
     is_empty: bool,
     extra: E,
+    /// if `true` then it will not print a new line between elements
+    no_nl: bool,
 }
 
 impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
@@ -72,7 +88,10 @@ impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
                 writeln!(self.ctx.out)?;
                 self.ctx.write_indent()?;
                 item.try_dump(self.ctx, &self.extra)?;
-                writeln!(self.ctx.out, ",")?;
+                write!(self.ctx.out, ",")?;
+                if !self.no_nl {
+                    writeln!(self.ctx.out)?;
+                }
                 self.is_empty = false;
 
                 Ok(())
@@ -99,7 +118,10 @@ impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
                     writeln!(self.ctx.out)?;
                     self.ctx.write_indent()?;
                     item.try_dump(self.ctx, &self.extra)?;
-                    writeln!(self.ctx.out, ",")?;
+                    write!(self.ctx.out, ",")?;
+                    if !self.no_nl {
+                        writeln!(self.ctx.out)?;
+                    }
                     self.is_empty = false;
                 }
 
@@ -107,6 +129,12 @@ impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
             })();
         }
 
+        self
+    }
+
+    /// Disable the newline between elements, enabled by default.
+    pub fn disable_nl(mut self) -> Self {
+        self.no_nl = true;
         self
     }
 
@@ -120,6 +148,10 @@ impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
                 self.ctx.dedent();
 
                 if !self.is_empty {
+                    if self.no_nl {
+                        writeln!(self.ctx.out)?;
+                    }
+
                     self.ctx.write_indent()?;
                 }
                 write!(self.ctx.out, "]")
@@ -135,6 +167,7 @@ impl<'ctx, 'w, E> ListDump<'ctx, 'w, E> {
 pub enum Writer<'w> {
     Owned(Box<dyn Write>),
     Borrowed(&'w mut dyn Write),
+    BorrowedFmt(&'w mut dyn fmt::Write),
 }
 
 impl<'w> Writer<'w> {
@@ -148,6 +181,12 @@ impl<'w> Write for Writer<'w> {
         match self {
             Writer::Owned(w) => w.write(buf),
             Writer::Borrowed(w) => w.write(buf),
+            Writer::BorrowedFmt(w) => {
+                let str = String::from_utf8_lossy(buf);
+                w.write_str(&str).unwrap();
+
+                Ok(buf.len())
+            }
         }
     }
 
@@ -155,6 +194,7 @@ impl<'w> Write for Writer<'w> {
         match self {
             Writer::Owned(w) => w.flush(),
             Writer::Borrowed(w) => w.flush(),
+            Writer::BorrowedFmt(_) => Ok(()),
         }
     }
 }
@@ -222,6 +262,7 @@ impl<'w> PrettyCtxt<'w> {
             finished: false,
             is_empty: true,
             extra: extra.clone(),
+            no_nl: false,
         }
     }
 
@@ -232,6 +273,42 @@ impl<'w> PrettyCtxt<'w> {
         } else {
             write!(self.out, " @ none")
         }
+    }
+
+    /// Pretty-print a map-like aggregate.
+    pub fn pretty_map<I, K, V, E>(&mut self, entries: I, extra: &E) -> io::Result<()>
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: Display,
+        V: PrettyDump<E>,
+        E: Clone,
+    {
+        let entries = entries.into_iter();
+
+        write!(self.out, "{{")?;
+        self.indent();
+        let mut is_empty = true;
+
+        for (k, v) in entries {
+            is_empty = false;
+
+            writeln!(self.out)?;
+            self.write_indent()?;
+            write!(self.out, "{k}: ")?;
+            v.try_dump(self, extra)?;
+            write!(self.out, ",")?;
+        }
+
+        self.dedent();
+
+        if !is_empty {
+            writeln!(self.out)?;
+            self.write_indent()?;
+        }
+
+        write!(self.out, "}}")?;
+
+        Ok(())
     }
 }
 
@@ -375,4 +452,20 @@ impl_pdump! {
     f32,
     f64,
     // f128,
+}
+
+impl<E> PrettyDump<E> for () {
+    fn try_dump(&self, _: &mut PrettyCtxt, _: &E) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+pub fn pretty_to_string<T: PrettyDump<E>, E>(val: T, extra: &E) -> String {
+    let mut res = String::new();
+
+    let mut ctx = PrettyCtxt::new(4, Writer::BorrowedFmt(&mut res));
+
+    val.try_dump(&mut ctx, extra).unwrap();
+
+    res
 }

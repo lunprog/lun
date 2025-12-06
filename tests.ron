@@ -1723,7 +1723,7 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
 
               @last_expr: none,
             ] @ 544..567 (fid = 0);
-          } @ 536..596 (fid = 0);
+          } @ 544..567 (fid = 0);
           else_br: Block {
             label: none;
             block: Block [
@@ -2209,31 +2209,24 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
               else_br: none;
             } @ none @ none,
 
-            Block {
-              label: none;
-              block: Block [
-                Call {
-                  callee: Symbol {
-                    kind: function;
-                    name: println;
-                    ordinal: 0;
-                    path: orb::println;
-                  } @ 138..145 (fid = 0) @ 219..226 (fid = 0);
-                  args: [
-                    string "i = {}" @ 227..235 (fid = 0),
+            Call {
+              callee: Symbol {
+                kind: function;
+                name: println;
+                ordinal: 0;
+                path: orb::println;
+              } @ 138..145 (fid = 0) @ 219..226 (fid = 0);
+              args: [
+                string "i = {}" @ 227..235 (fid = 0),
 
-                    Symbol {
-                      kind: mutable user-binding;
-                      name: i;
-                      ordinal: 0;
-                      path: i;
-                    } @ 179..182 (fid = 0) @ 237..238 (fid = 0),
-                  ];
-                } @ 219..239 (fid = 0) @ 219..239 (fid = 0),
-
-                @last_expr: none,
-              ] @ 209..246 (fid = 0);
-            } @ none @ none,
+                Symbol {
+                  kind: mutable user-binding;
+                  name: i;
+                  ordinal: 0;
+                  path: i;
+                } @ 179..182 (fid = 0) @ 237..238 (fid = 0),
+              ];
+            } @ 219..239 (fid = 0) @ 219..239 (fid = 0),
 
             @last_expr: none,
           ] @ 209..246 (fid = 0);
@@ -2289,31 +2282,24 @@ error: compilation of `E026` failed due to 1 error and 0 warnings
               else_br: none;
             } @ none @ none,
 
-            Block {
-              label: none;
-              block: Block [
-                Call {
-                  callee: Symbol {
-                    kind: function;
-                    name: println;
-                    ordinal: 0;
-                    path: orb::println;
-                  } @ 138..145 (fid = 0) @ 308..315 (fid = 0);
-                  args: [
-                    string "j = {}" @ 316..324 (fid = 0),
+            Call {
+              callee: Symbol {
+                kind: function;
+                name: println;
+                ordinal: 0;
+                path: orb::println;
+              } @ 138..145 (fid = 0) @ 308..315 (fid = 0);
+              args: [
+                string "j = {}" @ 316..324 (fid = 0),
 
-                    Symbol {
-                      kind: mutable user-binding;
-                      name: j;
-                      ordinal: 1;
-                      path: j;
-                    } @ 252..255 (fid = 0) @ 326..327 (fid = 0),
-                  ];
-                } @ 308..328 (fid = 0) @ 308..328 (fid = 0),
-
-                @last_expr: none,
-              ] @ 298..335 (fid = 0);
-            } @ none @ none,
+                Symbol {
+                  kind: mutable user-binding;
+                  name: j;
+                  ordinal: 1;
+                  path: j;
+                } @ 252..255 (fid = 0) @ 326..327 (fid = 0),
+              ];
+            } @ 308..328 (fid = 0) @ 308..328 (fid = 0),
 
             @last_expr: none,
           ] @ 298..335 (fid = 0);
@@ -15418,6 +15404,177 @@ warning: compilation of `never_block` succeeded but 2 warnings emitted.
 
 ",
         compiler_code: 0,
+        test_out: "",
+        test_code: 0,
+    ),
+    "utir/E017": (
+        compiler_out: r#"[compiler/lunc/src/lib.rs:853:5] unifier.substitutions() = SparseMap {
+    elems: {
+        0: Integer,
+        1: Float,
+    },
+    _e: PhantomData<fn(lunc_untyped::utir::TyVar) -> lunc_untyped::utir::Uty>,
+}
+utir = {
+  i0: Fundef {
+    name: main @ 39..43 (fid = 0);
+    path: orb::main;
+    typ: e2;
+    params: {};
+    ret_ty: none;
+    entry: b0;
+    body: Body {
+      labels: {};
+      bindings: {};
+      stmts: {
+        s0: e3,
+        s1: e4,
+        s2: e6,
+        s3: e9,
+      };
+      exprs: {
+        e0: primitive_type(void),
+        e1: primitive_type(type),
+        e2: fun() -> e0 { i0 },
+        e3: int(1),
+        e4: float(2),
+        e5: primitive_type(char),
+        e6: char('c'),
+        e7: primitive_type(str),
+        e8: *e7,
+        e9: str("Hello"),
+      };
+      blocks: {
+        b0: Block {
+          stmts: [
+            s0,
+            s1,
+            s2,
+            s3,
+          ];
+          tail: none;
+          typ: e0;
+        } @ 53..104 (fid = 0),
+      };
+      expr_t: {
+        e1: e1,
+        e0: e1,
+        e3: 'T0,
+        e4: 'T1,
+        e5: e1,
+        e6: e5,
+        e7: e1,
+        e9: e8,
+      };
+      type_vars: ['T0, 'T1];
+      constraints: [
+        'T0 = {integer} @ 59..63 (fid = 0),
+        'T1 = {float} @ 69..75 (fid = 0),
+      ];
+      expr_locs: {
+        e3: 59..63 (fid = 0),
+        e4: 69..75 (fid = 0),
+        e6: 81..86 (fid = 0),
+        e9: 92..101 (fid = 0),
+      };
+      stmt_locs: {
+        s0: 59..63 (fid = 0),
+        s1: 69..75 (fid = 0),
+        s2: 81..86 (fid = 0),
+        s3: 92..101 (fid = 0),
+      };
+    };
+  } @ 39..104 (fid = 0),
+}
+error[E017]: unknown literal tag 'ab' for integer
+  ┌─ ./tests/utir/E017.lun:3:5
+  │
+3 │     1'ab;
+  │     ^^^^
+  │
+  = valid tags are integer types like, 'u8', 'u16', 'isz' etc.
+
+error[E017]: unknown literal tag 'cd' for float
+  ┌─ ./tests/utir/E017.lun:4:5
+  │
+4 │     2.0'cd;
+  │     ^^^^^^
+  │
+  = valid float tags are float types: 'f32', 'f64'.
+
+error[E017]: unknown literal tag 'ef' for char
+  ┌─ ./tests/utir/E017.lun:5:5
+  │
+5 │     ef'c';
+  │     ^^^^^
+  │
+  = currently character literals do not support tags.
+
+error[E017]: unknown literal tag 'gh' for string
+  ┌─ ./tests/utir/E017.lun:6:5
+  │
+6 │     gh"Hello";
+  │     ^^^^^^^^^
+  │
+  = valid string literal tag is 'c'.
+
+error: compilation of `E017` failed due to 4 errors and 0 warnings
+
+"#,
+        compiler_code: 255,
+        test_out: "",
+        test_code: 0,
+    ),
+    "utir/E040": (
+        compiler_out: "[compiler/lunc/src/lib.rs:853:5] unifier.substitutions() = SparseMap {
+    elems: {},
+    _e: PhantomData<fn(lunc_untyped::utir::TyVar) -> lunc_untyped::utir::Uty>,
+}
+utir = {
+  i0: Fundef {
+    name: a @ 46..47 (fid = 0);
+    path: orb::a;
+    typ: e2;
+    params: {};
+    ret_ty: none;
+    entry: b0;
+    body: Body {
+      labels: {};
+      bindings: {};
+      stmts: {};
+      exprs: {
+        e0: primitive_type(void),
+        e1: primitive_type(type),
+        e2: fun() -> e0 { i0 },
+      };
+      blocks: {
+        b0: Block {
+          stmts: [];
+          tail: none;
+          typ: e0;
+        } @ 57..59 (fid = 0),
+      };
+      expr_t: {
+        e1: e1,
+        e0: e1,
+      };
+      type_vars: [];
+      constraints: [];
+      expr_locs: {};
+      stmt_locs: {};
+    };
+  } @ 46..59 (fid = 0),
+}
+error[E040]: cannot define a function definition inside of a mutable global definition
+  ┌─ ./tests/utir/E040.lun:3:1
+  │
+3 │ a := fun() {}
+  │ ^^^^^^^^^^^^^
+
+error: compilation of `E040` failed due to 1 error and 0 warnings
+
+",
+        compiler_code: 255,
         test_out: "",
         test_code: 0,
     ),

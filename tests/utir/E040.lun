@@ -1,0 +1,10 @@
+// EO40: error testing - FunctionInGlobalMut
+
+a := fun() {}
+
+// TODO: re-enable those test cases.
+// b := fun();
+
+// extern "C" {
+//     c := fun();
+// }
