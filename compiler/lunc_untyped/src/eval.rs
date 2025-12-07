@@ -11,7 +11,7 @@ use lunc_entity::Opt;
 use lunc_seq::sir::{self, PrimType};
 use lunc_utils::Span;
 
-use crate::diags::CantEvaluateAtComptime;
+use crate::{diags::CantEvaluateAtComptime, utir::Ext};
 
 use super::utir;
 
@@ -23,6 +23,7 @@ pub struct CtemBuilder {
     pub(crate) sink: DiagnosticSink,
     old_hash: Option<u64>,
     hash_builder: RandomState,
+    coming_from: Option<(utir::ItemId, utir::ExprId)>,
 }
 
 impl CtemBuilder {
@@ -33,6 +34,7 @@ impl CtemBuilder {
             sink,
             old_hash: None,
             hash_builder: RandomState::new(),
+            coming_from: None,
         }
     }
 
@@ -57,6 +59,7 @@ impl CtemBuilder {
             emit_diag: true,
             loc: Span::ZERO,
             memo,
+            coming_from: self.coming_from,
         }
     }
 }
@@ -102,6 +105,8 @@ pub struct UtirCtem<'utir> {
     loc: Span,
     /// Memoized results
     memo: HashMap<(utir::ItemId, utir::ExprId), UtirValue>,
+    /// the previous expression that was evaluated
+    coming_from: Option<(utir::ItemId, utir::ExprId)>,
 }
 
 impl<'utir> UtirCtem<'utir> {
@@ -114,6 +119,7 @@ impl<'utir> UtirCtem<'utir> {
             emit_diag: true,
             loc: Span::ZERO,
             memo: HashMap::new(),
+            coming_from: None,
         }
     }
 
@@ -133,6 +139,26 @@ impl<'utir> UtirCtem<'utir> {
         self.current_item().body().expr_t.get(expr).copied()
     }
 
+    fn with_item<R>(
+        &mut self,
+        item: utir::ItemId,
+        mut f: impl for<'a> FnMut(&'a mut Self) -> R,
+    ) -> R {
+        let old_item = self.item;
+        let old_emit = self.emit_diag;
+        let old_loc = mem::replace(&mut self.loc, Span::ZERO);
+
+        self.item = Opt::Some(item);
+
+        let res = f(self);
+
+        self.item = old_item;
+        self.loc = old_loc;
+        self.emit_diag = old_emit;
+
+        res
+    }
+
     /// Tries to evaluate the expression `expr` in the item `item`.
     ///
     /// # Errors
@@ -140,31 +166,23 @@ impl<'utir> UtirCtem<'utir> {
     /// If this function in unable to evaluate the expression at compile-time it
     /// will return `None` and maybe emit a diagnostic.
     pub fn evaluate_expr(&mut self, item: utir::ItemId, expr: utir::ExprId) -> Option<UtirValue> {
-        let old_item = self.item;
-        let old_loc = mem::replace(&mut self.loc, Span::ZERO);
+        self.with_item(item, |this| {
+            let expr_loc = this.get_expr_loc(expr).unwrap_or_default();
 
-        self.item = Opt::Some(item);
+            match this._eval_expr(expr) {
+                Ok(v) => Some(v),
 
-        let expr_loc = self.get_expr_loc(expr).unwrap_or_default();
+                Err((loc, note)) => {
+                    this.sink.emit(CantEvaluateAtComptime {
+                        note,
+                        loc_expr: expr_loc,
+                        loc,
+                    });
 
-        let res = match self._eval_expr(expr) {
-            Ok(v) => Some(v),
-
-            Err((loc, note)) => {
-                self.sink.emit(CantEvaluateAtComptime {
-                    note,
-                    loc_expr: expr_loc,
-                    loc,
-                });
-
-                None
+                    None
+                }
             }
-        };
-
-        self.item = old_item;
-        self.loc = old_loc;
-
-        res
+        })
     }
 
     /// Tries to evaluate an expression as a type.
@@ -176,17 +194,14 @@ impl<'utir> UtirCtem<'utir> {
     /// can emit in type-checking the "expected type but got an expression"
     /// diagnostic.
     pub fn evaluate_type(&mut self, item: utir::ItemId, typ: utir::ExprId) -> Option<utir::Type> {
-        let old_emit = self.emit_diag;
-        self.emit_diag = false;
+        self.with_item(item, |this| {
+            this.emit_diag = false;
 
-        let res = match self.evaluate_expr(item, typ) {
-            Some(UtirValue::Type(t)) => Some(t),
-            Some(_) | None => None,
-        };
-
-        self.emit_diag = old_emit;
-
-        res
+            match this.evaluate_expr(item, typ) {
+                Some(UtirValue::Type(t)) => Some(t),
+                Some(_) | None => None,
+            }
+        })
     }
 
     /// Tries to evaluate the expression, return `None` if it can't evaluate at
@@ -301,6 +316,19 @@ impl<'utir> UtirCtem<'utir> {
                     ret: Box::new(ret_t),
                 }))
             }
+            utir::Expr::ExtExpr(ext @ Ext { item, ent }) => {
+                let old = self.item.unwrap();
+
+                self.with_item(item, |this| {
+                    if this.coming_from == Some((old, ent)) {
+                        panic!("Cyclic expression {ext}")
+                    }
+
+                    this.coming_from = Some((this.item.unwrap(), ent));
+
+                    this._eval_expr(ent)
+                })
+            }
             e => {
                 if cfg!(debug_assertions) {
                     Err((expr_loc, Some(format!("DEBUG: {e:?} isn't able to eval."))))
@@ -346,6 +374,7 @@ impl<'utir> UtirCtem<'utir> {
             sink: self.sink,
             old_hash,
             hash_builder,
+            coming_from: self.coming_from,
         }
     }
 }

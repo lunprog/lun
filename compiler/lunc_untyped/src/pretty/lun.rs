@@ -89,7 +89,7 @@ struct OrbDumperInner {
 
 impl PrettyDump<LunFlavor> for Orb {
     fn try_dump(&self, ctx: &mut PrettyCtxt, _: &LunFlavor) -> io::Result<()> {
-        let Orb { items } = self;
+        let Orb { items, flavor: _ } = self;
 
         let dumper = OrbDumper(Rc::new(Mutex::new(OrbDumperInner {
             orb: &raw const *self,

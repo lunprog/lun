@@ -380,3 +380,24 @@ impl ToDiagnostic for ExpectedTypeFoundExpr {
             .with_label(Label::primary(self.loc.fid, self.loc))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct CyclicTypeSystem {
+    /// Location of the other item that make it loop.
+    pub other: Span,
+    /// Location of the item we are trying to evaluate the type.
+    pub loc: Span,
+}
+
+impl ToDiagnostic for CyclicTypeSystem {
+    fn into_diag(self) -> Diagnostic {
+        Diagnostic::error()
+            .with_code(ErrorCode::CyclicTypeSystem)
+            .with_message("cyclic typying not allowed")
+            .with_label(
+                Label::primary(self.loc.fid, self.loc)
+                    .with_message("cannot evaluate the type of this item"),
+            )
+            .with_label(Label::secondary(self.other.fid, self.other))
+    }
+}

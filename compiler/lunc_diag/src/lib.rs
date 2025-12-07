@@ -321,7 +321,7 @@ impl ToDiagnostic for Diagnostic {
 /// |`E015`| n/a[^5]                                           |
 /// |`E016`| `tests/scir/E016.lun`                             |
 /// |`E017`| `tests/utir/E017.lun`                             |
-/// |`E018`| deprecated, **CAN BE REPLACED BY A NEW CODE**     |
+/// |`E018`|                                                   |
 /// |`E019`| `tests/lexer/E019.lun`                            |
 /// |`E020`| `tests/lexer/E020.lun`                            |
 /// |`E021`| `tests/lexer/E021.lun`                            |
@@ -516,9 +516,8 @@ pub enum ErrorCode {
     LabelKwOutsideLoopOrBlock = 16,
     /// unknown tag of a literal
     UnknownLitTag = 17,
-    /// mutation of immutable
-    #[deprecated(note = "pls replace me")]
-    MutationOfImmutable = 18,
+    /// cyclic type system
+    CyclicTypeSystem = 18,
     /// name defined multiple times
     NameDefinedMultipleTimes = 19,
     /// expected exponent part of hexadecimal floating point literal

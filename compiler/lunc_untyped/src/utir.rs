@@ -1,11 +1,17 @@
 //! UnTyped Intermediate Representation -- UTIR.
 
-use std::fmt::{self, Display};
+use std::{
+    fmt::{self, Display},
+    io::{self, Write},
+};
 
 use lunc_ast::{Abi, BinOp, Mutability, Path, Spanned, UnOp};
 use lunc_entity::{Entity, EntityDb, EntitySet, Opt, SparseMap, entity};
 use lunc_seq::sir::PrimType;
-use lunc_utils::{Span, opt_unreachable};
+use lunc_utils::{
+    Span, opt_unreachable,
+    pretty::{PrettyCtxt, PrettyDump},
+};
 
 use crate::diags::PreMt;
 
@@ -16,13 +22,55 @@ use crate::diags::PreMt;
 #[derive(Debug, Clone, Hash)]
 pub struct Orb {
     pub items: EntityDb<ItemId>,
+    pub flavor: Flavor,
 }
 
 impl Default for Orb {
     fn default() -> Self {
         Orb {
             items: EntityDb::new(),
+            flavor: Flavor::Generated,
         }
+    }
+}
+
+/// Flavor of UTIR.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Flavor {
+    /// The "generated UTIR" dialect, everything is possible.
+    ///
+    /// # Note
+    ///
+    /// [`Expr::ExtType`] -- is never generated.
+    Generated,
+    /// The dialect used by the unifier to unify the type-variables.
+    ///
+    /// The following variants are not allowed:
+    /// * [`Expr::TypeofItem`]
+    Unified,
+}
+
+impl Flavor {
+    /// Get the next flavor of utir after `self`.
+    pub fn next(&self) -> Flavor {
+        match self {
+            Flavor::Generated => Flavor::Unified,
+            Flavor::Unified => panic!("no following flavor after `Flavor::Unified`"),
+        }
+    }
+
+    /// String slice representing the flavor.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Flavor::Generated => "generated",
+            Flavor::Unified => "unified",
+        }
+    }
+}
+
+impl<E> PrettyDump<E> for Flavor {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
+        write!(ctx.out, "{}", self.as_str())
     }
 }
 
@@ -91,6 +139,16 @@ impl Item {
             Item::GlobalDef(GlobalDef { typ, .. }) => *typ,
             Item::Module(..) => panic!("Item::Module doesn't have a type"),
             Item::ExternBlock(..) => panic!("Item::ExternBlock doesn't have a type"),
+        }
+    }
+    pub fn loc(&self) -> &Span {
+        match self {
+            Item::Fundef(Fundef { loc, .. })
+            | Item::Fundecl(Fundecl { loc, .. })
+            | Item::GlobalDef(GlobalDef { loc, .. })
+            | Item::GlobalUninit(GlobalUninit { loc, .. })
+            | Item::Module(Module { loc, .. })
+            | Item::ExternBlock(ExternBlock { loc, .. }) => loc,
         }
     }
 }
@@ -307,7 +365,7 @@ impl Display for Ieee754 {
 /// By default an expression is *untyped* unless an expression is `typed(type,
 /// val)`, which tells the later stages that `val` must be able to be a `typ`.
 /// Note that it doesn't perform type conversion by default.
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Hash, PartialEq)]
 pub enum Expr {
     /// Integer, see [`DsExprKind::Lit`].
     ///
@@ -429,6 +487,18 @@ pub enum Expr {
     /// Type of the specified item, should not be used if the item id is the
     /// same of the item containing the expression.
     TypeofItem(ItemId),
+    /// An expression in a foreign item.
+    ///
+    /// # Note
+    ///
+    /// This type doesn't represent an expression in Lun, it's an internal thing.
+    ExtExpr(Ext<ExprId>),
+    /// A type in a foreign item.
+    ///
+    /// # Note
+    ///
+    /// This type doesn't represent an expression in Lun, it's an internal thing.
+    ExtUty(Ext<Uty>),
 }
 
 impl Expr {
@@ -443,30 +513,16 @@ impl Expr {
     }
 }
 
-/// External reference to an expr ([ExprId]) in the local item or in the
-/// [ItemId] if any.
+/// External reference to an entity in the [ItemId].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ExtExpr(Opt<ItemId>, ExprId);
-
-impl ExtExpr {
-    /// New external expression (`expr`) in the `item`.
-    pub fn ext(item: ItemId, expr: ExprId) -> ExtExpr {
-        ExtExpr(Opt::Some(item), expr)
-    }
-
-    /// New local expression (`expr`).
-    pub const fn local(expr: ExprId) -> ExtExpr {
-        ExtExpr(Opt::None, expr)
-    }
+pub struct Ext<E> {
+    pub item: ItemId,
+    pub ent: E,
 }
 
-impl Display for ExtExpr {
+impl<E: Display> Display for Ext<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(item) = self.0.expand() {
-            write!(f, "ext({item}, {})", self.1)
-        } else {
-            Display::fmt(&self.1, f)
-        }
+        write!(f, "{}@{}", self.item, self.ent)
     }
 }
 
@@ -597,7 +653,9 @@ impl Display for LabelKind {
 pub struct Label {
     pub id: LabelId,
     pub name: Option<Spanned<String>>,
-    pub typ: Option<Uty>,
+    pub tyvar: TyVar,
+    /// Location of the first constraint on the type of the label.
+    pub tyvar_loc: Option<Span>,
     pub kind: LabelKind,
     /// Did we `break` out of this label?
     pub break_out: bool,

@@ -22,8 +22,8 @@ use lunc_utils::{Span, default, opt_unreachable};
 use crate::{
     diags::{
         BreakUseAnImplicitLabelInBlock, BreakWithValueUnsupported, CantContinueABlock,
-        FunctionInGlobalMut, ItemNotAllowedInExternBlock, LabelKwOutsideLoopOrBlock,
-        OutsideExternBlock, PreMt, UnknownLitTag, UseOfUndefinedLabel,
+        CyclicTypeSystem, FunctionInGlobalMut, ItemNotAllowedInExternBlock,
+        LabelKwOutsideLoopOrBlock, OutsideExternBlock, PreMt, UnknownLitTag, UseOfUndefinedLabel,
     },
     utir::*,
 };
@@ -33,6 +33,13 @@ pub mod eval;
 pub mod pretty;
 pub mod unifier;
 pub mod utir;
+
+/// Back patch that needs to be performed on the [Orb].
+#[derive(Debug, Clone, Copy)]
+pub enum BackPatch {
+    /// Replace [`Expr::TypeofItem`] by [`Expr::ExtType`].
+    TypeofItemExpr { item: ItemId, typeof_item: ExprId },
+}
 
 /// Constructs the [UTIR](utir) from [DSIR](lunc_desugar)
 ///
@@ -71,6 +78,8 @@ pub struct UtirGen {
     sym_to_def: SparseMap<Symbol, DefId>,
     /// Diagnostic sink
     sink: DiagnosticSink,
+    /// All the back-patches need to be made
+    patches: Vec<BackPatch>,
 
     //
     // ITEM SPECIFIC
@@ -113,6 +122,7 @@ impl UtirGen {
             symdb,
             sym_to_def: SparseMap::new(),
             sink,
+            patches: Vec::new(),
             item: Opt::None,
             item_kind: ItemKind::Fundef,
             container: ItemContainer::Module,
@@ -124,12 +134,17 @@ impl UtirGen {
         }
     }
 
+    pub fn patches(&self) -> &[BackPatch] {
+        &self.patches
+    }
+
     /// Produce the [Orb] for the given DSIR.
     pub fn produce(&mut self, mut dsir: DsModule) -> Orb {
         assert!(dsir.fid.is_root(), "expected the root module.");
 
         self.populate_mod(&mut dsir);
         self.gen_module(&dsir);
+        self.patch_all();
 
         mem::take(&mut self.orb)
     }
@@ -740,10 +755,13 @@ impl UtirGen {
 
     /// Define a new label and put it on top of the stack
     fn define_label(&mut self, name: Option<Spanned<String>>, kind: LabelKind) -> LabelId {
+        let tyvar = self.body().type_vars.create_default();
+
         let lab = self.labels_mut().create_with(|id| Label {
             id,
             name,
-            typ: None,
+            tyvar,
+            tyvar_loc: None,
             kind,
             break_out: false,
         });
@@ -1011,8 +1029,14 @@ impl UtirGen {
                                 let item_t = self.orb.items.get(item).typ();
                                 typ = Some(item_t);
                             } else {
-                                let ext_t = self.body().exprs.create(Expr::TypeofItem(item));
-                                typ = Some(Uty::Expr(ext_t));
+                                let typeof_e = self.body().exprs.create(Expr::TypeofItem(item));
+
+                                self.patches.push(BackPatch::TypeofItemExpr {
+                                    item: self.item.unwrap(),
+                                    typeof_item: typeof_e,
+                                });
+
+                                typ = Some(Uty::Expr(typeof_e));
                             }
 
                             Expr::Item(item)
@@ -1243,13 +1267,29 @@ impl UtirGen {
 
                     let block = self.gen_block(block);
 
-                    typ = Some(
-                        self.get_label_by_id(lab)
-                            .typ
-                            .unwrap_or_else(|| self.body_ref().blocks.get(block).typ),
-                    );
+                    typ = Some(Uty::TyVar(self.get_label_by_id(lab).tyvar));
 
                     self.label_stack.pop();
+                    let Label {
+                        tyvar: lab_tyvar,
+                        tyvar_loc: lab_due_to,
+                        ..
+                    } = self.body_ref().labels.get(lab);
+
+                    let loc = self
+                        .body_ref()
+                        .blocks
+                        .get(block)
+                        .tail
+                        .expand()
+                        .and_then(|e| self.expr_loc(e))
+                        .unwrap_or_else(|| expression.loc.unwrap());
+
+                    self.constraint_block_t(
+                        block,
+                        Uty::TyVar(*lab_tyvar),
+                        PreMt::new(loc, *lab_due_to, None),
+                    );
 
                     Expr::Block(Opt::Some(lab), block)
                 } else {
@@ -1300,10 +1340,8 @@ impl UtirGen {
 
                 typ = if !info.break_out {
                     Some(Uty::Expr(self.ptype_expr(PrimType::Never)))
-                } else if let Some(typ) = info.typ {
-                    Some(typ)
                 } else {
-                    Some(Uty::Expr(self.ptype_expr(PrimType::Void)))
+                    Some(Uty::TyVar(info.tyvar))
                 };
 
                 self.label_stack.pop();
@@ -1333,8 +1371,15 @@ impl UtirGen {
                 Expr::Return(expr)
             }
             DsExprKind::Break { label, expr } => {
-                let (label_typ, label_kind, id) = if let Some(label) = label {
-                    let Some(Label { id, typ, kind, .. }) = self.get_label_by_name(label) else {
+                let (label_tyvar, due_to, label_kind, id) = if let Some(label) = label {
+                    let Some(Label {
+                        id,
+                        tyvar,
+                        tyvar_loc,
+                        kind,
+                        ..
+                    }) = self.get_label_by_name(label)
+                    else {
                         self.sink.emit(UseOfUndefinedLabel {
                             name: label.clone(),
                             // TODO: add location of the label name
@@ -1344,7 +1389,7 @@ impl UtirGen {
                         return None;
                     };
 
-                    (*typ, kind.clone(), *id)
+                    (*tyvar, *tyvar_loc, kind.clone(), *id)
                 } else {
                     let Some(id) = self.label_stack.last() else {
                         self.sink.emit(LabelKwOutsideLoopOrBlock {
@@ -1355,7 +1400,12 @@ impl UtirGen {
                         return None;
                     };
 
-                    let Label { typ, kind, .. } = self.get_label_by_id(*id).clone();
+                    let Label {
+                        tyvar,
+                        tyvar_loc,
+                        kind,
+                        ..
+                    } = self.get_label_by_id(*id).clone();
 
                     if !kind.is_loop() {
                         self.sink.emit(BreakUseAnImplicitLabelInBlock {
@@ -1363,33 +1413,52 @@ impl UtirGen {
                         });
                     }
 
-                    (typ, kind, *id)
+                    (tyvar, tyvar_loc, kind, *id)
                 };
+
+                let loc = expression.loc.unwrap_or_default();
 
                 let expr = if let Some(expr) = expr {
                     let expr = self.gen_expr(expr)?;
+                    let expr_loc = self.expr_loc(expr);
+
+                    let lab = self.mut_label_by_id(id);
+
+                    if lab.tyvar_loc.is_none() {
+                        lab.tyvar_loc = Some(expr_loc.unwrap_or(loc));
+                    }
 
                     if !label_kind.can_have_val() {
                         self.sink.emit(BreakWithValueUnsupported {
                             loc: expression.loc.unwrap_or_default(),
                         });
-                    } else if label_typ.is_none() {
-                        self.mut_label_by_id(id).typ = if let Some(typ) = self.expr_typ(expr) {
-                            Some(typ)
-                        } else {
-                            let tyvar = self.body().type_vars.create_default();
-
-                            self.body().expr_t.insert(expr, Uty::TyVar(tyvar));
-
-                            Some(Uty::TyVar(tyvar))
-                        };
+                    } else {
+                        self.constraint_expr_t(
+                            expr,
+                            Uty::TyVar(label_tyvar),
+                            PreMt::new(
+                                self.expr_loc(expr)
+                                    .unwrap_or_else(|| expression.loc.unwrap_or_default()),
+                                due_to,
+                                None,
+                            ),
+                        );
                     }
 
                     Opt::Some(expr)
                 } else {
-                    if label_typ.is_none() {
-                        self.mut_label_by_id(id).typ =
-                            Some(Uty::Expr(self.ptype_expr(PrimType::Void)));
+                    let void_e = self.ptype_expr(PrimType::Void);
+
+                    self.push_con(Con {
+                        lhs: Uty::TyVar(label_tyvar),
+                        rhs: Uty::Expr(void_e),
+                        pre: PreMt::new(loc, None, None),
+                    });
+
+                    let lab = self.mut_label_by_id(id);
+
+                    if lab.tyvar_loc.is_none() {
+                        lab.tyvar_loc = Some(loc);
                     }
 
                     Opt::None
@@ -1577,7 +1646,9 @@ impl UtirGen {
             | Expr::FunptrType(_, _)
             | Expr::PrimType(_)
             | Expr::FundefType { .. }
-            | Expr::TypeofItem(_) => {}
+            | Expr::TypeofItem(_)
+            | Expr::ExtExpr(_)
+            | Expr::ExtUty(_) => {}
             Expr::Borrow(_, borrowed) => {
                 if let Uty::Expr(typ_e) = typ
                     && let typ_e = self.body_ref().exprs.get(typ_e)
@@ -1750,5 +1821,200 @@ impl UtirGen {
             typ: tail_t,
             loc: loc.unwrap_or_default(),
         })
+    }
+
+    fn patch_all(&mut self) {
+        let patches = mem::take(&mut self.patches);
+
+        for patch in patches.iter().copied() {
+            self.back_patch(patch);
+        }
+
+        _ = mem::replace(&mut self.patches, patches);
+    }
+
+    fn back_patch(&mut self, patch: BackPatch) {
+        match patch {
+            BackPatch::TypeofItemExpr { item, typeof_item } => {
+                let expr = self.orb.items.get(item).body().exprs.get(typeof_item);
+
+                let Expr::TypeofItem(item_to_get_type_of) = *expr else {
+                    // SAFETY: it's guaranteed by the generation stage.
+                    opt_unreachable!();
+                };
+
+                if self.is_cyclic_typeof(item, item_to_get_type_of) {
+                    self.sink.emit(CyclicTypeSystem {
+                        other: *self.orb.items.get(item_to_get_type_of).loc(),
+                        loc: *self.orb.items.get(item).loc(),
+                    });
+
+                    return;
+                }
+
+                let typ = self.orb.items.get(item_to_get_type_of).typ();
+
+                // NOTE: we re-borrow so that the compiler doesn't complain
+                let expr = self
+                    .orb
+                    .items
+                    .get_mut(item)
+                    .body_mut()
+                    .exprs
+                    .get_mut(typeof_item);
+
+                *expr = Expr::ExtUty(Ext {
+                    item: item_to_get_type_of,
+                    ent: typ,
+                });
+            }
+        }
+    }
+
+    /// Returns true if `where` as type-expression `typeof(from)`.
+    fn is_cyclic_typeof(&self, r#where: ItemId, from: ItemId) -> bool {
+        if let Uty::Expr(where_expr) = self.orb.items.get(r#where).typ() {
+            let needle = Expr::TypeofItem(from);
+
+            self.expr_contains_other(
+                Ext {
+                    item: r#where,
+                    ent: where_expr,
+                },
+                &needle,
+            )
+        } else {
+            false
+        }
+    }
+
+    fn expr_contains_other(&self, expr: Ext<ExprId>, needle: &Expr) -> bool {
+        let where_expr = self.orb.items.get(expr.item).body().exprs.get(expr.ent);
+
+        if where_expr == needle {
+            return true;
+        }
+
+        let ext = |id: ExprId| Ext {
+            item: expr.item,
+            ent: id,
+        };
+
+        match where_expr {
+            Expr::Int(_)
+            | Expr::Char(_)
+            | Expr::Float(_)
+            | Expr::Str(_)
+            | Expr::CStr(_)
+            | Expr::Bool(_)
+            | Expr::Item(_)
+            | Expr::Param(_)
+            | Expr::Binding(_)
+            | Expr::Continue(_)
+            | Expr::Underscore
+            | Expr::PrimType(_)
+            | Expr::TypeofItem(_)
+            | Expr::ExtExpr(_)
+            | Expr::ExtUty(_) => {
+                // NOTE: we return false because if expr was one of those we already returned true
+                false
+            }
+            Expr::Binary(l, _, r) => {
+                self.expr_contains_other(ext(*l), needle)
+                    || self.expr_contains_other(ext(*r), needle)
+            }
+            Expr::Unary(_, e) | Expr::Borrow(_, e) => self.expr_contains_other(ext(*e), needle),
+            Expr::Call { callee, args } => {
+                self.expr_contains_other(ext(*callee), needle)
+                    || args
+                        .iter()
+                        .any(|e| self.expr_contains_other(ext(*e), needle))
+            }
+            Expr::If {
+                cond,
+                then_e,
+                else_e,
+            } => {
+                let is_else = if let Some(else_e) = else_e.expand() {
+                    self.expr_contains_other(ext(else_e), needle)
+                } else {
+                    false
+                };
+
+                self.expr_contains_other(ext(*cond), needle)
+                    || self.expr_contains_other(ext(*then_e), needle)
+                    || is_else
+            }
+            Expr::Block(_, b) | Expr::Loop(_, b) => self.block_contains_expr(
+                Ext {
+                    item: expr.item,
+                    ent: *b,
+                },
+                needle,
+            ),
+            Expr::Return(e) | Expr::Break(_, e) => {
+                if let Some(e) = e.expand() {
+                    self.expr_contains_other(ext(e), needle)
+                } else {
+                    false
+                }
+            }
+            Expr::PtrType(_, e) => self.expr_contains_other(ext(*e), needle),
+            Expr::FunptrType(params, ret) => {
+                params
+                    .iter()
+                    .any(|e| self.expr_contains_other(ext(*e), needle))
+                    || ret
+                        .expand()
+                        .is_some_and(|e| self.expr_contains_other(ext(e), needle))
+            }
+            Expr::FundefType {
+                fundef: _,
+                params,
+                ret,
+            } => {
+                params
+                    .iter()
+                    .any(|e| self.expr_contains_other(ext(*e), needle))
+                    || self.expr_contains_other(ext(*ret), needle)
+            }
+        }
+    }
+
+    fn block_contains_expr(&self, block: Ext<BlockId>, needle: &Expr) -> bool {
+        let b = self.orb.items.get(block.item).body().blocks.get(block.ent);
+
+        b.stmts.iter().any(|s| {
+            self.stmt_contains_expr(
+                Ext {
+                    item: block.item,
+                    ent: *s,
+                },
+                needle,
+            )
+        }) || b.tail.expand().is_some_and(|e| {
+            self.expr_contains_other(
+                Ext {
+                    item: block.item,
+                    ent: e,
+                },
+                needle,
+            )
+        })
+    }
+
+    fn stmt_contains_expr(&self, stmt: Ext<StmtId>, needle: &Expr) -> bool {
+        let s = self.orb.items.get(stmt.item).body().stmts.get(stmt.ent);
+
+        match s {
+            Stmt::Expression(e) => self.expr_contains_other(
+                Ext {
+                    item: stmt.item,
+                    ent: *e,
+                },
+                needle,
+            ),
+            _ => false,
+        }
     }
 }

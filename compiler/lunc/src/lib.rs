@@ -30,7 +30,7 @@
 )]
 
 use clap::{ArgAction, Parser as ArgParser, ValueEnum};
-use lunc_untyped::{UtirGen, pretty};
+use lunc_untyped::{UtirGen, pretty, unifier::Unifier};
 // use lunc_linkage::Linker;
 use std::{
     backtrace::{Backtrace, BacktraceStatus},
@@ -845,12 +845,22 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     // 6. type-annotation, DSIR => UTIR
     let mut utirgen = UtirGen::new(symdb, sink.clone());
     let utir = utirgen.produce(dsir);
+    dbg!(utirgen.patches());
 
-    use lunc_untyped::unifier::Unifier;
+    if sink.failed() {
+        //    maybe print the UTIR (before we return)
+        if argv.debug.print(InterRes::Utir) {
+            eprint!("utir = ");
+            utir.dump(&pretty::TreeFlavor);
+            eprintln!();
+        }
+
+        return Err(builderr());
+    }
 
     let mut unifier = Unifier::new(utir, sink.clone());
     unifier.unify();
-    dbg!(unifier.substitutions());
+    // dbg!(unifier.substitutions());
 
     let utir = unifier.take_orb();
 

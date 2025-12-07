@@ -1,5 +1,8 @@
 //! Type variable unifier -- Hindley–Milner type system
 
+use lunc_diag::DiagGuaranteed;
+use lunc_entity::TightMap;
+
 use crate::{
     diags::{ExpectedTypeFoundExpr, MismatchedTypes},
     eval::CtemBuilder,
@@ -13,6 +16,7 @@ use super::*;
 pub struct Unifier {
     orb: Orb,
     substitutions: SparseMap<TyVar, Uty>,
+    all_subs: TightMap<ItemId, SparseMap<TyVar, Uty>>,
     ctem_builder: CtemBuilder,
     /// current item that we unify, used for evaluation of types.
     item: Opt<ItemId>,
@@ -24,6 +28,9 @@ impl Unifier {
         Unifier {
             orb,
             substitutions: SparseMap::new(),
+            // NOTE: here we can use a tight-map because we go through the items
+            // in order.
+            all_subs: TightMap::new(),
             ctem_builder: CtemBuilder::new(sink),
             item: Opt::None,
         }
@@ -34,6 +41,9 @@ impl Unifier {
         for item in self.orb.items.entity_iter() {
             self.item = Opt::Some(item);
             self.unify_body(item);
+
+            let substitutions = self.take_subs();
+            self.all_subs.insert(item, substitutions);
         }
     }
 
@@ -42,7 +52,7 @@ impl Unifier {
         let constraints = body.constraints.clone();
 
         for con in constraints.0.iter() {
-            self.unify_con(con.clone());
+            _ = self.unify_con(con.clone());
         }
     }
 
@@ -61,7 +71,10 @@ impl Unifier {
             .unwrap_or_default()
     }
 
-    pub fn unify_con(&mut self, con: Con) {
+    /// Returns `Some(DiagGuaranteed)` if it emitted a diagnostic, otherwise
+    /// `None`.
+    #[must_use]
+    pub fn unify_con(&mut self, con: Con) -> Option<DiagGuaranteed> {
         match con {
             Con {
                 lhs: Uty::Expr(expr_l),
@@ -74,16 +87,14 @@ impl Unifier {
 
                 let Some(typ_l) = ctem.evaluate_type(self.item.unwrap(), expr_l) else {
                     let loc = self.expr_loc(expr_l);
-                    self.sink().emit(ExpectedTypeFoundExpr { loc });
 
-                    return;
+                    return Some(self.sink().emit(ExpectedTypeFoundExpr { loc }));
                 };
 
                 let Some(typ_r) = ctem.evaluate_type(self.item.unwrap(), expr_r) else {
                     let loc = self.expr_loc(expr_r);
-                    self.sink().emit(ExpectedTypeFoundExpr { loc });
 
-                    return;
+                    return Some(self.sink().emit(ExpectedTypeFoundExpr { loc }));
                 };
 
                 self.ctem_builder = ctem.builder();
@@ -97,8 +108,12 @@ impl Unifier {
                     let expected_str = self.expr_to_string(expr_r);
                     let found_str = self.expr_to_string(expr_l);
 
-                    self.sink()
-                        .emit(MismatchedTypes::new(pre, vec![expected_str], found_str));
+                    Some(
+                        self.sink()
+                            .emit(MismatchedTypes::new(pre, vec![expected_str], found_str)),
+                    )
+                } else {
+                    None
                 }
             }
             Con {
@@ -117,9 +132,8 @@ impl Unifier {
 
                 let Some(type_expr) = ctem.evaluate_type(self.item.unwrap(), expr) else {
                     let loc = self.expr_loc(expr);
-                    self.sink().emit(ExpectedTypeFoundExpr { loc });
 
-                    return;
+                    return Some(self.sink().emit(ExpectedTypeFoundExpr { loc }));
                 };
 
                 self.ctem_builder = ctem.builder();
@@ -130,54 +144,73 @@ impl Unifier {
                     let expr_str = self.expr_to_string(expr);
                     let ability_str = ability.to_string();
 
-                    self.sink()
-                        .emit(MismatchedTypes::new(pre, vec![expr_str], ability_str));
+                    Some(
+                        self.sink()
+                            .emit(MismatchedTypes::new(pre, vec![expr_str], ability_str)),
+                    )
+                } else {
+                    None
                 }
             }
             Con {
                 lhs: Uty::TyVar(tyv_l),
                 rhs: Uty::TyVar(tyv_r),
                 pre: _,
-            } if tyv_l == tyv_r => {}
+            } if tyv_l == tyv_r => None,
             Con {
                 lhs: Uty::TyVar(tyvar),
                 rhs: ty,
                 pre,
             } => {
-                if let Some(substitution) = self.substitutions.get(tyvar).copied() {
-                    self.unify_con(Con {
+                let errored = if let Some(substitution) = self.substitutions.get(tyvar).copied() {
+                    let errored = self.unify_con(Con {
                         lhs: substitution,
                         rhs: ty,
                         pre,
                     });
 
                     if substitution.is_strong() {
-                        return;
+                        return errored;
                     }
-                }
+
+                    errored
+                } else {
+                    None
+                };
 
                 assert!(!self.occurs_in(tyvar, ty));
-                self.substitutions.insert(tyvar, ty);
+                if errored.is_none() {
+                    self.substitutions.insert(tyvar, ty);
+                }
+
+                errored
             }
             Con {
                 lhs: ty,
                 rhs: Uty::TyVar(tyvar),
                 pre,
             } => {
-                if let Some(substitution) = self.substitutions.get(tyvar).copied() {
-                    self.unify_con(Con {
+                let errored = if let Some(substitution) = self.substitutions.get(tyvar).copied() {
+                    let errored = self.unify_con(Con {
                         lhs: ty,
                         rhs: substitution,
                         pre,
                     });
 
                     if substitution.is_strong() {
-                        return;
+                        return errored;
                     }
-                }
+                    errored
+                } else {
+                    None
+                };
 
                 assert!(!self.occurs_in(tyvar, ty));
-                self.substitutions.insert(tyvar, ty);
+                if errored.is_none() {
+                    self.substitutions.insert(tyvar, ty);
+                }
+
+                errored
             }
             Con {
                 lhs: lhs_uty @ (Uty::Integer | Uty::Float),
@@ -188,7 +221,9 @@ impl Unifier {
                     let lhs = lhs_uty.to_string();
                     let rhs = rhs_uty.to_string();
 
-                    self.sink().emit(MismatchedTypes::new(pre, vec![rhs], lhs));
+                    Some(self.sink().emit(MismatchedTypes::new(pre, vec![rhs], lhs)))
+                } else {
+                    None
                 }
             }
         }
@@ -209,12 +244,16 @@ impl Unifier {
         }
     }
 
-    pub fn substitutions(&self) -> &SparseMap<TyVar, Uty> {
-        &self.substitutions
+    pub fn substitutions(&self) -> &TightMap<ItemId, SparseMap<TyVar, Uty>> {
+        &self.all_subs
     }
 
     fn sink(&mut self) -> &mut DiagnosticSink {
         &mut self.ctem_builder.sink
+    }
+
+    fn take_subs(&mut self) -> SparseMap<TyVar, Uty> {
+        mem::take(&mut self.substitutions)
     }
 
     pub fn take_orb(&mut self) -> Orb {

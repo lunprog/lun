@@ -20,7 +20,10 @@ pub struct OrbDumper(());
 
 impl PrettyDump<TreeFlavor> for Orb {
     fn try_dump(&self, ctx: &mut PrettyCtxt, _: &TreeFlavor) -> io::Result<()> {
-        let Orb { items } = self;
+        let Orb {
+            items,
+            flavor: _, // NOTE: internal thingy
+        } = self;
 
         let dumper = OrbDumper(());
 
@@ -375,6 +378,8 @@ impl PrettyDump<OrbDumper> for Expr {
                 Ok(())
             }
             Self::TypeofItem(item) => write!(ctx.out, "typeof_item({item})"),
+            Self::ExtExpr(ext) => write!(ctx.out, "{ext}"),
+            Self::ExtUty(ext) => write!(ctx.out, "{ext}"),
         }
     }
 }
@@ -409,7 +414,8 @@ impl PrettyDump<OrbDumper> for Label {
         let Label {
             id: _, // already printed
             name,
-            typ,
+            tyvar,
+            tyvar_loc,
             kind,
             break_out,
         } = self;
@@ -420,7 +426,8 @@ impl PrettyDump<OrbDumper> for Label {
             "Label",
             {
                 name,
-                typ,
+                tyvar,
+                tyvar_loc,
                 kind,
                 break_out
             }
