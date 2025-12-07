@@ -359,10 +359,16 @@ impl<E: Entity> Default for EntityDb<E> {
 /// assert_eq!(map.get(n), Some(&42));
 /// assert!(map.contains_entity(n));
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SparseMap<E: Entity, V> {
     elems: IndexMap<usize, V>,
     _e: PhantomData<fn(E) -> V>,
+}
+
+impl<E: Entity, V: Debug> Debug for SparseMap<E, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_map().entries(self.iter()).finish()
+    }
 }
 
 impl<E: Entity, V> SparseMap<E, V> {
@@ -454,51 +460,25 @@ impl<E: Entity, V: Hash> Hash for SparseMap<E, V> {
 /// tm.insert(r, 7);
 /// assert_eq!(tm.get(r), Some(&7));
 /// ```
-#[derive(Debug, Clone)]
-pub struct TightMap<E: Entity, V: Clone> {
+#[derive(Clone)]
+pub struct TightMap<E: Entity, V> {
     _e: PhantomData<fn(E) -> V>,
     /// the stored elements
-    elems: Vec<V>,
-    /// default value used to fill holes
-    default: V,
-    /// occupancy bitmap, used for Debug checks
-    #[cfg(debug_assertions)]
-    occupied: Vec<bool>,
+    elems: Vec<Option<V>>,
+}
+
+impl<E: Entity, V: Debug> Debug for TightMap<E, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_map().entries(self.iter()).finish()
+    }
 }
 
 impl<E: Entity, V: Clone> TightMap<E, V> {
-    /// Create a new [`TightMap`] using [`V::default()`] as the default.
-    ///
-    /// [`V::default()`]: Default::default
-    pub fn new() -> TightMap<E, V>
-    where
-        V: Default,
-    {
-        TightMap::with_default(Default::default())
-    }
-
-    /// Create a new [`TightMap`] with the provided `default` value.
-    pub fn with_default(default: V) -> TightMap<E, V> {
-        TightMap {
-            _e: PhantomData,
-            elems: Vec::new(),
-            default,
-            #[cfg(debug_assertions)]
-            occupied: Vec::new(),
-        }
-    }
-
     /// Ensure the internal vectors are at least `index + 1` long.
     fn ensure_index(&mut self, index: usize) {
         if index >= self.elems.len() {
             let to_add = index + 1 - self.elems.len();
-            self.elems
-                .extend(std::iter::repeat_with(|| self.default.clone()).take(to_add));
-
-            #[cfg(debug_assertions)]
-            {
-                self.occupied.extend(std::iter::repeat_n(false, to_add));
-            }
+            self.elems.extend(std::iter::repeat_n(None, to_add));
         }
     }
 
@@ -508,12 +488,34 @@ impl<E: Entity, V: Clone> TightMap<E, V> {
         self.ensure_index(entity.index());
 
         // put value into slot, mark occupied
-        self.elems[entity.index()] = value;
+        self.elems[entity.index()] = Some(value);
+    }
+}
 
-        #[cfg(debug_assertions)]
-        {
-            self.occupied[entity.index()] = true;
-        };
+impl<E: Entity, V> TightMap<E, V> {
+    /// Create a new empty [`TightMap`].
+    pub fn new() -> TightMap<E, V> {
+        TightMap {
+            _e: PhantomData,
+            elems: Vec::new(),
+        }
+    }
+
+    /// Get the value for `entity`.
+    pub fn get(&self, entity: E) -> Option<&V> {
+        self.elems.get(entity.index()).and_then(|opt| opt.as_ref())
+    }
+
+    /// Mutable `get`.
+    pub fn get_mut(&mut self, entity: E) -> Option<&mut V> {
+        self.elems
+            .get_mut(entity.index())
+            .and_then(|opt| opt.as_mut())
+    }
+
+    /// Clear the map contents.
+    pub fn clear(&mut self) {
+        self.elems.clear();
     }
 
     /// Remove the value for `entity`. Returns the previous value (which may be
@@ -522,36 +524,22 @@ impl<E: Entity, V: Clone> TightMap<E, V> {
         let idx = entity.index();
 
         if idx < self.elems.len() {
-            #[cfg(debug_assertions)]
-            {
-                self.occupied[idx] = false;
-            };
-
-            let prev = mem::replace(&mut self.elems[idx], self.default.clone());
-
-            Some(prev)
+            self.elems[idx].take()
         } else {
             None
         }
     }
 
-    /// Get the value for `entity`.
-    pub fn get(&self, entity: E) -> Option<&V> {
-        self.elems.get(entity.index())
-    }
-
-    /// Mutable `get`.
-    pub fn get_mut(&mut self, entity: E) -> Option<&mut V> {
-        self.elems.get_mut(entity.index())
-    }
-
-    /// Clear the map contents.
-    pub fn clear(&mut self) {
-        self.elems.clear();
+    /// Get an iterator over the occupied entity+value pair in the map.
+    pub fn iter(&self) -> impl Iterator<Item = (E, &V)> {
+        self.elems
+            .iter()
+            .enumerate()
+            .filter_map(|(id, val)| val.as_ref().map(|val| (E::new(id), val)))
     }
 }
 
-impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
+impl<E: Entity, V> Default for TightMap<E, V> {
     fn default() -> Self {
         TightMap::new()
     }
@@ -884,7 +872,7 @@ mod tests {
     #[test]
     fn tight_map_insert_get_remove() {
         // use i32 default value of 0
-        let mut tm = TightMap::<TestEntityB, i32>::with_default(0);
+        let mut tm = TightMap::<TestEntityB, i32>::new();
 
         let e2 = TestEntityB::new(2);
         // Initially out of range
@@ -897,13 +885,13 @@ mod tests {
         let e5 = TestEntityB::new(5);
         tm.insert(e5, 99);
         assert_eq!(tm.get(e5), Some(&99));
-        // earlier indices that were never assigned should equal default (0)
-        assert_eq!(tm.get(TestEntityB::new(0)), Some(&0));
+        // earlier indices that were never assigned should equal to None.
+        assert_eq!(tm.get(TestEntityB::new(0)), None);
 
-        // remove returns previous value and resets slot to default
+        // remove returns previous value and resets slot to None
         let prev = tm.remove(e5);
         assert_eq!(prev, Some(99));
-        assert_eq!(tm.get(e5), Some(&0));
+        assert_eq!(tm.get(e5), None);
 
         // removing an index that was never allocated returns None
         let not_alloc = TestEntityB::new(1000);
@@ -912,7 +900,7 @@ mod tests {
 
     #[test]
     fn tight_map_get_mut_and_clear() {
-        let mut tm = TightMap::<TestEntityB, i32>::with_default(-1);
+        let mut tm = TightMap::<TestEntityB, i32>::new();
         let e3 = TestEntityB::new(3);
         tm.insert(e3, 7);
 
