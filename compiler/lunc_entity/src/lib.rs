@@ -326,6 +326,13 @@ impl<E: Entity> EntityDb<E> {
             .map(|(id, data)| (E::new(id), data))
     }
 
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (E, &mut E::Data)> {
+        self.elems
+            .iter_mut()
+            .enumerate()
+            .map(|(id, data)| (E::new(id), data))
+    }
+
     /// Get the last entity we created
     pub fn last(&self) -> E {
         E::new(self.elems.len() - 1)
@@ -413,6 +420,11 @@ impl<E: Entity, V> SparseMap<E, V> {
     /// Returns an iterator on the entity and its associated data.
     pub fn iter(&self) -> impl Iterator<Item = (E, &V)> {
         self.elems.iter().map(|(id, data)| (E::new(*id), data))
+    }
+
+    /// Returns an iterator on the entity and its associated data.
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (E, &mut V)> {
+        self.elems.iter_mut().map(|(id, data)| (E::new(*id), data))
     }
 }
 

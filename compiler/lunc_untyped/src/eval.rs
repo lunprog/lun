@@ -173,11 +173,13 @@ impl<'utir> UtirCtem<'utir> {
                 Ok(v) => Some(v),
 
                 Err((loc, note)) => {
-                    this.sink.emit(CantEvaluateAtComptime {
-                        note,
-                        loc_expr: expr_loc,
-                        loc,
-                    });
+                    if this.emit_diag {
+                        this.sink.emit(CantEvaluateAtComptime {
+                            note,
+                            loc_expr: expr_loc,
+                            loc,
+                        });
+                    }
 
                     None
                 }
@@ -219,11 +221,13 @@ impl<'utir> UtirCtem<'utir> {
             // NOTE: we don't emit a diag here because we will emit one in the
             // type-checking
             Err((loc, note)) => {
-                self.sink.emit(CantEvaluateAtComptime {
-                    note,
-                    loc_expr: self.get_expr_loc(expr).unwrap(),
-                    loc,
-                });
+                if self.emit_diag {
+                    self.sink.emit(CantEvaluateAtComptime {
+                        note,
+                        loc_expr: self.get_expr_loc(expr).unwrap(),
+                        loc,
+                    });
+                }
 
                 utir::Type::PrimType(PrimType::Void)
             }
@@ -329,6 +333,7 @@ impl<'utir> UtirCtem<'utir> {
                     this._eval_expr(ent)
                 })
             }
+            utir::Expr::ExtType(_) => Err((expr_loc, None)),
             e => {
                 if cfg!(debug_assertions) {
                     Err((expr_loc, Some(format!("DEBUG: {e:?} isn't able to eval."))))

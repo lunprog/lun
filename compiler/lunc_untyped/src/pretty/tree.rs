@@ -379,7 +379,7 @@ impl PrettyDump<OrbDumper> for Expr {
             }
             Self::TypeofItem(item) => write!(ctx.out, "typeof_item({item})"),
             Self::ExtExpr(ext) => write!(ctx.out, "{ext}"),
-            Self::ExtUty(ext) => write!(ctx.out, "{ext}"),
+            Self::ExtType(ext) => write!(ctx.out, "{ext}"),
         }
     }
 }

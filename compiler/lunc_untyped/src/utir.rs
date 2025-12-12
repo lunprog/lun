@@ -1,7 +1,7 @@
 //! UnTyped Intermediate Representation -- UTIR.
 
 use std::{
-    fmt::{self, Display},
+    fmt::{self, Debug, Display},
     io::{self, Write},
 };
 
@@ -59,6 +59,11 @@ impl Flavor {
         }
     }
 
+    /// Set the flavor to the next one.
+    pub fn set_next(&mut self) {
+        *self = self.next()
+    }
+
     /// String slice representing the flavor.
     pub fn as_str(&self) -> &'static str {
         match self {
@@ -75,12 +80,18 @@ impl<E> PrettyDump<E> for Flavor {
 }
 
 /// Id of an [`Item`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ItemId(u32);
 
 impl Display for ItemId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "i{}", self.index())
+    }
+}
+
+impl Debug for ItemId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        <ItemId as Display>::fmt(self, f)
     }
 }
 
@@ -186,12 +197,18 @@ impl Default for Fundef {
 }
 
 /// Id of a function definition parameter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ParamId(u32);
 
 impl Display for ParamId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "p{}", self.index())
+    }
+}
+
+impl Debug for ParamId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(self, f)
     }
 }
 
@@ -327,12 +344,18 @@ impl Default for ExternBlock {
 }
 
 /// Local reference to an [`Expr`] in something that can store it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ExprId(u32);
 
 impl Display for ExprId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "e{}", self.index())
+    }
+}
+
+impl Debug for ExprId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(self, f)
     }
 }
 
@@ -361,10 +384,6 @@ impl Display for Ieee754 {
 }
 
 /// An expression.
-///
-/// By default an expression is *untyped* unless an expression is `typed(type,
-/// val)`, which tells the later stages that `val` must be able to be a `typ`.
-/// Note that it doesn't perform type conversion by default.
 #[derive(Debug, Clone, Hash, PartialEq)]
 pub enum Expr {
     /// Integer, see [`DsExprKind::Lit`].
@@ -498,7 +517,7 @@ pub enum Expr {
     /// # Note
     ///
     /// This type doesn't represent an expression in Lun, it's an internal thing.
-    ExtUty(Ext<Uty>),
+    ExtType(Ext<Uty>),
 }
 
 impl Expr {
@@ -522,17 +541,23 @@ pub struct Ext<E> {
 
 impl<E: Display> Display for Ext<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}@{}", self.item, self.ent)
+        write!(f, "{}@{}", self.ent, self.item)
     }
 }
 
 /// Local reference to an [`Stmt`] in something that can store it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct StmtId(u32);
 
 impl Display for StmtId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "s{}", self.index())
+    }
+}
+
+impl Debug for StmtId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(self, f)
     }
 }
 
@@ -552,12 +577,18 @@ pub enum Stmt {
 }
 
 /// Local reference to a block.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct BlockId(u32);
 
 impl Display for BlockId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "b{}", self.index())
+    }
+}
+
+impl Debug for BlockId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(self, f)
     }
 }
 
@@ -573,12 +604,18 @@ pub struct Block {
 }
 
 /// Local reference to a user binding see [`Stmt::BindingDef`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct BindingId(u32);
 
 impl Display for BindingId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "bind{}", self.index())
+    }
+}
+
+impl Debug for BindingId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(self, f)
     }
 }
 
@@ -594,12 +631,18 @@ pub struct BindingDef {
 }
 
 /// Local reference to a label.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct LabelId(u32);
 
 impl Display for LabelId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "l{}", self.index())
+    }
+}
+
+impl Debug for LabelId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(self, f)
     }
 }
 
@@ -702,7 +745,7 @@ impl Default for Body {
 }
 
 /// A type-variable.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TyVar(u32);
 
 entity!(TyVar, ());
@@ -713,8 +756,14 @@ impl Display for TyVar {
     }
 }
 
+impl Debug for TyVar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(self, f)
+    }
+}
+
 /// UTIR-type, either a reference to an expression or a typevar
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Uty {
     Expr(ExprId),
     TyVar(TyVar),
@@ -747,6 +796,12 @@ impl Display for Uty {
             Self::Integer => write!(f, "{{integer}}"),
             Self::Float => write!(f, "{{float}}"),
         }
+    }
+}
+
+impl Debug for Uty {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(self, f)
     }
 }
 

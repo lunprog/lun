@@ -15408,8 +15408,7 @@ warning: compilation of `never_block` succeeded but 2 warnings emitted.
         test_code: 0,
     ),
     "utir/E017": (
-        compiler_out: r#"[compiler/lunc/src/lib.rs:848:5] utirgen.patches() = []
-utir = {
+        compiler_out: r#"utir = {
   i0: Fundef {
     name: main @ 39..43 (fid = 0);
     path: orb::main;
@@ -15520,8 +15519,7 @@ error: compilation of `E017` failed due to 4 errors and 0 warnings
         test_code: 0,
     ),
     "utir/E040": (
-        compiler_out: "[compiler/lunc/src/lib.rs:848:5] utirgen.patches() = []
-utir = {
+        compiler_out: "utir = {
   i0: Fundef {
     name: a @ 46..47 (fid = 0);
     path: orb::a;

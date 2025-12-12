@@ -67,6 +67,16 @@ pub enum BackPatch {
 ///
 /// So the rule is simple, we try to use as much TypeExpressions as possible,
 /// but when we cannot, we use type-variables.
+///
+/// ## Back-patching Stage
+///
+/// It is usually shorter than the generation stage, in this stage we
+/// are performing back-patches like it's name suggest (take a look
+/// at [`BackPatch`]). e.g: removing the [`Expr::TypeofItem`] with
+/// [`Expr::ExtType`], etc.. Generally speaking at this stage we are performing
+/// computation on things that need the whole orb to work, like we don't know
+/// what the type of the item after the one being generated will be so we add it
+/// to the back-patches etc..
 #[derive(Debug, Clone)]
 pub struct UtirGen {
     /// The generated orb
@@ -1648,7 +1658,7 @@ impl UtirGen {
             | Expr::FundefType { .. }
             | Expr::TypeofItem(_)
             | Expr::ExtExpr(_)
-            | Expr::ExtUty(_) => {}
+            | Expr::ExtType(_) => {}
             Expr::Borrow(_, borrowed) => {
                 if let Uty::Expr(typ_e) = typ
                     && let typ_e = self.body_ref().exprs.get(typ_e)
@@ -1844,6 +1854,14 @@ impl UtirGen {
                 };
 
                 if self.is_cyclic_typeof(item, item_to_get_type_of) {
+                    // FIXME: in most cases we throw the error twice, the
+                    // following code, throws an error for the first and second
+                    // line, and i think only one is necessary, and i think only
+                    // one is necessary.
+                    //
+                    // a :: b;
+                    // b :: a;
+                    //
                     self.sink.emit(CyclicTypeSystem {
                         other: *self.orb.items.get(item_to_get_type_of).loc(),
                         loc: *self.orb.items.get(item).loc(),
@@ -1863,7 +1881,7 @@ impl UtirGen {
                     .exprs
                     .get_mut(typeof_item);
 
-                *expr = Expr::ExtUty(Ext {
+                *expr = Expr::ExtType(Ext {
                     item: item_to_get_type_of,
                     ent: typ,
                 });
@@ -1915,7 +1933,7 @@ impl UtirGen {
             | Expr::PrimType(_)
             | Expr::TypeofItem(_)
             | Expr::ExtExpr(_)
-            | Expr::ExtUty(_) => {
+            | Expr::ExtType(_) => {
                 // NOTE: we return false because if expr was one of those we already returned true
                 false
             }
