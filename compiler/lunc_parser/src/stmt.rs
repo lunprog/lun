@@ -221,7 +221,7 @@ impl Parser {
                 let expr = self.parse_expr().emit_wval(self.x(), Expression::dummy);
 
                 Ok(Statement {
-                    loc: expr.loc.clone(),
+                    loc: expr.loc,
                     stmt: StmtKind::Expression(expr),
                 })
             }
@@ -258,7 +258,7 @@ impl Parser {
         self.expect(ExpToken::Eq).emit(self.x());
         let value = Box::new(self.parse_expr()?);
 
-        let hi = value.loc.clone();
+        let hi = value.loc;
 
         Ok(Statement {
             stmt: StmtKind::BindingDef {
@@ -300,13 +300,13 @@ impl Parser {
 
         let value = Box::new(self.parse_expr().emit_wval(self.x(), Expression::dummy));
 
-        let hi = value.loc.clone();
+        let hi = value.loc;
 
         Ok(Statement {
             stmt: StmtKind::BindingDef {
                 name: Spanned {
                     node: name,
-                    loc: lo.clone(),
+                    loc: lo,
                 },
                 mutability,
                 typeexpr,
@@ -323,7 +323,7 @@ impl Parser {
 
         let expr = self.parse_expr()?;
 
-        let loc = Span::from_ends(lo, expr.loc.clone());
+        let loc = Span::from_ends(lo, expr.loc);
 
         Ok(Statement {
             stmt: StmtKind::Defer { expr },

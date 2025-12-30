@@ -1,11 +1,16 @@
 name: CI
-
-on: [push, pull_request]
-
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+concurrency:
+  # Cancels pending runs when a PR gets updated.
+  group: ${{ github.head_ref || github.run_id }}-${{ github.actor }}-ci
+  cancel-in-progress: true
 env:
   CARGO_TERM_COLOR: always
   LUNTESTS_COLOR: always
-
 jobs:
   build_and_test:
     name: Test - x86_64-linux-gnu

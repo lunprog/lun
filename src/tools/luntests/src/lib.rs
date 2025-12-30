@@ -407,6 +407,7 @@ pub enum TestStage {
     Lexer,
     Parser,
     Dsir,
+    Utir,
     Scir,
     Behavior,
     Multifile,
@@ -419,6 +420,7 @@ impl TestStage {
             TestStage::Lexer => &["-Zhalt=lexer", "-Zprint=token-stream"],
             TestStage::Parser => &["-Zhalt=parser", "-Zprint=ast"],
             TestStage::Dsir => &["-Zhalt=dsir", "-Zprint=dsir"],
+            TestStage::Utir => &["-Zhalt=utir", "-Zprint=utir"],
             // TestStage::Scir => &["-Zhalt=scir", "-Zprint=scir", "--orb-type", "llib"],
             // TestStage::Behavior => &["-Zprint=ssa", "-Zprint=scir"],
             TestStage::Scir | TestStage::Behavior => &[],
@@ -446,6 +448,8 @@ impl FromStr for TestStage {
             Ok(TestStage::Parser)
         } else if s.starts_with("dsir/") {
             Ok(TestStage::Dsir)
+        } else if s.starts_with("utir/") {
+            Ok(TestStage::Utir)
         } else if s.starts_with("scir/") {
             Ok(TestStage::Scir)
         } else if s.starts_with("behavior/") {

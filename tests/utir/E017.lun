@@ -1,0 +1,7 @@
+// EO17: error testing - UnknownLitTag
+main :: fun() {
+    1'ab;
+    2.0'cd;
+    ef'c';
+    gh"Hello";
+}

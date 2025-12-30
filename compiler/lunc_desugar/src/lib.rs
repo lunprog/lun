@@ -3,16 +3,16 @@
     html_logo_url = "https://raw.githubusercontent.com/lunprog/lun/main/src/assets/logo_no_bg_black.png"
 )]
 
-use std::{collections::HashMap, fmt::Debug, fs, path::PathBuf};
+use std::{collections::HashMap, fmt::Debug, fs, mem, path::PathBuf};
 
 use diags::{
     ModuleFileDoesnotExist, NameDefinedMultipleTimes, NotFoundInScope, UnderscoreInExpression,
     UnderscoreReservedIdent,
 };
 
-use lunc_ast::{Abi, BinOp, Mutability, Path, PathSegment, Spanned, UnOp};
+use lunc_ast::{Abi, BinOp, ItemKind, Mutability, Path, PathSegment, Spanned, UnOp};
 use lunc_diag::{Diagnostic, DiagnosticSink, FileId, ToDiagnostic, feature_todo};
-use lunc_entity::EntityDb;
+use lunc_entity::{AnyId, Entity, EntityDb};
 use lunc_lexer::Lexer;
 use lunc_parser::{
     Parser,
@@ -111,11 +111,39 @@ pub enum DsItem {
         abi: Abi,
         items: Vec<DsItem>,
         loc: OSpan,
+        /// it will hold the ItemId of the UTIR later, we use this because
+        /// ExternBlock doesn't have an item id.
+        id: Option<AnyId>,
     },
     /// See [`Item::Directive`]
     ///
     /// [`Item::Directive`]: lunc_parser::item::Item::Directive
     Directive(DsDirective),
+}
+
+impl DsItem {
+    /// Unwarps the location of the item
+    pub fn loc(&self) -> Span {
+        match self {
+            DsItem::GlobalDef { loc, .. }
+            | DsItem::GlobalUninit { loc, .. }
+            | DsItem::Module { loc, .. }
+            | DsItem::ExternBlock { loc, .. } => (*loc).unwrap(),
+            DsItem::Directive(directive) => directive.loc(),
+        }
+    }
+
+    pub fn kind(&self) -> ItemKind {
+        match self {
+            DsItem::GlobalDef { value, .. } if value.is_fundef() => ItemKind::Fundef,
+            DsItem::GlobalDef { value, .. } if value.is_fundecl() => ItemKind::Fundecl,
+            DsItem::GlobalDef { .. } => ItemKind::GlobalDef,
+            DsItem::GlobalUninit { .. } => ItemKind::GlobalUninit,
+            DsItem::Module { .. } => ItemKind::Module,
+            DsItem::ExternBlock { .. } => ItemKind::ExternBlock,
+            DsItem::Directive(_) => ItemKind::Directive,
+        }
+    }
 }
 
 /// See [`ItemDirective`]
@@ -130,6 +158,14 @@ pub enum DsDirective {
     },
     /// NOTE: This directive will not be here after we pass the lowered DSIR to the desugarrer
     Mod { name: String, loc: OSpan },
+}
+
+impl DsDirective {
+    pub fn loc(&self) -> Span {
+        match self {
+            DsDirective::Import { loc, .. } | DsDirective::Mod { loc, .. } => (*loc).unwrap(),
+        }
+    }
 }
 
 impl FromHigher for DsDirective {
@@ -183,6 +219,7 @@ impl FromHigher for DsItem {
                 abi,
                 items: lower(items),
                 loc: Some(loc),
+                id: None,
             },
             Item::Directive(directive) => DsItem::Directive(lower(directive)),
         }
@@ -207,6 +244,10 @@ impl DsExpression {
     /// Is the expression a function declaration?
     pub fn is_fundecl(&self) -> bool {
         matches!(self.expr, DsExprKind::FunDeclaration { .. })
+    }
+
+    pub fn is_underscore(&self) -> bool {
+        matches!(self.expr, DsExprKind::Underscore)
     }
 }
 
@@ -272,30 +313,34 @@ impl FromHigher for DsExpression {
             //         break :label;
             //     }
             //
-            //     {
-            //         // body
-            //     };
+            //     // body
             // }
             // ```
             //
             // NOTE: if you modify the desugaring of while expression, this
             // might break the detection of while expression in the SCIR in
-            // file `lunc_scir/src/checking.rs` in the function `ck_expr`
-            ExprKind::PredicateLoop { label, cond, body } => DsExprKind::Loop {
-                label: label.clone(),
-                body: block(
-                    body.loc.clone(),
-                    vec![
-                        stmt_expr(expr_if(
-                            expr_unary(UnOp::Not, lower(*cond)),
-                            expr_break(label.map(|Spanned { node: name, loc: _ }| name), None),
-                            None,
-                        )),
-                        stmt_expr(expr_block(lower(body))),
-                    ],
+            // file `lunc_untyped/src/lib.rs` in the function `gen_expr`
+            ExprKind::PredicateLoop { label, cond, body } => {
+                let mut stmts = Vec::with_capacity(body.stmts.len() + 1);
+
+                stmts.push(stmt_expr(expr_if(
+                    expr_unary(UnOp::Not, lower(*cond)),
+                    expr_break(
+                        label.clone().map(|Spanned { node: name, loc: _ }| name),
+                        None,
+                    ),
                     None,
-                ),
-            },
+                )));
+
+                for stmt in body.stmts {
+                    stmts.push(lower(stmt));
+                }
+
+                DsExprKind::Loop {
+                    label: label.clone(),
+                    body: block(body.loc, stmts, lower(body.last_expr)),
+                }
+            }
             ExprKind::IteratorLoop { loc, .. } => DsExprKind::Poisoned {
                 diag: Some(feature_todo! {
                     feature: "iterator loop",
@@ -351,20 +396,22 @@ impl FromHigher for DsExpression {
 }
 
 pub fn lower_if_expression(ifexpr: IfExpression) -> DsExprKind {
+    let then_b: DsBlock = lower(*ifexpr.body);
+
     DsExprKind::If {
         cond: lower(ifexpr.cond),
         then_br: Box::new(DsExpression {
-            expr: expr_block(lower(*ifexpr.body)).expr,
-            loc: Some(ifexpr.loc.clone()),
+            loc: then_b.loc,
+            expr: expr_block(then_b.loc, then_b).expr,
         }),
         else_br: match ifexpr.else_br.map(|e| *e) {
             Some(Else::IfExpr(ifexp)) => Some(Box::new(DsExpression {
-                loc: Some(ifexp.loc.clone()),
+                loc: Some(ifexp.loc),
                 expr: lower_if_expression(ifexp),
             })),
             Some(Else::Block(block)) => Some(Box::new(DsExpression {
-                loc: Some(block.loc.clone()),
-                expr: expr_block(lower(block)).expr,
+                loc: Some(block.loc),
+                expr: expr_block(block.loc, lower(block)).expr,
             })),
             None => None,
         },
@@ -621,10 +668,10 @@ pub fn expr_if(
 }
 
 /// Creates a block expression without location.
-pub fn expr_block(block: DsBlock) -> DsExpression {
+pub fn expr_block(loc: impl Into<OSpan>, block: DsBlock) -> DsExpression {
     DsExpression {
         expr: DsExprKind::Block { label: None, block },
-        loc: None,
+        loc: loc.into(),
     }
 }
 
@@ -872,7 +919,7 @@ pub struct Desugarrer {
     /// current path of the module we are desugarring
     current_path: Path,
     /// symbol database
-    pub symdb: EntityDb<Symbol>,
+    symdb: EntityDb<Symbol>,
 }
 
 impl Desugarrer {
@@ -910,8 +957,8 @@ impl Desugarrer {
         {
             return Err(NameDefinedMultipleTimes {
                 name: &name,
-                loc_previous: previous_sym.loc.clone(),
-                loc: symdata.loc.clone(),
+                loc_previous: previous_sym.loc,
+                loc: symdata.loc,
             }
             .into_diag());
         }
@@ -935,10 +982,7 @@ impl Desugarrer {
         }
 
         if name.as_str() == "_" {
-            return Err(UnderscoreReservedIdent {
-                loc: symdata.loc.clone(),
-            }
-            .into_diag());
+            return Err(UnderscoreReservedIdent { loc: symdata.loc }.into_diag());
         }
 
         self.table.last_map_mut().map.insert(name, sym);
@@ -966,9 +1010,17 @@ impl Desugarrer {
         Some(module)
     }
 
-    /// Returns the produced tree
-    pub fn module_tree(self) -> ModuleTree {
-        self.orb
+    /// Returns the produce Orb-tree, it replaces the module tree with a dummy one.
+    pub fn take_orb_tree(&mut self) -> ModuleTree {
+        mem::replace(
+            &mut self.orb,
+            ModuleTree::new(None, LazySymbol::Sym(Symbol::RESERVED)),
+        )
+    }
+
+    /// Returns the entity database of symbols, replaces it with a dummy one.
+    pub fn take_symdb(&mut self) -> EntityDb<Symbol> {
+        mem::replace(&mut self.symdb, EntityDb::new())
     }
 
     /// Takes a module and converts (recursively) the Mod directive to Item Mod.
@@ -1019,7 +1071,7 @@ impl Desugarrer {
                         self.sink.emit(ModuleFileDoesnotExist {
                             name: name.clone(),
                             expected_path: submodule_path,
-                            loc: loc.clone().unwrap(),
+                            loc: (*loc).unwrap(),
                         });
                         continue;
                     }
@@ -1057,7 +1109,7 @@ impl Desugarrer {
                     *item = DsItem::Module {
                         name: name.clone(),
                         module: submodule_dsir,
-                        loc: loc.clone(),
+                        loc: *loc,
                         sym: LazySymbol::Path(Path::with_root(name.clone())),
                     };
                 }
@@ -1136,6 +1188,7 @@ impl Desugarrer {
                 abi: _,
                 items,
                 loc: _,
+                id: _,
             } => {
                 for item in items {
                     match self.resolve_item(item) {
@@ -1205,7 +1258,7 @@ impl Desugarrer {
                     *mutability,
                     name.node.clone(),
                     self.table.usr_binding_count(),
-                    name.loc.clone(),
+                    name.loc,
                 );
 
                 *sym = LazySymbol::Sym(symref);
@@ -1293,7 +1346,7 @@ impl Desugarrer {
             DsExprKind::Path(LazySymbol::Path(path)) => {
                 if path.is_underscore() {
                     return Err(UnderscoreInExpression {
-                        loc: expr.loc.clone().unwrap(),
+                        loc: expr.loc.unwrap(),
                     }
                     .into_diag());
                 }
@@ -1353,7 +1406,7 @@ impl Desugarrer {
                     // path not found.
                     Err(NotFoundInScope {
                         name: path.to_string(),
-                        loc: expr.loc.clone().unwrap(),
+                        loc: expr.loc.unwrap(),
                     }
                     .into_diag())
                 }
@@ -1396,7 +1449,7 @@ impl Desugarrer {
                     let symref = self.symdb.create_param(
                         name.node.clone(),
                         self.table.param_count(),
-                        name.loc.clone(),
+                        name.loc,
                     );
 
                     *sym = LazySymbol::Sym(symref);
@@ -1467,7 +1520,7 @@ impl Desugarrer {
 
                 let symref = sym.symbol().unwrap_or_else(|| {
                     self.symdb
-                        .create_function(name.node.clone(), path, name.loc.clone())
+                        .create_function(name.node.clone(), path, name.loc)
                 });
 
                 self.orb
@@ -1500,12 +1553,8 @@ impl Desugarrer {
                 path.push(name.node.clone());
 
                 let symref = sym.symbol().unwrap_or_else(|| {
-                    self.symdb.create_global_def(
-                        *mutability,
-                        name.node.clone(),
-                        path,
-                        name.loc.clone(),
-                    )
+                    self.symdb
+                        .create_global_def(*mutability, name.node.clone(), path, name.loc)
                 });
 
                 self.orb
@@ -1536,12 +1585,8 @@ impl Desugarrer {
                 path.push(name.node.clone());
 
                 let symref = sym.symbol().unwrap_or_else(|| {
-                    self.symdb.create_global_def(
-                        Mutability::Mut,
-                        name.node.clone(),
-                        path,
-                        name.loc.clone(),
-                    )
+                    self.symdb
+                        .create_global_def(Mutability::Mut, name.node.clone(), path, name.loc)
                 });
 
                 self.orb
@@ -1573,7 +1618,7 @@ impl Desugarrer {
 
                 let symref = sym.symbol().unwrap_or_else(|| {
                     self.symdb
-                        .create_module(name.clone(), path, loc.clone().unwrap())
+                        .create_module(name.clone(), path, (*loc).unwrap())
                 });
 
                 *sym = LazySymbol::Sym(symref);
@@ -1607,6 +1652,7 @@ impl Desugarrer {
                 abi: _,
                 items,
                 loc: _,
+                id: _,
             } => {
                 // NOTE: we check, its optional in theory but it should speed up
                 // a little bit
@@ -1635,7 +1681,7 @@ impl Desugarrer {
                 } else {
                     Err(NotFoundInScope {
                         name: path.node.to_string(),
-                        loc: path.loc.clone(),
+                        loc: path.loc,
                     }
                     .into_diag())
                 }
