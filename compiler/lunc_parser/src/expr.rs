@@ -172,7 +172,7 @@ pub enum ExprKind {
     ///
     /// `"fun" "(" ( ident ":" expr ),* ")" [ "->" expr ] block`
     FunDefinition {
-        args: Vec<Arg>,
+        params: Vec<Param>,
         rettypeexpr: Option<Box<Expression>>,
         body: Block,
     },
@@ -180,7 +180,7 @@ pub enum ExprKind {
     ///
     /// `"fun" "(" ( expr ),* ")" [ "->" expr ]`
     FunDeclaration {
-        args: Vec<Expression>,
+        params: Vec<Expression>,
         rettypeexpr: Option<Box<Expression>>,
     },
     //
@@ -213,10 +213,10 @@ pub enum Else {
     Block(Block),
 }
 
+/// Function parameter
 #[derive(Debug, Clone)]
-pub struct Arg {
-    pub name: String,
-    pub name_loc: Span,
+pub struct Param {
+    pub name: Spanned<String>,
     pub typeexpr: Expression,
     pub loc: Span,
 }
@@ -518,7 +518,7 @@ impl Parser {
         }
 
         let lo = self.token_loc();
-        let mut hi = lo.clone();
+        let mut hi = lo;
 
         while self.eat_no_expect(ExpToken::ColonColon) {
             // TEST: no. 1
@@ -578,7 +578,7 @@ impl Parser {
         let rhs = self
             .parse_expr_precedence(pr)
             .emit_wval(self.x(), Expression::dummy);
-        let loc = Span::from_ends(lhs.loc.clone(), rhs.loc.clone());
+        let loc = Span::from_ends(lhs.loc, rhs.loc);
 
         Ok(Expression {
             kind: ExprKind::Binary {
@@ -605,7 +605,7 @@ impl Parser {
             .emit_wval(self.x(), Expression::dummy);
 
         Ok(Expression {
-            loc: Span::from_ends(lo, expr.loc.clone()),
+            loc: Span::from_ends(lo, expr.loc),
             kind: ExprKind::Unary {
                 op,
                 expr: Box::new(expr),
@@ -615,7 +615,7 @@ impl Parser {
 
     /// Parses the call expression
     pub fn parse_call_expr(&mut self, called: Box<Expression>) -> IResult<Expression> {
-        let lo = called.loc.clone();
+        let lo = called.loc;
         // TEST: n/a
         self.expect(ExpToken::LParen)?;
 
@@ -714,7 +714,7 @@ impl Parser {
                 // KwFun, LParen, Ident, Colon, ...
                 //                ^^^^^ self.token
 
-                let mut args = Vec::new();
+                let mut params = Vec::new();
 
                 loop {
                     if self.check(ExpToken::RParen) {
@@ -731,9 +731,11 @@ impl Parser {
 
                     match self.parse_typeexpr() {
                         Ok(t) => {
-                            args.push(Arg {
-                                name,
-                                name_loc: lo_arg.clone(),
+                            params.push(Param {
+                                name: Spanned {
+                                    node: name,
+                                    loc: lo_arg,
+                                },
                                 typeexpr: t.clone(),
                                 loc: Span::from_ends(lo_arg, t.loc),
                             });
@@ -776,11 +778,11 @@ impl Parser {
                 let body = self
                     .with_rest(Restrictions::empty(), Parser::parse_block)
                     .emit_wval(self.x(), Block::dummy);
-                let hi = body.loc.clone();
+                let hi = body.loc;
 
                 Ok(Expression {
                     kind: ExprKind::FunDefinition {
-                        args,
+                        params,
                         rettypeexpr,
                         body,
                     },
@@ -817,12 +819,12 @@ impl Parser {
 
                     let hi = rettypeexpr
                         .as_ref()
-                        .map(|typeexpr| typeexpr.loc.clone())
+                        .map(|typeexpr| typeexpr.loc)
                         .unwrap_or(hi_paren);
 
                     Ok(Expression {
                         kind: ExprKind::FunDeclaration {
-                            args: Vec::new(),
+                            params: Vec::new(),
                             rettypeexpr,
                         },
                         loc: Span::from_ends(lo, hi),
@@ -833,11 +835,11 @@ impl Parser {
                     let body = self
                         .with_rest(Restrictions::empty(), Parser::parse_block)
                         .emit_wval(self.x(), Block::dummy);
-                    let hi = body.loc.clone();
+                    let hi = body.loc;
 
                     Ok(Expression {
                         kind: ExprKind::FunDefinition {
-                            args: Vec::new(),
+                            params: Vec::new(),
                             rettypeexpr,
                             body,
                         },
@@ -848,7 +850,7 @@ impl Parser {
             _ => {
                 // function declaration
 
-                let mut args = Vec::new();
+                let mut params = Vec::new();
 
                 loop {
                     if self.eat_no_expect(ExpToken::RParen) {
@@ -857,7 +859,7 @@ impl Parser {
 
                     match self.parse_typeexpr() {
                         Ok(t) => {
-                            args.push(t);
+                            params.push(t);
                         }
                         Err(recovered) => {
                             if let Recovered::Unable(d) = recovered {
@@ -879,7 +881,7 @@ impl Parser {
                     }
                 }
                 // TEST: n/a
-                let hi_paren = self.token.loc.clone();
+                let hi_paren = self.token.loc;
 
                 let rettypeexpr = if self.eat_no_expect(ExpToken::MinusGt) {
                     match self.parse_typeexpr() {
@@ -898,11 +900,14 @@ impl Parser {
 
                 let hi = rettypeexpr
                     .as_ref()
-                    .map(|typeexpr| typeexpr.loc.clone())
+                    .map(|typeexpr| typeexpr.loc)
                     .unwrap_or(hi_paren);
 
                 Ok(Expression {
-                    kind: ExprKind::FunDeclaration { args, rettypeexpr },
+                    kind: ExprKind::FunDeclaration {
+                        params,
+                        rettypeexpr,
+                    },
                     loc: Span::from_ends(lo, hi),
                 })
             }
@@ -924,7 +929,7 @@ impl Parser {
             // "if" expression block [ "else" (if-expr | block-expr) ]
             let body = Box::new(self.with_rest(Restrictions::empty(), Parser::parse_block)?);
 
-            let mut hi = body.loc.clone();
+            let mut hi = body.loc;
 
             let else_br = if self.eat_no_expect(ExpToken::KwElse) {
                 let else_branch = if self.check(ExpToken::KwIf) {
@@ -937,14 +942,14 @@ impl Parser {
                         // SAFETY: parse_if_else_expr only produces like that one.
                         opt_unreachable!();
                     };
-                    hi = if_expr.loc.clone();
+                    hi = if_expr.loc;
 
                     Else::IfExpr(if_expr)
                 } else if self.check(ExpToken::LCurly) {
                     // block
                     let block = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
 
-                    hi = block.loc.clone();
+                    hi = block.loc;
 
                     Else::Block(block)
                 } else {
@@ -964,7 +969,7 @@ impl Parser {
                     cond,
                     body,
                     else_br,
-                    loc: loc.clone(),
+                    loc,
                 }),
                 loc,
             })
@@ -979,7 +984,7 @@ impl Parser {
             self.expect(ExpToken::KwElse)?;
             let false_val = Box::new(self.parse_expr_reset()?);
 
-            let hi = false_val.loc.clone();
+            let hi = false_val.loc;
 
             Ok(Expression {
                 kind: ExprKind::IfThenElse {
@@ -1016,8 +1021,8 @@ impl Parser {
         let block = self.with_rest(Restrictions::empty(), Parser::parse_block)?;
 
         if let Some(label) = label {
-            let lo = label.loc.clone();
-            let hi = block.loc.clone();
+            let lo = label.loc;
+            let hi = block.loc;
 
             Ok(Expression {
                 kind: ExprKind::BlockWithLabel { label, block },
@@ -1025,7 +1030,7 @@ impl Parser {
             })
         } else {
             Ok(Expression {
-                loc: block.loc.clone(),
+                loc: block.loc,
                 kind: ExprKind::Block(block),
             })
         }
@@ -1037,14 +1042,14 @@ impl Parser {
 
         // TEST: n/a
         let lo_while = self.expect(ExpToken::KwWhile)?;
-        let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_while);
+        let lo = label.as_ref().map(|l| l.loc).unwrap_or(lo_while);
 
         let cond = Box::new(self.parse_expr().emit_wval(self.x(), Expression::dummy));
         let body = self
             .with_rest(Restrictions::empty(), Parser::parse_block)
             .emit_wval(self.x(), Block::dummy);
 
-        let hi = body.loc.clone();
+        let hi = body.loc;
 
         Ok(Expression {
             kind: ExprKind::PredicateLoop { label, cond, body },
@@ -1058,7 +1063,7 @@ impl Parser {
 
         // TEST: n/a
         let lo_for = self.expect(ExpToken::KwFor)?;
-        let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_for);
+        let lo = label.as_ref().map(|l| l.loc).unwrap_or(lo_for);
 
         // TEST: no. 1
         self.expect(ExpToken::Ident).emit(self.x());
@@ -1076,7 +1081,7 @@ impl Parser {
             .with_rest(Restrictions::empty(), Parser::parse_block)
             .emit_wval(self.x(), Block::dummy);
 
-        let hi = body.loc.clone();
+        let hi = body.loc;
 
         let loc = Span::from_ends(lo, hi);
 
@@ -1086,7 +1091,7 @@ impl Parser {
                 variable,
                 iterator,
                 body,
-                loc: loc.clone(),
+                loc,
             },
             loc,
         })
@@ -1098,13 +1103,13 @@ impl Parser {
 
         // TEST: n/a
         let lo_loop = self.expect(ExpToken::KwLoop)?;
-        let lo = label.as_ref().map(|l| l.loc.clone()).unwrap_or(lo_loop);
+        let lo = label.as_ref().map(|l| l.loc).unwrap_or(lo_loop);
 
         let block = self
             .with_rest(Restrictions::empty(), Parser::parse_block)
             .emit_wval(self.x(), Block::dummy);
 
-        let hi = block.loc.clone();
+        let hi = block.loc;
 
         Ok(Expression {
             kind: ExprKind::InfiniteLoop { label, body: block },
@@ -1116,13 +1121,13 @@ impl Parser {
     pub fn parse_return_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
         let lo = self.expect(ExpToken::KwReturn)?;
-        let mut hi = lo.clone();
+        let mut hi = lo;
 
         let val = if self.token.is_stmt_end() {
             None
         } else {
             let expr = Box::new(self.parse_expr().emit_wval(self.x(), Expression::dummy));
-            hi = expr.loc.clone();
+            hi = expr.loc;
 
             Some(expr)
         };
@@ -1138,7 +1143,7 @@ impl Parser {
         // TEST: n/a
         let lo = self.expect(ExpToken::KwBreak)?;
 
-        let mut hi = lo.clone();
+        let mut hi = lo;
 
         let label = if self.eat_no_expect(ExpToken::Colon) {
             // TEST: no. 1
@@ -1156,7 +1161,7 @@ impl Parser {
             None
         } else {
             let expr = Box::new(self.parse_expr().emit_wval(self.x(), Expression::dummy));
-            hi = expr.loc.clone();
+            hi = expr.loc;
 
             Some(expr)
         };
@@ -1171,7 +1176,7 @@ impl Parser {
     pub fn parse_continue_expr(&mut self) -> IResult<Expression> {
         // TEST: n/a
         let lo = self.expect(ExpToken::KwContinue)?;
-        let mut hi = lo.clone();
+        let mut hi = lo;
 
         let label = if self.eat_no_expect(ExpToken::Colon) {
             // TEST: no. 1
@@ -1253,7 +1258,7 @@ impl Parser {
                 Ok(t) => {
                     let typeexpr = Box::new(t);
 
-                    (typeexpr.loc.clone(), Some(typeexpr))
+                    (typeexpr.loc, Some(typeexpr))
                 }
                 Err(recovered) => {
                     if let Recovered::Unable(d) = recovered {
@@ -1281,7 +1286,7 @@ impl Parser {
         let mutability = self.parse_mutability();
 
         let typeexpr = Box::new(self.parse_typeexpr().emit_wval(self.x(), Expression::dummy));
-        let hi = typeexpr.loc.clone();
+        let hi = typeexpr.loc;
 
         Ok(Expression {
             kind: ExprKind::PointerType(mutability, typeexpr),
@@ -1291,7 +1296,7 @@ impl Parser {
 
     /// Parses unary right expression
     pub fn parse_unary_right_expr(&mut self, lhs: Expression) -> IResult<Expression> {
-        let lo = lhs.loc.clone();
+        let lo = lhs.loc;
 
         let (op, hi) = if let Some(op) = UnOp::right_from_token(&self.token.tt) {
             self.bump();
@@ -1319,7 +1324,7 @@ impl Parser {
 
         let val = Box::new(self.parse_expr().emit_wval(self.x(), Expression::dummy));
 
-        let hi = val.loc.clone();
+        let hi = val.loc;
 
         Ok(Expression {
             kind: ExprKind::Borrow(mutability, val),
@@ -1337,7 +1342,7 @@ impl Parser {
         let hi = self.token_loc();
         let member = self.as_ident();
 
-        let loc = Span::from_ends(expr.loc.clone(), hi);
+        let loc = Span::from_ends(expr.loc, hi);
 
         Ok(Expression {
             kind: ExprKind::Field {

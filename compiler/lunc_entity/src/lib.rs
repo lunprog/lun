@@ -42,7 +42,19 @@
 //! assert_eq!(db.get(e), &"hello".to_string());
 //! ```
 
-use std::{collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData, mem};
+use std::{
+    fmt::{self, Debug, Display},
+    hash::{Hash, Hasher},
+    io,
+    marker::PhantomData,
+    mem,
+};
+
+use indexmap::{IndexMap, IndexSet};
+use lunc_utils::{
+    impl_pdump,
+    pretty::{PrettyCtxt, PrettyDump},
+};
 
 /// An entity is a tiny, `Copy` identifier used across the compiler.
 ///
@@ -98,6 +110,11 @@ pub trait Entity: Debug + Copy + PartialEq + Eq + Hash {
     #[inline(always)]
     fn is_reserved(self) -> bool {
         self == Entity::RESERVED
+    }
+
+    /// Converts this entity to an [`AnyId`].
+    fn to_any(self) -> AnyId {
+        AnyId(self.index() as u32)
     }
 }
 
@@ -164,12 +181,11 @@ macro_rules! entity {
 /// assert!(db.is_valid(id));
 /// assert_eq!(db.get(id), &"value".to_string());
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct EntityDb<E: Entity> {
     /// the data being stored
     elems: Vec<E::Data>,
-    /// last id given to an entity
-    last_id: usize,
+    /// phantom data so that E is actually used
     _e: PhantomData<fn(E) -> E::Data>,
 }
 
@@ -178,7 +194,6 @@ impl<E: Entity> EntityDb<E> {
     pub fn new() -> EntityDb<E> {
         EntityDb {
             elems: Vec::new(),
-            last_id: 0,
             _e: PhantomData,
         }
     }
@@ -194,12 +209,56 @@ impl<E: Entity> EntityDb<E> {
     /// Allocate a new entity and store `data` for it. The returned value is a
     /// fresh `E` whose index corresponds to the pushed slot.
     pub fn create(&mut self, data: E::Data) -> E {
-        let entity = E::new(self.last_id);
-        self.last_id += 1;
+        let entity = E::new(self.elems.len());
 
         self.elems.push(data);
 
         entity
+    }
+
+    /// Create a new entity with data the default value of `E::Data`.
+    pub fn create_default(&mut self) -> E
+    where
+        E::Data: Default,
+    {
+        self.create(E::Data::default())
+    }
+
+    /// Create a new entity with `ctor` that takes the id as argument, and
+    /// returns the data to associate with the entity. This method returns the
+    /// entity created.
+    pub fn create_with(&mut self, ctor: impl FnOnce(E) -> E::Data) -> E {
+        let entity = E::new(self.elems.len());
+        self.create(ctor(entity));
+
+        entity
+    }
+
+    /// Creates `count` new entities with the data returned by `ctor`, returns a
+    /// Vector containing all created entities.
+    ///
+    /// `ctor` takes to arguments:
+    /// - the entity being created as the first param
+    /// - the index, e.g: when `ctor` is called for the first entity, the
+    ///   `index == 0`, for the second entity created `index == 1` etc..
+    pub fn create_many(
+        &mut self,
+        mut ctor: impl FnMut(E, usize) -> E::Data,
+        count: usize,
+    ) -> Vec<E> {
+        self.elems.reserve(count);
+        let mut entities = Vec::with_capacity(count);
+
+        for i in 0..count {
+            let entity = E::new(self.elems.len());
+            entities.push(entity);
+            let data = ctor(entity, i);
+            let res = self.create(data);
+
+            debug_assert_eq!(entity, res);
+        }
+
+        entities
     }
 
     /// Checks whether `entity` refers to a slot inside this database.
@@ -242,6 +301,42 @@ impl<E: Entity> EntityDb<E> {
     pub fn is_empty(&self) -> bool {
         self.count() == 0
     }
+
+    /// Returns an iterator on the data of the entities.
+    ///
+    /// The iterator yields all the data in the order they were created.
+    pub fn data_iter(&self) -> impl ExactSizeIterator<Item = &E::Data> {
+        self.elems.iter()
+    }
+
+    /// Returns an iterator over the stored entities handles.
+    ///
+    /// The iterator yields all the data in the order they were created.
+    pub fn entity_iter(&self) -> impl ExactSizeIterator<Item = E> + use<E> {
+        (0..self.elems.len()).map(|i| E::new(i))
+    }
+
+    /// Returns an iterator on the entity and its associated data.
+    ///
+    /// The iterator yields all the data in the order they were created.
+    pub fn full_iter(&self) -> impl Iterator<Item = (E, &E::Data)> {
+        self.elems
+            .iter()
+            .enumerate()
+            .map(|(id, data)| (E::new(id), data))
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (E, &mut E::Data)> {
+        self.elems
+            .iter_mut()
+            .enumerate()
+            .map(|(id, data)| (E::new(id), data))
+    }
+
+    /// Get the last entity we created
+    pub fn last(&self) -> E {
+        E::new(self.elems.len() - 1)
+    }
 }
 
 impl<E: Entity> Default for EntityDb<E> {
@@ -271,17 +366,23 @@ impl<E: Entity> Default for EntityDb<E> {
 /// assert_eq!(map.get(n), Some(&42));
 /// assert!(map.contains_entity(n));
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SparseMap<E: Entity, V> {
-    elems: HashMap<usize, V>,
+    elems: IndexMap<usize, V>,
     _e: PhantomData<fn(E) -> V>,
+}
+
+impl<E: Entity, V: Debug> Debug for SparseMap<E, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_map().entries(self.iter()).finish()
+    }
 }
 
 impl<E: Entity, V> SparseMap<E, V> {
     /// Create a new empty [`SparseMap`].
     pub fn new() -> SparseMap<E, V> {
         SparseMap {
-            elems: HashMap::new(),
+            elems: IndexMap::new(),
             _e: PhantomData,
         }
     }
@@ -310,11 +411,36 @@ impl<E: Entity, V> SparseMap<E, V> {
     pub fn contains_entity(&self, entity: E) -> bool {
         self.get(entity).is_some()
     }
+
+    /// Is this map empty?
+    pub fn is_empty(&self) -> bool {
+        self.elems.is_empty()
+    }
+
+    /// Returns an iterator on the entity and its associated data.
+    pub fn iter(&self) -> impl Iterator<Item = (E, &V)> {
+        self.elems.iter().map(|(id, data)| (E::new(*id), data))
+    }
+
+    /// Returns an iterator on the entity and its associated data.
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (E, &mut V)> {
+        self.elems.iter_mut().map(|(id, data)| (E::new(*id), data))
+    }
 }
 
 impl<E: Entity, V> Default for SparseMap<E, V> {
     fn default() -> Self {
         SparseMap::new()
+    }
+}
+
+impl<E: Entity, V: Hash> Hash for SparseMap<E, V> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.elems.len().hash(state);
+
+        for pair in self.iter() {
+            pair.hash(state);
+        }
     }
 }
 
@@ -346,51 +472,25 @@ impl<E: Entity, V> Default for SparseMap<E, V> {
 /// tm.insert(r, 7);
 /// assert_eq!(tm.get(r), Some(&7));
 /// ```
-#[derive(Debug, Clone)]
-pub struct TightMap<E: Entity, V: Clone> {
+#[derive(Clone)]
+pub struct TightMap<E: Entity, V> {
     _e: PhantomData<fn(E) -> V>,
     /// the stored elements
-    elems: Vec<V>,
-    /// default value used to fill holes
-    default: V,
-    /// occupancy bitmap, used for Debug checks
-    #[cfg(debug_assertions)]
-    occupied: Vec<bool>,
+    elems: Vec<Option<V>>,
+}
+
+impl<E: Entity, V: Debug> Debug for TightMap<E, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_map().entries(self.iter()).finish()
+    }
 }
 
 impl<E: Entity, V: Clone> TightMap<E, V> {
-    /// Create a new [`TightMap`] using [`V::default()`] as the default.
-    ///
-    /// [`V::default()`]: Default::default
-    pub fn new() -> TightMap<E, V>
-    where
-        V: Default,
-    {
-        TightMap::with_default(Default::default())
-    }
-
-    /// Create a new [`TightMap`] with the provided `default` value.
-    pub fn with_default(default: V) -> TightMap<E, V> {
-        TightMap {
-            _e: PhantomData,
-            elems: Vec::new(),
-            default,
-            #[cfg(debug_assertions)]
-            occupied: Vec::new(),
-        }
-    }
-
     /// Ensure the internal vectors are at least `index + 1` long.
     fn ensure_index(&mut self, index: usize) {
         if index >= self.elems.len() {
             let to_add = index + 1 - self.elems.len();
-            self.elems
-                .extend(std::iter::repeat_with(|| self.default.clone()).take(to_add));
-
-            #[cfg(debug_assertions)]
-            {
-                self.occupied.extend(std::iter::repeat_n(false, to_add));
-            }
+            self.elems.extend(std::iter::repeat_n(None, to_add));
         }
     }
 
@@ -400,12 +500,34 @@ impl<E: Entity, V: Clone> TightMap<E, V> {
         self.ensure_index(entity.index());
 
         // put value into slot, mark occupied
-        self.elems[entity.index()] = value;
+        self.elems[entity.index()] = Some(value);
+    }
+}
 
-        #[cfg(debug_assertions)]
-        {
-            self.occupied[entity.index()] = true;
-        };
+impl<E: Entity, V> TightMap<E, V> {
+    /// Create a new empty [`TightMap`].
+    pub fn new() -> TightMap<E, V> {
+        TightMap {
+            _e: PhantomData,
+            elems: Vec::new(),
+        }
+    }
+
+    /// Get the value for `entity`.
+    pub fn get(&self, entity: E) -> Option<&V> {
+        self.elems.get(entity.index()).and_then(|opt| opt.as_ref())
+    }
+
+    /// Mutable `get`.
+    pub fn get_mut(&mut self, entity: E) -> Option<&mut V> {
+        self.elems
+            .get_mut(entity.index())
+            .and_then(|opt| opt.as_mut())
+    }
+
+    /// Clear the map contents.
+    pub fn clear(&mut self) {
+        self.elems.clear();
     }
 
     /// Remove the value for `entity`. Returns the previous value (which may be
@@ -414,39 +536,130 @@ impl<E: Entity, V: Clone> TightMap<E, V> {
         let idx = entity.index();
 
         if idx < self.elems.len() {
-            #[cfg(debug_assertions)]
-            {
-                self.occupied[idx] = false;
-            };
-
-            let prev = mem::replace(&mut self.elems[idx], self.default.clone());
-
-            Some(prev)
+            self.elems[idx].take()
         } else {
             None
         }
     }
 
-    /// Get the value for `entity`.
-    pub fn get(&self, entity: E) -> Option<&V> {
-        self.elems.get(entity.index())
-    }
-
-    /// Mutable `get`.
-    pub fn get_mut(&mut self, entity: E) -> Option<&mut V> {
-        self.elems.get_mut(entity.index())
-    }
-
-    /// Clear the map contents.
-    pub fn clear(&mut self) {
-        self.elems.clear();
+    /// Get an iterator over the occupied entity+value pair in the map.
+    pub fn iter(&self) -> impl Iterator<Item = (E, &V)> {
+        self.elems
+            .iter()
+            .enumerate()
+            .filter_map(|(id, val)| val.as_ref().map(|val| (E::new(id), val)))
     }
 }
 
-impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
+impl<E: Entity, V> Default for TightMap<E, V> {
     fn default() -> Self {
         TightMap::new()
     }
+}
+
+/// A set of entities, used to store only one copy of an entity. It should be
+/// used instead of a `Vec<Entity>` when you know that you want only one entry by entity.
+#[derive(Debug, Clone)]
+pub struct EntitySet<E: Entity> {
+    elems: IndexSet<E>,
+}
+
+impl<E: Entity> EntitySet<E> {
+    /// Create a new empty entity set.
+    pub fn new() -> EntitySet<E> {
+        EntitySet {
+            elems: IndexSet::new(),
+        }
+    }
+
+    /// Insert a new entity in the set.
+    #[inline]
+    pub fn insert(&mut self, entity: E) {
+        self.elems.insert(entity);
+    }
+
+    /// Returns `true` if the entity is in the set.
+    #[inline]
+    pub fn exists(&self, entity: E) -> bool {
+        self.elems.contains(&entity)
+    }
+
+    /// Clear the set
+    #[inline]
+    pub fn clear(&mut self) {
+        self.elems.clear();
+    }
+
+    /// Count of how many entities are stored in the set.
+    #[inline]
+    pub fn len(&mut self) -> usize {
+        self.elems.len()
+    }
+
+    /// Returns `true` if the set is empty.
+    #[inline]
+    pub fn is_empty(&mut self) -> bool {
+        self.len() == 0
+    }
+
+    /// Get an iterator over the entries of the set, it is ensured to be in the
+    /// order of insertion.
+    pub fn iter(&self) -> impl Iterator<Item = &E> {
+        self.elems.iter()
+    }
+}
+
+impl<E: Entity> Default for EntitySet<E> {
+    fn default() -> Self {
+        EntitySet::new()
+    }
+}
+
+impl<Ex: Clone, E: Entity + PrettyDump<Ex>> PrettyDump<Ex> for EntitySet<E> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &Ex) -> io::Result<()> {
+        ctx.pretty_list(None, extra)
+            .disable_nl()
+            .items(self.iter())
+            .finish()
+    }
+}
+
+impl<E: Entity> Hash for EntitySet<E> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        for entity in self.iter() {
+            entity.hash(state);
+        }
+    }
+}
+
+/// Any entity, can be downcast to anything that implements [`Entity`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct AnyId(u32);
+
+impl AnyId {
+    /// Create a new any id from the entity, ensured to be a valid any id.
+    pub fn upcast<E: Entity>(entity: E) -> AnyId {
+        entity.to_any()
+    }
+
+    /// Downcast this any id to `E`.
+    ///
+    /// # Safety
+    ///
+    /// You should only downcast when you are 100% that it will be a valid entity.
+    pub fn downcast<E: Entity>(self) -> E {
+        E::new(self.0 as usize)
+    }
+}
+
+impl Display for AnyId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "AnyId({})", self.0)
+    }
+}
+
+impl_pdump! {
+    AnyId,
 }
 
 /// [`Opt<E>`] is an optimized [`Option<E>`]: it stores an [`Entity`] but reuses
@@ -468,7 +681,7 @@ impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
 /// entity!(Slot, ());
 ///
 /// // None variant:
-/// let mut o: Opt<Slot> = Opt::None();
+/// let mut o: Opt<Slot> = Opt::None;
 /// assert!(o.is_none());
 ///
 /// // Some variant:
@@ -476,11 +689,11 @@ impl<E: Entity, V: Clone + Default> Default for TightMap<E, V> {
 /// assert!(some.is_some());
 /// assert_eq!(some.unwrap().index(), 1);
 /// ```
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Opt<E: Entity>(E);
 
 impl<E: Entity> Opt<E> {
-    /// Construct a [`Some(entity)`]. Panics (in debug mode) if `entity` is the
+    /// Construct a `Some(entity)`. Panics (in debug mode) if `entity` is the
     /// reserved Entity.
     #[allow(non_snake_case)]
     pub fn Some(entity: E) -> Opt<E> {
@@ -494,10 +707,8 @@ impl<E: Entity> Opt<E> {
     }
 
     /// Construct a `None` option.
-    #[allow(non_snake_case)]
-    pub const fn None() -> Opt<E> {
-        Opt(E::RESERVED)
-    }
+    #[allow(non_upper_case_globals)]
+    pub const None: Opt<E> = Opt(E::RESERVED);
 
     /// Is this `None`?
     pub fn is_none(&self) -> bool {
@@ -527,7 +738,65 @@ impl<E: Entity> Opt<E> {
 
     /// Take the stored entity, leaving a `None` in its place.
     pub fn take(&mut self) -> Opt<E> {
-        mem::replace(self, Self::None())
+        mem::replace(self, Self::None)
+    }
+}
+
+impl<E: Entity> Debug for Opt<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_some() {
+            f.debug_tuple("Some").field(&self.0).finish()
+        } else {
+            f.debug_struct("None").finish()
+        }
+    }
+}
+
+impl<E: Entity + Display> Display for Opt<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_some() {
+            Display::fmt(&self.0, f)
+        } else {
+            write!(f, "None")
+        }
+    }
+}
+
+impl<E: PrettyDump<Ex> + Entity, Ex> PrettyDump<Ex> for Opt<E> {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &Ex) -> io::Result<()> {
+        self.expand().try_dump(ctx, extra)
+    }
+}
+
+impl<E: Entity> From<Option<E>> for Opt<E> {
+    fn from(value: Option<E>) -> Self {
+        match value {
+            Some(e) => Opt::Some(e),
+            None => Opt::None,
+        }
+    }
+}
+
+impl<E: Entity> From<E> for Opt<E> {
+    fn from(value: E) -> Self {
+        Self::Some(value)
+    }
+}
+
+pub mod private {
+    pub trait Sealed {}
+
+    impl<E> Sealed for Option<E> {}
+}
+
+pub trait OptionExt<E: Entity>: private::Sealed {
+    /// Reduces the `Option<E>` to an `Opt<E>`, where `E` is an [Entity].
+    fn shorten(self) -> Opt<E>;
+}
+
+impl<E: Entity> OptionExt<E> for Option<E> {
+    fn shorten(self) -> Opt<E> {
+        Opt::from(self)
     }
 }
 
@@ -621,7 +890,7 @@ mod tests {
     #[test]
     fn tight_map_insert_get_remove() {
         // use i32 default value of 0
-        let mut tm = TightMap::<TestEntityB, i32>::with_default(0);
+        let mut tm = TightMap::<TestEntityB, i32>::new();
 
         let e2 = TestEntityB::new(2);
         // Initially out of range
@@ -634,13 +903,13 @@ mod tests {
         let e5 = TestEntityB::new(5);
         tm.insert(e5, 99);
         assert_eq!(tm.get(e5), Some(&99));
-        // earlier indices that were never assigned should equal default (0)
-        assert_eq!(tm.get(TestEntityB::new(0)), Some(&0));
+        // earlier indices that were never assigned should equal to None.
+        assert_eq!(tm.get(TestEntityB::new(0)), None);
 
-        // remove returns previous value and resets slot to default
+        // remove returns previous value and resets slot to None
         let prev = tm.remove(e5);
         assert_eq!(prev, Some(99));
-        assert_eq!(tm.get(e5), Some(&0));
+        assert_eq!(tm.get(e5), None);
 
         // removing an index that was never allocated returns None
         let not_alloc = TestEntityB::new(1000);
@@ -649,7 +918,7 @@ mod tests {
 
     #[test]
     fn tight_map_get_mut_and_clear() {
-        let mut tm = TightMap::<TestEntityB, i32>::with_default(-1);
+        let mut tm = TightMap::<TestEntityB, i32>::new();
         let e3 = TestEntityB::new(3);
         tm.insert(e3, 7);
 
@@ -675,7 +944,7 @@ mod tests {
     #[test]
     fn opt_some_none_and_expand() {
         // None
-        let none_opt: Opt<TestEntityA> = Opt::None();
+        let none_opt: Opt<TestEntityA> = Opt::None;
         assert!(none_opt.is_none());
         assert!(!none_opt.is_some());
         assert_eq!(none_opt.expand(), None);
@@ -713,7 +982,7 @@ mod tests {
     // debug-only test: ensure we can create the RESERVED sentinel via Opt::None
     #[test]
     fn opt_none_is_reserved_under_the_hood() {
-        let none: Opt<TestEntityA> = Opt::None();
+        let none: Opt<TestEntityA> = Opt::None;
         assert!(none.is_none());
         // expanding should yield None
         assert_eq!(none.expand(), None);

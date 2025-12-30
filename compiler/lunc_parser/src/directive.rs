@@ -1,6 +1,6 @@
 //! Parsing of lun's directives.
 
-use lunc_ast::symbol::EffectivePath;
+use lunc_ast::{Path, PathSegment};
 use lunc_diag::ResultExt;
 use lunc_utils::default;
 
@@ -34,27 +34,27 @@ impl Directive {
     ];
 }
 
-/// Spanned [EffectivePath].
-pub type SpannedPath = Spanned<EffectivePath>;
+/// Spanned [Path].
+pub type SpannedPath = Spanned<Path>;
 
 /// Directive parsing
 impl Parser {
     /// Parse a [`SpannedPath`].
     pub fn parse_spanned_path(&mut self) -> IResult<SpannedPath> {
-        let mut path = Vec::new();
+        let mut path = Path::new();
 
         // TEST: no. 1
         if self.eat(ExpToken::Ident) {
             path.push(self.as_ident());
         } else if self.eat(ExpToken::KwOrb) {
-            path.push("orb".to_string())
+            path.push_seg(PathSegment::Orb);
         } else {
             return self.etd_and_bump();
         }
 
         let lo = self.token_loc();
 
-        let mut hi = lo.clone();
+        let mut hi = lo;
         while self.eat_no_expect(ExpToken::ColonColon) {
             // TEST: no. 2
             hi = self.expect(ExpToken::Ident).emit_wval(self.x(), default);
@@ -62,7 +62,7 @@ impl Parser {
         }
 
         Ok(SpannedPath {
-            node: EffectivePath::from_vec(path),
+            node: path,
             loc: Span::from_ends(lo, hi),
         })
     }

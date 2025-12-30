@@ -861,8 +861,9 @@ dependencies = [
  "lunc_linkage",
  "lunc_llib_meta",
  "lunc_parser",
- "lunc_scir",
+ "lunc_seq",
  "lunc_token",
+ "lunc_untyped",
  "lunc_utils",
  "shadow-rs",
  "termcolor",
@@ -888,7 +889,6 @@ dependencies = [
  "cranelift-object",
  "lunc_ast",
  "lunc_llib_meta",
- "lunc_scir",
  "lunc_token",
  "lunc_utils",
 ]
@@ -899,6 +899,7 @@ version = "0.1.0"
 dependencies = [
  "lunc_ast",
  "lunc_diag",
+ "lunc_entity",
  "lunc_lexer",
  "lunc_llib_meta",
  "lunc_parser",
@@ -918,6 +919,10 @@ dependencies = [
 [[package]]
 name = "lunc_entity"
 version = "0.1.0"
+dependencies = [
+ "indexmap",
+ "lunc_utils",
+]
 
 [[package]]
 name = "lunc_lexer"
@@ -966,14 +971,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "lunc_scir"
+name = "lunc_seq"
 version = "0.1.0"
 dependencies = [
  "lunc_ast",
  "lunc_desugar",
  "lunc_diag",
- "lunc_llib_meta",
- "lunc_token",
+ "lunc_entity",
  "lunc_utils",
 ]
 
@@ -981,6 +985,19 @@ dependencies = [
 name = "lunc_token"
 version = "0.1.0"
 dependencies = [
+ "lunc_utils",
+]
+
+[[package]]
+name = "lunc_untyped"
+version = "0.1.0"
+dependencies = [
+ "lunc_ast",
+ "lunc_desugar",
+ "lunc_diag",
+ "lunc_entity",
+ "lunc_seq",
+ "lunc_token",
  "lunc_utils",
 ]
 

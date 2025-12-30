@@ -1,7 +1,13 @@
 name: Typos check
-
-on: [push, pull_request]
-
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+concurrency:
+  # Cancels pending runs when a PR gets updated.
+  group: ${{ github.head_ref || github.run_id }}-${{ github.actor }}-typos
+  cancel-in-progress: true
 jobs:
   spellcheck:
     name: Check typos

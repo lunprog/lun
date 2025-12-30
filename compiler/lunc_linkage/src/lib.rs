@@ -11,7 +11,7 @@ use std::{
     process::{Command, Output},
 };
 
-use lunc_llib_meta::{ModuleTree, meta::Lmeta};
+use lunc_llib_meta::Lmeta;
 use lunc_utils::{BuildOptions, OrbType};
 use tar::HeaderMode;
 use tempfile::{Builder, NamedTempFile};
@@ -24,7 +24,7 @@ pub enum Error {
     #[error(transparent)]
     Io(#[from] io::Error),
     #[error(transparent)]
-    LlibMeta(#[from] lunc_llib_meta::meta::Error),
+    LlibMeta(#[from] lunc_llib_meta::Error),
 }
 
 /// Takes the object file and turns it into the file with appropriate format for
@@ -44,8 +44,6 @@ pub struct Linker {
     /// This is used to keep the temporary file alive, so that the linker can
     /// still find the object file before it being deleted.
     tempfile: Option<NamedTempFile>,
-    /// orb tree.
-    orbtree: ModuleTree,
     /// build options
     opts: BuildOptions,
 }
@@ -56,7 +54,6 @@ impl Linker {
         objbytes: Vec<u8>,
         objpath: Option<PathBuf>,
         out: impl AsRef<Path>,
-        orbtree: ModuleTree,
         opts: BuildOptions,
     ) -> Linker {
         Linker {
@@ -64,7 +61,6 @@ impl Linker {
             objpath,
             out: out.as_ref().to_path_buf(),
             tempfile: None,
-            orbtree,
             opts,
         }
     }
@@ -127,7 +123,6 @@ impl Linker {
         let lmeta = Lmeta::new(
             env!("CARGO_PKG_VERSION").to_string(),
             self.opts.target().clone(),
-            self.orbtree.clone(),
         );
 
         let lmeta_bytes = lmeta.to_bytes()?;

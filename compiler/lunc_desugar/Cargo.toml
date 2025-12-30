@@ -13,3 +13,4 @@ lunc_utils = { workspace = true }
 lunc_llib_meta = { workspace = true }
 lunc_ast = { workspace = true }
 lunc_token = { workspace = true }
+lunc_entity = { workspace = true }

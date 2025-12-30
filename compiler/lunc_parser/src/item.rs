@@ -175,7 +175,7 @@ impl Parser {
             return Ok(Item::GlobalUninit {
                 name: Spanned {
                     node: name,
-                    loc: lo.clone(),
+                    loc: lo,
                 },
                 typeexpr,
                 loc: Span::from_ends(lo, hi),
@@ -189,17 +189,17 @@ impl Parser {
         let hi = if value.is_expr_with_block() {
             self.eat_no_expect(ExpToken::Semi);
 
-            value.loc.clone()
+            value.loc
         } else {
             // TEST: no. 3
             self.expect_nae(ExpToken::Semi).emit(self.x());
 
             // if semi was there it's his correct location,
             // if semi was not here it's a dummy location.
-            self.prev_token.loc.clone()
+            self.prev_token.loc
         };
 
-        let loc = Span::from_ends(lo.clone(), hi);
+        let loc = Span::from_ends(lo, hi);
 
         Ok(Item::GlobalDef {
             name: Spanned {
@@ -230,7 +230,7 @@ impl Parser {
 
                     Err(UnknownDirective {
                         name: id.clone(),
-                        loc: directive_name.loc.clone(),
+                        loc: directive_name.loc,
                     }
                     .into())
                 }
