@@ -488,7 +488,8 @@ pub struct Timings {
 impl Timings {
     /// Sum up and put it in lun_sum
     pub fn sum_up(&mut self) {
-        self.lun_sum = self.setup + self.lexer + self.parser + self.dsir + self.sir + self.ssa;
+        self.lun_sum =
+            self.setup + self.lexer + self.parser + self.dsir + self.utir + self.sir + self.ssa;
     }
 }
 
