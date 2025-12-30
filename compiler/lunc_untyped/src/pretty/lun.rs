@@ -7,19 +7,30 @@ use std::{
 };
 
 use lunc_entity::Opt;
-use lunc_utils::pretty::{PrettyCtxt, PrettyDump, pretty_to_string};
+use lunc_utils::{
+    join_pretty,
+    pretty::{PrettyCtxt, PrettyDump, pretty_to_string},
+};
 
 use crate::{pretty::LunFlavor, utir::*};
 
-pub fn expr_to_string(expr: ExprId, item: ItemId, orb: &Orb) -> String {
+pub fn with_dumper<R>(item: ItemId, orb: &Orb, f: impl FnOnce(&OrbDumper) -> R) -> R {
     let dumper = OrbDumper(Rc::new(Mutex::new(OrbDumperInner {
         orb: &raw const *orb,
-        item: Opt::None,
+        item: Opt::Some(item),
     })));
 
-    dumper.set_item(item);
+    f(&dumper)
+}
 
-    pretty_to_string(dumper.body().exprs.get(expr), &dumper)
+pub fn type_to_string(typ: Type, item: ItemId, orb: &Orb) -> String {
+    with_dumper(item, orb, |dumper| pretty_to_string(typ, dumper))
+}
+
+pub fn expr_to_string(expr: ExprId, item: ItemId, orb: &Orb) -> String {
+    with_dumper(item, orb, |dumper| {
+        pretty_to_string(dumper.body().exprs.get(expr), dumper)
+    })
 }
 
 /// Struct used to [`PrettyDump`] SIR with the Lun-like Flavor.
@@ -130,7 +141,7 @@ impl PrettyDump<OrbDumper> for Fundef {
             path,
             typ: _, // we don't care printing the type for a fundef...
             params,
-            ret_ty,
+            ret,
             entry,
             body,
             loc,
@@ -151,7 +162,7 @@ impl PrettyDump<OrbDumper> for Fundef {
             typ.try_dump(ctx, extra)?;
         }
 
-        _ = ret_ty;
+        _ = ret;
         _ = entry;
         _ = body;
         _ = loc;
@@ -291,6 +302,50 @@ impl PrettyDump<OrbDumper> for Expr {
                 Ok(())
             }
             e => todo!("{e:?}"),
+        }
+    }
+}
+
+impl PrettyDump<OrbDumper> for Type {
+    fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
+        match self {
+            Type::PrimType(ptype) => write!(ctx.out, "{ptype}"),
+            Type::Ptr(mutability, pointee) => {
+                write!(ctx.out, "*{}", mutability.prefix_str())?;
+
+                pointee.try_dump(ctx, extra)?;
+
+                Ok(())
+            }
+            Type::FunPtr(params, ret) => {
+                write!(ctx.out, "*fun({}) -> ", join_pretty(params, extra))?;
+
+                ret.try_dump(ctx, extra)?;
+
+                Ok(())
+            }
+            Type::FunDef {
+                fundef,
+                params,
+                ret,
+            } => {
+                write!(ctx.out, "fun({}) -> ", join_pretty(params, extra))?;
+
+                ret.try_dump(ctx, extra)?;
+
+                extra.access(*fundef, |item| write!(ctx.out, " {{ {} }}", item.path()))?;
+
+                Ok(())
+            }
+            Type::Item(id) => {
+                extra.access(*id, |item| -> io::Result<()> {
+                    write!(ctx.out, "<{}>", item.path())?;
+
+                    Ok(())
+                })?;
+
+                Ok(())
+            }
         }
     }
 }

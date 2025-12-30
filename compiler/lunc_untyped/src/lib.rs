@@ -564,7 +564,7 @@ impl UtirGen {
 
                 let ret_ty = self.gen_option_expr(rettypeexpr.as_deref());
 
-                self.fundef_mut().ret_ty = ret_ty;
+                self.fundef_mut().ret = ret_ty;
                 self.fun_ret_ty = ret_ty;
 
                 if let Some(ret_e) = ret_ty.expand() {
@@ -586,7 +586,7 @@ impl UtirGen {
                         }
 
                         let ret = fundef
-                            .ret_ty
+                            .ret
                             .expand()
                             .unwrap_or_else(|| self.ptype_expr(PrimType::Void));
 
@@ -982,6 +982,7 @@ impl UtirGen {
             },
             DsExprKind::BoolLit(b) => {
                 typ = Some(Uty::Expr(self.ptype_expr(PrimType::Bool)));
+
                 Expr::Bool(*b)
             }
             DsExprKind::Path(lazy) => {
@@ -1185,16 +1186,18 @@ impl UtirGen {
                         PreMt::new(self.expr_loc(id).unwrap_or_default(), None, None),
                     );
 
-                    match self.body_ref().exprs.get(callee_t) {
-                        Expr::FunptrType(_, ret) => Some(Uty::Expr(
-                            ret.expand()
-                                .unwrap_or_else(|| self.ptype_expr(PrimType::Void)),
-                        )),
-                        Expr::FundefType { ret, .. } => Some(Uty::Expr(*ret)),
-                        _ => None,
+                    if let Some(ret) = self.body_ref().exprs.get(callee_t).fun_ret().map(Uty::Expr)
+                    {
+                        Some(ret)
+                    } else {
+                        let tyvar = self.body().type_vars.create_default();
+
+                        Some(Uty::TyVar(tyvar))
                     }
                 } else {
-                    None
+                    let tyvar = self.body().type_vars.create_default();
+
+                    Some(Uty::TyVar(tyvar))
                 };
 
                 if let Some(typ) = typ {

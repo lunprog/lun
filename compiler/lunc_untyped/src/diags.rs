@@ -263,6 +263,10 @@ impl PreMt {
             }
         }
     }
+
+    pub fn dummy() -> PreMt {
+        PreMt::new(Span::ZERO, None, None)
+    }
 }
 
 impl PreMt {
@@ -324,10 +328,30 @@ pub struct MismatchedTypes {
     pub notes: Vec<String>,
     pub loc: Span,
     pub emit_loc: &'static Location<'static>,
+    /// in the label msg: <code>expected {PREFIX}\`{TYPE}\`, found \`{TYPE}\`</code>
+    pub prefix: Option<&'static str>,
 }
 
 impl MismatchedTypes {
-    pub fn new(pre: PreMt, expected: Vec<String>, found: String) -> MismatchedTypes {
+    pub fn new<S: ToString>(
+        expected: impl IntoIterator<Item = S>,
+        found: impl ToString,
+        loc: Span,
+        due_to: impl Into<Option<Span>>,
+        notes: impl IntoIterator<Item = String>,
+    ) -> MismatchedTypes {
+        MismatchedTypes {
+            expected: expected.into_iter().map(|s| s.to_string()).collect(),
+            found: found.to_string(),
+            due_to: due_to.into(),
+            notes: notes.into_iter().collect(),
+            loc,
+            emit_loc: Location::caller(),
+            prefix: None,
+        }
+    }
+
+    pub fn with_pre(pre: PreMt, expected: Vec<String>, found: String) -> MismatchedTypes {
         MismatchedTypes {
             expected,
             found,
@@ -335,20 +359,38 @@ impl MismatchedTypes {
             notes: pre.notes(),
             loc: pre.loc(),
             emit_loc: pre.emit_loc(),
+            prefix: None,
         }
+    }
+
+    pub fn with_prefix(mut self, prefix: &'static str) -> Self {
+        self.prefix = Some(prefix);
+
+        self
     }
 }
 
 impl ToDiagnostic for MismatchedTypes {
     fn into_diag(self) -> Diagnostic {
+        let mut label_msg = String::from("expected ");
+
+        if let Some(prefix) = self.prefix {
+            let prefix = format!("{} ", prefix);
+            label_msg.push_str(&prefix);
+        }
+
+        let expected = format!("`{}`", list_fmt(&self.expected));
+        label_msg.push_str(&expected);
+
+        if !self.found.is_empty() {
+            let found = format!(", found `{}`", self.found);
+            label_msg.push_str(&found);
+        }
+
         Diagnostic::error()
             .with_code(ErrorCode::MismatchedTypes)
             .with_message("mismatched types")
-            .with_label(Label::primary(self.loc.fid, self.loc).with_message(format!(
-                "expected `{}`, found `{}`",
-                list_fmt(&self.expected),
-                self.found
-            )))
+            .with_label(Label::primary(self.loc.fid, self.loc).with_message(label_msg))
             .with_labels_iter(
                 self.due_to
                     .map(|loc| Label::secondary(loc.fid, loc).with_message("expected due to this")),

@@ -20,10 +20,9 @@ pub struct OrbDumper(());
 
 impl PrettyDump<TreeFlavor> for Orb {
     fn try_dump(&self, ctx: &mut PrettyCtxt, _: &TreeFlavor) -> io::Result<()> {
-        let Orb {
-            items,
-            flavor: _, // NOTE: internal thingy
-        } = self;
+        let Orb { items, flavor } = self;
+
+        write!(ctx.out, "({flavor}) ")?;
 
         let dumper = OrbDumper(());
 
@@ -53,7 +52,7 @@ impl PrettyDump<OrbDumper> for Fundef {
             path,
             typ,
             params,
-            ret_ty,
+            ret,
             entry,
             body,
             loc,
@@ -68,7 +67,7 @@ impl PrettyDump<OrbDumper> for Fundef {
                 path: path,
                 typ: typ,
                 params: ctx.pretty_map(params.full_iter(), extra)?,
-                ret_ty: ret_ty,
+                ret: ret,
                 entry: entry,
                 body: body,
             },
@@ -290,7 +289,7 @@ impl PrettyDump<OrbDumper> for Body {
 impl PrettyDump<OrbDumper> for Stmt {
     fn try_dump(&self, ctx: &mut PrettyCtxt, extra: &OrbDumper) -> io::Result<()> {
         match self {
-            Self::BindingDef(id) => id.try_dump(ctx, extra),
+            Self::BindingDef(id) => write!(ctx.out, "initBinding({id})"),
             Self::Expression(expr) => expr.try_dump(ctx, extra),
         }
     }

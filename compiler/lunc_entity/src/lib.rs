@@ -305,7 +305,7 @@ impl<E: Entity> EntityDb<E> {
     /// Returns an iterator on the data of the entities.
     ///
     /// The iterator yields all the data in the order they were created.
-    pub fn data_iter(&self) -> impl Iterator<Item = &E::Data> {
+    pub fn data_iter(&self) -> impl ExactSizeIterator<Item = &E::Data> {
         self.elems.iter()
     }
 
@@ -774,6 +774,12 @@ impl<E: Entity> From<Option<E>> for Opt<E> {
             Some(e) => Opt::Some(e),
             None => Opt::None,
         }
+    }
+}
+
+impl<E: Entity> From<E> for Opt<E> {
+    fn from(value: E) -> Self {
+        Self::Some(value)
     }
 }
 

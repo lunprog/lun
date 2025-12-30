@@ -891,5 +891,16 @@ pub fn build_with_argv(argv: Argv) -> Result<()> {
     }
     timings.utir = utir_instant.elapsed();
 
-    todo!("IMPLEMENT SIR AND THE FOLLOWING")
+    timings.total = top_instant.elapsed();
+    timings.sum_up();
+
+    if argv.debug.timings {
+        eprint!("\n{timings}");
+    }
+
+    if sink.is_empty() {
+        Ok(())
+    } else {
+        Err(builderr())
+    }
 }

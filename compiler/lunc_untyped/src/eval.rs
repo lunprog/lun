@@ -62,6 +62,16 @@ impl CtemBuilder {
             coming_from: self.coming_from,
         }
     }
+
+    pub(super) fn shallow_clone(&self) -> CtemBuilder {
+        CtemBuilder {
+            memo: HashMap::new(),
+            sink: self.sink.clone(),
+            old_hash: None,
+            hash_builder: RandomState::new(),
+            coming_from: None,
+        }
+    }
 }
 
 /// Maybe untyped value, used to represent untyped integer and float literals.
@@ -85,6 +95,13 @@ impl From<sir::CValue> for UtirValue {
     fn from(value: sir::CValue) -> Self {
         UtirValue::CVal(value)
     }
+}
+
+/// Evaluation error.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EvalError {
+    NotType,
+    UnableAtComptime,
 }
 
 /// UTIR **c**ompile-**t**ime **e**valuation **m**achinery.
@@ -165,12 +182,16 @@ impl<'utir> UtirCtem<'utir> {
     ///
     /// If this function in unable to evaluate the expression at compile-time it
     /// will return `None` and maybe emit a diagnostic.
-    pub fn evaluate_expr(&mut self, item: utir::ItemId, expr: utir::ExprId) -> Option<UtirValue> {
+    pub fn evaluate_expr(
+        &mut self,
+        item: utir::ItemId,
+        expr: utir::ExprId,
+    ) -> Result<UtirValue, EvalError> {
         self.with_item(item, |this| {
             let expr_loc = this.get_expr_loc(expr).unwrap_or_default();
 
-            match this._eval_expr(expr) {
-                Ok(v) => Some(v),
+            match this.try_eval_expr(expr) {
+                Ok(v) => Ok(v),
 
                 Err((loc, note)) => {
                     if this.emit_diag {
@@ -181,7 +202,7 @@ impl<'utir> UtirCtem<'utir> {
                         });
                     }
 
-                    None
+                    Err(EvalError::UnableAtComptime)
                 }
             }
         })
@@ -195,21 +216,21 @@ impl<'utir> UtirCtem<'utir> {
     /// diagnostic (unable to evaluate at compile-time) this is so that you
     /// can emit in type-checking the "expected type but got an expression"
     /// diagnostic.
-    pub fn evaluate_type(&mut self, item: utir::ItemId, typ: utir::ExprId) -> Option<utir::Type> {
+    pub fn evaluate_type(
+        &mut self,
+        item: utir::ItemId,
+        typ: utir::ExprId,
+        emit: bool,
+    ) -> Result<utir::Type, EvalError> {
         self.with_item(item, |this| {
-            this.emit_diag = false;
+            this.emit_diag = emit;
 
             match this.evaluate_expr(item, typ) {
-                Some(UtirValue::Type(t)) => Some(t),
-                Some(_) | None => None,
+                Ok(UtirValue::Type(t)) => Ok(t),
+                Ok(_) => Err(EvalError::NotType),
+                Err(e) => Err(e),
             }
         })
-    }
-
-    /// Tries to evaluate the expression, return `None` if it can't evaluate at
-    /// compile-time and NEVER emits a diagnostic.
-    fn try_eval_expr(&mut self, expr: utir::ExprId) -> Result<UtirValue, (Span, Option<String>)> {
-        self._eval_expr(expr)
     }
 
     /// Tries to evaluate the expression as a type, it it fails it returns the
@@ -234,7 +255,9 @@ impl<'utir> UtirCtem<'utir> {
         }
     }
 
-    fn _eval_expr(&mut self, id: utir::ExprId) -> Result<UtirValue, (Span, Option<String>)> {
+    /// Tries to evaluate the expression, return `None` if it can't evaluate at
+    /// compile-time and NEVER emits a diagnostic.
+    fn try_eval_expr(&mut self, id: utir::ExprId) -> Result<UtirValue, (Span, Option<String>)> {
         if let Some(res) = self.memo.get(&(self.item.unwrap(), id)) {
             return Ok(res.clone());
         }
@@ -244,7 +267,7 @@ impl<'utir> UtirCtem<'utir> {
 
         let expr_t = if let Some(utir::Uty::Expr(expr)) = expr_t
             && id != expr
-        // TODO: this prevents a stack overflow when we try to evaluate the type
+        // NOTE: this prevents a stack overflow when we try to evaluate the type
         // of type, because it's self-referential (in expr_t, eN: eN),
         {
             // NOTE: this is used by the eval to use as less as possible of
@@ -330,7 +353,7 @@ impl<'utir> UtirCtem<'utir> {
 
                     this.coming_from = Some((this.item.unwrap(), ent));
 
-                    this._eval_expr(ent)
+                    this.try_eval_expr(ent)
                 })
             }
             utir::Expr::ExtType(_) => Err((expr_loc, None)),

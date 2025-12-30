@@ -48,6 +48,18 @@ pub enum Flavor {
     /// The following variants are not allowed:
     /// * [`Expr::TypeofItem`]
     Unified,
+    /// The dialect outputted by the [`Substituter`].
+    ///
+    /// The following variants are not allowed:
+    /// * *all of the above in previous flavors*
+    /// * [`Uty::Integer`]
+    /// * [`Uty::Float`]
+    /// * [`Uty::TyVar`] is allowed if it has only one constraint of rhs
+    ///   `Uty::Integer` or `Uty::Float` and [`Uty::TyVar`] is **never** allowed
+    ///   as the type of a GlobalDef or the type of a parameter.
+    ///
+    /// [`Substituter`]: crate::unifier::Substituter
+    Substituted,
 }
 
 impl Flavor {
@@ -55,7 +67,8 @@ impl Flavor {
     pub fn next(&self) -> Flavor {
         match self {
             Flavor::Generated => Flavor::Unified,
-            Flavor::Unified => panic!("no following flavor after `Flavor::Unified`"),
+            Flavor::Unified => Flavor::Substituted,
+            Flavor::Substituted => panic!("no following flavor after `Flavor::Substituted`"),
         }
     }
 
@@ -69,6 +82,7 @@ impl Flavor {
         match self {
             Flavor::Generated => "generated",
             Flavor::Unified => "unified",
+            Flavor::Substituted => "substituted",
         }
     }
 }
@@ -76,6 +90,12 @@ impl Flavor {
 impl<E> PrettyDump<E> for Flavor {
     fn try_dump(&self, ctx: &mut PrettyCtxt, _: &E) -> io::Result<()> {
         write!(ctx.out, "{}", self.as_str())
+    }
+}
+
+impl Display for Flavor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
     }
 }
 
@@ -171,7 +191,7 @@ pub struct Fundef {
     pub path: Path,
     pub typ: ExprId,
     pub params: EntityDb<ParamId>,
-    pub ret_ty: Opt<ExprId>,
+    pub ret: Opt<ExprId>,
     pub entry: BlockId,
     pub body: Body,
     pub loc: Span,
@@ -188,7 +208,7 @@ impl Default for Fundef {
             path: Path::new(),
             typ: ExprId::RESERVED,
             params: EntityDb::new(),
-            ret_ty: Opt::None,
+            ret: Opt::None,
             entry: BlockId::RESERVED,
             body: Body::default(),
             loc: Span::ZERO,
@@ -361,6 +381,15 @@ impl Debug for ExprId {
 
 entity!(ExprId, Expr);
 
+impl From<Uty> for Opt<ExprId> {
+    fn from(value: Uty) -> Self {
+        match value {
+            Uty::Expr(e) => Opt::Some(e),
+            _ => Opt::None,
+        }
+    }
+}
+
 /// IEEE-754 floating point number
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -527,6 +556,19 @@ impl Expr {
         match self {
             Expr::FunptrType(_, ret) => ret.expand(),
             Expr::FundefType { ret, .. } => Some(*ret),
+            _ => None,
+        }
+    }
+
+    pub fn to_funlike(&self) -> Option<(Vec<ExprId>, Opt<ExprId>)> {
+        match self {
+            Expr::FunptrType(params, ret) => Some((params.clone(), *ret)),
+            Expr::FundefType {
+                fundef: _,
+                params,
+                ret,
+                ..
+            } => Some((params.clone(), Opt::Some(*ret))),
             _ => None,
         }
     }
@@ -786,6 +828,17 @@ impl Uty {
     pub fn is_strong(&self) -> bool {
         !self.is_weak()
     }
+
+    /// Convert this Uty to an ExprId
+    pub fn as_expr(self) -> ExprId {
+        match self {
+            Self::Expr(id) => id,
+            _ => {
+                // SAFETY: caller guarantees
+                opt_unreachable!()
+            }
+        }
+    }
 }
 
 impl Display for Uty {
@@ -880,6 +933,46 @@ impl Type {
             Type::PrimType(ptype) if ptype.is_integer() && ability == TypeAbility::Integer => true,
             Type::PrimType(ptype) if ptype.is_float() && ability == TypeAbility::Float => true,
             _ => false,
+        }
+    }
+
+    /// Returns `true` if `self` can coerce to `other`.
+    pub fn can_coerce(&self, other: &Type) -> bool {
+        match (self, other) {
+            (_, Type::PrimType(PrimType::Never)) => true,
+            (
+                Type::FunDef {
+                    fundef: _,
+                    params,
+                    ret,
+                },
+                Type::FunPtr(params_o, ret_o),
+            ) => params == params_o && ret == ret_o,
+            _ => false,
+        }
+    }
+
+    /// Returns true if types are equal or if they can coerce to something that
+    /// will be equal.
+    pub fn coerce_eq(&self, other: &Type) -> bool {
+        self == other || self.can_coerce(other)
+    }
+
+    /// Not [coerce_eq].
+    pub fn coerce_ne(&self, other: &Type) -> bool {
+        !self.coerce_eq(other)
+    }
+
+    /// Convert a fun-like type to its inner components.
+    pub fn to_funlike(self) -> Option<(Vec<Type>, Box<Type>)> {
+        match self {
+            Type::FunPtr(params, ret)
+            | Type::FunDef {
+                fundef: _,
+                params,
+                ret,
+            } => Some((params, ret)),
+            _ => None,
         }
     }
 }

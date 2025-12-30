@@ -15408,13 +15408,13 @@ warning: compilation of `never_block` succeeded but 2 warnings emitted.
         test_code: 0,
     ),
     "utir/E017": (
-        compiler_out: r#"utir = {
+        compiler_out: r#"utir = (generated) {
   i0: Fundef {
     name: main @ 39..43 (fid = 0);
     path: orb::main;
     typ: e2;
     params: {};
-    ret_ty: none;
+    ret: none;
     entry: b0;
     body: Body {
       labels: {};
@@ -15519,13 +15519,13 @@ error: compilation of `E017` failed due to 4 errors and 0 warnings
         test_code: 0,
     ),
     "utir/E040": (
-        compiler_out: "utir = {
+        compiler_out: "utir = (generated) {
   i0: Fundef {
     name: a @ 46..47 (fid = 0);
     path: orb::a;
     typ: e2;
     params: {};
-    ret_ty: none;
+    ret: none;
     entry: b0;
     body: Body {
       labels: {};

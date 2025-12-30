@@ -75,33 +75,29 @@ impl Unifier {
 
                 let mut ctem = ctem_builder.build(&self.orb);
 
-                let Some(typ_l) = ctem.evaluate_type(self.item.unwrap(), expr_l) else {
+                let Ok(typ_l) = ctem.evaluate_type(self.item.unwrap(), expr_l, false) else {
                     // NOTE: we don't throw an error because we will in the
                     // typeck stage, re typecheck everything and if it really
                     // can't work we throw the error.
                     return None;
                 };
 
-                let Some(typ_r) = ctem.evaluate_type(self.item.unwrap(), expr_r) else {
+                let Ok(typ_r) = ctem.evaluate_type(self.item.unwrap(), expr_r, false) else {
                     // NOTE: same as above.
                     return None;
                 };
 
                 self.ctem_builder = ctem.builder();
 
-                if typ_l != typ_r
-                    // TODO: this is kinda hackish maybe we should have a
-                    // prettier way of handling `never` types.
-                    && typ_l != Type::PrimType(PrimType::Never)
-                    && typ_r != Type::PrimType(PrimType::Never)
-                {
+                if typ_l.coerce_ne(&typ_r) {
                     let expected_str = self.expr_to_string(expr_r);
                     let found_str = self.expr_to_string(expr_l);
 
-                    Some(
-                        self.sink()
-                            .emit(MismatchedTypes::new(pre, vec![expected_str], found_str)),
-                    )
+                    Some(self.sink().emit(MismatchedTypes::with_pre(
+                        pre,
+                        vec![expected_str],
+                        found_str,
+                    )))
                 } else {
                     None
                 }
@@ -120,7 +116,7 @@ impl Unifier {
 
                 let mut ctem = ctem_builder.build(&self.orb);
 
-                let Some(type_expr) = ctem.evaluate_type(self.item.unwrap(), expr) else {
+                let Ok(type_expr) = ctem.evaluate_type(self.item.unwrap(), expr, false) else {
                     // NOTE: see the comments above.
                     return None;
                 };
@@ -133,10 +129,11 @@ impl Unifier {
                     let expr_str = self.expr_to_string(expr);
                     let ability_str = ability.to_string();
 
-                    Some(
-                        self.sink()
-                            .emit(MismatchedTypes::new(pre, vec![expr_str], ability_str)),
-                    )
+                    Some(self.sink().emit(MismatchedTypes::with_pre(
+                        pre,
+                        vec![expr_str],
+                        ability_str,
+                    )))
                 } else {
                     None
                 }
@@ -210,7 +207,10 @@ impl Unifier {
                     let lhs = lhs_uty.to_string();
                     let rhs = rhs_uty.to_string();
 
-                    Some(self.sink().emit(MismatchedTypes::new(pre, vec![rhs], lhs)))
+                    Some(
+                        self.sink()
+                            .emit(MismatchedTypes::with_pre(pre, vec![rhs], lhs)),
+                    )
                 } else {
                     None
                 }
@@ -250,9 +250,9 @@ impl Unifier {
     }
 
     pub fn take_ctem(&mut self) -> CtemBuilder {
-        let sink = self.ctem_builder.sink.clone();
+        let builder = self.ctem_builder.shallow_clone();
 
-        mem::replace(&mut self.ctem_builder, CtemBuilder::new(sink))
+        mem::replace(&mut self.ctem_builder, builder)
     }
 }
 
@@ -267,6 +267,8 @@ pub struct Substituter {
     // ITEM SPECIFIC
     i32_expr: Opt<ExprId>,
     f32_expr: Opt<ExprId>,
+    constraints: Constraints,
+    late_tyvars: EntitySet<TyVar>,
 }
 
 impl Substituter {
@@ -276,6 +278,8 @@ impl Substituter {
             item: Opt::None,
             i32_expr: Opt::None,
             f32_expr: Opt::None,
+            constraints: Constraints(Vec::new()),
+            late_tyvars: EntitySet::new(),
         }
     }
 
@@ -284,6 +288,10 @@ impl Substituter {
     }
 
     pub fn substitute(&mut self, orb: &mut Orb) {
+        orb.flavor.set_next();
+
+        assert_eq!(orb.flavor, Flavor::Substituted);
+
         for id in orb.items.entity_iter() {
             self.item = Opt::Some(id);
 
@@ -297,13 +305,13 @@ impl Substituter {
                     path: _,
                     typ: _,
                     params,
-                    ret_ty: _,
+                    ret: _,
                     entry: _,
                     body: _,
                     loc: _,
                 }) => {
                     for (_, param) in params.iter_mut() {
-                        param.typ = Uty::Expr(self.sub(param.typ));
+                        param.typ = Uty::Expr(self.sub_forced(param.typ));
                     }
                 }
                 Item::Fundecl(_)
@@ -319,17 +327,18 @@ impl Substituter {
                     body: _,
                     loc: _,
                 }) => {
-                    *typ = Uty::Expr(self.sub(*typ));
+                    *typ = Uty::Expr(self.sub_forced(*typ));
                 }
             }
-
-            self.clear_item_specific();
         }
+
+        self.clear_item_specific();
     }
 
     fn clear_item_specific(&mut self) {
         self.i32_expr = Opt::None;
         self.f32_expr = Opt::None;
+        self.late_tyvars.clear();
     }
 
     fn substitute_body(&mut self, body: &mut Body) {
@@ -340,21 +349,27 @@ impl Substituter {
             exprs,
             blocks: _,
             expr_t,
-            type_vars,
+            type_vars: _,
             constraints,
             expr_locs: _,
             stmt_locs: _,
         } = body;
 
-        for (_, binding) in bindings.iter_mut() {
-            binding.typ = Uty::Expr(self.sub(binding.typ));
-        }
-
         // it's super dump but we can't do differently without being dumber
+        let type_e = exprs.create(Expr::PrimType(PrimType::Type));
+
         let i32_e = exprs.create(Expr::PrimType(PrimType::I32));
         self.i32_expr = Opt::Some(i32_e);
         let f32_e = exprs.create(Expr::PrimType(PrimType::F32));
         self.f32_expr = Opt::Some(f32_e);
+
+        expr_t.insert(type_e, Uty::Expr(type_e));
+        expr_t.insert(i32_e, Uty::Expr(type_e));
+        expr_t.insert(f32_e, Uty::Expr(type_e));
+
+        for (_, binding) in bindings.iter_mut() {
+            binding.typ = self.sub(binding.typ, false);
+        }
 
         for (_, expr) in exprs.iter_mut() {
             if let Expr::ExtType(Ext { item, ent: typ }) = expr {
@@ -363,7 +378,7 @@ impl Substituter {
 
                 *expr = Expr::ExtExpr(Ext {
                     item: *item,
-                    ent: self.sub(*typ),
+                    ent: self.sub_forced(*typ),
                 });
 
                 self.item = old;
@@ -371,54 +386,73 @@ impl Substituter {
         }
 
         for (_, typ) in expr_t.iter_mut() {
-            *typ = Uty::Expr(self.sub(*typ));
+            *typ = self.sub(*typ, false);
         }
 
-        constraints.0.clear();
-        mem::take(type_vars);
+        let _ = mem::replace(constraints, self.take_constraints());
     }
 
-    /// Substitute the type-variables by something else than `Uty::TyVar(..)`.
-    fn sub(&mut self, uty: Uty) -> ExprId {
-        let typ = match uty {
+    fn take_constraints(&mut self) -> Constraints {
+        mem::replace(&mut self.constraints, Constraints(Vec::new()))
+    }
+
+    /// Substitute the uty always by an expression type, if `forced` is true, or
+    /// by an expression if it is constrained like that or by a type-variable
+    /// with an integer or float constraint.
+    fn sub(&mut self, uty: Uty, forced: bool) -> Uty {
+        match uty {
             Uty::Expr(_) => uty,
             Uty::TyVar(tyvar) => {
-                if let Some(typ) = self.cur_subs().get(tyvar) {
-                    Uty::Expr(self.sub(*typ))
+                let subbed = if let Some(typ) = self.cur_subs().get(tyvar) {
+                    self.sub(*typ, forced)
+                } else {
+                    uty
+                };
+
+                match subbed {
+                    Uty::Integer | Uty::Float => {
+                        if !self.late_tyvars.exists(tyvar) {
+                            self.constraints.0.push(Con {
+                                lhs: Uty::TyVar(tyvar),
+                                rhs: subbed,
+                                pre: PreMt::dummy(),
+                            });
+                        }
+
+                        self.late_tyvars.insert(tyvar);
+
+                        uty
+                    }
+                    _ => subbed,
+                }
+            }
+            Uty::Integer => {
+                if let Some(i32) = self.i32_expr.expand()
+                    && forced
+                {
+                    Uty::Expr(i32)
                 } else {
                     uty
                 }
             }
-            Uty::Integer => {
-                if let Some(i32) = self.i32_expr.expand() {
-                    Uty::Expr(i32)
-                } else {
-                    // SAFETY: caller guarantees
-                    opt_unreachable!()
-                }
-            }
             Uty::Float => {
-                if let Some(f32) = self.f32_expr.expand() {
+                if let Some(f32) = self.f32_expr.expand()
+                    && forced
+                {
                     Uty::Expr(f32)
                 } else {
-                    // SAFETY: caller guarantees
-                    opt_unreachable!()
+                    uty
                 }
             }
-        };
+        }
+    }
 
-        match typ {
+    fn sub_forced(&mut self, uty: Uty) -> ExprId {
+        match self.sub(uty, true) {
             Uty::Expr(e) => e,
-            Uty::TyVar(tyvar) => {
-                panic!(
-                    "unable to substitute type-variable {tyvar} in {}",
-                    self.item.unwrap()
-                );
-            }
-            Uty::Float | Uty::Integer => {
-                // if we had an integer/float we re-substitute, to have the
-                // corresponding type-expression
-                self.sub(typ)
+            _ => {
+                // SAFETY: guaranteed because forced is set to true
+                opt_unreachable!()
             }
         }
     }
